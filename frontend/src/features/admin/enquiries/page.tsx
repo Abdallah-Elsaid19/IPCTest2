@@ -1,3 +1,7 @@
+import { Mail } from "lucide-react";
+import { useState } from "react";
+
+import { adminApi } from "@/features/admin/adminApi";
 import {
   AdminPageHeader,
   AdminPageState,
@@ -6,10 +10,28 @@ import {
   StatusBadge,
 } from "@/features/admin/components/AdminPage";
 import { useAdminDashboard } from "@/features/admin/context/AdminDashboardContext";
+import EnquiryReplyModal from "@/features/admin/enquiries/EnquiryReplyModal";
+import type { DashboardEnquiry } from "@/features/admin/types";
+import { useAuth } from "@/features/auth/AuthContext";
 import { adminUrl, formatDate } from "@/features/admin/utils";
+import { notifications } from "@/lib/notifications";
 
 export default function AdminEnquiriesPage() {
-  const { data, isLoading } = useAdminDashboard();
+  const { data, isLoading, refresh } = useAdminDashboard();
+  const { user } = useAuth();
+  const [replyingTo, setReplyingTo] = useState<DashboardEnquiry | null>(null);
+
+  const sendReply = async (message: string) => {
+    if (!replyingTo) return;
+    try {
+      await adminApi.replyToEnquiry(replyingTo.type, replyingTo.id, message);
+      notifications.success(`Reply sent successfully to ${replyingTo.email}.`);
+      setReplyingTo(null);
+      await refresh();
+    } catch (error) {
+      notifications.error(error instanceof Error ? error.message : "The enquiry reply could not be sent.");
+    }
+  };
   return (
     <AdminPageState isLoading={isLoading} hasData={Boolean(data)}>
       {data && (
@@ -35,6 +57,7 @@ export default function AdminEnquiriesPage() {
                       <th className="px-5 py-3.5">Subject</th>
                       <th className="px-5 py-3.5">Status</th>
                       <th className="px-5 py-3.5">Received</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8DED2]">
@@ -61,6 +84,17 @@ export default function AdminEnquiriesPage() {
                         <td className="px-5 py-4 text-[#756B61]">
                           {formatDate(item.created_at)}
                         </td>
+                        <td className="px-5 py-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setReplyingTo(item)}
+                            className="inline-grid h-9 w-9 place-items-center rounded-lg text-[#655D55] transition-colors hover:bg-primary-100 hover:text-primary-800"
+                            title={`Reply to ${item.email}`}
+                            aria-label={`Reply to ${item.name}`}
+                          >
+                            <Mail size={16} />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -70,6 +104,12 @@ export default function AdminEnquiriesPage() {
               <EmptyState>No enquiries have been received.</EmptyState>
             )}
           </div>
+          <EnquiryReplyModal
+            enquiry={replyingTo}
+            administrator={user}
+            onClose={() => setReplyingTo(null)}
+            onSend={sendReply}
+          />
         </>
       )}
     </AdminPageState>

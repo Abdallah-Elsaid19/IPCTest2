@@ -1,0 +1,23 @@
+IPC event registration confirmed
+
+Hello {{ registration.contact_first_name }},
+
+Your registration for {{ event.title }} is confirmed.
+
+Reference: {{ registration.reference }}
+Ticket: {{ registration.ticket_name }}
+Quantity: {{ registration.quantity }}
+Date: {{ event_date }}
+Time: {{ event_time }}
+Location: {% if event.is_online_event %}Online event{% else %}{{ event.venue_name|default:event.location }}{% endif %}
+Total: Free
+
+Attendees:
+{% for attendee in registration.attendees.all %}- {{ attendee.first_name }} {{ attendee.last_name }} ({{ attendee.email }})
+{% endfor %}
+
+View registration: {{ view_url }}
+Add to calendar: {{ calendar_url }}
+
+Need help? Reply to this email.
+Institute of Project Controls

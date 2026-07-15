@@ -91,7 +91,7 @@ export default function AdminProfilePage() {
               </label>
               <div className="mt-2 flex h-14 items-center gap-2 rounded-xl border border-[#E2D8CC] bg-[#F7F2EB] px-4 text-sm font-semibold text-[#332E29]">
                 <UserRound size={16} className="text-primary-700" />
-                {user.is_staff ? "Staff administrator" : "Member"}
+                {user.role === "admin" ? "Admin" : "User"}
               </div>
             </div>
           </div>

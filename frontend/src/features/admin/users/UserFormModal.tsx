@@ -16,8 +16,7 @@ const schema = z.object({
     .max(150)
     .regex(/^[\w.@+-]+$/, "Use letters, numbers, or @/./+/-/_ only"),
   email: z.email("Enter a valid email address").max(254),
-  is_staff: z.boolean(),
-  role: z.enum(["admin", "reviewer", "staff"]).nullable(),
+  role: z.enum(["admin", "user"]),
   is_active: z.boolean(),
 });
 
@@ -40,8 +39,6 @@ export default function UserFormModal({
     register,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -50,13 +47,10 @@ export default function UserFormModal({
       last_name: "",
       username: "",
       email: "",
-      is_staff: false,
-      role: null,
+      role: "user",
       is_active: true,
     },
   });
-  const isStaff = watch("is_staff");
-
   useEffect(() => {
     if (!isOpen) return;
     reset(
@@ -66,7 +60,6 @@ export default function UserFormModal({
             last_name: user.last_name,
             username: user.username,
             email: user.email,
-            is_staff: user.is_staff,
             role: user.role,
             is_active: user.is_active,
           }
@@ -75,16 +68,12 @@ export default function UserFormModal({
             last_name: "",
             username: "",
             email: "",
-            is_staff: false,
-            role: null,
+            role: "user",
             is_active: true,
           },
     );
   }, [isOpen, reset, user]);
 
-  useEffect(() => {
-    setValue("role", isStaff ? watch("role") || "staff" : null);
-  }, [isStaff, setValue, watch]);
   if (!isOpen) return null;
 
   const inputClass =
@@ -160,13 +149,12 @@ export default function UserFormModal({
               </span>
             )}
           </label>
-          <label className="flex items-center gap-3 rounded-xl border border-[#D9CDBE] bg-[#F7F2EB] p-4 text-sm font-semibold">
-            <input
-              type="checkbox"
-              {...register("is_staff")}
-              className="h-4 w-4 accent-[#D79525]"
-            />
-            Staff access
+          <label className="text-xs font-bold uppercase tracking-wide text-[#655D55]">
+            Role
+            <select {...register("role")} className={inputClass}>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
           </label>
           <label className="flex items-center gap-3 rounded-xl border border-[#D9CDBE] bg-[#F7F2EB] p-4 text-sm font-semibold">
             <input
@@ -176,21 +164,6 @@ export default function UserFormModal({
             />
             Active account
           </label>
-          {isStaff && (
-            <label className="text-xs font-bold uppercase tracking-wide text-[#655D55] sm:col-span-2">
-              Admin role
-              <select {...register("role")} className={inputClass}>
-                <option value="staff">Staff</option>
-                <option value="reviewer">Reviewer</option>
-                <option value="admin">Admin</option>
-              </select>
-              {errors.role && (
-                <span className="mt-1 block text-[11px] normal-case text-red-600">
-                  {errors.role.message}
-                </span>
-              )}
-            </label>
-          )}
         </div>
         <div className="flex justify-end gap-3 border-t border-[#E6DCCE] px-6 py-4">
           <button

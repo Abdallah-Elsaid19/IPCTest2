@@ -3,6 +3,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 from ipc_backend.validators import evidence_upload_to, validate_upload
@@ -37,10 +38,8 @@ class FormDefinition(models.Model):
 class Application(models.Model):
     class Status(models.TextChoices):
         SUBMITTED = "submitted", "Submitted"
-        UNDER_REVIEW = "under_review", "Under review"
-        MORE_INFO_REQUIRED = "more_info_required", "More information required"
+        UNDER_REVIEW = "under_review", "Under Review"
         APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Rejected"
 
     class ContactPreference(models.TextChoices):
         EMAIL = "email", "Email"
@@ -58,6 +57,7 @@ class Application(models.Model):
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.SUBMITTED)
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120)
+    username = models.CharField(max_length=30, blank=True)
     email = models.EmailField()
     phone = models.CharField(max_length=80, blank=True)
     country = models.CharField(max_length=120, blank=True)
@@ -81,6 +81,23 @@ class Application(models.Model):
         related_name="reviewed_applications",
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    approved_user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="membership_application",
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="approved_membership_applications",
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    account_created_at = models.DateTimeField(null=True, blank=True)
+    welcome_email_sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "applications_application"
@@ -91,6 +108,13 @@ class Application(models.Model):
             models.Index(fields=["reviewed_by"], name="app_reviewer_idx"),
             models.Index(fields=["form_definition", "form_version"], name="app_form_version_idx"),
             models.Index(fields=["submitted_at"], name="app_submitted_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("username"),
+                condition=~models.Q(username=""),
+                name="uniq_application_username_ci",
+            ),
         ]
 
     @property
@@ -105,6 +129,16 @@ class Application(models.Model):
 
     def clean(self):
         errors = {}
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).values(
+                "status",
+                "approved_user_id",
+            ).first()
+            if previous:
+                if previous["status"] == self.Status.APPROVED and self.status != self.Status.APPROVED:
+                    errors["status"] = "Approved applications are locked and their status cannot be changed."
+                if previous["approved_user_id"] and previous["approved_user_id"] != self.approved_user_id:
+                    errors["approved_user"] = "The approved user relationship cannot be changed."
         if not isinstance(self.grade_specific_data, dict):
             errors["grade_specific_data"] = "Grade-specific data must be a JSON object."
         if self.form_definition_id:
@@ -116,6 +150,19 @@ class Application(models.Model):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).values(
+                "status",
+                "approved_user_id",
+            ).first()
+            if previous:
+                errors = {}
+                if previous["status"] == self.Status.APPROVED and self.status != self.Status.APPROVED:
+                    errors["status"] = "Approved applications are locked and their status cannot be changed."
+                if previous["approved_user_id"] and previous["approved_user_id"] != self.approved_user_id:
+                    errors["approved_user"] = "The approved user relationship cannot be changed."
+                if errors:
+                    raise ValidationError(errors)
         if not self.application_reference:
             self.application_reference = generate_application_reference()
         if self.form_definition_id:

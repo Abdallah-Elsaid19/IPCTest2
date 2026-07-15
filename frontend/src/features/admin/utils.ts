@@ -1,7 +1,7 @@
 export const adminUrl = (import.meta.env.VITE_DJANGO_ADMIN_URL || "http://localhost:8000/admin/").replace(/\/?$/, "/");
 
 const statusLabels: Record<string, string> = {
-  submitted: "Submitted", under_review: "Under review", more_info_required: "More information",
+  submitted: "Submitted", under_review: "Under Review", more_info_required: "More information",
   approved: "Approved", rejected: "Rejected", new: "New", in_progress: "In progress",
   handled: "Handled", contacted: "Contacted", closed: "Closed", spam: "Spam",
   registered: "Registered", waitlisted: "Waitlisted", cancelled: "Cancelled",

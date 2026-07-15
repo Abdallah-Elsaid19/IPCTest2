@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 
 import { adminApi } from "@/features/admin/adminApi";
-import type { DashboardData } from "@/features/admin/types";
+import type { AdminApplicationDetail, DashboardData } from "@/features/admin/types";
 import { notifications } from "@/lib/notifications";
 
 interface AdminDashboardContextValue {
@@ -9,35 +10,71 @@ interface AdminDashboardContextValue {
   isLoading: boolean;
   isRefreshing: boolean;
   refresh: () => Promise<void>;
+  updateRecentApplication: (application: AdminApplicationDetail) => void;
 }
 
 const AdminDashboardContext = createContext<AdminDashboardContextValue | null>(null);
 
 export function AdminDashboardProvider({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const activeRequest = useRef<Promise<void> | null>(null);
 
   const loadDashboard = useCallback(async (forceRefresh = false) => {
-    forceRefresh ? setIsRefreshing(true) : setIsLoading(true);
+    if (activeRequest.current) return activeRequest.current;
+
+    const request = (async () => {
+      forceRefresh ? setIsRefreshing(true) : setIsLoading(true);
+      try {
+        setData(await adminApi.dashboard(forceRefresh));
+      } catch (error) {
+        notifications.error(error instanceof Error ? error.message : "Could not load the dashboard.");
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    })();
+    activeRequest.current = request;
     try {
-      setData(await adminApi.dashboard(forceRefresh));
-    } catch (error) {
-      notifications.error(error instanceof Error ? error.message : "Could not load the dashboard.");
+      await request;
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (activeRequest.current === request) activeRequest.current = null;
     }
   }, []);
 
-  useEffect(() => { void loadDashboard(); }, [loadDashboard]);
+  const needsDashboardData =
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/enquiries") ||
+    pathname === "/admin/events";
+
+  useEffect(() => {
+    if (needsDashboardData && !data) void loadDashboard();
+  }, [data, loadDashboard, needsDashboardData]);
+
+  const updateRecentApplication = useCallback((application: AdminApplicationDetail) => {
+    setData((current) => current ? {
+      ...current,
+      recent_applications: current.recent_applications.map((item) =>
+        item.id === application.id
+          ? {
+              ...item,
+              status: application.status,
+              approved_user_email: application.approved_user_email,
+            }
+          : item,
+      ),
+    } : current);
+  }, []);
 
   const value = useMemo(() => ({
     data,
     isLoading,
     isRefreshing,
     refresh: () => loadDashboard(true),
-  }), [data, isLoading, isRefreshing, loadDashboard]);
+    updateRecentApplication,
+  }), [data, isLoading, isRefreshing, loadDashboard, updateRecentApplication]);
 
   return <AdminDashboardContext.Provider value={value}>{children}</AdminDashboardContext.Provider>;
 }

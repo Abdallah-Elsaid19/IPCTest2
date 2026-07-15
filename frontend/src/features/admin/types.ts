@@ -24,7 +24,95 @@ export interface DashboardApplication {
   email: string;
   grade: string;
   status: string;
+  approved_user_email?: string | null;
   submitted_at: string;
+}
+
+export type ApplicationStatus = "submitted" | "under_review" | "approved";
+
+export interface ApplicationEvidence {
+  id: number;
+  evidence_type: string;
+  original_name: string;
+  file_url: string;
+  content_type: string;
+  file_size: number;
+  uploaded_by_name: string;
+  uploaded_at: string;
+  updated_at: string;
+}
+
+export interface ApplicationReference {
+  id: number;
+  name: string;
+  email: string;
+  organisation: string;
+  relationship: string;
+  notes: string;
+  created_at: string;
+}
+
+export interface ApplicationStatusHistory {
+  id: number;
+  from_status: string | null;
+  to_status: string;
+  changed_by_name: string;
+  note: string;
+  created_at: string;
+}
+
+export interface ApplicationReviewerNote {
+  id: number;
+  author_name: string;
+  note: string;
+  is_internal: boolean;
+  created_at: string;
+}
+
+export interface AdminApplicationDetail {
+  id: number;
+  application_id: number;
+  application_reference: string;
+  status: ApplicationStatus;
+  status_label: string;
+  created_at: string;
+  updated_at: string;
+  submitted_at: string;
+  grade: string;
+  membership_grade_code: string;
+  membership_grade_title: string;
+  form_definition_code: string;
+  form_definition_name: string;
+  form_version: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  phone: string;
+  country: string;
+  organisation: string;
+  contact_preference: string;
+  contact_preference_label: string;
+  grade_specific_data: Record<string, unknown>;
+  code_of_conduct_consent: boolean;
+  privacy_consent: boolean;
+  evidence_files: ApplicationEvidence[];
+  application_references: ApplicationReference[];
+  reviewer_notes: ApplicationReviewerNote[];
+  status_history: ApplicationStatusHistory[];
+  reviewed_by: number | null;
+  reviewed_by_name: string;
+  reviewed_at: string | null;
+  approved_user: number | null;
+  approved_user_email: string | null;
+  approved_user_is_managed_account: boolean;
+  approved_by: number | null;
+  approved_by_name: string;
+  approved_at: string | null;
+  account_created_at: string | null;
+  welcome_email_sent_at: string | null;
+  welcome_email_sent?: boolean;
+  welcome_email_error?: string | null;
 }
 
 export interface DashboardEnquiry {
@@ -38,12 +126,17 @@ export interface DashboardEnquiry {
 }
 
 export interface DashboardRegistration {
-  id: number;
+  id: number | string;
   name: string;
   email: string;
   event_name: string;
   status: string;
   created_at: string;
+  source?: "ipc" | "eventbrite";
+  reference?: string;
+  quantity?: number;
+  ticket_name?: string;
+  confirmation_email_status?: "pending" | "sent" | "failed";
 }
 
 export interface DashboardEvent {
@@ -54,6 +147,43 @@ export interface DashboardEvent {
   registrations: number;
   capacity: number | null;
 }
+
+export type AdminEventType = "london_master_class" | "regional_club" | "other";
+
+export interface AdminEvent {
+  id: number;
+  title: string;
+  slug: string;
+  event_type: AdminEventType;
+  description: string;
+  location: string;
+  region: string;
+  venue_name: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  capacity: number | null;
+  image_url: string;
+  eventbrite_id: string | null;
+  eventbrite_url: string;
+  status: string;
+  is_online_event: boolean;
+  is_featured: boolean;
+  is_published: boolean;
+  is_hidden_on_site: boolean;
+  created_at: string;
+  updated_at: string;
+  registration_title?: string;
+  registration_description?: string;
+  registration_opens_at?: string | null;
+  registration_closes_at?: string | null;
+  max_tickets_per_registration?: number;
+  timezone?: string;
+}
+
+export type AdminEventPayload = Omit<
+  AdminEvent,
+  "id" | "is_hidden_on_site" | "created_at" | "updated_at"
+>;
 
 export interface DashboardUser {
   id: number;
@@ -78,7 +208,7 @@ export interface DashboardData {
   recent_users: DashboardUser[];
 }
 
-export type AdminRole = "admin" | "reviewer" | "staff";
+export type AdminRole = "admin" | "user";
 
 export interface AdminUser {
   id: number;
@@ -87,12 +217,21 @@ export interface AdminUser {
   first_name: string;
   last_name: string;
   name: string;
-  role: AdminRole | null;
+  role: AdminRole;
   is_staff: boolean;
   is_superuser: boolean;
   is_active: boolean;
   date_joined: string;
   last_login: string | null;
+  ipc_email: string;
+  personal_email: string | null;
+  membership_application_id: number | null;
+  membership_reference: string | null;
+  membership_grade: string | null;
+  application_status: ApplicationStatus | null;
+  application_submitted_at: string | null;
+  application_approved_at: string | null;
+  account_created_at: string;
 }
 
 export interface AdminUserPayload {
@@ -100,8 +239,7 @@ export interface AdminUserPayload {
   email: string;
   first_name: string;
   last_name: string;
-  role: AdminRole | null;
-  is_staff: boolean;
+  role: AdminRole;
   is_active: boolean;
 }
 
@@ -110,4 +248,11 @@ export interface PaginatedAdminUsers {
   next: string | null;
   previous: string | null;
   results: AdminUser[];
+}
+
+export interface PaginatedAdminApplications {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: DashboardApplication[];
 }

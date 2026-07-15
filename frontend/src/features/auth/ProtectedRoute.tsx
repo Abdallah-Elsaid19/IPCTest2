@@ -12,7 +12,7 @@ export function ProtectedRoute({ children, requireStaff = false, requireAdmin = 
   }
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (requireStaff && !user.is_staff) return <Navigate to="/home" replace />;
-  if (requireAdmin && !(user.is_superuser || (user.is_staff && (user.role === "admin" || user.role === null)))) return <Navigate to="/admin" replace />;
+  if (requireAdmin && !(user.is_superuser || user.role === "admin")) return <Navigate to="/admin" replace />;
   return children;
 }
 

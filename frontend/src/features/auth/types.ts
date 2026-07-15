@@ -7,7 +7,7 @@ export interface AuthUser {
   name: string;
   is_staff: boolean;
   is_superuser: boolean;
-  role: "admin" | "reviewer" | "staff" | null;
+  role: "admin" | "user";
 }
 
 export interface AuthResponse {

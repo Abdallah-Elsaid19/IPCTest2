@@ -5,10 +5,12 @@ import { requiredDocumentSchema } from "./uploadSchema";
 
 const namePattern = /^[A-Za-z\u00C0-\u024F\u0600-\u06FF' -]+$/;
 const phonePattern = /^[+()\d\s.-]{7,30}$/;
+const usernamePattern = /^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$/;
 
 const baseSchema = z.object({
   first_name: z.string().trim().min(2, "First name must be at least 2 characters.").regex(namePattern, "Enter a valid first name."),
   last_name: z.string().trim().min(2, "Last name must be at least 2 characters.").regex(namePattern, "Enter a valid last name."),
+  username: z.string().trim().toLowerCase().regex(usernamePattern, "Use 3-30 letters, numbers, dots, underscores or hyphens."),
   email: z.string().trim().email("Please enter a valid email address."),
   phone: z.string().trim().min(1, "Phone number is required.").regex(phonePattern, "Please enter a valid phone number."),
   organisation: z.string().trim().max(180),

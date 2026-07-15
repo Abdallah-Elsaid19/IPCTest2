@@ -4,6 +4,27 @@ import { ExternalLink } from "lucide-react";
 import { labelStatus } from "@/features/admin/utils";
 
 export function StatusBadge({ status }: { status: string }) {
+  if (status === "submitted") {
+    return (
+      <span className="inline-flex whitespace-nowrap rounded-full border border-[#D79525]/30 bg-[#F6E8D2] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#83540C]">
+        {labelStatus(status)}
+      </span>
+    );
+  }
+  if (status === "under_review") {
+    return (
+      <span className="inline-flex whitespace-nowrap rounded-full border border-[#9A6516]/30 bg-[#E6C992] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#5F3A05]">
+        {labelStatus(status)}
+      </span>
+    );
+  }
+  if (status === "approved") {
+    return (
+      <span className="inline-flex whitespace-nowrap rounded-full border border-emerald-700/20 bg-[#DDEBE1] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#315D40]">
+        {labelStatus(status)}
+      </span>
+    );
+  }
   const positive = ["approved", "handled", "contacted", "registered"].includes(
     status,
   );

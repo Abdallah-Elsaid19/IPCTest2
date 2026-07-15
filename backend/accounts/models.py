@@ -5,11 +5,10 @@ from django.db import models
 class AdminProfile(models.Model):
     class Role(models.TextChoices):
         ADMIN = "admin", "Admin"
-        REVIEWER = "reviewer", "Reviewer"
-        STAFF = "staff", "Staff"
+        USER = "user", "User"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="admin_profile")
-    role = models.CharField(max_length=24, choices=Role.choices, default=Role.STAFF)
+    role = models.CharField(max_length=24, choices=Role.choices, default=Role.USER)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

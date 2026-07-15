@@ -137,5 +137,6 @@ export interface EventItem {
   capacity?: number | null;
   image_url?: string;
   eventbrite_url?: string;
+  eventbrite_id?: string | null;
   is_published: boolean;
 }

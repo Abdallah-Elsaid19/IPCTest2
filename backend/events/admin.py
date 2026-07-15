@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Event, EventRegistration, EventbriteConnection
+from .models import Event, EventAttendee, EventQuestion, EventRegistration, EventRegistrationAnswer, EventbriteConnection
+
+
+class EventQuestionInline(admin.TabularInline):
+    model = EventQuestion
+    extra = 0
 
 
 @admin.register(Event)
@@ -9,14 +14,20 @@ class EventAdmin(admin.ModelAdmin):
     search_fields = ("title", "description", "location", "region", "venue_name", "eventbrite_id")
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("created_at", "updated_at")
+    inlines = (EventQuestionInline,)
 
 
 @admin.register(EventRegistration)
 class EventRegistrationAdmin(admin.ModelAdmin):
-    list_display = ("name", "email", "event_name", "event_type", "status", "created_at")
-    list_filter = ("event_type", "status", "created_at")
-    search_fields = ("name", "email", "event_name", "organisation")
+    list_display = ("reference", "name", "email", "event_name", "quantity", "status", "confirmation_email_status", "created_at")
+    list_filter = ("event_type", "status", "confirmation_email_status", "created_at")
+    search_fields = ("reference", "name", "email", "event_name", "organisation")
     autocomplete_fields = ("event",)
+    readonly_fields = ("reference", "access_token", "idempotency_key", "created_at", "updated_at")
+
+
+admin.site.register(EventAttendee)
+admin.site.register(EventRegistrationAnswer)
 
 
 @admin.register(EventbriteConnection)

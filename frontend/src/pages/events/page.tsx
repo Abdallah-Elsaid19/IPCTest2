@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
-import { SimpleInterestForm } from "@/components/forms/SimpleInterestForm";
 import { apiJson, type EventItem } from "@/lib/api";
 
 type UpcomingEvent = {
@@ -16,6 +15,7 @@ type UpcomingEvent = {
   highlight?: boolean;
   image?: string;
   url?: string;
+  external?: boolean;
 };
 
 export default function Events() {
@@ -105,7 +105,8 @@ export default function Events() {
       description: event.description || "Event details will be confirmed shortly.",
       highlight: index === 0,
       image: event.image_url || undefined,
-      url: event.eventbrite_url || "#register",
+      url: event.eventbrite_url || `/events/${event.slug}`,
+      external: Boolean(event.eventbrite_id),
     }));
   }, [eventbriteEvents]);
 
@@ -273,11 +274,11 @@ export default function Events() {
                     <div>
                       <a
                         href={event.url || "#register"}
-                        target={event.url?.startsWith("http") ? "_blank" : undefined}
-                        rel={event.url?.startsWith("http") ? "noreferrer" : undefined}
+                        target={event.external ? "_blank" : undefined}
+                        rel={event.external ? "noreferrer" : undefined}
                         className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary-500 text-background-950 hover:bg-primary-400 transition-all duration-300 whitespace-nowrap"
                       >
-                        Register Interest
+                        {event.external ? "Register on Eventbrite" : "View event"}
                         <i className="ri-arrow-right-line" />
                       </a>
                     </div>
@@ -319,12 +320,12 @@ export default function Events() {
                     </p>
                     <a
                       href={event.url || "#register"}
-                      target={event.url?.startsWith("http") ? "_blank" : undefined}
-                      rel={event.url?.startsWith("http") ? "noreferrer" : undefined}
+                      target={event.external ? "_blank" : undefined}
+                      rel={event.external ? "noreferrer" : undefined}
                       className="inline-flex w-full items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-sm font-semibold text-background-950 transition-colors hover:bg-primary-400"
                     >
-                      Register on Eventbrite
-                      <i className="ri-external-link-line" />
+                      {event.external ? "Register on Eventbrite" : "View event"}
+                      <i className={event.external ? "ri-external-link-line" : "ri-arrow-right-line"} />
                     </a>
                   </div>
                 </article>
@@ -479,11 +480,9 @@ export default function Events() {
           <div className="reveal max-w-3xl mb-10">
             <span className="eyebrow text-primary-600 mb-4 block">Register</span>
             <h2 className="font-heading text-3xl md:text-4xl font-semibold text-background-950 mb-4">Event registration</h2>
-            <p className="text-foreground-600 leading-relaxed">Register interest for London Master Class Events, regional clubs, roundtables, mentoring circles and employer engagement sessions.</p>
+            <p className="text-foreground-600 leading-relaxed">Choose a published event above to view its details and complete the secure step-by-step registration.</p>
           </div>
-          <div className="bg-background-50 border border-background-200/70 p-6 md:p-8 reveal">
-            <SimpleInterestForm type="event" />
-          </div>
+          <a href="#upcoming" className="btn-primary inline-flex items-center gap-2">Choose an event <i className="ri-arrow-up-line" /></a>
         </div>
       </section>
       {/* CTA */}

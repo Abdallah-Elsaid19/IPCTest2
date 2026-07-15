@@ -1,10 +1,13 @@
 import re
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 from ipc_backend.validators import clean_text, validate_upload
 from memberships.models import MembershipGrade
@@ -17,6 +20,10 @@ from .models import (
     FormDefinition,
     ReviewerNote,
 )
+
+
+User = get_user_model()
+USERNAME_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$")
 
 
 LEGACY_DETAIL_FIELDS = (
@@ -41,9 +48,14 @@ class ApplicationEvidenceSerializer(serializers.ModelSerializer):
 
     def get_file_url(self, obj):
         request = self.context.get("request")
-        if request and obj.file:
-            return request.build_absolute_uri(obj.file.url)
-        return obj.file.url if obj.file else ""
+        if not obj.file:
+            return ""
+        url = reverse(
+            "admin-application-evidence",
+            kwargs={"pk": obj.application_id, "evidence_id": obj.pk},
+            request=request,
+        )
+        return url
 
 
 class ApplicationReferenceSerializer(serializers.ModelSerializer):
@@ -94,7 +106,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
         model = Application
         fields = [
             "id", "application_id", "application_reference", "created_at", "updated_at", "submitted_at", "status",
-            "grade", "membership_grade_code", "form_definition_code", "form_version", "first_name", "last_name",
+            "grade", "membership_grade_code", "form_definition_code", "form_version", "first_name", "last_name", "username",
             "email", "phone", "country", "organisation", "contact_preference", "grade_specific_data",
             *LEGACY_DETAIL_FIELDS, "code_of_conduct_consent", "privacy_consent", "cv", "cpd_file", "work_file",
             "references_file", "evidence", "evidence_files", "application_references", "reviewer_notes", "status_history",
@@ -136,6 +148,23 @@ class ApplicationSerializer(serializers.ModelSerializer):
                 errors[field] = f"{label} is required."
             elif not re.fullmatch("[A-Za-z\\u00C0-\\u024F\\u0600-\\u06FF' -]+", value):
                 errors[field] = f"{label} can contain letters, spaces, apostrophes and hyphens only."
+
+        username = attrs.get("username", getattr(self.instance, "username", ""))
+        username = username.strip().lower() if username else ""
+        attrs["username"] = username
+        if not self.instance and not username:
+            errors["username"] = "Username is required."
+        elif username and not USERNAME_PATTERN.fullmatch(username):
+            errors["username"] = (
+                "Use 3-30 lowercase letters, numbers, dots, underscores or hyphens; "
+                "start and end with a letter or number."
+            )
+        elif username:
+            application_matches = Application.objects.filter(username__iexact=username)
+            if self.instance:
+                application_matches = application_matches.exclude(pk=self.instance.pk)
+            if application_matches.exists() or User.objects.filter(username__iexact=username).exists():
+                errors["username"] = "This username is already reserved."
 
         email = attrs.get("email", getattr(self.instance, "email", ""))
         if email:
@@ -275,15 +304,48 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
 class AdminApplicationSerializer(ApplicationSerializer):
     reviewer_note = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    contact_preference_label = serializers.CharField(source="get_contact_preference_display", read_only=True)
+    membership_grade_title = serializers.CharField(source="membership_grade.title", read_only=True)
+    form_definition_name = serializers.CharField(source="form_definition.name", read_only=True)
+    reviewed_by_name = serializers.SerializerMethodField()
+    approved_by_name = serializers.SerializerMethodField()
+    approved_user_email = serializers.EmailField(source="approved_user.email", read_only=True, allow_null=True)
+    approved_user_is_managed_account = serializers.SerializerMethodField()
 
     class Meta(ApplicationSerializer.Meta):
-        fields = ApplicationSerializer.Meta.fields + ["reviewed_by", "reviewed_at", "reviewer_note"]
+        fields = ApplicationSerializer.Meta.fields + [
+            "status_label", "contact_preference_label", "membership_grade_title",
+            "form_definition_name", "reviewed_by", "reviewed_by_name", "reviewed_at",
+            "approved_user", "approved_user_email", "approved_user_is_managed_account",
+            "approved_by", "approved_by_name",
+            "approved_at", "account_created_at", "welcome_email_sent_at", "reviewer_note",
+        ]
         read_only_fields = [
-            "id", "application_id", "application_reference", "created_at", "updated_at", "submitted_at",
+            "id", "application_id", "application_reference", "created_at", "updated_at", "submitted_at", "status",
             "membership_grade_code", "form_definition_code", "form_version", "evidence_files", "application_references",
             "reviewer_notes", "status_history",
-            "reviewed_by", "reviewed_at",
+            "reviewed_by", "reviewed_at", "approved_user", "approved_by", "approved_at",
+            "account_created_at", "welcome_email_sent_at",
         ]
+
+    def get_reviewed_by_name(self, application):
+        reviewer = application.reviewed_by
+        if not reviewer:
+            return ""
+        return reviewer.get_full_name().strip() or reviewer.get_username()
+
+    def get_approved_by_name(self, application):
+        approver = application.approved_by
+        if not approver:
+            return ""
+        return approver.get_full_name().strip() or approver.get_username()
+
+    def get_approved_user_is_managed_account(self, application):
+        if not application.approved_user_id:
+            return False
+        domain = settings.IPC_ACCOUNT_EMAIL_DOMAIN.strip().lower()
+        return application.approved_user.email.lower().endswith(f"@{domain}")
 
     def update(self, instance, validated_data):
         note = clean_text(validated_data.pop("reviewer_note", ""))
@@ -297,4 +359,53 @@ class AdminApplicationSerializer(ApplicationSerializer):
         instance = super().update(instance, validated_data)
         if note:
             ReviewerNote.objects.create(application=instance, author=user, note=note)
+        return instance
+
+
+class AdminApplicationListSerializer(serializers.ModelSerializer):
+    reference = serializers.CharField(source="application_reference", read_only=True)
+    name = serializers.SerializerMethodField()
+    grade = serializers.CharField(source="membership_grade.code", read_only=True)
+    approved_user_email = serializers.EmailField(
+        source="approved_user.email",
+        read_only=True,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = Application
+        fields = [
+            "id",
+            "reference",
+            "name",
+            "email",
+            "grade",
+            "status",
+            "approved_user_email",
+            "submitted_at",
+        ]
+        read_only_fields = fields
+
+    def get_name(self, application):
+        return f"{application.first_name} {application.last_name}".strip()
+
+
+class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Application
+        fields = ["status"]
+
+    def update(self, instance, validated_data):
+        new_status = validated_data["status"]
+        if new_status == instance.status:
+            return instance
+
+        request = self.context.get("request")
+        user = request.user if request and request.user.is_authenticated else None
+        instance.status = new_status
+        instance.reviewed_by = user
+        instance.reviewed_at = timezone.now()
+        instance._changed_by = user
+        instance._status_note = "Status updated from the IPC Admin dashboard."
+        instance.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
         return instance

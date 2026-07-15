@@ -39,12 +39,24 @@ class IsUserAdministrator(BasePermission):
 class AdminUserSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    ipc_email = serializers.EmailField(source="email", read_only=True)
+    personal_email = serializers.SerializerMethodField()
+    membership_application_id = serializers.SerializerMethodField()
+    membership_reference = serializers.SerializerMethodField()
+    membership_grade = serializers.SerializerMethodField()
+    application_status = serializers.SerializerMethodField()
+    application_submitted_at = serializers.SerializerMethodField()
+    application_approved_at = serializers.SerializerMethodField()
+    account_created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
             "id", "username", "email", "first_name", "last_name", "name", "role",
             "is_staff", "is_superuser", "is_active", "date_joined", "last_login",
+            "ipc_email", "personal_email", "membership_application_id",
+            "membership_reference", "membership_grade", "application_status",
+            "application_submitted_at", "application_approved_at", "account_created_at",
         )
         read_only_fields = ("id", "name", "is_superuser", "date_joined", "last_login")
 
@@ -53,15 +65,60 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
     def get_role(self, user):
         profile = getattr(user, "admin_profile", None)
-        return profile.role if profile else None
+        if profile:
+            return profile.role
+        return AdminProfile.Role.ADMIN if user.is_staff else AdminProfile.Role.USER
+
+    @staticmethod
+    def _application(user):
+        try:
+            return user.membership_application
+        except User.membership_application.RelatedObjectDoesNotExist:
+            return None
+
+    def get_personal_email(self, user):
+        application = self._application(user)
+        return application.email if application else None
+
+    def get_membership_application_id(self, user):
+        application = self._application(user)
+        return application.pk if application else None
+
+    def get_membership_reference(self, user):
+        application = self._application(user)
+        return application.application_reference if application else None
+
+    def get_membership_grade(self, user):
+        application = self._application(user)
+        return application.membership_grade.code if application else None
+
+    def get_application_status(self, user):
+        application = self._application(user)
+        return application.status if application else None
+
+    def get_application_submitted_at(self, user):
+        application = self._application(user)
+        return application.submitted_at if application else None
+
+    def get_application_approved_at(self, user):
+        application = self._application(user)
+        return application.approved_at if application else None
+
+    def get_account_created_at(self, user):
+        application = self._application(user)
+        return application.account_created_at if application else user.date_joined
 
 
 class AdminUserWriteSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(choices=AdminProfile.Role.choices, allow_null=True, required=False)
+    role = serializers.ChoiceField(
+        choices=AdminProfile.Role.choices,
+        default=AdminProfile.Role.USER,
+        required=False,
+    )
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "role", "is_staff", "is_active")
+        fields = ("username", "email", "first_name", "last_name", "role", "is_active")
 
     def validate_email(self, value):
         if not value:
@@ -79,24 +136,25 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         if instance:
             if instance == request.user and attrs.get("is_active") is False:
                 raise serializers.ValidationError({"is_active": "You cannot deactivate your own account."})
-            if instance == request.user and attrs.get("is_staff") is False:
-                raise serializers.ValidationError({"is_staff": "You cannot remove your own staff access."})
+            if instance == request.user and attrs.get("role") == AdminProfile.Role.USER:
+                raise serializers.ValidationError({"role": "You cannot remove your own admin access."})
             if instance.is_superuser and not request.user.is_superuser:
                 raise serializers.ValidationError("Only a superuser can modify another superuser.")
-        if attrs.get("role") and attrs.get("is_staff") is False:
-            raise serializers.ValidationError({"role": "A non-staff user cannot have an admin role."})
+            if instance.is_superuser and attrs.get("role") == AdminProfile.Role.USER:
+                raise serializers.ValidationError({"role": "A superuser cannot be changed to the user role."})
         return attrs
 
     def _save_role(self, user, role):
-        if user.is_staff and role:
-            AdminProfile.objects.update_or_create(user=user, defaults={"role": role})
-        elif not user.is_staff:
-            AdminProfile.objects.filter(user=user).delete()
+        AdminProfile.objects.update_or_create(user=user, defaults={"role": role})
+        should_be_staff = role == AdminProfile.Role.ADMIN or user.is_superuser
+        if user.is_staff != should_be_staff:
+            user.is_staff = should_be_staff
+            user.save(update_fields=["is_staff"])
 
     @transaction.atomic
     def create(self, validated_data):
-        role = validated_data.pop("role", None)
-        user = User(**validated_data)
+        role = validated_data.pop("role", AdminProfile.Role.USER)
+        user = User(is_staff=role == AdminProfile.Role.ADMIN, **validated_data)
         user.set_unusable_password()
         user.save()
         self._save_role(user, role)
@@ -105,7 +163,7 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         existing_profile = getattr(instance, "admin_profile", None)
-        role = validated_data.pop("role", existing_profile.role if existing_profile else None)
+        role = validated_data.pop("role", existing_profile.role if existing_profile else (AdminProfile.Role.ADMIN if instance.is_staff else AdminProfile.Role.USER))
         for field, value in validated_data.items():
             setattr(instance, field, value)
         instance.save()
@@ -123,7 +181,10 @@ class AdminUserViewSet(ModelViewSet):
     permission_classes = [IsUserAdministrator]
     pagination_class = UserPagination
     throttle_scope = None
-    queryset = User.objects.select_related("admin_profile").order_by("-date_joined")
+    queryset = User.objects.select_related(
+        "admin_profile",
+        "membership_application__membership_grade",
+    ).order_by("-date_joined")
 
     def get_serializer_class(self):
         return AdminUserSerializer if self.action in ("list", "retrieve") else AdminUserWriteSerializer
@@ -146,16 +207,23 @@ class AdminUserViewSet(ModelViewSet):
         queryset = super().get_queryset()
         search = self.request.query_params.get("search", "").strip()
         if search:
-            queryset = queryset.filter(Q(username__icontains=search) | Q(email__icontains=search) | Q(first_name__icontains=search) | Q(last_name__icontains=search))
+            queryset = queryset.filter(
+                Q(username__icontains=search)
+                | Q(email__icontains=search)
+                | Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(membership_application__email__icontains=search)
+                | Q(membership_application__application_reference__icontains=search)
+                | Q(membership_application__membership_grade__code__icontains=search)
+            ).distinct()
         active = self.request.query_params.get("active")
         if active in ("true", "false"):
             queryset = queryset.filter(is_active=active == "true")
-        staff = self.request.query_params.get("staff")
-        if staff in ("true", "false"):
-            queryset = queryset.filter(is_staff=staff == "true")
         role = self.request.query_params.get("role")
-        if role in AdminProfile.Role.values:
-            queryset = queryset.filter(admin_profile__role=role)
+        if role == AdminProfile.Role.ADMIN:
+            queryset = queryset.filter(Q(admin_profile__role=role) | Q(admin_profile__isnull=True, is_staff=True))
+        elif role == AdminProfile.Role.USER:
+            queryset = queryset.filter(Q(admin_profile__role=role) | Q(admin_profile__isnull=True, is_staff=False))
         return queryset
 
     def perform_destroy(self, instance):
@@ -170,7 +238,12 @@ class AdminUserViewSet(ModelViewSet):
         user = self.get_object()
         if user.is_superuser and not request.user.is_superuser:
             return Response({"detail": "Only a superuser can reset another superuser's password."}, status=status.HTTP_403_FORBIDDEN)
-        if not user.email:
+        try:
+            application = user.membership_application
+        except User.membership_application.RelatedObjectDoesNotExist:
+            application = None
+        recipient = application.email if application else user.email
+        if not recipient:
             return Response({"email": ["This user does not have an email address."]}, status=status.HTTP_400_BAD_REQUEST)
         cooldown_key = f"ipc:password-reset-email:{user.pk}"
         if cache.get(cooldown_key):
@@ -179,7 +252,7 @@ class AdminUserViewSet(ModelViewSet):
         token = default_token_generator.make_token(user)
         reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}"
         try:
-            send_password_reset_email(recipient=user.email, name=user.get_full_name().strip() or user.get_username(), reset_url=reset_url)
+            send_password_reset_email(recipient=recipient, name=user.get_full_name().strip() or user.get_username(), reset_url=reset_url)
         except (GraphMailError, ImproperlyConfigured, RequestException):
             return Response({"detail": "The reset email could not be sent. Check the Microsoft Graph configuration."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         cache.set(cooldown_key, True, settings.EMAIL_COOLDOWN_MINUTES * 60)

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<body style="margin:0;background:#f4ece1;color:#182235;font-family:Arial,sans-serif">
+  <div style="max-width:680px;margin:0 auto;padding:28px 16px">
+    <div style="background:#0b0b0b;padding:26px 30px;border-radius:16px 16px 0 0">
+      <div style="color:#d89424;font-size:13px;font-weight:700;letter-spacing:3px">IPC</div>
+      <h1 style="margin:10px 0 0;color:#fff;font-size:27px">Registration confirmed</h1>
+    </div>
+    <div style="background:#fff;padding:30px;border-radius:0 0 16px 16px;border:1px solid #e3d7c8">
+      <p>Hello {{ registration.contact_first_name }},</p>
+      <p>Your place at <strong>{{ event.title }}</strong> is confirmed.</p>
+      <div style="background:#f8f2e9;border-left:4px solid #d89424;padding:18px;margin:24px 0;line-height:1.8">
+        <strong>Reference:</strong> {{ registration.reference }}<br>
+        <strong>Ticket:</strong> {{ registration.ticket_name }} × {{ registration.quantity }}<br>
+        <strong>Date:</strong> {{ event_date }}<br>
+        <strong>Time:</strong> {{ event_time }}<br>
+        <strong>Location:</strong> {% if event.is_online_event %}Online event{% else %}{{ event.venue_name|default:event.location }}{% endif %}<br>
+        <strong>Total:</strong> Free
+      </div>
+      <div style="margin:22px 0">
+        <strong>Attendees</strong>
+        <ul style="padding-left:20px;line-height:1.8">
+          {% for attendee in registration.attendees.all %}<li>{{ attendee.first_name }} {{ attendee.last_name }} — {{ attendee.email }}</li>{% endfor %}
+        </ul>
+      </div>
+      <p>
+        <a href="{{ view_url }}" style="display:inline-block;background:#d89424;color:#0b0b0b;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:9px;margin-right:8px">View registration</a>
+        <a href="{{ calendar_url }}" style="display:inline-block;color:#7d4d00;text-decoration:none;font-weight:700;padding:12px 4px">Add to calendar</a>
+      </p>
+      <p style="color:#6d645b;font-size:13px;margin-top:28px">Need help? Reply to this email and the IPC team will assist you.</p>
+    </div>
+  </div>
+</body>
+</html>

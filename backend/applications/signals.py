@@ -39,10 +39,11 @@ def notify_application_status(sender, instance, created, **kwargs):
             changed_by=getattr(instance, "_changed_by", None),
             note=getattr(instance, "_status_note", ""),
         )
-        send_mail(
-            "IPC application status updated",
-            f"Your IPC application status is now: {instance.get_status_display()}.",
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.email],
-            fail_silently=True,
-        )
+        if not getattr(instance, "_suppress_status_email", False):
+            send_mail(
+                "IPC application status updated",
+                f"Your IPC application status is now: {instance.get_status_display()}.",
+                settings.DEFAULT_FROM_EMAIL,
+                [instance.email],
+                fail_silently=True,
+            )

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
@@ -25,6 +26,13 @@ class Event(models.Model):
     is_online_event = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
+    is_hidden_on_site = models.BooleanField(default=False)
+    registration_title = models.CharField(max_length=120, default="Event registration")
+    registration_description = models.TextField(blank=True)
+    registration_opens_at = models.DateTimeField(null=True, blank=True)
+    registration_closes_at = models.DateTimeField(null=True, blank=True)
+    max_tickets_per_registration = models.PositiveSmallIntegerField(default=4)
+    timezone = models.CharField(max_length=64, default="Europe/London")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,8 +63,22 @@ class EventRegistration(models.Model):
 
     class Status(models.TextChoices):
         REGISTERED = "registered", "Registered"
+        CONFIRMED = "confirmed", "Confirmed"
+        ATTENDED = "attended", "Attended"
         WAITLISTED = "waitlisted", "Waitlisted"
         CANCELLED = "cancelled", "Cancelled"
+
+    class EmailStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
+    class PaymentStatus(models.TextChoices):
+        NOT_REQUIRED = "not_required", "Not required"
+        PENDING = "pending", "Pending"
+        PAID = "paid", "Paid"
+        FAILED = "failed", "Failed"
+        REFUNDED = "refunded", "Refunded"
 
     event = models.ForeignKey(Event, null=True, blank=True, on_delete=models.SET_NULL, related_name="registrations")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -67,12 +89,38 @@ class EventRegistration(models.Model):
     organisation = models.CharField(max_length=180, blank=True)
     dietary_access_needs = models.TextField(blank=True)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.REGISTERED)
+    reference = models.CharField(max_length=32, unique=True, null=True, blank=True)
+    registered_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="event_registrations",
+    )
+    contact_first_name = models.CharField(max_length=80, blank=True)
+    contact_last_name = models.CharField(max_length=80, blank=True)
+    contact_mobile = models.CharField(max_length=40, blank=True)
+    company = models.CharField(max_length=180, blank=True)
+    job_title = models.CharField(max_length=160, blank=True)
+    city = models.CharField(max_length=120, blank=True)
+    quantity = models.PositiveSmallIntegerField(default=1)
+    ticket_name = models.CharField(max_length=120, default="Event registration")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, default="GBP")
+    payment_status = models.CharField(max_length=20, choices=PaymentStatus.choices, default=PaymentStatus.NOT_REQUIRED)
+    payment_provider = models.CharField(max_length=40, blank=True)
+    payment_reference = models.CharField(max_length=160, blank=True, db_index=True)
+    marketing_consent = models.BooleanField(default=False)
+    terms_accepted = models.BooleanField(default=False)
+    idempotency_key = models.CharField(max_length=72, unique=True, null=True, blank=True)
+    access_token = models.CharField(max_length=96, unique=True, null=True, blank=True)
+    confirmation_email_status = models.CharField(
+        max_length=16, choices=EmailStatus.choices, default=EmailStatus.PENDING,
+    )
+    confirmation_email_sent_at = models.DateTimeField(null=True, blank=True)
+    confirmation_email_error = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(fields=["event", "email"], condition=Q(event__isnull=False), name="unique_event_registration_email"),
-        ]
         indexes = [
             models.Index(fields=["event", "created_at"]),
             models.Index(fields=["email"]),
@@ -87,6 +135,65 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.event_name}"
+
+
+class EventAttendee(models.Model):
+    registration = models.ForeignKey(EventRegistration, on_delete=models.CASCADE, related_name="attendees")
+    first_name = models.CharField(max_length=80)
+    last_name = models.CharField(max_length=80)
+    email = models.EmailField()
+    mobile = models.CharField(max_length=40, blank=True)
+    company = models.CharField(max_length=180, blank=True)
+    job_title = models.CharField(max_length=160, blank=True)
+    city = models.CharField(max_length=120, blank=True)
+    dietary_access_needs = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+
+class EventQuestion(models.Model):
+    class QuestionType(models.TextChoices):
+        SHORT_TEXT = "short_text", "Short text"
+        LONG_TEXT = "long_text", "Long text"
+        SELECT = "select", "Select"
+        RADIO = "radio", "Radio"
+        CHECKBOX = "checkbox", "Checkbox"
+        YES_NO = "yes_no", "Yes / No"
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="registration_questions")
+    label = models.CharField(max_length=220)
+    help_text = models.CharField(max_length=300, blank=True)
+    question_type = models.CharField(max_length=24, choices=QuestionType.choices)
+    options = models.JSONField(default=list, blank=True)
+    is_required = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return self.label
+
+
+class EventRegistrationAnswer(models.Model):
+    registration = models.ForeignKey(EventRegistration, on_delete=models.CASCADE, related_name="answers")
+    attendee = models.ForeignKey(EventAttendee, null=True, blank=True, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(EventQuestion, on_delete=models.PROTECT, related_name="answers")
+    value = models.JSONField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["registration", "attendee", "question"],
+                name="unique_registration_attendee_question",
+            ),
+        ]
 
 class EventbriteConnection(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

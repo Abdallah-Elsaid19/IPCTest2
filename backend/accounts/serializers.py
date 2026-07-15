@@ -19,7 +19,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_role(self, user):
         profile = getattr(user, "admin_profile", None)
-        return profile.role if profile else None
+        if profile:
+            return profile.role
+        return "admin" if user.is_staff else "user"
 
 
 

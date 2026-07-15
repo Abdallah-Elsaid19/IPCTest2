@@ -14,17 +14,23 @@ import Sponsorship from "../pages/sponsorship/page";
 import BookingPage from "../pages/BookingPage";
 import Awards from "../pages/awards/page";
 import Events from "../pages/events/page";
+import EventDetailPage from "@/features/events/registration/EventDetailPage";
+import RegistrationPage from "@/features/events/registration/RegistrationPage";
+import RegistrationDetailsPage, { RegistrationCalendarRedirect } from "@/features/events/registration/RegistrationDetailsPage";
 import Clubs from "../pages/clubs/page";
 import About from "../pages/about/page";
 import Contact from "../pages/contact/page";
 import Privacy from "../pages/privacy/page";
 import AdminApplicationsPage from "@/features/admin/applications/page";
+import AdminApplicationDetailsPage from "@/features/admin/applications/details/page";
 import AdminEnquiriesPage from "@/features/admin/enquiries/page";
 import AdminEventsPage from "@/features/admin/events/page";
+import AdminEventDetailsPage from "@/features/admin/events/details/page";
 import AdminLayout from "@/features/admin/layouts/AdminLayout";
 import AdminOverviewPage from "@/features/admin/overview/page";
 import AdminProfilePage from "@/features/admin/profile/page";
 import AdminUsersPage from "@/features/admin/users/page";
+import AdminUserDetailsPage from "@/features/admin/users/details/page";
 import Login from "@/features/auth/login/Login";
 import PasswordResetPage from "@/features/auth/password-reset/page";
 import { GuestOnlyRoute, ProtectedRoute } from "@/features/auth/ProtectedRoute";
@@ -44,6 +50,11 @@ const routes: RouteObject[] = [
   { path: "/booking", element: <BookingPage /> },
   { path: "/awards", element: <Awards /> },
   { path: "/events", element: <Events /> },
+  { path: "/events/registration/:reference/confirmed", element: <RegistrationDetailsPage confirmed /> },
+  { path: "/events/registration/:reference/calendar", element: <RegistrationCalendarRedirect /> },
+  { path: "/events/registration/:reference", element: <RegistrationDetailsPage /> },
+  { path: "/events/:slug/register", element: <RegistrationPage /> },
+  { path: "/events/:slug", element: <EventDetailPage /> },
   { path: "/clubs", element: <Clubs /> },
   { path: "/about", element: <About /> },
   { path: "/login", element: <GuestOnlyRoute><Login /></GuestOnlyRoute> },
@@ -56,8 +67,10 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <AdminOverviewPage /> },
       { path: "applications", element: <AdminApplicationsPage /> },
+      { path: "applications/:id", element: <AdminApplicationDetailsPage /> },
       { path: "enquiries", element: <AdminEnquiriesPage /> },
       { path: "events", element: <AdminEventsPage /> },
+      { path: "events/:id", element: <AdminEventDetailsPage /> },
       { path: "users", element: <ProtectedRoute requireAdmin><AdminUsersPage /></ProtectedRoute> },
       { path: "profile", element: <AdminProfilePage /> },
     ],
@@ -66,6 +79,11 @@ const routes: RouteObject[] = [
     path: "/dashboard/users",
     element: <ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>,
     children: [{ index: true, element: <AdminUsersPage /> }],
+  },
+  {
+    path: "/dashboard/users/:id",
+    element: <ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>,
+    children: [{ index: true, element: <AdminUserDetailsPage /> }],
   },
   { path: "*", element: <NotFound /> },
 ];

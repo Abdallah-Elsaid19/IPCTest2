@@ -18,6 +18,7 @@ type FormValue = string | boolean | string[];
 const personalFields: ApplicationField[] = [
   { name: "first_name", label: "First name", type: "text", required: true },
   { name: "last_name", label: "Last name", type: "text", required: true },
+  { name: "username", label: "Username", type: "text", required: true, placeholder: "e.g. abdoelsaid368", help: "3-30 lowercase letters, numbers, dots, underscores or hyphens." },
   { name: "email", label: "Email address", type: "email", required: true },
   { name: "phone", label: "Phone number", type: "tel", required: true },
   { name: "organisation", label: "Organisation / employer", type: "text" },
@@ -31,6 +32,7 @@ function emptyValues(config: GradeApplicationConfig): GradeApplicationData {
   const values: Record<string, unknown> = {
     first_name: "",
     last_name: "",
+    username: "",
     email: "",
     phone: "",
     organisation: "",
@@ -247,6 +249,7 @@ export default function MembershipApplicationPage() {
       payload.set("grade", config.gradeCode);
       payload.set("first_name", String(data.first_name));
       payload.set("last_name", String(data.last_name));
+      payload.set("username", String(data.username));
       payload.set("email", String(data.email));
       payload.set("phone", String(data.phone));
       payload.set("organisation", String(data.organisation || ""));

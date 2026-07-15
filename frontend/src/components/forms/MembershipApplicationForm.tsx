@@ -22,6 +22,7 @@ type FileFieldName = "cv" | "cpd_file" | "work_file" | "references_file" | "evid
 const textFields: TextFieldName[] = [
   "first_name",
   "last_name",
+  "username",
   "email",
   "phone",
   "country",
@@ -104,6 +105,7 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
     defaultValues: {
       first_name: "",
       last_name: "",
+      username: "",
       email: "",
       phone: "",
       country: "",
@@ -124,6 +126,7 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
     reset({
       first_name: "",
       last_name: "",
+      username: "",
       email: "",
       phone: "",
       country: "",
@@ -175,6 +178,7 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
     <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-5" encType="multipart/form-data" noValidate>
       {textInput(register, errors, "first_name", "First name")}
       {textInput(register, errors, "last_name", "Last name")}
+      {textInput(register, errors, "username", "Username")}
       {textInput(register, errors, "email", "Email", {}, "email")}
       {textInput(register, errors, "phone", "Phone")}
       {textInput(register, errors, "country", "Country")}
@@ -219,5 +223,4 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
     </form>
   );
 }
-
 

@@ -1,10 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.validators import validate_email
 from django.db import connection
 from django.db.models import Count
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from requests import RequestException
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from applications.models import Application
@@ -15,6 +22,9 @@ from events.models import Event, EventRegistration
 from media_library.models import MediaAsset
 from memberships.models import MembershipGrade
 from newsletter.models import NewsletterSignup
+from ipc_backend.validators import clean_text
+
+from .graph_mail import GraphMailError, send_enquiry_reply_email
 
 
 User = get_user_model()
@@ -44,7 +54,7 @@ def _dashboard_counts():
           (SELECT COUNT(*) FROM {_table(AwardsInterest)}),
           (SELECT COUNT(*) FROM {_table(AwardsInterest)} WHERE status = %s),
           (SELECT COUNT(*) FROM {_table(EventRegistration)}),
-          (SELECT COUNT(*) FROM {_table(Event)} WHERE is_published = %s),
+          (SELECT COUNT(*) FROM {_table(Event)} WHERE is_published = %s AND is_hidden_on_site = %s),
           (SELECT COUNT(*) FROM {_table(NewsletterSignup)} WHERE is_active = %s),
           (SELECT COUNT(*) FROM {_table(MembershipGrade)} WHERE is_active = %s),
           (SELECT COUNT(*) FROM {_table(AwardProgramme)} WHERE is_active = %s),
@@ -53,7 +63,7 @@ def _dashboard_counts():
     params = [
         True, Application.Status.SUBMITTED, Application.Status.UNDER_REVIEW,
         ContactSubmission.Status.NEW, ContactSubmission.Status.IN_PROGRESS,
-        ClubEnquiry.Status.NEW, AwardsInterest.Status.NEW, True, True, True, True,
+        ClubEnquiry.Status.NEW, AwardsInterest.Status.NEW, True, False, True, True, True,
     ]
     keys = [
         "users", "active_users", "applications", "applications_pending",
@@ -114,13 +124,14 @@ def _recent_enquiries():
 
 
 def _build_dashboard():
-    applications = Application.objects.select_related("membership_grade")
+    applications = Application.objects.select_related("membership_grade", "approved_user")
     application_statuses, enquiry_statuses = _status_counts()
 
     recent_applications = [{
         "id": item.pk, "reference": item.application_reference,
         "name": f"{item.first_name} {item.last_name}".strip(), "email": item.email,
         "grade": item.membership_grade.code, "status": item.status,
+        "approved_user_email": item.approved_user.email if item.approved_user else None,
         "submitted_at": _iso(item.submitted_at),
     } for item in applications.order_by("-submitted_at")[:8]]
 
@@ -134,7 +145,7 @@ def _build_dashboard():
         "starts_at": _iso(item.starts_at), "registrations": item.registration_count,
         "capacity": item.capacity,
     } for item in Event.objects.filter(
-        is_published=True, starts_at__gte=timezone.now(),
+        is_published=True, is_hidden_on_site=False, starts_at__gte=timezone.now(),
     ).annotate(registration_count=Count("registrations")).order_by("starts_at")[:6]]
 
     recent_users = [{
@@ -169,3 +180,93 @@ class AdminDashboardView(APIView):
             payload = _build_dashboard()
             cache.set(CACHE_KEY, payload, CACHE_SECONDS)
         return Response(payload)
+
+
+class EnquiryReplySerializer(serializers.Serializer):
+    message = serializers.CharField(min_length=2, max_length=5000, trim_whitespace=True)
+
+    def validate_message(self, value):
+        return clean_text(value)
+
+
+def _enquiry_for_reply(source, enquiry_id):
+    models_by_source = {
+        "contact": ContactSubmission,
+        "club": ClubEnquiry,
+        "award": AwardsInterest,
+    }
+    model = models_by_source.get(source)
+    if not model:
+        raise Http404
+    try:
+        enquiry = get_object_or_404(model, pk=enquiry_id)
+    except (ValueError, ValidationError) as error:
+        raise Http404 from error
+
+    if source == "contact":
+        return enquiry, enquiry.name, enquiry.email, enquiry.category
+    if source == "club":
+        return (
+            enquiry,
+            enquiry.club_name or "IPC clubs enquirer",
+            enquiry.email,
+            enquiry.club_name or "Clubs enquiry",
+        )
+    return (
+        enquiry,
+        enquiry.name,
+        enquiry.email,
+        enquiry.programme.title if enquiry.programme_id else enquiry.interest_type,
+    )
+
+
+class AdminEnquiryReplyView(APIView):
+    permission_classes = [IsAdminUser]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "admin_enquiry_reply"
+
+    def post(self, request, source, enquiry_id):
+        serializer = EnquiryReplySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        enquiry, recipient_name, recipient_email, enquiry_subject = _enquiry_for_reply(
+            source,
+            enquiry_id,
+        )
+        administrator_name = (
+            request.user.get_full_name().strip() or request.user.get_username()
+        )
+        reply_to = request.user.email.strip().lower()
+        try:
+            validate_email(reply_to)
+        except ValidationError:
+            reply_to = None
+
+        try:
+            send_enquiry_reply_email(
+                recipient=recipient_email,
+                recipient_name=recipient_name,
+                enquiry_subject=enquiry_subject,
+                message_body=serializer.validated_data["message"],
+                administrator_name=administrator_name,
+                reply_to=reply_to,
+            )
+        except (GraphMailError, ImproperlyConfigured, RequestException):
+            return Response(
+                {"detail": "The enquiry reply could not be sent. Check the Microsoft Graph configuration."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        if source == "contact":
+            enquiry.status = ContactSubmission.Status.IN_PROGRESS
+            enquiry.handled_by = request.user
+            enquiry.handled_at = timezone.now()
+            enquiry.save(update_fields=["status", "handled_by", "handled_at"])
+        elif source == "club":
+            enquiry.status = ClubEnquiry.Status.CONTACTED
+            enquiry.save(update_fields=["status", "updated_at"])
+        else:
+            enquiry.status = AwardsInterest.Status.CONTACTED
+            enquiry.save(update_fields=["status"])
+
+        cache.delete(CACHE_KEY)
+        return Response({"detail": "Enquiry reply sent successfully.", "status": enquiry.status})

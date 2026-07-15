@@ -48,23 +48,40 @@ class FormDefinitionAdmin(admin.ModelAdmin):
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ("application_reference", "full_name", "membership_grade", "status", "email", "submitted_at", "reviewed_by")
+    list_display = (
+        "application_reference", "full_name", "membership_grade", "status",
+        "email", "approved_user", "approved_at", "approved_by", "submitted_at",
+    )
     list_filter = ("membership_grade", "status", "form_definition", "submitted_at")
-    search_fields = ("application_reference", "first_name", "last_name", "email", "organisation")
-    readonly_fields = ("application_reference", "form_version", "submitted_at", "created_at", "updated_at", "reviewed_at")
+    search_fields = ("application_reference", "first_name", "last_name", "username", "email", "organisation")
+    readonly_fields = (
+        "application_reference", "form_version", "submitted_at", "created_at", "updated_at",
+        "reviewed_at", "approved_user", "approved_by", "approved_at", "account_created_at",
+        "welcome_email_sent_at",
+    )
     autocomplete_fields = ("membership_grade", "form_definition", "reviewed_by")
     inlines = [ApplicationEvidenceInline, ApplicationReferenceInline, ReviewerNoteInline, ApplicationStatusHistoryInline]
     fieldsets = (
-        ("Applicant", {"fields": ("application_reference", "first_name", "last_name", "email", "phone", "country", "organisation", "contact_preference")}),
+        ("Applicant", {"fields": ("application_reference", "first_name", "last_name", "username", "email", "phone", "country", "organisation", "contact_preference")}),
         ("Application form", {"fields": ("membership_grade", "form_definition", "form_version", "grade_specific_data")}),
         ("Consents", {"fields": ("code_of_conduct_consent", "privacy_consent")}),
         ("Review", {"fields": ("status", "reviewed_by", "reviewed_at")}),
+        ("Approval account", {"fields": (
+            "approved_user", "approved_by", "approved_at", "account_created_at",
+            "welcome_email_sent_at",
+        )}),
         ("Timestamps", {"fields": ("submitted_at", "created_at", "updated_at")}),
     )
 
     @admin.display(description="Applicant")
     def full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj and obj.status == Application.Status.APPROVED:
+            readonly.extend(["status", "reviewed_by"])
+        return tuple(dict.fromkeys(readonly))
 
 
 @admin.register(ApplicationEvidence)

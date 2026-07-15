@@ -50,14 +50,16 @@ export default function AdminLayout() {
       .toUpperCase();
   }, [user]);
 
+  const isNavigationActive = (to: string) =>
+    location.pathname === to ||
+    (to !== "/admin" && location.pathname.startsWith(`${to}/`));
   const pageLabel =
-    navigation.find(({ to }) => to === location.pathname)?.label || "Admin";
+    navigation.find(({ to }) => isNavigationActive(to))?.label || "Admin";
   const visibleNavigation = navigation.filter(
     ({ to }) =>
       to !== "/dashboard/users" ||
       user?.is_superuser ||
-      user?.role === "admin" ||
-      user?.role === null,
+      user?.role === "admin",
   );
   const compact = collapsed && !mobileOpen;
   const closeMobile = () => setMobileOpen(false);
@@ -119,7 +121,7 @@ export default function AdminLayout() {
           </p>
         )}
         {visibleNavigation.map(({ to, label, icon: Icon }) => {
-          const active = location.pathname === to;
+          const active = isNavigationActive(to);
           return (
             <Link
               key={to}

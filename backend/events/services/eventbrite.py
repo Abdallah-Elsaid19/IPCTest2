@@ -53,12 +53,14 @@ class EventbriteClient:
         except (requests.RequestException, ValueError) as exc:
             raise EventbriteError("Eventbrite API is currently unavailable or returned an invalid response.", 502) from exc
 
-    def _all_pages(self, path, params=None, collection_key="events"):
+    def _all_pages(self, path, params=None, collection_key="events", max_items=None):
         items = []
         query = dict(params or {})
         while True:
             data = self._request(path, query)
             items.extend(data.get(collection_key) or [])
+            if max_items and len(items) >= max_items:
+                return items[:max_items]
             pagination = data.get("pagination") or {}
             continuation = pagination.get("continuation")
             if not pagination.get("has_more_items") or not continuation:
@@ -91,6 +93,19 @@ class EventbriteClient:
 
     def get_event_details(self, event_id):
         return self._request(f"events/{event_id}/", {"expand": "venue,logo,ticket_availability"})
+
+    def get_organization_attendees(self, organization_id=None):
+        organization_id = (organization_id or settings.EVENTBRITE_ORGANIZATION_ID).strip()
+        if not organization_id:
+            raise EventbriteError(
+                "Eventbrite organization is not configured. Set EVENTBRITE_ORGANIZATION_ID=your_org_id.",
+                503,
+            )
+        return self._all_pages(
+            f"organizations/{organization_id}/attendees/",
+            collection_key="attendees",
+            max_items=100,
+        )
 
 
 def get_configured_client():
