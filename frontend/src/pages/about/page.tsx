@@ -1,0 +1,941 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
+
+/* ─────────────────────────────────────────────
+   SCROLL-DRIVEN ABOUT PAGE — OWL AS VISUAL GUIDE
+   Scene flow: Hero → Who We Are → Why We Exist
+   → Vision → Mission → Core Values → Identity → Finale
+   ───────────────────────────────────────────── */
+
+export default function AboutPage() {
+  const [globalScrollY, setGlobalScrollY] = useState(0);
+  const [heroProgress, setHeroProgress] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
+  const rafRef = useRef<number | null>(null);
+
+  /* ── Global scroll tracking ── */
+  const onScroll = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      setGlobalScrollY(window.scrollY);
+      /* Hero parallax progress */
+      if (heroRef.current) {
+        const rect = heroRef.current.getBoundingClientRect();
+        const heroH = heroRef.current.offsetHeight;
+        const scrolled = -rect.top;
+        setHeroProgress(Math.min(1, Math.max(0, scrolled / (heroH * 0.7))));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [onScroll]);
+
+  /* ── Section entrance observer ── */
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("scene-visible");
+          }
+        });
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -30px 0px" }
+    );
+
+    document.querySelectorAll(".scene-reveal").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  /* ── Ring rotation observer ── */
+  useEffect(() => {
+    const ringObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const rings = entry.target.querySelectorAll(".ring-animate");
+          rings.forEach((r) => {
+            if (entry.isIntersecting) {
+              (r as HTMLElement).style.animationPlayState = "running";
+            }
+          });
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    document.querySelectorAll(".radar-scene").forEach((el) => ringObserver.observe(el));
+    return () => ringObserver.disconnect();
+  }, []);
+
+  return (
+    <div className="bg-background-950 text-background-50 overflow-x-hidden">
+      {/* ═══════════════════════════════════════════
+          SCENE 1 — HERO — Owl Dominant
+          ═══════════════════════════════════════════ */}
+      <SceneHero heroProgress={heroProgress} globalScrollY={globalScrollY} ref={heroRef} />
+
+      {/* ═══════════════════════════════════════════
+          OWL TRANSITION BRIDGE — Wing Sweep
+          ═══════════════════════════════════════════ */}
+      <OwlTransitionBridge progress={heroProgress} />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 2 — WHO WE ARE
+          ═══════════════════════════════════════════ */}
+      <SceneWhoWeAre />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 3 — WHY IPC EXISTS (Eye Transition)
+          ═══════════════════════════════════════════ */}
+      <SceneWhyExist />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 4 — OUR VISION
+          ═══════════════════════════════════════════ */}
+      <SceneVision />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 5 — OUR MISSION
+          ═══════════════════════════════════════════ */}
+      <SceneMission />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 6 — CORE VALUES (Radar + Owl Orbit)
+          ═══════════════════════════════════════════ */}
+      <SceneCoreValues />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 7 — THE IPC IDENTITY
+          ═══════════════════════════════════════════ */}
+      <SceneIdentity />
+
+      {/* ═══════════════════════════════════════════
+          SCENE 8 — FINALE
+          ═══════════════════════════════════════════ */}
+      <SceneFinale />
+
+      {/* ── Subtle scroll-progress gold line at page bottom-left ── */}
+      <div className="fixed bottom-0 left-0 h-[2px] bg-gradient-to-r from-primary-500/40 to-primary-500/10 z-50 transition-all duration-300"
+        style={{ width: `${Math.min(100, (globalScrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100)}%` }}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 1 — HERO
+   Full-height. Owl dominant center. Concentric rings, gold dots,
+   technical linework, warm white / charcoal contrast.
+   ═══════════════════════════════════════════════════════════════ */
+function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
+  heroProgress: number;
+  globalScrollY: number;
+  ref: React.Ref<HTMLElement>;
+}) {
+  return (
+    <section
+      ref={forwardedRef}
+      id="scene-hero"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background-950"
+      style={{
+        /* Owl lifts up and scales down slightly as user scrolls */
+        ["--owl-y" as string]: `${-heroProgress * 80}px`,
+        ["--owl-scale" as string]: `${1 - heroProgress * 0.08}`,
+        ["--owl-opacity" as string]: `${1 - heroProgress * 0.5}`,
+        ["--content-y" as string]: `${-heroProgress * 120}px`,
+        ["--content-opacity" as string]: `${1 - heroProgress * 0.7}`,
+        ["--ring-scale" as string]: `${1 + heroProgress * 0.15}`,
+        ["--ring-opacity" as string]: `${Math.max(0.05, 0.25 - heroProgress * 0.2)}`,
+      } as React.CSSProperties}
+    >
+      {/* ── Deep gold radial glow behind owl ── */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none transition-all duration-500"
+        style={{
+          background: "radial-gradient(ellipse at center, oklch(0.685 0.132 72 / 0.09) 0%, transparent 65%)",
+          opacity: 1 - heroProgress * 0.6,
+          transform: `translate(-50%, -50%) scale(${1 + heroProgress * 0.1})`,
+        }}
+      />
+
+      {/* ── Concentric ring system ── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <svg viewBox="0 0 1440 900" preserveAspectRatio="none" className="w-full h-full">
+          {/* Outer data ring */}
+          <circle cx="720" cy="420" r="350" fill="none"
+            stroke="oklch(0.685 0.132 72 / 0.06)" strokeWidth="0.5" strokeDasharray="4 18"
+            className="ring-animate" style={{ transformOrigin: "720px 420px", animation: "ring-rotate-slow 90s linear infinite", opacity: "var(--ring-opacity)" }} />
+          {/* Mid ring */}
+          <circle cx="720" cy="420" r="260" fill="none"
+            stroke="oklch(0.685 0.132 72 / 0.1)" strokeWidth="0.5"
+            className="ring-animate" style={{ transformOrigin: "720px 420px", animation: "ring-rotate-slow 70s linear infinite reverse", opacity: "var(--ring-opacity)" }} />
+          {/* Inner precision ring */}
+          <circle cx="720" cy="420" r="190" fill="none"
+            stroke="oklch(0.685 0.132 72 / 0.14)" strokeWidth="1" strokeDasharray="60 12"
+            className="ring-animate" style={{ transformOrigin: "720px 420px", animation: "ring-rotate-slow 50s linear infinite", opacity: "var(--ring-opacity)" }} />
+          {/* Core ring */}
+          <circle cx="720" cy="420" r="120" fill="none"
+            stroke="oklch(0.685 0.132 72 / 0.2)" strokeWidth="1"
+            className="ring-animate" style={{ transformOrigin: "720px 420px", animation: "ring-rotate-slow 35s linear infinite reverse", opacity: "var(--ring-opacity)" }} />
+          {/* Eye-level crosshair */}
+          <line x1="640" y1="420" x2="800" y2="420"
+            stroke="oklch(0.685 0.132 72 / 0.12)" strokeWidth="0.5" strokeDasharray="4 10" />
+          <line x1="720" y1="340" x2="720" y2="500"
+            stroke="oklch(0.685 0.132 72 / 0.12)" strokeWidth="0.5" strokeDasharray="4 10" />
+          {/* Wing-inspired arcs */}
+          <path d="M 350 420 A 370 370 0 0 1 1090 420" fill="none"
+            stroke="oklch(0.685 0.132 72 / 0.07)" strokeWidth="0.5" strokeDasharray="8 20" />
+          <path d="M 350 420 A 370 370 0 0 0 1090 420" fill="none"
+            stroke="oklch(0.685 0.132 72 / 0.05)" strokeWidth="0.5" strokeDasharray="3 14" />
+          {/* Gold dot nodes */}
+          <circle cx="370" cy="230" r="2.5" fill="oklch(0.685 0.132 72 / 0.4)" />
+          <circle cx="1070" cy="230" r="2.5" fill="oklch(0.685 0.132 72 / 0.4)" />
+          <circle cx="370" cy="610" r="2" fill="oklch(0.685 0.132 72 / 0.3)" />
+          <circle cx="1070" cy="610" r="2" fill="oklch(0.685 0.132 72 / 0.3)" />
+          <circle cx="530" cy="170" r="1.5" fill="oklch(0.685 0.132 72 / 0.25)" />
+          <circle cx="910" cy="670" r="1.5" fill="oklch(0.685 0.132 72 / 0.25)" />
+        </svg>
+      </div>
+
+      {/* ── Dot matrix overlay ── */}
+      <div className="absolute inset-0 dot-grid opacity-[0.06] pointer-events-none" />
+
+      {/* ── THE OWL — dominant center figure ── */}
+      <div
+        className="absolute z-10 pointer-events-none transition-all duration-700 ease-out"
+        style={{
+          top: "calc(50% + var(--owl-y))",
+          left: "50%",
+          transform: "translate(-50%, -50%) scale(var(--owl-scale))",
+          opacity: "var(--owl-opacity)",
+        }}
+      >
+        <div className="relative w-[420px] h-[520px] md:w-[520px] md:h-[640px]">
+          <img
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            src="https://readdy.ai/api/search-image?query=Majestic%20eagle%20owl%20with%20pronounced%20ear%20tufts%20standing%20in%20powerful%20poised%20stance%2C%20intense%20golden%20orange%20eyes%20piercing%20forward%2C%20warm%20brown%20cream%20and%20charcoal%20feather%20tones%20with%20elegant%20realistic%20detail%2C%20dramatic%20side%20lighting%20with%20gold%20rim%20light%2C%20dark%20sophisticated%20background%2C%20institutional%20dignity%2C%20professional%20wildlife%20photography%2C%20no%20text%20no%20watermark&width=800&height=1000&seq=about-owl-hero-01&orientation=portrait"
+            alt="Institute owl — wisdom and foresight"
+            className="w-full h-full object-contain object-center owl-eye-glow"
+          />
+        </div>
+      </div>
+
+      {/* ── Hero content overlay ── */}
+      <div
+        className="relative z-20 text-center px-6 md:px-10 transition-all duration-700 ease-out"
+        style={{
+          transform: "translateY(var(--content-y))",
+          opacity: "var(--content-opacity)",
+        }}
+      >
+        {/* Institutional label */}
+        <div className="mb-6">
+          <span className="text-[10px] md:text-[11px] font-mono text-primary-400/80 tracking-[0.35em] uppercase">
+            Institute of Project Controls
+          </span>
+        </div>
+
+        {/* Gold rule */}
+        <div className="w-16 gold-rule mx-auto mb-7" />
+
+        {/* Headline */}
+        <h1 className="font-heading text-[clamp(2.2rem,5vw,4.8rem)] font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em] mb-6">
+          Wisdom guides
+          <br />
+          <span className="text-primary-400">every decision</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-sm md:text-[15px] text-background-300 max-w-[480px] mx-auto leading-relaxed mb-10">
+          The Institute of Project Controls exists to bring structure, evidence and professional
+          judgement to the projects that shape our world.
+        </p>
+
+        {/* CTA */}
+        <Link
+          to="/membership"
+          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer"
+        >
+          <span>Discover the Institution</span>
+          <i className="ri-arrow-right-line" />
+        </Link>
+      </div>
+
+      {/* ── Scroll indicator ── */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 transition-opacity duration-500"
+        style={{ opacity: 1 - heroProgress * 1.5 }}>
+        <span className="text-[10px] font-mono text-background-500 tracking-[0.2em] uppercase">Scroll</span>
+        <div className="w-px h-10 bg-gradient-to-b from-primary-500/50 to-transparent" />
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRANSITION BRIDGE — Owl wing sweeps into "Who We Are"
+   ═══════════════════════════════════════════════════════════════ */
+function OwlTransitionBridge({ progress }: { progress: number }) {
+  const active = progress > 0.25;
+
+  return (
+    <div className="relative h-[120px] md:h-[160px] bg-background-950 overflow-hidden" aria-hidden="true">
+      {/* Wing sweep arc */}
+      <svg viewBox="0 0 1440 160" preserveAspectRatio="none" className="w-full h-full absolute inset-0">
+        <path
+          d="M -100 80 Q 720 -60 1540 80"
+          fill="none"
+          stroke="oklch(0.685 0.132 72 / 0.12)"
+          strokeWidth="1"
+          strokeDasharray="8 20"
+          className="transition-all duration-1000"
+          style={{
+            strokeDashoffset: active ? 0 : 2000,
+            opacity: active ? 1 : 0,
+          }}
+        />
+        <path
+          d="M -60 80 Q 720 -30 1500 80"
+          fill="none"
+          stroke="oklch(0.685 0.132 72 / 0.05)"
+          strokeWidth="0.5"
+          strokeDasharray="3 12"
+          className="transition-all duration-1200"
+          style={{
+            strokeDashoffset: active ? 0 : 2000,
+            opacity: active ? 1 : 0,
+          }}
+        />
+      </svg>
+
+      {/* Feather trail dots */}
+      <div className="absolute inset-0 pointer-events-none" style={{ opacity: active ? 0.7 : 0, transition: "opacity 1.2s ease" }}>
+        {[0.15, 0.28, 0.42, 0.55, 0.68, 0.8, 0.92].map((x, i) => (
+          <div key={i}
+            className="absolute w-1 h-1 bg-primary-500/40"
+            style={{
+              left: `${x * 100}%`,
+              top: `${50 + Math.sin(x * Math.PI) * 35}%`,
+              opacity: 0.3 + i * 0.07,
+              transform: `scale(${0.6 + i * 0.08})`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 2 — WHO WE ARE
+   Owl wing extends, revealing the institution's identity
+   ═══════════════════════════════════════════════════════════════ */
+function SceneWhoWeAre() {
+  return (
+    <section id="scene-who" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
+      {/* Wing-curve background accent */}
+      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] pointer-events-none opacity-[0.03]"
+        style={{
+          borderRadius: "50% 0 0 50%",
+          border: "1px solid oklch(0.685 0.132 72 / 0.5)",
+          transform: "scale(1.4, 0.7)",
+        }}
+      />
+
+      <div className="container-content relative z-10">
+        <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+          {/* Left: Owl wing-extended image */}
+          <div className="lg:w-[45%] shrink-0 scene-reveal transition-all duration-1000"
+            style={{ opacity: 0, transform: "translateX(-40px)" }}>
+            <div className="relative">
+              <div className="overflow-hidden">
+                <img
+            loading="lazy"
+            decoding="async"
+                  src="https://readdy.ai/api/search-image?query=Eagle%20owl%20with%20one%20wing%20elegantly%20extended%20sideways%20in%20graceful%20spread%2C%20warm%20brown%20cream%20and%20charcoal%20feathers%2C%20golden%20orange%20eye%20visible%20in%20profile%2C%20wing%20feathers%20creating%20elegant%20arc%20shape%2C%20warm%20dark%20background%20with%20subtle%20gold%20particles%2C%20professional%20wildlife%20photography%2C%20no%20text&width=700&height=500&seq=about-owl-wing-02&orientation=landscape"
+                  alt="Owl wing extended — revealing the institution"
+                  className="w-full h-auto transition-transform duration-1000 hover:scale-[1.03]"
+                />
+              </div>
+              {/* Gold accent block */}
+              <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-primary-500 hidden md:block" />
+            </div>
+          </div>
+
+          {/* Right: Who We Are content */}
+          <div className="flex-1 scene-reveal transition-all duration-1000"
+            style={{ opacity: 0, transform: "translateX(40px)", transitionDelay: "0.2s" }}>
+            <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
+              Who We Are
+            </span>
+            <div className="w-16 h-[2px] bg-primary-500 mb-6" />
+            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
+              The professional home
+              <br />
+              for <span className="text-primary-600">project controls</span>
+            </h2>
+            <div className="space-y-4 text-foreground-600 leading-relaxed text-base md:text-lg max-w-xl">
+              <p>
+                The Institute of Project Controls is a serious professional body for people
+                who plan, control, assure and improve project delivery. We provide a structured
+                recognition pathway, a professional community and a credible institutional identity.
+              </p>
+              <p>
+                Founded in 2014 by practitioners who recognised that project controls lacked
+                a dedicated professional home, the Institute has grown into an international
+                community of professionals across more than 35 countries.
+              </p>
+              <p>
+                Our members work in construction, infrastructure, energy, defence, manufacturing,
+                technology and public sector programmes — wherever projects need evidence-led
+                decisions.
+              </p>
+            </div>
+
+            {/* Stats row */}
+            <div className="flex flex-wrap gap-8 md:gap-14 mt-10 pt-8 border-t border-background-200">
+              {[
+                { n: "5", l: "Membership Grades" },
+                { n: "35+", l: "Countries" },
+                { n: "8", l: "Competence Domains" },
+                { n: "12", l: "Years" },
+              ].map((s) => (
+                <div key={s.l}>
+                  <div className="font-heading text-3xl md:text-4xl font-bold text-primary-500">{s.n}</div>
+                  <div className="text-xs text-foreground-500 tracking-wider uppercase mt-1">{s.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 3 — WHY IPC EXISTS (Owl Eye → Analytical Circles)
+   ═══════════════════════════════════════════════════════════════ */
+function SceneWhyExist() {
+  return (
+    <section id="scene-why" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
+      {/* Dot matrix background */}
+      <div className="absolute inset-0 dot-grid-gold opacity-[0.05]" />
+
+      {/* Owl eye to circles transition */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none radar-scene">
+        <div className="relative w-[500px] h-[500px] md:w-[700px] md:h-[700px]">
+          {/* Outer rings — expand from eye */}
+          {[400, 320, 240, 160, 80].map((r, i) => (
+            <div key={i}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-primary-500/10 ring-animate"
+              style={{
+                width: r,
+                height: r,
+                borderRadius: "50%",
+                animation: `ring-rotate-slow ${40 + i * 15}s linear infinite`,
+                animationDirection: i % 2 === 0 ? "normal" : "reverse",
+                opacity: 0.08 + i * 0.03,
+              }}
+            />
+          ))}
+
+          {/* Crosshair axis */}
+          <div className="absolute top-1/2 left-0 right-0 h-px bg-primary-500/8" />
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-primary-500/8" />
+
+          {/* Data nodes on rings */}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+            <div key={i} className="absolute w-2 h-2 bg-primary-500/30"
+              style={{
+                top: `calc(50% + ${Math.sin((angle * Math.PI) / 180) * 200}px)`,
+                left: `calc(50% + ${Math.cos((angle * Math.PI) / 180) * 200}px)`,
+                transform: "translate(-50%, -50%)",
+                animation: `twinkle ${2 + i * 0.4}s ease-in-out infinite`,
+                animationDelay: `${i * 0.3}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="container-content relative z-10">
+        <div className="max-w-3xl mx-auto text-center scene-reveal transition-all duration-1000"
+          style={{ opacity: 0, transform: "translateY(30px)" }}>
+          {/* Owl eye — small centered image as transition anchor */}
+          <div className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-10 overflow-hidden rounded-full border-2 border-primary-500/20">
+            <img
+            loading="lazy"
+            decoding="async"
+              src="https://readdy.ai/api/search-image?query=Extreme%20close%20up%20of%20eagle%20owl%20golden%20orange%20eye%20with%20intricate%20iris%20detail%2C%20dark%20pupil%20centered%2C%20surrounding%20cream%20and%20brown%20feathers%20with%20fine%20texture%2C%20intense%20intelligent%20gaze%2C%20warm%20dramatic%20lighting%2C%20macro%20photography%2C%20dark%20vignette%20background%2C%20no%20text&width=300&height=300&seq=about-owl-eye-03&orientation=squarish"
+              alt="The eye of foresight"
+              className="w-full h-full object-cover owl-eye-glow"
+            />
+          </div>
+
+          <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
+            Why We Exist
+          </span>
+          <div className="w-16 gold-rule mx-auto mb-7" />
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-8">
+            Insight before
+            <br />
+            <span className="text-primary-400">every decision</span>
+          </h2>
+          <p className="text-base md:text-lg text-background-300 leading-relaxed max-w-2xl mx-auto">
+            The Institute exists because project controls has never had a dedicated professional
+            home. Planners, cost engineers, risk analysts and project data specialists work across
+            every major sector — yet until IPC, there was no structured pathway to demonstrate
+            competence, no professional community to belong to, and no institutional voice to
+            represent the discipline.
+          </p>
+
+          {/* Three insight pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-14">
+            {[
+              { icon: "ri-search-eye-line", t: "Foresight", d: "Project controls professionals see ahead — identifying risks, modelling outcomes and enabling informed choices before commitments are made." },
+              { icon: "ri-bar-chart-grouped-line", t: "Evidence", d: "Every recommendation, forecast and assessment is grounded in data, analysis and professional judgement — not assumption or optimism." },
+              { icon: "ri-scales-3-line", t: "Accountability", d: "Controls professionals take responsibility for the quality, validity and timeliness of the information that shapes major decisions." },
+            ].map((p) => (
+              <div key={p.t} className="scene-reveal transition-all duration-1000 group p-8 bg-background-900/60 border border-background-800 hover:border-primary-500/20"
+                style={{ opacity: 0, transform: "translateY(24px)", transitionDelay: "0.15s" }}>
+                <div className="w-12 h-12 bg-primary-500/10 flex items-center justify-center mb-5">
+                  <i className={`${p.icon} text-xl text-primary-400`} />
+                </div>
+                <h4 className="font-heading text-lg font-semibold text-background-50 mb-3">{p.t}</h4>
+                <p className="text-sm text-background-400 leading-relaxed">{p.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 4 — OUR VISION (Owl gliding through horizon)
+   ═══════════════════════════════════════════════════════════════ */
+function SceneVision() {
+  return (
+    <section id="scene-vision" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
+      {/* Architectural horizon lines */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <svg viewBox="0 0 1440 800" preserveAspectRatio="none" className="w-full h-full">
+          <line x1="0" y1="280" x2="1440" y2="280" stroke="oklch(0.15 0 0 / 0.06)" strokeWidth="1" />
+          <line x1="0" y1="400" x2="1440" y2="400" stroke="oklch(0.15 0 0 / 0.04)" strokeWidth="1" strokeDasharray="20 40" />
+          <line x1="0" y1="520" x2="1440" y2="520" stroke="oklch(0.15 0 0 / 0.06)" strokeWidth="1" />
+          {/* Gold arcs suggesting owl flight path */}
+          <path d="M 100 600 Q 720 100 1340 600" fill="none" stroke="oklch(0.685 0.132 72 / 0.08)" strokeWidth="1" strokeDasharray="10 30" />
+          <path d="M 200 600 Q 720 160 1240 600" fill="none" stroke="oklch(0.685 0.132 72 / 0.05)" strokeWidth="0.5" strokeDasharray="4 20" />
+        </svg>
+      </div>
+
+      <div className="container-content relative z-10">
+        <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+          {/* Left: Vision text */}
+          <div className="flex-1 scene-reveal transition-all duration-1000"
+            style={{ opacity: 0, transform: "translateX(-30px)" }}>
+            <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
+              Our Vision
+            </span>
+            <div className="w-16 h-[2px] bg-primary-500 mb-6" />
+            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
+              A profession
+              <br />
+              <span className="text-primary-600">elevated</span>
+            </h2>
+            <div className="space-y-3 text-foreground-600 leading-relaxed text-base max-w-lg">
+              <p>
+                We envision a future where project controls is recognised as a strategic
+                discipline — not an administrative reporting function. Where professionals
+                have a clear, credible pathway from entry to senior leadership.
+              </p>
+              <p>
+                Where employers can trust that IPC recognition represents real competence.
+                Where the profession attracts talented people who see a career with status,
+                structure and progression.
+              </p>
+            </div>
+
+            {/* Three vision pillars */}
+            <div className="flex flex-col sm:flex-row gap-6 mt-10">
+              {[
+                { icon: "ri-home-smile-line", t: "Trusted Professional Home" },
+                { icon: "ri-seedling-line", t: "Stronger Talent Pipeline" },
+                { icon: "ri-vip-crown-line", t: "A Respected Profession" },
+              ].map((v) => (
+                <div key={v.t} className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-primary-100 flex items-center justify-center shrink-0">
+                    <i className={`${v.icon} text-base text-primary-600`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-background-950">{v.t}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Owl gliding image */}
+          <div className="lg:w-[42%] shrink-0 scene-reveal transition-all duration-1000"
+            style={{ opacity: 0, transform: "translateX(40px)", transitionDelay: "0.2s" }}>
+            <div className="relative overflow-hidden">
+              <img
+            loading="lazy"
+            decoding="async"
+                src="https://readdy.ai/api/search-image?query=Eagle%20owl%20gliding%20gracefully%20in%20controlled%20aerial%20pose%2C%20wings%20fully%20spread%20in%20elegant%20V%20shape%2C%20warm%20brown%20cream%20charcoal%20feather%20tones%2C%20golden%20orange%20eyes%20focused%20forward%2C%20smooth%20professional%20motion%2C%20warm%20golden%20atmospheric%20background%20with%20subtle%20arc%20lines%2C%20cinematic%20composition%2C%20no%20text&width=700&height=500&seq=about-owl-glide-04&orientation=landscape"
+                alt="Owl gliding — vision elevated"
+                className="w-full h-auto transition-transform duration-1000 hover:scale-[1.03]"
+              />
+              {/* Gold corner accent */}
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary-500 hidden md:block" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 5 — OUR MISSION (Owl path → mission framework)
+   ═══════════════════════════════════════════════════════════════ */
+function SceneMission() {
+  const missions = [
+    { icon: "ri-award-line", title: "Advance Professional Recognition", desc: "A structured route for professionals to demonstrate competence, integrity, development and contribution through clear membership grades." },
+    { icon: "ri-bar-chart-grouped-line", title: "Strengthen Project Delivery", desc: "Promote project controls as an integrated discipline that improves time, cost, risk, quality, safety, carbon, transparency and accountability." },
+    { icon: "ri-team-line", title: "Build Professional Community", desc: "Bring together practitioners, employers, consultants, training providers, academics and learners through events, clubs, awards and publications." },
+    { icon: "ri-door-open-line", title: "Open Access to Opportunity", desc: "Support learners and career changers through scholarships, bursaries, mentoring, master classes and employer partnerships." },
+  ];
+
+  return (
+    <section id="scene-mission" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
+      {/* Owl silhouette passing through */}
+      <div className="absolute top-0 right-0 w-[300px] md:w-[450px] opacity-[0.04] pointer-events-none">
+        <img
+            loading="lazy"
+            decoding="async"
+          src="https://readdy.ai/api/search-image?query=Eagle%20owl%20silhouette%20in%20dark%20charcoal%20against%20warm%20golden%20gradient%20background%2C%20ear%20tufts%20clearly%20visible%2C%20powerful%20profile%20stance%2C%20elegant%20minimal%20composition%2C%20subtle%20gold%20rim%20light%20on%20feather%20edges%2C%20no%20text%2C%20high%20contrast&width=600&height=400&seq=about-owl-silhouette-05&orientation=landscape"
+          alt=""
+          className="w-full h-auto"
+        />
+      </div>
+
+      {/* Gold route path — owl's flight becomes mission line */}
+      <svg viewBox="0 0 1440 300" preserveAspectRatio="none" className="absolute top-1/2 left-0 w-full h-[300px] pointer-events-none opacity-30">
+        <path d="M -50 150 Q 200 50 400 120 T 800 80 T 1100 140 Q 1300 170 1500 130"
+          fill="none" stroke="oklch(0.685 0.132 72 / 0.25)" strokeWidth="1.5" strokeDasharray="6 18" />
+        <path d="M -50 150 Q 200 50 400 120 T 800 80 T 1100 140 Q 1300 170 1500 130"
+          fill="none" stroke="oklch(0.685 0.132 72 / 0.08)" strokeWidth="4" />
+      </svg>
+
+      <div className="container-content relative z-10">
+        <div className="text-center mb-16 scene-reveal transition-all duration-1000"
+          style={{ opacity: 0, transform: "translateY(30px)" }}>
+          <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
+            Our Mission
+          </span>
+          <div className="w-16 gold-rule mx-auto mb-7" />
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-6">
+            The path we follow
+          </h2>
+          <p className="text-base text-background-300 max-w-xl mx-auto leading-relaxed">
+            The Institute&apos;s mission describes the practical work of advancing project
+            controls as a profession — creating structure, building community and opening
+            opportunity.
+          </p>
+        </div>
+
+        {/* 4 mission items along the owl's path */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0">
+          {missions.map((m, i) => (
+            <div key={m.title}
+              className="scene-reveal transition-all duration-1000 group p-7 md:p-9 bg-background-900/50 border border-background-800 hover:bg-background-900/80 hover:border-primary-500/20"
+              style={{ opacity: 0, transform: "translateY(30px)", transitionDelay: `${i * 0.12}s` }}>
+              {/* Owl wing accent */}
+              <div className="w-8 h-[1px] bg-primary-500/40 mb-4 group-hover:w-14 transition-all duration-500" />
+              <span className="font-heading text-3xl font-bold text-primary-500/20 block mb-3">0{i + 1}</span>
+              <div className="w-10 h-10 bg-primary-500/10 flex items-center justify-center mb-4">
+                <i className={`${m.icon} text-lg text-primary-400`} />
+              </div>
+              <h4 className="font-heading text-base font-semibold text-background-50 mb-2">{m.title}</h4>
+              <p className="text-sm text-background-400 leading-relaxed">{m.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 6 — CORE VALUES (Radar + Owl circulating)
+   ═══════════════════════════════════════════════════════════════ */
+function SceneCoreValues() {
+  const values = [
+    { icon: "ri-shield-check-line", title: "Integrity", desc: "Present data and professional standing honestly. Reports, forecasts and claims should be evidence-led." },
+    { icon: "ri-brain-line", title: "Competence", desc: "Recognition based on relevant knowledge, skills, behaviours, judgement and evidence." },
+    { icon: "ri-hand-heart-line", title: "Accountability", desc: "Take responsibility for the quality, validity and timeliness of project information." },
+    { icon: "ri-lightbulb-flash-line", title: "Independence", desc: "Support project management while retaining independence to challenge weak assumptions." },
+    { icon: "ri-group-line", title: "Collaboration", desc: "Work with engineers, commercial teams, planners, PMO, finance and clients." },
+    { icon: "ri-arrow-up-circle-line", title: "Growth", desc: "Maintain CPD, learn from projects, share lessons and improve tools and standards." },
+    { icon: "ri-cpu-line", title: "Technology", desc: "Use AI, digital systems and analytics to improve insight while protecting data quality." },
+    { icon: "ri-leaf-line", title: "Sustainability", desc: "Help projects understand environmental impact, carbon consequences and responsible delivery." },
+  ];
+
+  return (
+    <section id="scene-values" className="relative bg-background-50 py-24 md:py-36 overflow-hidden radar-scene">
+      {/* Large radar ring system */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[700px] h-[700px] md:w-[900px] md:h-[900px]">
+        {[420, 340, 260, 180, 100].map((r, i) => (
+          <div key={i}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-primary-500/8 ring-animate"
+            style={{
+              width: r,
+              height: r,
+              borderRadius: "50%",
+              animation: `ring-rotate-slow ${30 + i * 18}s linear infinite`,
+              animationDirection: i % 2 === 0 ? "normal" : "reverse",
+            }}
+          />
+        ))}
+        {/* Cross lines */}
+        <div className="absolute top-1/2 left-0 right-0 h-px bg-primary-500/5" />
+        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-primary-500/5" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-primary-500/30" />
+      </div>
+
+      <div className="container-content relative z-10">
+        <div className="text-center mb-16 scene-reveal transition-all duration-1000"
+          style={{ opacity: 0, transform: "translateY(30px)" }}>
+          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
+            Core Values
+          </span>
+          <div className="w-16 h-[2px] bg-primary-500 mx-auto mb-7" />
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
+            Values that guide
+            <br />
+            <span className="text-primary-600">recognition</span>
+          </h2>
+          <p className="text-base text-foreground-600 max-w-xl mx-auto leading-relaxed">
+            Recognition is powerful only if it is trusted. These values underpin every
+            membership decision, every assessment and every interaction.
+          </p>
+        </div>
+
+        {/* Values grid — owl passes through activating each */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 md:gap-2">
+          {values.map((v, i) => (
+            <div key={v.title}
+              className="scene-reveal transition-all duration-1000 group p-6 md:p-7 bg-background-50 border border-background-200/70 hover:border-primary-200 hover:bg-background-100"
+              style={{ opacity: 0, transform: "translateY(20px)", transitionDelay: `${i * 0.08}s` }}>
+              <div className="w-10 h-10 bg-primary-100 flex items-center justify-center mb-4">
+                <i className={`${v.icon} text-lg text-primary-600`} />
+              </div>
+              <h4 className="font-heading text-sm font-semibold text-background-950 mb-2">{v.title}</h4>
+              <p className="text-xs text-foreground-600 leading-relaxed">{v.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Owl circulating presence */}
+        <div className="mt-16 text-center scene-reveal transition-all duration-1000"
+          style={{ opacity: 0, transform: "translateY(20px)", transitionDelay: "0.6s" }}>
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-accent-50 border border-accent-200">
+            <div className="w-8 h-8 overflow-hidden rounded-full">
+              <img
+            loading="lazy"
+            decoding="async"
+                src="https://readdy.ai/api/search-image?query=Extreme%20close%20up%20of%20eagle%20owl%20golden%20orange%20eye%20with%20intricate%20iris%20detail%2C%20dark%20pupil%20centered%2C%20surrounding%20cream%20and%20brown%20feathers%20with%20fine%20texture%2C%20intense%20intelligent%20gaze%2C%20warm%20dramatic%20lighting%2C%20macro%20photography%2C%20dark%20vignette%20background%2C%20no%20text&width=300&height=300&seq=about-owl-eye-03&orientation=squarish"
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-xs font-mono text-accent-700 tracking-wider">
+              Values activated by professional judgement
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 7 — THE IPC IDENTITY (All elements converge)
+   ═══════════════════════════════════════════════════════════════ */
+function SceneIdentity() {
+  const symbols = [
+    { icon: "ri-eye-line", title: "Wisdom & Judgement", desc: "The owl represents the professional insight and calm authority that project controls brings to complex decisions." },
+    { icon: "ri-focus-3-line", title: "Insight & Foresight", desc: "The eye represents the analytical clarity and forward-looking perspective that defines the discipline." },
+    { icon: "ri-donut-chart-line", title: "Control & Evidence", desc: "The circles represent the structured frameworks, data integrity and evidence-based approach of professional controls." },
+    { icon: "ri-flight-takeoff-line", title: "Progression & Ambition", desc: "The wings represent professional growth, institutional ambition and the career pathway that IPC provides." },
+    { icon: "ri-share-line", title: "Connection & Contribution", desc: "The dot patterns represent the global community of professionals connected through shared standards and purpose." },
+  ];
+
+  return (
+    <section id="scene-identity" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
+      {/* Dot matrix + halftone map */}
+      <div className="absolute inset-0 dot-grid-gold opacity-[0.04]" />
+      <div className="absolute inset-0 halftone-map opacity-[0.06]" />
+
+      {/* Concentric rings background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <svg viewBox="0 0 1440 900" preserveAspectRatio="none" className="w-full h-full opacity-30">
+          <circle cx="720" cy="450" r="380" fill="none" stroke="oklch(0.685 0.132 72 / 0.05)" strokeWidth="0.5" strokeDasharray="3 14" />
+          <circle cx="720" cy="450" r="300" fill="none" stroke="oklch(0.685 0.132 72 / 0.08)" strokeWidth="0.5" />
+          <circle cx="720" cy="450" r="220" fill="none" stroke="oklch(0.685 0.132 72 / 0.1)" strokeWidth="1" strokeDasharray="50 10" />
+          <circle cx="720" cy="450" r="140" fill="none" stroke="oklch(0.685 0.132 72 / 0.15)" strokeWidth="1" />
+        </svg>
+      </div>
+
+      <div className="container-content relative z-10">
+        <div className="text-center mb-16 scene-reveal transition-all duration-1000"
+          style={{ opacity: 0, transform: "translateY(30px)" }}>
+          <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
+            The IPC Identity
+          </span>
+          <div className="w-16 gold-rule mx-auto mb-7" />
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-6">
+            What the owl
+            <br />
+            <span className="text-primary-400">represents</span>
+          </h2>
+          <p className="text-base text-background-300 max-w-xl mx-auto leading-relaxed">
+            Every element of the Institute&apos;s visual identity carries meaning.
+            Together they tell the story of an institution guided by wisdom, structure,
+            evidence and professional foresight.
+          </p>
+        </div>
+
+        {/* Symbols grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1 md:gap-2 mb-16">
+          {symbols.map((s, i) => (
+            <div key={s.title}
+              className="scene-reveal transition-all duration-1000 group p-6 md:p-7 text-center bg-background-900/60 border border-background-800 hover:border-primary-500/20 hover:bg-background-900/80"
+              style={{ opacity: 0, transform: "translateY(24px)", transitionDelay: `${i * 0.1}s` }}>
+              <div className="w-14 h-14 mx-auto bg-primary-500/10 flex items-center justify-center mb-4">
+                <i className={`${s.icon} text-2xl text-primary-400`} />
+              </div>
+              <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">{s.title}</h4>
+              <p className="text-xs text-background-400 leading-relaxed">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Connecting linework */}
+        <div className="scene-reveal transition-all duration-1000"
+          style={{ opacity: 0, transform: "translateY(20px)", transitionDelay: "0.5s" }}>
+          <svg viewBox="0 0 1200 60" className="w-full h-auto opacity-40">
+            <line x1="0" y1="30" x2="1200" y2="30" stroke="oklch(0.685 0.132 72 / 0.15)" strokeWidth="0.5" strokeDasharray="4 12" />
+            <circle cx="200" cy="30" r="3" fill="oklch(0.685 0.132 72 / 0.4)" />
+            <circle cx="440" cy="30" r="3" fill="oklch(0.685 0.132 72 / 0.4)" />
+            <circle cx="680" cy="30" r="3" fill="oklch(0.685 0.132 72 / 0.4)" />
+            <circle cx="920" cy="30" r="3" fill="oklch(0.685 0.132 72 / 0.4)" />
+            <circle cx="1160" cy="30" r="3" fill="oklch(0.685 0.132 72 / 0.4)" />
+          </svg>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 8 — FINALE (Owl complete + institutional close)
+   ═══════════════════════════════════════════════════════════════ */
+function SceneFinale() {
+  return (
+    <section id="scene-finale" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
+      {/* Final concentric ring backdrop */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[800px] h-[800px]">
+        {[380, 300, 220, 140].map((r, i) => (
+          <div key={i}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-primary-500/6"
+            style={{
+              width: r,
+              height: r,
+              borderRadius: "50%",
+              opacity: 0.25 + i * 0.08,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Wing-inspired gold curves */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <svg viewBox="0 0 1440 800" preserveAspectRatio="none" className="w-full h-full opacity-[0.06]">
+          <path d="M 200 400 Q 720 -80 1240 400" fill="none" stroke="oklch(0.685 0.132 72 / 1)" strokeWidth="2" />
+          <path d="M 300 400 Q 720 20 1140 400" fill="none" stroke="oklch(0.685 0.132 72 / 1)" strokeWidth="1" strokeDasharray="8 20" />
+          <path d="M 100 400 Q 720 -200 1340 400" fill="none" stroke="oklch(0.685 0.132 72 / 0.5)" strokeWidth="0.5" strokeDasharray="2 14" />
+        </svg>
+      </div>
+
+      <div className="container-content relative z-10">
+        <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+          {/* Left: Final owl */}
+          <div className="lg:w-[42%] shrink-0 scene-reveal transition-all duration-1000"
+            style={{ opacity: 0, transform: "translateX(-30px)" }}>
+            <div className="relative">
+              <img
+                loading="lazy"
+                decoding="async"
+                src="https://readdy.ai/api/search-image?query=Majestic%20eagle%20owl%20with%20pronounced%20ear%20tufts%20standing%20in%20powerful%20poised%20stance%2C%20intense%20golden%20orange%20eyes%20piercing%20forward%2C%20warm%20brown%20cream%20and%20charcoal%20feather%20tones%20with%20elegant%20realistic%20detail%2C%20dramatic%20side%20lighting%20with%20gold%20rim%20light%2C%20dark%20sophisticated%20background%2C%20institutional%20dignity%2C%20professional%20wildlife%20photography%2C%20no%20text%20no%20watermark&width=800&height=1000&seq=about-owl-hero-01&orientation=portrait"
+                alt="Institute of Project Controls owl"
+                className="w-full h-auto"
+              />
+              {/* Gold accent */}
+              <div className="absolute -bottom-3 -right-3 w-16 h-16 bg-primary-500 hidden md:block" />
+            </div>
+          </div>
+
+          {/* Right: Institutional close */}
+          <div className="flex-1 scene-reveal transition-all duration-1000"
+            style={{ opacity: 0, transform: "translateX(30px)", transitionDelay: "0.2s" }}>
+            <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
+              The Institute
+            </span>
+            <div className="w-16 h-[2px] bg-primary-500 mb-6" />
+            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
+              Wisdom guides
+              <br />
+              <span className="text-primary-600">every decision</span>
+            </h2>
+            <p className="text-base md:text-lg text-foreground-600 leading-relaxed max-w-lg mb-8">
+              IPC is an institution guided by wisdom, structure, evidence and professional
+              foresight. From the moment a professional considers membership to the point
+              they achieve recognition, the Institute provides a pathway that is clear,
+              credible and progressive.
+            </p>
+            <p className="text-sm text-foreground-500 leading-relaxed max-w-lg mb-10">
+              The owl — our symbol of wisdom — reminds us that project controls is not
+              about paperwork or process. It is about turning project information into
+              decisions. About seeing ahead. About earning the trust that comes from
+              evidence, not assumption.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/membership"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer">
+                <i className="ri-award-line" />
+                <span>Explore Membership</span>
+              </Link>
+              <Link to="/contact"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-background-950 text-sm font-bold tracking-wide border border-background-300 hover:border-primary-500 transition-all duration-300 whitespace-nowrap cursor-pointer">
+                <i className="ri-mail-line" />
+                <span>Get in Touch</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

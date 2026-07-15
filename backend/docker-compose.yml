@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ipc
+      POSTGRES_USER: ipc
+      POSTGRES_PASSWORD: ipc
+    ports:
+      - "5432:5432"
+    volumes:
+      - ipc_postgres:/var/lib/postgresql/data
+
+volumes:
+  ipc_postgres:

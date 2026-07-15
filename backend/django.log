@@ -1,0 +1,437 @@
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 11:56:33
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC contact form received
+From: office@instituteofprojectcontrols.org
+To: office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 08:56:52 -0000
+Message-ID: <178358741200.68204.4086233247063553525@DESKTOP-SLBH6DO>
+
+Smoke Tester <smoke-contact@example.com> sent a General enquiry.
+
+Testing contact endpoint from Codex smoke test.
+-------------------------------------------------------------------------------
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC event registration confirmed
+From: office@instituteofprojectcontrols.org
+To: event-smoke@example.com, office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 08:57:06 -0000
+Message-ID: <178358742680.68204.2772918463785594966@DESKTOP-SLBH6DO>
+
+Your interest in London Master Class: Integrated Project Controls has been received.
+-------------------------------------------------------------------------------
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC awards interest received
+From: office@instituteofprojectcontrols.org
+To: office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 08:57:06 -0000
+Message-ID: <178358742695.68204.16950909747727872653@DESKTOP-SLBH6DO>
+
+Smoke Tester registered awards interest: Nominate
+-------------------------------------------------------------------------------
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC membership application submitted
+From: office@instituteofprojectcontrols.org
+To: application-smoke@example.com, office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 08:57:14 -0000
+Message-ID: <178358743497.68204.331142819890957429@DESKTOP-SLBH6DO>
+
+Thank you. Your IPC membership application has been received for evidence-based review.
+-------------------------------------------------------------------------------
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:21:26
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:21:43
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:21:56
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:22:39
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:23:12
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:23:43
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:24:05
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:24:24
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:24:51
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:25:09
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:25:23
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:25:40
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:26:10
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:26:24
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:26:54
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:27:25
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 25 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, applications, auth, awards, contact, contenttypes, events, media_library, memberships, newsletter, sessions.
+Run 'python manage.py migrate' to apply them.
+July 09, 2026 - 14:27:37
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 14:31:17
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC membership application submitted
+From: office@instituteofprojectcontrols.org
+To: abdodonia45@gmail.com, office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 11:40:07 -0000
+Message-ID: <178359720737.26292.14148121843236772304@DESKTOP-SLBH6DO>
+
+Thank you. Your IPC membership application has been received for evidence-based review.
+-------------------------------------------------------------------------------
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC membership application submitted
+From: office@instituteofprojectcontrols.org
+To: abdodonia45@gmail.com, office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 11:40:40 -0000
+Message-ID: <178359724065.26292.8698580355641354876@DESKTOP-SLBH6DO>
+
+Thank you. Your IPC membership application has been received for evidence-based review.
+-------------------------------------------------------------------------------
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC membership application submitted
+From: office@instituteofprojectcontrols.org
+To: abdodonia45@gmail.com, office@instituteofprojectcontrols.org
+Date: Thu, 09 Jul 2026 12:54:46 -0000
+Message-ID: <178360168675.26292.10015647850693181057@DESKTOP-SLBH6DO>
+
+Thank you. Your IPC membership application has been received for evidence-based review.
+-------------------------------------------------------------------------------
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:13:45
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:14:46
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:14:59
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:15:13
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:15:31
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:29:26
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 16:30:17
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 17:17:58
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 09, 2026 - 17:18:17
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+Performing system checks...
+
+System check identified no issues (0 silenced).
+July 10, 2026 - 18:30:46
+Django version 5.2.15, using settings 'ipc_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: IPC membership application submitted
+From: office@instituteofprojectcontrols.org
+To: abdoelsaid368@gmail.com, office@instituteofprojectcontrols.org
+Date: Fri, 10 Jul 2026 15:34:58 -0000
+Message-ID: <178369769833.44928.5827463430159275846@DESKTOP-SLBH6DO>
+
+Thank you. Your IPC membership application has been received for evidence-based review.
+-------------------------------------------------------------------------------
+Performing system checks...
+
+Performing system checks...
+
