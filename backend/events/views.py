@@ -1,5 +1,6 @@
 import secrets
 from datetime import timezone as dt_timezone
+from concurrent.futures import ThreadPoolExecutor
 from secrets import token_urlsafe
 
 from django.conf import settings
@@ -16,7 +17,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .eventbrite import EventbriteError, exchange_code_for_token, get_authorization_url, save_connection
-from .models import Event, EventRegistration
+from .models import Event, EventRegistration, EventbriteAttendeeSnapshot
 from .serializers import (
     AdminEventRegistrationSerializer, AdminEventSerializer, AdminEventVisibilitySerializer,
     EventRegistrationConfigSerializer, EventRegistrationCreateSerializer,
@@ -341,10 +342,11 @@ class AdminEventbriteAttendeesView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get(self, request):
-        cache_key = "ipc:admin:eventbrite-attendees:v2"
-        cached = cache.get(cache_key)
+        cache_key = "ipc:admin:eventbrite-attendees:v3"
+        force_refresh = request.query_params.get("refresh") == "1"
+        cached = None if force_refresh else cache.get(cache_key)
         if cached is not None:
-            return Response(cached)
+            return Response({"results": cached, "is_stale": False, "synced_at": None})
 
         from .models import EventbriteConnection
 
@@ -354,11 +356,35 @@ class AdminEventbriteAttendeesView(APIView):
             if connection and connection.organization_id
             else settings.EVENTBRITE_ORGANIZATION_ID
         )
+        snapshot = EventbriteAttendeeSnapshot.objects.filter(
+            organization_id=organization_id,
+        ).first()
+        if snapshot is not None and not force_refresh:
+            return Response({
+                "results": snapshot.payload,
+                "is_stale": True,
+                "synced_at": snapshot.synced_at.isoformat(),
+            })
+        if not force_refresh:
+            return Response({"results": [], "is_stale": True, "synced_at": None})
+
         try:
             client = get_configured_client()
-            attendees = client.get_organization_attendees(
-                organization_id=organization_id,
-            )
+            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="eventbrite-admin") as executor:
+                attendees_future = executor.submit(
+                    client.get_organization_attendees,
+                    organization_id=organization_id,
+                )
+                events_future = executor.submit(
+                    client.get_organization_events,
+                    organization_id=organization_id,
+                    status=None,
+                )
+                attendees = attendees_future.result()
+                try:
+                    remote_events = events_future.result()
+                except EventbriteError:
+                    remote_events = []
         except EventbriteError as exc:
             return Response({"detail": str(exc)}, status=exc.status_code)
 
@@ -369,13 +395,6 @@ class AdminEventbriteAttendeesView(APIView):
         )
         # Attendees may belong to an Eventbrite event not yet synced into the
         # local Event table. Resolve those titles from Eventbrite in one call.
-        try:
-            remote_events = client.get_organization_events(
-                organization_id=organization_id,
-                status=None,
-            )
-        except EventbriteError:
-            remote_events = []
         for remote_event in remote_events:
             remote_id = str(remote_event.get("id") or "").strip()
             remote_title = (remote_event.get("name") or {}).get("text") or ""
@@ -414,8 +433,16 @@ class AdminEventbriteAttendeesView(APIView):
 
         payload.sort(key=lambda item: item.get("created_at") or "", reverse=True)
         payload = payload[:100]
-        cache.set(cache_key, payload, 60)
-        return Response(payload)
+        cache.set(cache_key, payload, 600)
+        snapshot, _ = EventbriteAttendeeSnapshot.objects.update_or_create(
+            organization_id=organization_id,
+            defaults={"payload": payload},
+        )
+        return Response({
+            "results": payload,
+            "is_stale": False,
+            "synced_at": snapshot.synced_at.isoformat(),
+        })
 
 
 class EventbriteSyncView(APIView):

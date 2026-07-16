@@ -25,6 +25,8 @@ import AdminApplicationsPage from "@/features/admin/applications/page";
 import AdminApplicationDetailsPage from "@/features/admin/applications/details/page";
 import AdminEnquiriesPage from "@/features/admin/enquiries/page";
 import AdminEventsPage from "@/features/admin/events/page";
+import AdminAwardsPage from "@/features/admin/awards/page";
+import AdminMembershipGradesPage from "@/features/admin/membership-grades/page";
 import AdminEventDetailsPage from "@/features/admin/events/details/page";
 import AdminLayout from "@/features/admin/layouts/AdminLayout";
 import AdminOverviewPage from "@/features/admin/overview/page";
@@ -33,6 +35,8 @@ import AdminUsersPage from "@/features/admin/users/page";
 import AdminUserDetailsPage from "@/features/admin/users/details/page";
 import Login from "@/features/auth/login/Login";
 import PasswordResetPage from "@/features/auth/password-reset/page";
+import ForgotPasswordPage from "@/features/auth/forgot-password/page";
+import UserProfilePage from "@/features/profile/page";
 import { GuestOnlyRoute, ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
 const routes: RouteObject[] = [
@@ -58,7 +62,9 @@ const routes: RouteObject[] = [
   { path: "/clubs", element: <Clubs /> },
   { path: "/about", element: <About /> },
   { path: "/login", element: <GuestOnlyRoute><Login /></GuestOnlyRoute> },
+  { path: "/forgot-password", element: <GuestOnlyRoute><ForgotPasswordPage /></GuestOnlyRoute> },
   { path: "/reset-password", element: <PasswordResetPage /> },
+  { path: "/profile", element: <ProtectedRoute><UserProfilePage /></ProtectedRoute> },
   { path: "/contact", element: <Contact /> },
   { path: "/privacy", element: <Privacy /> },
   {
@@ -70,6 +76,8 @@ const routes: RouteObject[] = [
       { path: "applications/:id", element: <AdminApplicationDetailsPage /> },
       { path: "enquiries", element: <AdminEnquiriesPage /> },
       { path: "events", element: <AdminEventsPage /> },
+      { path: "awards", element: <AdminAwardsPage /> },
+      { path: "membership-grades", element: <AdminMembershipGradesPage /> },
       { path: "events/:id", element: <AdminEventDetailsPage /> },
       { path: "users", element: <ProtectedRoute requireAdmin><AdminUsersPage /></ProtectedRoute> },
       { path: "profile", element: <AdminProfilePage /> },

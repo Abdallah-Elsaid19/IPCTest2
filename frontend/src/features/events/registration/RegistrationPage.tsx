@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { notifications } from "@/lib/notifications";
 import { clearRegistrationSession, idempotencyKey, registrationApi } from "./api";
 import type { RegistrationEvent, RegistrationPayload, RegistrationPerson } from "./types";
+import SEO from "@/components/seo/SEO";
 
 const personSchema = z.object({
   first_name: z.string().trim().min(1, "First name is required").max(80),
@@ -114,9 +115,11 @@ export default function RegistrationPage() {
     }
   });
 
-  if (loadError) return <div className="container-content py-24 text-center"><h1 className="font-heading text-3xl font-bold">Registration unavailable</h1><p className="mt-3">{loadError}</p><Link to="/events" className="btn-primary mt-6 inline-flex">Back to events</Link></div>;
-  if (!event) return <div className="container-content grid min-h-[55vh] place-items-center"><LoaderCircle className="animate-spin text-primary-600" size={38}/></div>;
-  if (!event.registration_is_open || event.eventbrite_id) return <div className="container-content py-24 text-center"><h1 className="font-heading text-3xl font-bold">Registration unavailable</h1><p className="mt-3 text-foreground-600">{event.registration_closed_reason}</p><Link to={`/events/${event.slug}`} className="btn-primary mt-6 inline-flex">View event</Link></div>;
+  const registrationSeo = <SEO title="Event Registration" description="Register for an Institute of Project Controls event." canonicalPath={`/events/${slug}/register`} noIndex />;
+
+  if (loadError) return <div className="container-content py-24 text-center">{registrationSeo}<h1 className="font-heading text-3xl font-bold">Registration unavailable</h1><p className="mt-3">{loadError}</p><Link to="/events" className="btn-primary mt-6 inline-flex">Back to events</Link></div>;
+  if (!event) return <div className="container-content grid min-h-[55vh] place-items-center">{registrationSeo}<LoaderCircle className="animate-spin text-primary-600" size={38}/></div>;
+  if (!event.registration_is_open || event.eventbrite_id) return <div className="container-content py-24 text-center">{registrationSeo}<h1 className="font-heading text-3xl font-bold">Registration unavailable</h1><p className="mt-3 text-foreground-600">{event.registration_closed_reason}</p><Link to={`/events/${event.slug}`} className="btn-primary mt-6 inline-flex">View event</Link></div>;
 
   const renderPerson = (prefix: "contact" | `attendees.${number}`, includeNeeds = false) => {
     const pathError = prefix === "contact" ? errors.contact : errors.attendees?.[Number(prefix.split(".")[1])];
@@ -144,7 +147,7 @@ export default function RegistrationPage() {
     return <input {...register(name)} className={fieldClass} />;
   };
 
-  return <div className="bg-background-50 py-10 md:py-16"><main className="container-content">
+  return <div className="bg-background-50 py-10 md:py-16">{registrationSeo}<main className="container-content">
     <Link to={`/events/${event.slug}`} className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-foreground-700"><ArrowLeft size={16}/> Back to event</Link>
     <div className="mb-8"><p className="eyebrow text-primary-700">Secure registration</p><h1 className="mt-2 font-heading text-3xl font-bold md:text-5xl">{event.title}</h1></div>
     <ol className="mb-8 grid grid-cols-4 gap-2" aria-label="Registration progress">{steps.map((label, index) => <li key={label} className={`border-t-4 pt-3 text-xs font-bold ${index <= step ? "border-primary-500 text-background-950" : "border-background-200 text-foreground-400"}`}><span className="hidden sm:inline">{index + 1}. </span>{label}</li>)}</ol>

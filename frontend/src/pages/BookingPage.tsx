@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 const bookingUrl =
   "https://outlook.office.com/book/IPC@kentbusinesscollege.com/s/ZND9gXN_Ckuhz75PflhCdQ2?ismsaljsauthenabled";
@@ -19,6 +21,7 @@ export default function BookingPage() {
 
   return (
     <div className="bg-background-100">
+      <SEO {...pageSeo.booking} />
       <section
         aria-labelledby="booking-page-heading"
         className="border-b border-background-800 bg-background-950 pb-12 pt-28 sm:pb-16 sm:pt-32 lg:pt-36"

@@ -28,6 +28,35 @@ from .models import AdminProfile
 User = get_user_model()
 
 
+def _personal_reset_email(user):
+    try:
+        application = user.membership_application
+    except User.membership_application.RelatedObjectDoesNotExist:
+        application = None
+
+    if application and application.email:
+        return application.email
+
+    # Staff accounts created before managed IPC addresses may still use a real
+    # email address directly on the Django user record.
+    managed_domain = settings.IPC_ACCOUNT_EMAIL_DOMAIN.lower().lstrip("@")
+    if user.email and not user.email.lower().endswith(f"@{managed_domain}"):
+        return user.email
+    return None
+
+
+def _reset_url_for(user):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    return f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}"
+
+
+def _masked_email(email):
+    local, domain = email.rsplit("@", 1)
+    visible = local[:2] if len(local) > 2 else local[:1]
+    return f"{visible}{'*' * max(3, len(local) - len(visible))}@{domain}"
+
+
 class IsUserAdministrator(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated or not request.user.is_staff:
@@ -238,25 +267,73 @@ class AdminUserViewSet(ModelViewSet):
         user = self.get_object()
         if user.is_superuser and not request.user.is_superuser:
             return Response({"detail": "Only a superuser can reset another superuser's password."}, status=status.HTTP_403_FORBIDDEN)
-        try:
-            application = user.membership_application
-        except User.membership_application.RelatedObjectDoesNotExist:
-            application = None
-        recipient = application.email if application else user.email
+        recipient = _personal_reset_email(user)
         if not recipient:
-            return Response({"email": ["This user does not have an email address."]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"email": ["This user does not have a personal email address."]}, status=status.HTTP_400_BAD_REQUEST)
         cooldown_key = f"ipc:password-reset-email:{user.pk}"
         if cache.get(cooldown_key):
             return Response({"detail": "A password-reset email was sent recently. Please wait before trying again."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}"
+        reset_url = _reset_url_for(user)
         try:
             send_password_reset_email(recipient=recipient, name=user.get_full_name().strip() or user.get_username(), reset_url=reset_url)
         except (GraphMailError, ImproperlyConfigured, RequestException):
             return Response({"detail": "The reset email could not be sent. Check the Microsoft Graph configuration."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         cache.set(cooldown_key, True, settings.EMAIL_COOLDOWN_MINUTES * 60)
         return Response({"detail": "Password-reset email sent."})
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+
+    def validate_email(self, value):
+        user = User.objects.filter(email__iexact=value.strip(), is_active=True).first()
+        if not user:
+            raise serializers.ValidationError("This IPC email address is incorrect.")
+        recipient = _personal_reset_email(user)
+        if not recipient:
+            raise serializers.ValidationError(
+                "No personal email address is linked to this IPC account. Contact IPC support."
+            )
+        self.context["user"] = user
+        self.context["recipient"] = recipient
+        return value.lower()
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class PasswordResetRequestView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset_request"
+
+    def post(self, request):
+        context = {}
+        serializer = PasswordResetRequestSerializer(data=request.data, context=context)
+        serializer.is_valid(raise_exception=True)
+        user = context["user"]
+        recipient = context["recipient"]
+        cooldown_key = f"ipc:password-reset-email:{user.pk}"
+        if cache.get(cooldown_key):
+            return Response(
+                {"detail": "A password-reset email was sent recently. Please wait before trying again."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        try:
+            send_password_reset_email(
+                recipient=recipient,
+                name=user.get_full_name().strip() or user.get_username(),
+                reset_url=_reset_url_for(user),
+            )
+        except (GraphMailError, ImproperlyConfigured, RequestException):
+            return Response(
+                {"detail": "The reset email could not be sent. Please try again later."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        cache.set(cooldown_key, True, settings.EMAIL_COOLDOWN_MINUTES * 60)
+        return Response({
+            "detail": "Password-reset email sent successfully.",
+            "destination": _masked_email(recipient),
+        })
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):

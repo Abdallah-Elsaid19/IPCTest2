@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from datetime import timedelta
 
-from .models import Event, EventRegistration
+from .models import Event, EventRegistration, EventbriteAttendeeSnapshot
 
 
 class AdminEventApiTests(TestCase):
@@ -83,6 +83,10 @@ class AdminEventApiTests(TestCase):
         self.assertEqual(update_response.data["status"], "live")
         self.assertTrue(update_response.data["is_published"])
 
+        delete_response = self.client.delete(f"/api/admin/events/{event_id}")
+        self.assertEqual(delete_response.status_code, 204)
+        self.assertFalse(Event.objects.filter(pk=event_id).exists())
+
     def test_end_date_must_not_precede_start_date(self):
         self.client.force_authenticate(self.admin)
         response = self.client.patch(
@@ -115,6 +119,10 @@ class AdminEventApiTests(TestCase):
         self.assertEqual(response.status_code, 409, response.data)
         synced_event.refresh_from_db()
         self.assertEqual(synced_event.title, "Synced Eventbrite Event")
+
+        delete_response = self.client.delete(f"/api/admin/events/{synced_event.pk}")
+        self.assertEqual(delete_response.status_code, 409, delete_response.data)
+        self.assertTrue(Event.objects.filter(pk=synced_event.pk).exists())
 
     def test_admin_can_hide_eventbrite_event_from_ipc_site(self):
         synced_event = Event.objects.create(
@@ -171,14 +179,24 @@ class AdminEventApiTests(TestCase):
         }]
         self.client.force_authenticate(self.admin)
 
-        response = self.client.get("/api/admin/eventbrite/attendees")
+        response = self.client.get("/api/admin/eventbrite/attendees", {"refresh": "1"})
 
         self.assertEqual(response.status_code, 200, response.data)
-        self.assertEqual(response.data[0]["name"], "Nora Ali")
-        self.assertEqual(response.data[0]["event_name"], synced_event.title)
-        self.assertEqual(response.data[0]["reference"], "EB-order-789")
-        self.assertEqual(response.data[0]["ticket_name"], "General admission")
-        self.assertEqual(response.data[0]["source"], "eventbrite")
+        self.assertFalse(response.data["is_stale"])
+        attendee = response.data["results"][0]
+        self.assertEqual(attendee["name"], "Nora Ali")
+        self.assertEqual(attendee["event_name"], synced_event.title)
+        self.assertEqual(attendee["reference"], "EB-order-789")
+        self.assertEqual(attendee["ticket_name"], "General admission")
+        self.assertEqual(attendee["source"], "eventbrite")
+
+        cache.clear()
+        cached_response = self.client.get("/api/admin/eventbrite/attendees")
+        self.assertEqual(cached_response.status_code, 200)
+        self.assertTrue(cached_response.data["is_stale"])
+        self.assertEqual(cached_response.data["results"][0]["name"], "Nora Ali")
+        self.assertEqual(EventbriteAttendeeSnapshot.objects.count(), 1)
+        self.assertEqual(get_client.call_count, 1)
 
     @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
     @patch("events.views.get_configured_client")
@@ -197,11 +215,11 @@ class AdminEventApiTests(TestCase):
         }]
         self.client.force_authenticate(self.admin)
 
-        response = self.client.get("/api/admin/eventbrite/attendees")
+        response = self.client.get("/api/admin/eventbrite/attendees", {"refresh": "1"})
 
         self.assertEqual(response.status_code, 200, response.data)
-        self.assertEqual(response.data[0]["event_name"], "Eventbrite Risk Masterclass")
-        self.assertEqual(response.data[0]["reference"], "EB-order-999")
+        self.assertEqual(response.data["results"][0]["event_name"], "Eventbrite Risk Masterclass")
+        self.assertEqual(response.data["results"][0]["reference"], "EB-order-999")
 
     def test_non_staff_cannot_view_eventbrite_attendees(self):
         self.client.force_authenticate(self.member)

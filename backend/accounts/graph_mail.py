@@ -129,7 +129,7 @@ def send_password_reset_email(*, recipient, name, reset_url):
       <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.6;max-width:600px;margin:auto">
         <h1 style="color:#5b3b82">Reset your IPC password</h1>
         <p>Hello {safe_name},</p>
-        <p>An IPC administrator requested a secure password reset for your account.</p>
+        <p>A secure password reset was requested for your IPC account.</p>
         <p><a href="{safe_url}" style="display:inline-block;background:#d79525;color:#0b0b0b;padding:12px 20px;text-decoration:none;font-weight:700">Set a new password</a></p>
         <p>This link is single-use and expires in {settings.PASSWORD_RESET_EXPIRE_MINUTES} minutes.</p>
         <p>If you were not expecting this email, contact IPC support. Do not forward this message.</p>

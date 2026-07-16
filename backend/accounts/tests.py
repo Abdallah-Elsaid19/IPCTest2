@@ -1,20 +1,24 @@
 import base64
 import html as html_lib
 import re
+from io import BytesIO
 from email import policy
 from email.parser import BytesParser
 from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, override_settings
 from django.core.cache import cache
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
+from PIL import Image
 from unittest.mock import patch
 from rest_framework.test import APIClient, APITestCase
 from clubs.models import ClubEnquiry
 from contact.models import ContactSubmission
+from awards.models import AwardsInterest
 from applications.models import Application, FormDefinition
 from memberships.models import MembershipGrade
 from accounts.graph_mail import (
@@ -82,6 +86,54 @@ class AuthenticationApiTests(APITestCase):
         self.assertEqual(self.post("/api/auth/logout").status_code, 204)
         self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
 
+    def test_user_can_update_own_name_username_and_profile_image(self):
+        self.post("/api/auth/login", {
+            "email": "member@example.com",
+            "password": "Strong-Test-Pass-938!",
+        })
+        image_bytes = BytesIO()
+        Image.new("RGB", (32, 32), color=(215, 149, 37)).save(image_bytes, format="PNG")
+        image = SimpleUploadedFile("avatar.png", image_bytes.getvalue(), content_type="image/png")
+
+        response = self.client.patch(
+            "/api/auth/me",
+            {"full_name": "Amina Hassan", "username": "amina.hassan", "profile_image": image},
+            format="multipart",
+            HTTP_X_CSRFTOKEN=self.csrf,
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        profile_image = self.user.admin_profile.profile_image
+        self.addCleanup(profile_image.delete, save=False)
+        self.assertEqual(response.data["user"]["name"], "Amina Hassan")
+        self.assertEqual(response.data["user"]["username"], "amina.hassan")
+        self.assertIn("/media/profiles/", response.data["user"]["profile_image_url"])
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Amina")
+        self.assertEqual(self.user.last_name, "Hassan")
+
+    def test_profile_update_does_not_allow_email_or_role_changes(self):
+        self.post("/api/auth/login", {
+            "email": "member@example.com",
+            "password": "Strong-Test-Pass-938!",
+        })
+        response = self.client.patch(
+            "/api/auth/me",
+            {
+                "full_name": "Amina Updated",
+                "username": "ipc.member",
+                "email": "changed@example.com",
+                "role": "admin",
+            },
+            format="json",
+            HTTP_X_CSRFTOKEN=self.csrf,
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "member@example.com")
+        self.assertFalse(self.user.is_staff)
+
 
 class AdminDashboardApiTests(APITestCase):
     def setUp(self):
@@ -112,6 +164,42 @@ class AdminDashboardApiTests(APITestCase):
         self.assertEqual(response.data["counts"]["contact_submissions"], 1)
         self.assertEqual(response.data["counts"]["club_enquiries"], 1)
         self.assertEqual(len(response.data["recent_enquiries"]), 2)
+
+    def test_staff_can_view_complete_enquiry_details(self):
+        enquiry = ContactSubmission.objects.get(email="contact@example.com")
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get(f"/api/admin/enquiries/contact/{enquiry.pk}")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["name"], enquiry.name)
+        self.assertEqual(response.data["email"], enquiry.email)
+        self.assertEqual(response.data["message"], enquiry.message)
+        self.assertEqual(response.data["subject"], enquiry.category)
+        self.assertEqual(response.data["type"], "contact")
+
+    def test_non_staff_cannot_view_enquiry_details(self):
+        enquiry = ContactSubmission.objects.get(email="contact@example.com")
+        self.client.force_authenticate(self.member)
+        response = self.client.get(f"/api/admin/enquiries/contact/{enquiry.pk}")
+        self.assertEqual(response.status_code, 403)
+
+    def test_enquiry_list_includes_awards_interests(self):
+        award_enquiry = AwardsInterest.objects.create(
+            name="Award candidate",
+            email="candidate@example.com",
+            interest_type="General award enquiry",
+            message="Please send the award details.",
+        )
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get("/api/admin/enquiries")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        award_rows = [item for item in response.data if item["type"] == "award"]
+        self.assertEqual(len(award_rows), 1)
+        self.assertEqual(award_rows[0]["id"], str(award_enquiry.pk))
+        self.assertEqual(award_rows[0]["email"], award_enquiry.email)
 
     @patch("accounts.dashboard.send_enquiry_reply_email")
     def test_staff_can_reply_to_contact_enquiry(self, send_reply):
@@ -316,6 +404,50 @@ class AdminUserManagementApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(send_email.call_args.kwargs["recipient"], application.email)
+
+    @patch("accounts.user_management.send_password_reset_email")
+    def test_member_can_request_reset_with_ipc_email_and_receives_it_personally(self, send_email):
+        application = self.link_member_application()
+
+        response = self.client.post(
+            "/api/auth/password-reset/request",
+            {"email": self.member.email.upper()},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(send_email.call_args.kwargs["recipient"], application.email)
+        self.assertNotEqual(response.data["destination"], application.email)
+        reset_url = send_email.call_args.kwargs["reset_url"]
+        self.assertIn("/reset-password?uid=", reset_url)
+        self.assertIn("&token=", reset_url)
+
+    @patch("accounts.user_management.send_password_reset_email")
+    def test_reset_request_rejects_unknown_ipc_email(self, send_email):
+        response = self.client.post(
+            "/api/auth/password-reset/request",
+            {"email": "missing@ipc.invalid"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("incorrect", str(response.data["email"][0]).lower())
+        send_email.assert_not_called()
+
+    @patch("accounts.user_management.send_password_reset_email")
+    def test_reset_request_requires_personal_email_for_managed_ipc_account(self, send_email):
+        self.member.email = "existing.member@ipc.invalid"
+        self.member.save(update_fields=["email"])
+
+        response = self.client.post(
+            "/api/auth/password-reset/request",
+            {"email": self.member.email},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("personal email", str(response.data["email"][0]).lower())
+        send_email.assert_not_called()
 
 
 @override_settings(

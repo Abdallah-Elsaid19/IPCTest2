@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { registrationApi } from "./api";
 import type { RegistrationRecord } from "./types";
+import SEO from "@/components/seo/SEO";
 
 export default function RegistrationDetailsPage({ confirmed = false }: { confirmed?: boolean }) {
   const { reference = "" } = useParams();
@@ -11,6 +12,14 @@ export default function RegistrationDetailsPage({ confirmed = false }: { confirm
   const [record, setRecord] = useState<RegistrationRecord | null>(null);
   const [error, setError] = useState("");
   useEffect(() => { registrationApi.detail(reference, token).then(setRecord).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Registration could not be loaded.")); }, [reference, token]);
+  const registrationDetailsSeo = (
+    <SEO
+      title={confirmed ? "Registration Confirmed" : "Registration Details"}
+      description="View your Institute of Project Controls event registration details."
+      canonicalPath={`/events/registration/${reference}${confirmed ? "/confirmed" : ""}`}
+      noIndex
+    />
+  );
 
   const googleCalendar = useMemo(() => {
     if (!record?.event.starts_at) return "";
@@ -21,10 +30,10 @@ export default function RegistrationDetailsPage({ confirmed = false }: { confirm
     return `https://calendar.google.com/calendar/render?${params}`;
   }, [record]);
 
-  if (error) return <div className="container-content py-24 text-center"><h1 className="font-heading text-3xl font-bold">Registration unavailable</h1><p className="mt-3">{error}</p><Link to="/events" className="btn-primary mt-6 inline-flex">Back to events</Link></div>;
-  if (!record) return <div className="container-content grid min-h-[55vh] place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" /></div>;
+  if (error) return <div className="container-content py-24 text-center">{registrationDetailsSeo}<h1 className="font-heading text-3xl font-bold">Registration unavailable</h1><p className="mt-3">{error}</p><Link to="/events" className="btn-primary mt-6 inline-flex">Back to events</Link></div>;
+  if (!record) return <div className="container-content grid min-h-[55vh] place-items-center">{registrationDetailsSeo}<div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" /></div>;
   const query = token ? `?token=${encodeURIComponent(token)}` : "";
-  return <div className="bg-background-50 py-16 md:py-24"><main className="container-content max-w-4xl">
+  return <div className="bg-background-50 py-16 md:py-24">{registrationDetailsSeo}<main className="container-content max-w-4xl">
     <div className="border border-background-200 bg-white p-6 shadow-xl md:p-10">
       {confirmed && <div className="mb-8 flex items-start gap-4 border-b border-background-200 pb-8"><CheckCircle2 className="mt-1 shrink-0 text-primary-600" size={38}/><div><p className="eyebrow text-primary-700">Registration complete</p><h1 className="mt-2 font-heading text-3xl font-bold md:text-4xl">You’re registered</h1><p className="mt-2 text-foreground-600">Reference <strong>{record.reference}</strong></p></div></div>}
       {!confirmed && <><p className="eyebrow text-primary-700">Registration</p><h1 className="mt-2 font-heading text-3xl font-bold">{record.reference}</h1></>}

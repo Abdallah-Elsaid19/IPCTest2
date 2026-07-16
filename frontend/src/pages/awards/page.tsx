@@ -1,9 +1,59 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import { SimpleInterestForm } from "@/components/forms/SimpleInterestForm";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
+import type { AwardCategory, AwardProgramme } from "@/features/awards/types";
+import { apiJson } from "@/lib/api";
 
 export default function Awards() {
+  const [featuredAwards, setFeaturedAwards] = useState<AwardProgramme[] | null>(null);
+  const [awardCategories, setAwardCategories] = useState<AwardCategory[] | null>(null);
+  const [awardsError, setAwardsError] = useState("");
+
+  const loadFeaturedAwards = useCallback(async (signal?: AbortSignal) => {
+    setFeaturedAwards(null);
+    setAwardsError("");
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const programmes = await apiJson<AwardProgramme[]>(
+          "/api/award-programmes",
+          undefined,
+          { signal },
+        );
+        setFeaturedAwards(programmes);
+        return;
+      } catch (error) {
+        if (signal?.aborted) return;
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          continue;
+        }
+        setFeaturedAwards([]);
+        setAwardsError(
+          error instanceof Error
+            ? error.message
+            : "Award programmes could not be loaded.",
+        );
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadFeaturedAwards(controller.signal);
+    return () => controller.abort();
+  }, [loadFeaturedAwards]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    apiJson<AwardCategory[]>("/api/award-categories", undefined, { signal: controller.signal })
+      .then(setAwardCategories)
+      .catch(() => { if (!controller.signal.aborted) setAwardCategories([]); });
+    return () => controller.abort();
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -22,64 +72,6 @@ export default function Awards() {
 
     return () => observer.disconnect();
   }, []);
-
-  const featuredAwards = [
-    {
-      name: "IPC Project Controls Team of the Year",
-      category: "Commercial",
-      description:
-        "Recognises a project controls team that has made an exceptional contribution to project delivery through integrated planning, cost control, risk management and performance reporting. Open to teams from any sector, project size or geography.",
-      criteria: ["Demonstrated integration of multiple controls disciplines", "Measurable improvement in project outcomes", "Evidence of innovation or practice development", "Professional conduct and collaboration"],
-    },
-    {
-      name: "IPC Young Professional Award",
-      category: "Professional",
-      description:
-        "Celebrates an emerging project controls professional under 30 who has made a notable contribution to their project, organisation or the wider profession. Candidates may self-nominate or be nominated by employers or mentors.",
-      criteria: ["Evidence of professional growth and learning", "Contribution to project or team outcomes", "Commitment to CPD and development", "Potential for future leadership"],
-    },
-    {
-      name: "IPC Dissertation Prize",
-      category: "Academic",
-      description:
-        "Awarded for outstanding undergraduate or postgraduate dissertation research in project controls, planning, cost engineering, risk management or related fields. Open to students from any recognised university programme worldwide.",
-      criteria: ["Originality and relevance of research", "Methodological rigour", "Practical applicability to project controls", "Quality of written presentation"],
-    },
-    {
-      name: "IPC Lifetime Contribution Award",
-      category: "Professional",
-      description:
-        "The Institute's highest honour, recognising a career of distinguished contribution to project controls practice, education, standards development or professional leadership. Awarded at the discretion of the Fellowship panel.",
-      criteria: ["Sustained contribution over 20+ years", "Influence on the profession or discipline", "Mentoring and development of others", "Demonstrated integrity and professional conduct"],
-    },
-  ];
-
-  const categories = [
-    {
-      icon: "ri-graduation-cap-line",
-      title: "Academic Awards",
-      description:
-        "Recognise dissertations, student research, emerging researchers, academic contribution and university project controls excellence.",
-      subItems: ["IPC Dissertation Prize", "Student Research Award", "Academic Contribution Award", "University Partnership Prize"],
-      image: "https://readdy.ai/api/search-image?query=University%20graduation%20ceremony%20with%20academic%20regalia%20in%20a%20grand%20historic%20hall%2C%20warm%20golden%20lighting%2C%20scroll%20and%20certificate%20details%2C%20proud%20academic%20atmosphere%2C%20traditional%20yet%20modern%20setting%2C%20shallow%20depth%20of%20field%2C%20editorial%20quality&width=500&height=350&seq=awards-cat-academic-02&orientation=landscape",
-    },
-    {
-      icon: "ri-building-2-line",
-      title: "Commercial Awards",
-      description:
-        "Recognise project controls teams, innovation, digital transformation, risk and change management, and major project achievement.",
-      subItems: ["Project Controls Team of the Year", "Digital Innovation Award", "Risk Management Excellence", "Major Project Achievement"],
-      image: "https://readdy.ai/api/search-image?query=Professional%20team%20receiving%20an%20award%20on%20stage%20at%20a%20modern%20corporate%20ceremony%2C%20warm%20stage%20lighting%2C%20elegant%20glass%20trophy%2C%20confident%20professional%20expressions%2C%20large%20LED%20screen%20backdrop%2C%20premium%20event%20atmosphere%2C%20editorial%20photography%20style&width=500&height=350&seq=awards-cat-commercial-02&orientation=landscape",
-    },
-    {
-      icon: "ri-user-star-line",
-      title: "Professional Awards",
-      description:
-        "Recognise individuals, young professionals, leaders, mentors, Fellows, women in project controls and lifetime contribution.",
-      subItems: ["Young Professional Award", "Mentor of the Year", "Women in Project Controls", "Lifetime Contribution Award"],
-      image: "https://readdy.ai/api/search-image?query=Individual%20professional%20receiving%20a%20prestigious%20recognition%20award%20certificate%20in%20an%20elegant%20ceremony%20setting%2C%20warm%20spotlight%20effect%2C%20gold%20trophy%20on%20pedestal%2C%20professional%20handshake%2C%20refined%20corporate%20atmosphere%2C%20shallow%20depth%20of%20field%2C%20editorial%20quality&width=500&height=350&seq=awards-cat-professional-02&orientation=landscape",
-    },
-  ];
 
   const benefits = [
     {
@@ -118,6 +110,7 @@ export default function Awards() {
 
   return (
     <div>
+      <SEO {...pageSeo.awards} />
       {/* Hero */}
       <section className="relative min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden bg-background-950">
         <div className="absolute inset-0 opacity-25">
@@ -167,21 +160,24 @@ export default function Awards() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {categories.map((cat, index) => (
-              <div key={cat.title} className={`reveal reveal-delay-${index + 1}`}>
+            {awardCategories === null && [0, 1, 2].map((item) => (
+              <div key={item} className="h-[500px] animate-pulse bg-background-100" />
+            ))}
+            {awardCategories?.map((cat) => (
+              <div key={cat.id}>
                 <div className="bg-background-100 border border-background-200/70 overflow-hidden h-full transition-all duration-300 hover:border-primary-200 group">
                   <div className="relative overflow-hidden h-44">
                     <img
             loading="lazy"
             decoding="async"
-                      src={cat.image}
+                      src={cat.image_url}
                       alt={cat.title}
                       className="w-full h-full object-cover image-zoom"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background-950/70 to-transparent" />
                     <div className="absolute bottom-3 left-3">
                       <div className="w-10 h-10 bg-background-50/20 backdrop-blur-sm flex items-center justify-center">
-                        <i className={`${cat.icon} text-lg text-background-50`} />
+                        <i className={`${cat.icon_class} text-lg text-background-50`} />
                       </div>
                     </div>
                   </div>
@@ -189,7 +185,7 @@ export default function Awards() {
                     <h3 className="font-heading text-xl font-semibold text-background-950 mb-3">{cat.title}</h3>
                     <p className="text-sm text-foreground-600 leading-relaxed mb-5">{cat.description}</p>
                     <div className="space-y-2">
-                      {cat.subItems.map((item) => (
+                      {cat.highlights.map((item) => (
                         <div key={item} className="flex items-center gap-2 text-sm text-background-950">
                           <i className="ri-checkbox-circle-line text-accent-600 text-base shrink-0" />
                           <span>{item}</span>
@@ -200,6 +196,9 @@ export default function Awards() {
                 </div>
               </div>
             ))}
+            {awardCategories?.length === 0 && (
+              <div className="md:col-span-3 border border-background-200 bg-background-100 p-8 text-center text-sm text-foreground-600">No award categories are currently available.</div>
+            )}
           </div>
         </div>
       </section>
@@ -229,17 +228,20 @@ export default function Awards() {
                 </div>
               </div>
               <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {featuredAwards.map((award, index) => (
-                  <div key={award.name} className={`reveal reveal-delay-${index + 2} bg-background-50 border border-background-200/70 p-6 md:p-7 transition-all duration-300 hover:border-primary-200`}>
+                {featuredAwards === null && [0, 1, 2, 3].map((item) => (
+                  <div key={item} className="h-72 animate-pulse bg-background-50 border border-background-200/70" />
+                ))}
+                {featuredAwards?.map((award) => (
+                  <div key={award.id} className="bg-background-50 border border-background-200/70 p-6 md:p-7 transition-all duration-300 hover:border-primary-200">
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-11 h-11 bg-primary-500 flex items-center justify-center shrink-0">
                         <i className="ri-award-line text-lg text-background-950" />
                       </div>
                       <div>
                         <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-primary-600 bg-primary-100 px-2.5 py-1 rounded-full mb-2">
-                          {award.category}
+                          {award.category_title}
                         </span>
-                        <h3 className="font-heading text-lg font-semibold text-background-950 leading-tight">{award.name}</h3>
+                        <h3 className="font-heading text-lg font-semibold text-background-950 leading-tight">{award.title}</h3>
                       </div>
                     </div>
                     <p className="text-sm text-foreground-600 leading-relaxed mb-4">{award.description}</p>
@@ -256,6 +258,20 @@ export default function Awards() {
                     </div>
                   </div>
                 ))}
+                {featuredAwards?.length === 0 && (
+                  <div className="lg:col-span-2 border border-background-200 bg-background-50 p-8 text-center text-sm text-foreground-600">
+                    <p>{awardsError || "No active award programmes are currently available."}</p>
+                    {awardsError && (
+                      <button
+                        type="button"
+                        onClick={() => void loadFeaturedAwards()}
+                        className="mt-4 border border-primary-500 px-5 py-2.5 text-xs font-bold text-primary-700 transition hover:bg-primary-50"
+                      >
+                        Try again
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -419,4 +435,3 @@ export default function Awards() {
     </div>
   );
 }
-

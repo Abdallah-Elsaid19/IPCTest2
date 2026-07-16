@@ -86,7 +86,7 @@ export default function AdminOverviewPage() {
       value: data.counts.membership_grades,
       detail: `${data.counts.media_assets} media assets`,
       icon: ShieldCheck,
-      href: `${adminUrl}memberships/membershipgrade/`,
+      href: "/admin/membership-grades",
     },
   ];
   const applicationTotal = Math.max(data.counts.applications, 1);

@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 export default function Scholarships() {
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function Scholarships() {
 
   return (
     <div>
+      <SEO {...pageSeo.scholarships} />
       {/* Hero */}
       <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center bg-background-100">
         <div className="absolute inset-0">

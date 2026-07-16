@@ -1,14 +1,23 @@
 from django.contrib import admin
-from .models import AwardProgramme, AwardsInterest
+from .models import AwardCategory, AwardProgramme, AwardsInterest
+
+
+@admin.register(AwardCategory)
+class AwardCategoryAdmin(admin.ModelAdmin):
+    list_display = ("title", "slug", "sort_order", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("title", "description", "highlights")
+    prepopulated_fields = {"slug": ("title",)}
 
 
 @admin.register(AwardProgramme)
 class AwardProgrammeAdmin(admin.ModelAdmin):
     list_display = ("title", "category", "is_active", "created_at")
     list_filter = ("category", "is_active", "created_at")
-    search_fields = ("title", "description")
+    search_fields = ("title", "description", "criteria")
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("created_at", "updated_at")
+    autocomplete_fields = ("category",)
 
 
 @admin.register(AwardsInterest)

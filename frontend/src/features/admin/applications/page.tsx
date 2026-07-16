@@ -31,7 +31,7 @@ import { formatDate } from "@/features/admin/utils";
 import { notifications } from "@/lib/notifications";
 
 export default function AdminApplicationsPage() {
-  const { updateRecentApplication } = useAdminDashboard();
+  const { updateRecentApplication, refresh } = useAdminDashboard();
   const [result, setResult] = useState<PaginatedAdminApplications | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -95,7 +95,10 @@ export default function AdminApplicationsPage() {
         editingApplication.id,
         status,
       );
-      updateRecentApplication(updated);
+      updateRecentApplication(updated, editingApplication.status);
+      // Keep every overview metric authoritative (for example the user count
+      // after approval) without delaying the status modal or notification.
+      void refresh();
       setEditingApplication(null);
       await loadApplications();
       if (status === "approved") {

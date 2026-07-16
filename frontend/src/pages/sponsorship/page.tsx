@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
 import FeatureCard from "@/components/base/FeatureCard";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 export default function Sponsorship() {
   useEffect(() => {
@@ -114,6 +116,7 @@ export default function Sponsorship() {
 
   return (
     <div>
+      <SEO {...pageSeo.sponsorship} />
       {/* Hero */}
       <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden bg-background-950">
         <div className="absolute inset-0 opacity-20">

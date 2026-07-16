@@ -7,6 +7,8 @@ import KnowledgeMosaic from "./components/KnowledgeMosaic";
 import CommunityMetrics from "./components/CommunityMetrics";
 import CtaTerminal from "./components/CtaTerminal";
 import HeroCanvas from "./components/HeroCanvas";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 export default function Home() {
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function Home() {
 
   return (
     <div className="bg-background-50">
+      <SEO {...pageSeo.home} />
       <HeroCanvas />
       <InstitutionAuthority />
       <DisciplineSystem />

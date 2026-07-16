@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -48,11 +49,13 @@ function EventCard({
   event,
   isVisibilitySaving,
   onEdit,
+  onDelete,
   onToggleVisibility,
 }: {
   event: AdminEvent;
   isVisibilitySaving: boolean;
   onEdit: () => void;
+  onDelete: () => void;
   onToggleVisibility: () => void;
 }) {
   const isEventbriteEvent = Boolean(event.eventbrite_id);
@@ -99,11 +102,14 @@ function EventCard({
             type="button"
             onClick={onToggleVisibility}
             disabled={isVisibilitySaving || (!event.is_published && !event.is_hidden_on_site)}
-            className="col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#D8CCBD] bg-[#F4ECE1] text-xs font-bold text-[#554E47] transition hover:border-primary-500 hover:text-primary-800 disabled:cursor-not-allowed disabled:opacity-45"
+            className={`${isEventbriteEvent ? "col-span-2" : ""} inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#D8CCBD] bg-[#F4ECE1] text-xs font-bold text-[#554E47] transition hover:border-primary-500 hover:text-primary-800 disabled:cursor-not-allowed disabled:opacity-45`}
           >
             {isVisibilitySaving ? <LoaderCircle size={15} className="animate-spin" /> : event.is_hidden_on_site ? <Eye size={15} /> : <EyeOff size={15} />}
             {event.is_hidden_on_site ? "Show on IPC website" : event.is_published ? "Hide from IPC website" : "Not published on website"}
           </button>
+          {!isEventbriteEvent && (
+            <button type="button" onClick={onDelete} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-700 transition hover:bg-red-100" aria-label={`Delete ${event.title}`}><Trash2 size={15}/> Delete</button>
+          )}
         </div>
       </div>
     </article>
@@ -167,6 +173,7 @@ export default function AdminEventsPage() {
   const [localRegistrations, setLocalRegistrations] = useState<DashboardRegistration[]>([]);
   const [eventbriteAttendees, setEventbriteAttendees] = useState<DashboardRegistration[]>([]);
   const [attendeesError, setAttendeesError] = useState("");
+  const [isEventbriteRefreshing, setIsEventbriteRefreshing] = useState(false);
   const [eventPage, setEventPage] = useState(1);
   const [registrationPage, setRegistrationPage] = useState(1);
   const [busyVisibilityId, setBusyVisibilityId] = useState<number | null>(null);
@@ -183,6 +190,8 @@ export default function AdminEventsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<AdminEvent | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const saveLock = useRef(false);
 
   const loadEvents = useCallback(async () => {
@@ -202,7 +211,22 @@ export default function AdminEventsPage() {
     let active = true;
     void adminApi.eventbriteAttendees()
       .then((response) => {
-        if (active) setEventbriteAttendees(response);
+        if (!active) return;
+        setEventbriteAttendees(response.results);
+        if (response.is_stale) {
+          setIsEventbriteRefreshing(true);
+          void adminApi.refreshEventbriteAttendees()
+            .then((fresh) => {
+              if (active) {
+                setEventbriteAttendees(fresh.results);
+                setAttendeesError("");
+              }
+            })
+            .catch((error: unknown) => {
+              if (active) setAttendeesError(error instanceof Error ? error.message : "Eventbrite attendees could not be refreshed.");
+            })
+            .finally(() => { if (active) setIsEventbriteRefreshing(false); });
+        }
       })
       .catch((error: unknown) => {
         if (active) {
@@ -277,6 +301,21 @@ export default function AdminEventsPage() {
       );
     } finally {
       setBusyVisibilityId(null);
+    }
+  };
+
+  const deleteEvent = async () => {
+    if (!deletingEvent || deletingEvent.eventbrite_id || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await adminApi.deleteEvent(deletingEvent.id);
+      setEvents((current) => current.filter((event) => event.id !== deletingEvent.id));
+      notifications.success("IPC event deleted successfully.");
+      setDeletingEvent(null);
+    } catch (error) {
+      notifications.error(error instanceof Error ? error.message : "Could not delete the event.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -390,7 +429,7 @@ export default function AdminEventsPage() {
             </div>
           </div>
           {visibleEvents.length ? <div className="grid gap-6 p-5 md:grid-cols-2 2xl:grid-cols-3">
-            {visibleEvents.map((event) => <EventCard key={event.id} event={event} isVisibilitySaving={busyVisibilityId === event.id} onEdit={() => openEdit(event)} onToggleVisibility={() => void toggleVisibility(event)} />)}
+            {visibleEvents.map((event) => <EventCard key={event.id} event={event} isVisibilitySaving={busyVisibilityId === event.id} onEdit={() => openEdit(event)} onDelete={() => setDeletingEvent(event)} onToggleVisibility={() => void toggleVisibility(event)} />)}
           </div> : <div className="p-5"><EmptyState>No events match the current filters.</EmptyState></div>}
           <PaginationControls page={eventPage} pageCount={eventPageCount} total={filteredEvents.length} label="events" onPageChange={setEventPage} />
         </section>
@@ -399,7 +438,7 @@ export default function AdminEventsPage() {
       )}
 
       <section className="mt-10 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#FFFDF9]">
-        <div className="border-b border-[#E8DED2] px-5 py-4"><h2 className="font-black">Recent registrations</h2><p className="mt-1 text-xs text-[#7B7167]">Latest registration records linked to IPC events.</p></div>
+        <div className="flex items-center justify-between gap-4 border-b border-[#E8DED2] px-5 py-4"><div><h2 className="font-black">Recent registrations</h2><p className="mt-1 text-xs text-[#7B7167]">Latest IPC and Eventbrite registration records.</p></div>{isEventbriteRefreshing && <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary-800"><LoaderCircle size={14} className="animate-spin" /> Updating Eventbrite</span>}</div>
         <div className="flex flex-col gap-3 border-b border-[#E8DED2] p-4 xl:flex-row xl:items-center">
           <div className="relative min-w-0 flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8178]" />
@@ -419,6 +458,16 @@ export default function AdminEventsPage() {
       </section>
 
       <EventFormModal event={editingEvent} open={formOpen} isSaving={isSaving} onClose={() => { if (!isSaving) setFormOpen(false); }} onSave={saveEvent} />
+      {deletingEvent && (
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-event-title">
+          <div className="w-full max-w-md rounded-2xl border border-[#DED2C3] bg-[#FFFDF9] p-6 shadow-2xl">
+            <div className="flex items-start justify-between"><span className="grid h-11 w-11 place-items-center rounded-xl bg-red-100 text-red-700"><Trash2 size={20}/></span><button type="button" onClick={() => setDeletingEvent(null)} disabled={isDeleting} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-[#F4ECE1] disabled:opacity-50" aria-label="Close delete confirmation"><X size={18}/></button></div>
+            <h2 id="delete-event-title" className="mt-5 text-xl font-black text-[#202A38]">Delete IPC event?</h2>
+            <p className="mt-3 text-sm leading-6 text-[#655D55]">This permanently deletes <strong>{deletingEvent.title}</strong> from IPC. Existing registration records will remain available. This action does not apply to Eventbrite events.</p>
+            <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setDeletingEvent(null)} disabled={isDeleting} className="h-10 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold disabled:opacity-50">Cancel</button><button type="button" onClick={() => void deleteEvent()} disabled={isDeleting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-600 px-4 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60">{isDeleting ? <LoaderCircle size={15} className="animate-spin"/> : <Trash2 size={15}/>} {isDeleting ? "Deleting..." : "Delete event"}</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

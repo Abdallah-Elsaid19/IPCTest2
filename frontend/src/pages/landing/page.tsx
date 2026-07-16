@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { LANDING_BACKGROUND_VIDEO } from "@/config/media";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
+import { buildOrganizationSchema, buildWebsiteSchema } from "@/lib/seo/structuredData";
+
+const landingStructuredData = [buildOrganizationSchema(), buildWebsiteSchema()];
 
 export default function LandingPage() {
   const [visible, setVisible] = useState(false);
@@ -16,6 +21,7 @@ export default function LandingPage() {
       ref={containerRef}
       className="relative w-full h-screen overflow-hidden bg-background-950"
     >
+      <SEO {...pageSeo.landing} structuredData={landingStructuredData} />
       {/* ── Dot Grid Pattern ── */}
       <div className="absolute inset-0 dot-grid-gold opacity-20" />
 

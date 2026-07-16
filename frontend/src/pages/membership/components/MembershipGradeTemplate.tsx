@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import useScrollReveal from "@/hooks/useScrollReveal";
 import type { MembershipGradeData } from "@/mocks/membershipGrades";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
+import SEO from "@/components/seo/SEO";
+import { buildBreadcrumbSchema } from "@/lib/seo/structuredData";
 
 interface Step {
   step: number;
@@ -199,8 +201,22 @@ export default function MembershipGradeTemplate({ data }: Props) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname]);
 
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", path: "/home" },
+    { name: "Membership", path: "/membership" },
+    { name: data.title, path: `/membership/${data.slug}` },
+  ]);
+
   return (
     <div className="bg-background-50">
+      <SEO
+        title={data.title}
+        description={data.heroDescription}
+        canonicalPath={`/membership/${data.slug}`}
+        image={data.heroImage}
+        keywords={["project controls membership", data.title.toLowerCase(), data.abbreviation]}
+        structuredData={breadcrumbSchema}
+      />
       {/* ===== HERO ===== */}
       <section className="relative min-h-[540px] md:min-h-[640px] flex items-end overflow-hidden bg-background-950">
         <div className="absolute inset-0">

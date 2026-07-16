@@ -3,6 +3,8 @@ import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
 import ClubEnquiryModal from "@/features/clubs/components/ClubEnquiryModal";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 export default function Clubs() {
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
@@ -119,6 +121,7 @@ export default function Clubs() {
 
   return (
     <div>
+      <SEO {...pageSeo.clubs} />
       {/* Hero */}
       <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center bg-background-100">
         <div className="absolute inset-0">

@@ -21,7 +21,7 @@ function ScrollToTop() {
 
 function AppLayout() {
   const location = useLocation();
-  const isLanding = location.pathname === "/" || location.pathname === "/login" || location.pathname === "/reset-password";
+  const isLanding = location.pathname === "/" || location.pathname === "/login" || location.pathname === "/forgot-password" || location.pathname === "/reset-password";
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dashboard");
 
   if (isLanding) {

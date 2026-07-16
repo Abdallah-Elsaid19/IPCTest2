@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import LoginSerializer, UserSerializer
+from .serializers import LoginSerializer, UserProfileUpdateSerializer, UserSerializer
 
 
 User = get_user_model()
@@ -118,3 +118,13 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         return Response({"user": UserSerializer(request.user).data})
+
+    def patch(self, request):
+        serializer = UserProfileUpdateSerializer(
+            request.user,
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({"user": UserSerializer(user).data})

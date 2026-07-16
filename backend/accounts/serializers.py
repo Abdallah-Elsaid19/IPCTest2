@@ -1,5 +1,10 @@
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.db import transaction
 from rest_framework import serializers
+
+from ipc_backend.validators import validate_image
+from .models import AdminProfile
 
 
 User = get_user_model()
@@ -8,10 +13,11 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    profile_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role")
+        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url")
         read_only_fields = fields
 
     def get_name(self, user):
@@ -22,6 +28,53 @@ class UserSerializer(serializers.ModelSerializer):
         if profile:
             return profile.role
         return "admin" if user.is_staff else "user"
+
+    def get_profile_image_url(self, user):
+        profile = getattr(user, "admin_profile", None)
+        return profile.profile_image.url if profile and profile.profile_image else None
+
+
+class UserProfileUpdateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=300, trim_whitespace=True)
+    username = serializers.CharField(max_length=150, validators=[UnicodeUsernameValidator()])
+    profile_image = serializers.ImageField(required=False, validators=[validate_image])
+
+    def validate_full_name(self, value):
+        value = " ".join(value.split())
+        if len(value) < 2:
+            raise serializers.ValidationError("Full name must contain at least 2 characters.")
+        return value
+
+    def validate_username(self, value):
+        value = value.strip()
+        queryset = User.objects.filter(username__iexact=value).exclude(pk=self.context["request"].user.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A user with this username already exists.")
+        return value
+
+    @transaction.atomic
+    def update(self, user, validated_data):
+        full_name = validated_data["full_name"]
+        name_parts = full_name.split(maxsplit=1)
+        user.first_name = name_parts[0]
+        user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+        user.username = validated_data["username"]
+        user.save(update_fields=["first_name", "last_name", "username"])
+
+        image = validated_data.get("profile_image")
+        if image is not None:
+            profile, _ = AdminProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    "role": AdminProfile.Role.ADMIN if user.is_staff else AdminProfile.Role.USER,
+                },
+            )
+            old_image = profile.profile_image
+            profile.profile_image = image
+            profile.save(update_fields=["profile_image", "updated_at"])
+            if old_image and old_image.name != profile.profile_image.name:
+                old_image.delete(save=False)
+        return user
 
 
 

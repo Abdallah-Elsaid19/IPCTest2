@@ -121,6 +121,7 @@ REST_FRAMEWORK = {
         "auth_login": env("DRF_AUTH_LOGIN_THROTTLE", default="5/min"),
         "auth_refresh": env("DRF_AUTH_REFRESH_THROTTLE", default="30/hour"),
         "admin_password_reset": env("DRF_ADMIN_PASSWORD_RESET_THROTTLE", default="10/hour"),
+        "password_reset_request": env("DRF_PASSWORD_RESET_REQUEST_THROTTLE", default="5/hour"),
         "admin_enquiry_reply": env("DRF_ADMIN_ENQUIRY_REPLY_THROTTLE", default="30/hour"),
         "password_reset_confirm": env("DRF_PASSWORD_RESET_CONFIRM_THROTTLE", default="10/hour"),
         "event_registration": env("DRF_EVENT_REGISTRATION_THROTTLE", default="10/hour"),

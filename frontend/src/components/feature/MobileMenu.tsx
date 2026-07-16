@@ -70,8 +70,10 @@ export default function MobileMenu({ isOpen, onClose, navItems, currentPath }: M
                 <p className="truncate text-sm font-semibold text-background-950">{user.name}</p>
                 <p className="truncate text-xs text-foreground-500">{user.email}</p>
               </div>
-              {user.is_staff && (
+              {user.is_staff ? (
                 <Link to="/admin" onClick={onClose} className="btn-primary w-full text-center text-sm">Dashboard</Link>
+              ) : (
+                <Link to="/profile" onClick={onClose} className="btn-primary w-full text-center text-sm">Profile</Link>
               )}
               <button type="button" onClick={() => { void logout(); onClose(); }} className="btn-ghost w-full text-center text-sm">Sign out</button>
             </>

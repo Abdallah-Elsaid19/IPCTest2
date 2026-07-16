@@ -10,7 +10,10 @@ interface AdminDashboardContextValue {
   isLoading: boolean;
   isRefreshing: boolean;
   refresh: () => Promise<void>;
-  updateRecentApplication: (application: AdminApplicationDetail) => void;
+  updateRecentApplication: (
+    application: AdminApplicationDetail,
+    previousStatus?: string,
+  ) => void;
 }
 
 const AdminDashboardContext = createContext<AdminDashboardContextValue | null>(null);
@@ -53,19 +56,47 @@ export function AdminDashboardProvider({ children }: { children: ReactNode }) {
     if (needsDashboardData && !data) void loadDashboard();
   }, [data, loadDashboard, needsDashboardData]);
 
-  const updateRecentApplication = useCallback((application: AdminApplicationDetail) => {
-    setData((current) => current ? {
-      ...current,
-      recent_applications: current.recent_applications.map((item) =>
-        item.id === application.id
-          ? {
-              ...item,
-              status: application.status,
-              approved_user_email: application.approved_user_email,
-            }
-          : item,
-      ),
-    } : current);
+  const updateRecentApplication = useCallback((
+    application: AdminApplicationDetail,
+    previousStatus?: string,
+  ) => {
+    setData((current) => {
+      if (!current) return current;
+      const nextStatus = application.status;
+      const statusChanged = Boolean(previousStatus && previousStatus !== nextStatus);
+      const pendingStatuses = new Set(["submitted", "under_review"]);
+      const pendingDelta = statusChanged
+        ? Number(pendingStatuses.has(nextStatus)) - Number(pendingStatuses.has(previousStatus!))
+        : 0;
+      const applicationStatuses = { ...current.application_statuses };
+      if (statusChanged) {
+        applicationStatuses[previousStatus!] = Math.max(
+          0,
+          (applicationStatuses[previousStatus!] || 0) - 1,
+        );
+        applicationStatuses[nextStatus] = (applicationStatuses[nextStatus] || 0) + 1;
+      }
+      return {
+        ...current,
+        application_statuses: applicationStatuses,
+        counts: {
+          ...current.counts,
+          applications_pending: Math.max(
+            0,
+            current.counts.applications_pending + pendingDelta,
+          ),
+        },
+        recent_applications: current.recent_applications.map((item) =>
+          item.id === application.id
+            ? {
+                ...item,
+                status: nextStatus,
+                approved_user_email: application.approved_user_email,
+              }
+            : item,
+        ),
+      };
+    });
   }, []);
 
   const value = useMemo(() => ({

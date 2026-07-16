@@ -65,3 +65,8 @@ def evidence_upload_to(instance, filename):
 def media_upload_to(instance, filename):
     ext = Path(filename).suffix.lower()
     return os.path.join("media-library", f"{uuid4().hex}{ext}")
+
+
+def profile_image_upload_to(instance, filename):
+    ext = Path(filename).suffix.lower()
+    return os.path.join("profiles", str(instance.user_id or "pending"), f"{uuid4().hex}{ext}")

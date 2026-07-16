@@ -7,6 +7,8 @@ import { z } from "zod";
 
 import { adminApi } from "@/features/admin/adminApi";
 import { notifications } from "@/lib/notifications";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 const schema = z
   .object({
@@ -51,6 +53,7 @@ export default function PasswordResetPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-[#0B0B0B] px-4 py-8">
+      <SEO {...pageSeo.resetPassword} />
       <section className="w-full max-w-lg border border-white/15 bg-[#11100F] p-7 text-white shadow-2xl sm:p-10">
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary-500 text-[#0B0B0B]">
@@ -71,8 +74,8 @@ export default function PasswordResetPage() {
 
         {!validLink ? (
           <div className="mt-7 rounded-xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200">
-            This password-reset link is incomplete. Request a new email from an
-            IPC administrator.
+            This password-reset link is incomplete. Request a new password-reset
+            email from the sign-in page.
           </div>
         ) : (
           <form onSubmit={handleSubmit(submit)} className="mt-7 space-y-5">
@@ -128,10 +131,10 @@ export default function PasswordResetPage() {
         )}
         <p className="mt-7 text-center text-xs text-white/45">
           <Link
-            to="/login"
+            to={validLink ? "/login" : "/forgot-password"}
             className="font-bold text-primary-500 hover:text-primary-400"
           >
-            Return to sign in
+            {validLink ? "Return to sign in" : "Request a new link"}
           </Link>
         </p>
       </section>

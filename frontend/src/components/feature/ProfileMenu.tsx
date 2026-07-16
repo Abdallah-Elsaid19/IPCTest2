@@ -45,7 +45,9 @@ export default function ProfileMenu() {
   return (
     <div ref={menuRef} className="relative hidden lg:block">
       <button type="button" onClick={() => setIsOpen((value) => !value)} className="flex items-center gap-2 text-background-300 transition-colors hover:text-background-50" aria-haspopup="menu" aria-expanded={isOpen} aria-label="Open account menu">
-        <span className="grid h-9 w-9 place-items-center rounded-full border border-primary-500/60 bg-primary-500/15 text-xs font-bold text-primary-400">{initials}</span>
+        <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-primary-500/60 bg-primary-500/15 text-xs font-bold text-primary-400">
+          {user.profile_image_url ? <img src={user.profile_image_url} alt="" className="h-full w-full object-cover" /> : initials}
+        </span>
         <ChevronDown size={15} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
@@ -53,7 +55,9 @@ export default function ProfileMenu() {
         <div className="absolute right-0 top-[calc(100%+0.75rem)] w-72 border border-background-700/70 bg-background-950 shadow-[0_24px_60px_rgba(0,0,0,0.45)]" role="menu">
           <div className="border-b border-background-800 px-5 py-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-500 text-sm font-bold text-background-950">{initials}</span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-primary-500 text-sm font-bold text-background-950">
+                {user.profile_image_url ? <img src={user.profile_image_url} alt="" className="h-full w-full object-cover" /> : initials}
+              </span>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-background-50">{user.name}</p>
                 <p className="truncate text-xs text-background-500">{user.email}</p>
@@ -70,7 +74,7 @@ export default function ProfileMenu() {
                   <LayoutDashboard size={17} className="text-primary-500" /> Dashboard
                 </Link>
             :   
-             <Link to="/admin/profile" className="flex items-center gap-3 px-3 py-3 text-sm text-background-300 transition-colors hover:bg-background-900 hover:text-background-50" role="menuitem">
+             <Link to="/profile" className="flex items-center gap-3 px-3 py-3 text-sm text-background-300 transition-colors hover:bg-background-900 hover:text-background-50" role="menuitem">
                   <UserRound size={17} className="text-primary-500" /> Profile
                 </Link>
             }

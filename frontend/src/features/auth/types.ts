@@ -8,6 +8,7 @@ export interface AuthUser {
   is_staff: boolean;
   is_superuser: boolean;
   role: "admin" | "user";
+  profile_image_url: string | null;
 }
 
 export interface AuthResponse {

@@ -12,6 +12,7 @@ export const simpleInterestSchema = z.object({
   event_name: z.string().trim().max(220),
   event_type: z.enum(["London Master Class", "Regional Club", "Other"]),
   organisation: z.string().trim().max(180),
+  programme: z.string().trim(),
   interest_type: z.enum(["Nominate", "Sponsor", "Judge", "General"]),
   message: z.string().trim().max(5000),
   dietary_access_needs: z.string().trim().max(2000),
@@ -32,8 +33,13 @@ export function createSimpleInterestSchema(type: SimpleInterestType) {
     if (type === "event" && !data.event_name) {
       context.addIssue({ code: "custom", path: ["event_name"], message: "Event name is required." });
     }
-    if (type === "awards" && data.message.length < 10) {
-      context.addIssue({ code: "custom", path: ["message"], message: "Message must be at least 10 characters." });
+    if (type === "awards") {
+      if (!/^[1-9]\d*$/.test(data.programme)) {
+        context.addIssue({ code: "custom", path: ["programme"], message: "Please select an award programme." });
+      }
+      if (data.message.length < 10) {
+        context.addIssue({ code: "custom", path: ["message"], message: "Message must be at least 10 characters." });
+      }
     }
   });
 }

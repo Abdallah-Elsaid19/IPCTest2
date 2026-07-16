@@ -4,6 +4,8 @@ import SectionHeader from "@/components/base/SectionHeader";
 import PathwayCard from "@/components/base/PathwayCard";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { apiJson, type MembershipGrade } from "@/lib/api";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 export default function Membership() {
   const [membershipGrades, setMembershipGrades] = useState<MembershipGrade[]>(
@@ -86,6 +88,7 @@ export default function Membership() {
   }, []);
   return (
     <div>
+      <SEO {...pageSeo.membership} />
       {/* ===== HERO ===== */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-background-950 pb-20">
         <div className="absolute inset-0">

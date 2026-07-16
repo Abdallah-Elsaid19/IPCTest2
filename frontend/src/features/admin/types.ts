@@ -125,6 +125,12 @@ export interface DashboardEnquiry {
   created_at: string;
 }
 
+export interface AdminEnquiryDetail extends DashboardEnquiry {
+  message: string;
+  updated_at: string | null;
+  metadata: Array<{ label: string; value: string | null }>;
+}
+
 export interface DashboardRegistration {
   id: number | string;
   name: string;
@@ -138,6 +144,42 @@ export interface DashboardRegistration {
   ticket_name?: string;
   confirmation_email_status?: "pending" | "sent" | "failed";
 }
+
+export interface EventbriteAttendeeResponse {
+  results: DashboardRegistration[];
+  is_stale: boolean;
+  synced_at: string | null;
+}
+
+export type MembershipGradeCode = "AffIPC" | "MIPC" | "AFIPC_L3" | "AFIPC_L4" | "FIPC";
+
+export interface AdminMembershipGrade {
+  id: number;
+  code: MembershipGradeCode;
+  slug: string;
+  title: string;
+  short_title: string;
+  description: string;
+  image_url: string;
+  post_nominal: string;
+  pathway_title: string;
+  pathway_description: string;
+  evidence_requirements: string;
+  cpd_requirements: string;
+  professional_recognition: string;
+  application_pathway: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  benefits: Array<{ id: number; title: string; description: string; display_order: number }>;
+  requirements: Array<{ id: number; requirement_type: string; title: string; description: string; is_required: boolean; display_order: number }>;
+}
+
+export type AdminMembershipGradePayload = Omit<
+  AdminMembershipGrade,
+  "id" | "created_at" | "updated_at" | "benefits" | "requirements"
+>;
 
 export interface DashboardEvent {
   id: number;

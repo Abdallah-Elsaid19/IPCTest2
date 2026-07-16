@@ -1,17 +1,40 @@
 from django.db import models
 
 
+class AwardCategory(models.Model):
+    title = models.CharField(max_length=120)
+    slug = models.SlugField(max_length=140, unique=True)
+    description = models.TextField()
+    image_url = models.URLField(max_length=1000)
+    icon_class = models.CharField(max_length=80)
+    highlights = models.JSONField(default=list)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "title"]
+        verbose_name_plural = "Award categories"
+        indexes = [
+            models.Index(fields=["is_active", "sort_order"], name="awards_cat_active_order_idx"),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
 class AwardProgramme(models.Model):
-    class Category(models.TextChoices):
-        ACADEMIC = "academic", "Academic"
-        COMMERCIAL = "commercial", "Commercial"
-        PROFESSIONAL = "professional", "Professional"
-        OTHER = "other", "Other"
 
     title = models.CharField(max_length=180)
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
-    category = models.CharField(max_length=32, choices=Category.choices, default=Category.OTHER)
+    criteria = models.JSONField(default=list, blank=True)
+    category = models.ForeignKey(
+        AwardCategory,
+        on_delete=models.PROTECT,
+        related_name="programmes",
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -19,8 +42,8 @@ class AwardProgramme(models.Model):
     class Meta:
         ordering = ["title"]
         indexes = [
-            models.Index(fields=["category", "is_active"]),
-            models.Index(fields=["slug"]),
+            models.Index(fields=["category", "is_active"], name="awards_prog_cat_active_idx"),
+            models.Index(fields=["slug"], name="awards_awar_slug_1d6b47_idx"),
         ]
 
     def __str__(self):

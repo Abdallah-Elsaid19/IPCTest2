@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
+import { buildAboutPageSchema } from "@/lib/seo/structuredData";
 
 /* ─────────────────────────────────────────────
    SCROLL-DRIVEN ABOUT PAGE — OWL AS VISUAL GUIDE
@@ -75,6 +78,7 @@ export default function AboutPage() {
 
   return (
     <div className="bg-background-950 text-background-50 overflow-x-hidden">
+      <SEO {...pageSeo.about} structuredData={buildAboutPageSchema(pageSeo.about.description)} />
       {/* ═══════════════════════════════════════════
           SCENE 1 — HERO — Owl Dominant
           ═══════════════════════════════════════════ */}

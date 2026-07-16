@@ -99,7 +99,7 @@ def _status_counts():
     return application_counts, enquiry_counts
 
 
-def _recent_enquiries():
+def _enquiries(limit=None):
     sql = f"""
         SELECT CAST(id AS TEXT), %s AS source, name, email, category AS subject, status, created_at
         FROM {_table(ContactSubmission)}
@@ -113,14 +113,21 @@ def _recent_enquiries():
         FROM {_table(AwardsInterest)} interest
         LEFT JOIN {_table(AwardProgramme)} programme ON programme.id = interest.programme_id
         ORDER BY created_at DESC
-        LIMIT %s
     """
+    params = ["contact", "club", "Club enquiry", "General clubs enquiry", "award"]
+    if limit is not None:
+        sql += " LIMIT %s"
+        params.append(limit)
     with connection.cursor() as cursor:
-        cursor.execute(sql, ["contact", "club", "Club enquiry", "General clubs enquiry", "award", 10])
+        cursor.execute(sql, params)
         return [{
             "id": row[0], "type": row[1], "name": row[2], "email": row[3],
             "subject": row[4], "status": row[5], "created_at": _iso(row[6]),
         } for row in cursor.fetchall()]
+
+
+def _recent_enquiries():
+    return _enquiries(limit=10)
 
 
 def _build_dashboard():
@@ -218,6 +225,67 @@ def _enquiry_for_reply(source, enquiry_id):
         enquiry.email,
         enquiry.programme.title if enquiry.programme_id else enquiry.interest_type,
     )
+
+
+class AdminEnquiryDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, source, enquiry_id):
+        enquiry, recipient_name, recipient_email, enquiry_subject = _enquiry_for_reply(
+            source,
+            enquiry_id,
+        )
+        metadata = []
+        updated_at = None
+        if source == "contact":
+            metadata = [
+                {"label": "Category", "value": enquiry.category},
+                {
+                    "label": "Handled by",
+                    "value": (
+                        enquiry.handled_by.get_full_name().strip()
+                        or enquiry.handled_by.get_username()
+                    ) if enquiry.handled_by_id else "Not assigned",
+                },
+                {"label": "Handled at", "value": _iso(enquiry.handled_at)},
+            ]
+        elif source == "club":
+            metadata = [
+                {"label": "Club", "value": enquiry.club_name or "General clubs enquiry"},
+                {"label": "Club slug", "value": enquiry.club_slug},
+                {"label": "Source page", "value": enquiry.page_url},
+            ]
+            updated_at = enquiry.updated_at
+        else:
+            metadata = [
+                {"label": "Interest type", "value": enquiry.interest_type},
+                {
+                    "label": "Award programme",
+                    "value": enquiry.programme.title if enquiry.programme_id else "Not specified",
+                },
+            ]
+
+        return Response({
+            "id": str(enquiry.pk),
+            "type": source,
+            "name": recipient_name,
+            "email": recipient_email,
+            "subject": enquiry_subject,
+            "message": enquiry.message,
+            "status": enquiry.status,
+            "created_at": _iso(enquiry.created_at),
+            "updated_at": _iso(updated_at),
+            "metadata": metadata,
+        })
+
+
+class AdminEnquiryListView(APIView):
+    """Return all enquiries from contact, clubs and awards in one ordered list."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        return Response(_enquiries())
 
 
 class AdminEnquiryReplyView(APIView):

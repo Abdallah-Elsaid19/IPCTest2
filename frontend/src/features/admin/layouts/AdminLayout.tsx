@@ -4,12 +4,14 @@ import {
   ChevronLeft,
   ExternalLink,
   FileText,
+  GraduationCap,
   Inbox,
   LayoutDashboard,
   LoaderCircle,
   LogOut,
   Menu,
   ShieldCheck,
+  Trophy,
   UserRound,
   UsersRound,
   X,
@@ -18,12 +20,15 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/features/auth/AuthContext";
 import { AdminDashboardProvider } from "@/features/admin/context/AdminDashboardContext";
+import SEO from "@/components/seo/SEO";
 
 const navigation = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard },
   { to: "/admin/applications", label: "Applications", icon: FileText },
   { to: "/admin/enquiries", label: "Enquiries", icon: Inbox },
   { to: "/admin/events", label: "Events", icon: CalendarDays },
+  { to: "/admin/awards", label: "Awards", icon: Trophy },
+  { to: "/admin/membership-grades", label: "Member grades", icon: GraduationCap },
   { to: "/dashboard/users", label: "Users", icon: UsersRound },
   { to: "/admin/profile", label: "Profile", icon: UserRound },
 ];
@@ -200,6 +205,12 @@ export default function AdminLayout() {
     <div
       className={`min-h-screen bg-[#F4ECE1] text-[#221E1A] transition-[grid-template-columns] duration-300 xl:grid ${collapsed ? "xl:grid-cols-[96px_minmax(0,1fr)]" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}
     >
+      <SEO
+        title={`Admin — ${pageLabel}`}
+        description="Internal Institute of Project Controls administration dashboard."
+        canonicalPath={location.pathname}
+        noIndex
+      />
       <aside className="sticky top-0 hidden h-screen p-5 pr-0 xl:block">
         {sidebar}
       </aside>

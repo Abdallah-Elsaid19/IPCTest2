@@ -38,3 +38,24 @@ class MembershipGradeSerializer(serializers.ModelSerializer):
             "benefits",
             "requirements",
         ]
+
+
+class AdminMembershipGradeSerializer(serializers.ModelSerializer):
+    benefits = MembershipGradeBenefitSerializer(many=True, read_only=True)
+    requirements = MembershipGradeRequirementSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MembershipGrade
+        fields = [
+            "id", "code", "slug", "title", "short_title", "description",
+            "image_url", "post_nominal", "pathway_title", "pathway_description",
+            "evidence_requirements", "cpd_requirements", "professional_recognition",
+            "application_pathway", "is_active", "display_order", "created_at",
+            "updated_at", "benefits", "requirements",
+        ]
+        read_only_fields = ["created_at", "updated_at", "benefits", "requirements"]
+
+    def validate_code(self, value):
+        if self.instance and value != self.instance.code:
+            raise serializers.ValidationError("The grade code cannot be changed after creation.")
+        return value

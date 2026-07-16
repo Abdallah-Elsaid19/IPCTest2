@@ -8,6 +8,8 @@ import { z } from "zod";
 import { LANDING_BACKGROUND_VIDEO } from "@/config/media";
 import { notifications } from "@/lib/notifications";
 import { useAuth } from "../AuthContext";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 const loginSchema = z.object({
   email: z
@@ -53,6 +55,7 @@ export default function Login() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background-950 px-4 py-4 sm:px-8 sm:py-5">
+      <SEO {...pageSeo.login} />
       <video
         src={LANDING_BACKGROUND_VIDEO}
         autoPlay
@@ -111,7 +114,7 @@ export default function Login() {
             <div>
               <div className="mb-2 flex items-center justify-between gap-4">
                 <label htmlFor="password" className="text-xs font-bold uppercase tracking-wide text-background-300">Password</label>
-                <Link to="/contact" className="text-xs text-background-400 transition-colors hover:text-primary-500">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-xs text-background-400 transition-colors hover:text-primary-500">Forgot password?</Link>
               </div>
               <div className="relative">
                 <LockKeyhole size={19} strokeWidth={1.8} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-background-500" aria-hidden="true" />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -12,8 +12,16 @@ import {
 const inputClass = "w-full border bg-background-50 px-4 py-3 text-sm text-background-950 focus:border-primary-500 focus:outline-none";
 const errorClass = "mt-1 text-xs text-red-700";
 
+interface AwardProgrammeOption {
+  id: number;
+  title: string;
+}
+
 export function SimpleInterestForm({ type }: { type: SimpleInterestType }) {
   const [submission, setSubmission] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [awardProgrammes, setAwardProgrammes] = useState<AwardProgrammeOption[]>([]);
+  const [areProgrammesLoading, setAreProgrammesLoading] = useState(type === "awards");
+  const [programmesError, setProgrammesError] = useState("");
   const schema = useMemo(() => createSimpleInterestSchema(type), [type]);
   const {
     register,
@@ -31,12 +39,34 @@ export function SimpleInterestForm({ type }: { type: SimpleInterestType }) {
       event_name: "",
       event_type: "London Master Class",
       organisation: "",
+      programme: "",
       interest_type: "General",
       message: "",
       dietary_access_needs: "",
       consent: true,
     },
   });
+
+  useEffect(() => {
+    if (type !== "awards") return;
+    const controller = new AbortController();
+    setAreProgrammesLoading(true);
+    setProgrammesError("");
+    apiJson<AwardProgrammeOption[]>("/api/award-programmes", undefined, {
+      signal: controller.signal,
+    })
+      .then(setAwardProgrammes)
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setProgrammesError(
+          error instanceof Error ? error.message : "Award programmes could not be loaded.",
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAreProgrammesLoading(false);
+      });
+    return () => controller.abort();
+  }, [type]);
 
   async function onSubmit(data: SimpleInterestFormData) {
     setSubmission(null);
@@ -55,7 +85,13 @@ export function SimpleInterestForm({ type }: { type: SimpleInterestType }) {
         });
       }
       if (type === "awards") {
-        await apiJson("/api/awards/interest", { name: data.name, email: data.email, interest_type: data.interest_type, message: data.message });
+        await apiJson("/api/awards/interest", {
+          name: data.name,
+          email: data.email,
+          programme: Number(data.programme),
+          interest_type: data.interest_type,
+          message: data.message,
+        });
       }
       if (type === "newsletter") {
         await apiJson("/api/newsletter", { email: data.email, consent: true, source: "website_footer" });
@@ -128,12 +164,43 @@ export function SimpleInterestForm({ type }: { type: SimpleInterestType }) {
       )}
 
       {type === "awards" && (
-        <div>
-          <select className={`${inputClass} ${errorBorder("interest_type")}`} aria-label="Interest type" {...register("interest_type")}>
-            <option>Nominate</option><option>Sponsor</option><option>Judge</option><option>General</option>
-          </select>
-          {errors.interest_type && <p className={errorClass}>{errors.interest_type.message}</p>}
-        </div>
+        <>
+          <div>
+            <label htmlFor="award-programme" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground-600">
+              Award programme
+            </label>
+            <select
+              id="award-programme"
+              className={`${inputClass} ${errorBorder("programme")}`}
+              disabled={areProgrammesLoading || Boolean(programmesError) || awardProgrammes.length === 0}
+              {...register("programme")}
+            >
+              <option value="">
+                {areProgrammesLoading
+                  ? "Loading award programmes..."
+                  : awardProgrammes.length
+                    ? "Select an award programme"
+                    : "No award programmes available"}
+              </option>
+              {awardProgrammes.map((programme) => (
+                <option key={programme.id} value={programme.id}>
+                  {programme.title}
+                </option>
+              ))}
+            </select>
+            {errors.programme && <p className={errorClass}>{errors.programme.message}</p>}
+            {programmesError && <p role="alert" className={errorClass}>{programmesError}</p>}
+          </div>
+          <div>
+            <label htmlFor="award-interest-type" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground-600">
+              Enquiry type
+            </label>
+            <select id="award-interest-type" className={`${inputClass} ${errorBorder("interest_type")}`} {...register("interest_type")}>
+              <option>Nominate</option><option>Sponsor</option><option>Judge</option><option>General</option>
+            </select>
+            {errors.interest_type && <p className={errorClass}>{errors.interest_type.message}</p>}
+          </div>
+        </>
       )}
 
       <div className="md:col-span-2">
@@ -148,7 +215,7 @@ export function SimpleInterestForm({ type }: { type: SimpleInterestType }) {
         {type !== "event" && errors.message && <p className={errorClass}>{errors.message.message}</p>}
       </div>
 
-      <button type="submit" disabled={isSubmitting} className="btn-primary px-6 py-3 disabled:cursor-wait disabled:opacity-60 md:col-span-2">
+      <button type="submit" disabled={isSubmitting || (type === "awards" && (areProgrammesLoading || Boolean(programmesError) || awardProgrammes.length === 0))} className="btn-primary px-6 py-3 disabled:cursor-wait disabled:opacity-60 md:col-span-2">
         {isSubmitting ? "Submitting..." : "Submit"}
       </button>
       {submission && <p role="status" className={`text-sm md:col-span-2 ${submission.type === "error" ? "text-red-700" : "text-accent-700"}`}>{submission.message}</p>}

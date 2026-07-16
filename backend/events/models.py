@@ -55,6 +55,18 @@ class Event(models.Model):
         return self.title
 
 
+class EventbriteAttendeeSnapshot(models.Model):
+    organization_id = models.CharField(max_length=128, unique=True)
+    payload = models.JSONField(default=list)
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-synced_at"]
+
+    def __str__(self):
+        return f"Eventbrite attendees - {self.organization_id}"
+
+
 class EventRegistration(models.Model):
     class EventType(models.TextChoices):
         LONDON_MASTER_CLASS = "London Master Class", "London Master Class"

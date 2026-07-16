@@ -12,6 +12,7 @@ import {
   type ApplicationField,
   type GradeApplicationConfig,
 } from "./membershipApplicationConfig";
+import SEO from "@/components/seo/SEO";
 
 type FormValue = string | boolean | string[];
 
@@ -216,8 +217,17 @@ export default function MembershipApplicationPage() {
     return () => subscription.unsubscribe();
   }, [allFields, storageKey, watch]);
 
+  const applySeo = (
+    <SEO
+      title={`Apply — ${activeConfig.title}`}
+      description={`Complete your ${activeConfig.title} (${activeConfig.postNominal}) membership application with the Institute of Project Controls.`}
+      canonicalPath={`/membership/${grade}/apply`}
+      noIndex
+    />
+  );
+
   if (!config) return <Navigate to="/membership" replace />;
-  if (submitted) return <section className="min-h-[75vh] bg-background-50 pt-20"><Success config={config} /></section>;
+  if (submitted) return <section className="min-h-[75vh] bg-background-50 pt-20">{applySeo}<Success config={config} /></section>;
 
   const errorFor = (name: string) => {
     const error = errors[name];
@@ -280,6 +290,7 @@ export default function MembershipApplicationPage() {
 
   return (
     <section className="min-h-screen bg-background-50 pb-20 pt-28 md:pt-32">
+      {applySeo}
       <div className="container-content max-w-4xl">
         <Progress currentStep={currentStep} />
         <div className="mb-5 bg-background-950 px-6 py-6 text-background-50 md:px-8">

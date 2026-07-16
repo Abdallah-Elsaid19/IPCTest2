@@ -3,6 +3,8 @@ import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
 import { apiJson, type EventItem } from "@/lib/api";
+import SEO from "@/components/seo/SEO";
+import { pageSeo } from "@/config/pageSeo";
 
 type UpcomingEvent = {
   id?: number;
@@ -155,6 +157,7 @@ export default function Events() {
   }, []);
   return (
     <div>
+      <SEO {...pageSeo.events} />
       {/* Hero */}
       <section className="relative min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden bg-background-950">
         <div className="absolute inset-0 opacity-25">
