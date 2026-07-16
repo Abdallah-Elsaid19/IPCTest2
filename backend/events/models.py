@@ -1,6 +1,48 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
+
+
+def _validate_content_collection(value, required_fields, label):
+    if not isinstance(value, list):
+        raise ValidationError(f"{label} content must be a list.")
+    if not value:
+        raise ValidationError(f"Add at least one {label.lower()} item.")
+    if len(value) > 24:
+        raise ValidationError(f"Add no more than 24 {label.lower()} items.")
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, dict):
+            raise ValidationError(f"{label} item {index} must be an object.")
+        for field in required_fields:
+            field_value = item.get(field)
+            if not isinstance(field_value, str) or not field_value.strip():
+                raise ValidationError(
+                    f"{label} item {index} must include a non-empty {field}."
+                )
+
+
+def validate_event_cards(value):
+    _validate_content_collection(value, ("icon", "title", "description"), "Card")
+
+
+def validate_event_formats(value):
+    _validate_content_collection(
+        value,
+        ("icon", "title", "description", "image"),
+        "Format",
+    )
+
+
+def validate_featured_programme(value):
+    if not isinstance(value, dict):
+        raise ValidationError("Featured programme must be an object.")
+    for field in ("eyebrow", "title", "description", "image_url", "image_alt"):
+        field_value = value.get(field)
+        if not isinstance(field_value, str) or not field_value.strip():
+            raise ValidationError(f"Featured programme must include a non-empty {field}.")
+    validate_event_cards(value.get("highlights"))
 
 
 class Event(models.Model):
@@ -53,6 +95,33 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def has_ended(self):
+        cutoff = self.ends_at or self.starts_at
+        return bool(cutoff and cutoff <= timezone.now())
+
+    @property
+    def lifecycle_status(self):
+        return "ended" if self.has_ended else self.status
+
+
+class EventPageContent(models.Model):
+    key = models.SlugField(max_length=40, unique=True, default="main")
+    featured_programme = models.JSONField(validators=[validate_featured_programme])
+    formats = models.JSONField(validators=[validate_event_formats])
+    audiences = models.JSONField(validators=[validate_event_cards])
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "events_content"
+        verbose_name = "Events page content"
+        verbose_name_plural = "Events page content"
+
+    def __str__(self):
+        return self.key
 
 
 class EventbriteAttendeeSnapshot(models.Model):

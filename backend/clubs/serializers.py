@@ -1,7 +1,14 @@
 from rest_framework import serializers
 
 from ipc_backend.validators import clean_text
-from .models import ClubEnquiry
+from .models import ClubEnquiry, ClubPageContent
+
+
+class ClubPageContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClubPageContent
+        fields = ["regional_clubs", "activities", "audience_values", "updated_at"]
+        read_only_fields = fields
 
 
 class ClubEnquiryCreateSerializer(serializers.ModelSerializer):
@@ -48,4 +55,3 @@ class ClubEnquiryCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("website", None)
         return super().create(validated_data)
-

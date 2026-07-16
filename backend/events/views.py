@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.http import HttpResponse
+from django.http import Http404
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -17,11 +19,12 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .eventbrite import EventbriteError, exchange_code_for_token, get_authorization_url, save_connection
-from .models import Event, EventRegistration, EventbriteAttendeeSnapshot
+from .models import Event, EventPageContent, EventRegistration, EventbriteAttendeeSnapshot
 from .serializers import (
     AdminEventRegistrationSerializer, AdminEventSerializer, AdminEventVisibilitySerializer,
     EventRegistrationConfigSerializer, EventRegistrationCreateSerializer,
-    EventRegistrationDetailSerializer, EventRegistrationSerializer, EventSerializer,
+    EventPageContentSerializer, EventRegistrationDetailSerializer,
+    EventRegistrationSerializer, EventSerializer,
 )
 from .services.registration import create_registration
 from .services.registration_email import registration_urls, send_registration_confirmation
@@ -30,12 +33,32 @@ from .services.sync_eventbrite import sync_eventbrite_events
 
 
 class EventViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    queryset = Event.objects.filter(
-        is_published=True,
-        is_hidden_on_site=False,
-    ).exclude(status__in=["canceled", "cancelled", "deleted"]).order_by("starts_at", "title")
+    queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        now = timezone.now()
+        return Event.objects.filter(
+            is_published=True,
+            is_hidden_on_site=False,
+        ).exclude(
+            status__in=["canceled", "cancelled", "deleted"],
+        ).filter(
+            Q(ends_at__gt=now)
+            | Q(ends_at__isnull=True, starts_at__gt=now)
+            | Q(ends_at__isnull=True, starts_at__isnull=True),
+        ).order_by("starts_at", "title")
+
+
+class EventPageContentView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        content = EventPageContent.objects.filter(key="main", is_active=True).first()
+        if content is None:
+            raise Http404("Events content is not available.")
+        return Response(EventPageContentSerializer(content).data)
 
 
 class AdminEventViewSet(viewsets.ModelViewSet):

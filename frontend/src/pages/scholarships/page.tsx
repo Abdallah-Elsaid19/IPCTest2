@@ -1,11 +1,54 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
+import { apiJson } from "@/lib/api";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
+
+interface ScholarshipCardContent {
+  icon: string;
+  title: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface ScholarshipContent {
+  audiences: ScholarshipCardContent[];
+  values: ScholarshipCardContent[];
+  updated_at: string;
+}
 
 export default function Scholarships() {
+  const [content, setContent] = useState<ScholarshipContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const audiences = content?.audiences.filter((item) => item.is_active !== false) ?? [];
+  const values = content?.values.filter((item) => item.is_active !== false) ?? [];
+
+  const loadScholarshipContent = useCallback(async () => {
+      try {
+        setLoadError("");
+        const response = await apiJson<ScholarshipContent>(
+          "/api/scholarships",
+          undefined,
+          { cache: "no-store" },
+        );
+        setContent(response);
+      } catch (error) {
+        setContent(null);
+        setLoadError(error instanceof Error ? error.message : "Scholarship content could not be loaded.");
+      } finally {
+        setIsLoading(false);
+      }
+  }, []);
+
+  useEffect(() => {
+    void loadScholarshipContent();
+    return subscribeToContentUpdates("scholarships", () => void loadScholarshipContent());
+  }, [loadScholarshipContent]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -23,73 +66,7 @@ export default function Scholarships() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
-
-  const audiences = [
-    {
-      icon: "ri-graduation-cap-line",
-      title: "Full-time Students",
-      description:
-        "Students on project controls, construction, engineering, quantity surveying, PMO and related programmes who want professional affiliation while studying.",
-    },
-    {
-      icon: "ri-exchange-line",
-      title: "Career Changers",
-      description:
-        "Professionals from engineering, quantity surveying, estimating, finance, military service, PMO, procurement and business analysis seeking to enter project controls.",
-    },
-    {
-      icon: "ri-heart-line",
-      title: "Underrepresented Groups",
-      description:
-        "Values-based access routes for learners who may not otherwise have opportunity, supporting diversity and social mobility in the profession.",
-    },
-    {
-      icon: "ri-user-star-line",
-      title: "Emerging Professionals",
-      description:
-        "Early-career practitioners, apprentices and junior staff who need support to develop foundation competence and build evidence for recognition.",
-    },
-  ];
-
-  const values = [
-    {
-      icon: "ri-wallet-3-line",
-      title: "Access to Recognition",
-      description:
-        "Scholarships fund access to project controls education and professional recognition for those who need support.",
-    },
-    {
-      icon: "ri-links-line",
-      title: "Professional Community",
-      description:
-        "Scholarship recipients join the Institute community, attend events, access clubs and build their professional network from day one.",
-    },
-    {
-      icon: "ri-book-open-line",
-      title: "Learning Resources",
-      description:
-        "Access to professional magazine content, master classes, CPD activity and thought leadership materials.",
-    },
-    {
-      icon: "ri-award-line",
-      title: "Career Visibility",
-      description:
-        "Post-nominal use, LinkedIn value, CV strengthening and professional identity that signals commitment to the discipline.",
-    },
-    {
-      icon: "ri-user-follow-line",
-      title: "Mentoring Support",
-      description:
-        "Structured peer and senior mentoring opportunities through mentoring circles and regional clubs.",
-    },
-    {
-      icon: "ri-building-2-line",
-      title: "Employer Connections",
-      description:
-        "Events where employers, recruiters and consultants can meet talent and share industry needs.",
-    },
-  ];
+  }, [audiences.length, values.length]);
 
   return (
     <div>
@@ -151,8 +128,19 @@ export default function Scholarships() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {audiences.map((audience, index) => (
-              <div key={audience.title} className="reveal" style={{ transitionDelay: `${index * 100}ms` }}>
+            {isLoading && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+                Loading scholarship audiences…
+              </div>
+            )}
+            {!isLoading && loadError && (
+              <div className="col-span-full border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                {loadError}
+              </div>
+            )}
+            {!isLoading && !loadError && audiences.map((audience, index) => (
+              <div key={audience.title} className="reveal h-full" style={{ transitionDelay: `${index * 100}ms` }}>
                 <AudienceCard
                   icon={audience.icon}
                   title={audience.title}
@@ -176,7 +164,18 @@ export default function Scholarships() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {values.map((value, index) => (
+            {isLoading && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+                Loading scholarship values…
+              </div>
+            )}
+            {!isLoading && loadError && (
+              <div className="col-span-full border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                {loadError}
+              </div>
+            )}
+            {!isLoading && !loadError && values.map((value, index) => (
               <div key={value.title} className="reveal" style={{ transitionDelay: `${index * 80}ms` }}>
                 <FeatureCard
                   icon={value.icon}

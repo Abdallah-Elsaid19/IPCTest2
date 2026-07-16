@@ -1,13 +1,62 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
 import ClubEnquiryModal from "@/features/clubs/components/ClubEnquiryModal";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
+import { apiJson } from "@/lib/api";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
+
+interface ClubCardContent {
+  icon: string;
+  title: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface RegionalClubContent {
+  icon: string;
+  name: string;
+  description: string;
+  label: string;
+  is_active?: boolean;
+}
+
+interface ClubPageContent {
+  regional_clubs: RegionalClubContent[];
+  activities: ClubCardContent[];
+  audience_values: ClubCardContent[];
+  updated_at: string;
+}
 
 export default function Clubs() {
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [content, setContent] = useState<ClubPageContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  const loadClubContent = useCallback(async () => {
+      try {
+        setLoadError("");
+        const response = await apiJson<ClubPageContent>(
+          "/api/clubs/content",
+          undefined,
+          { cache: "no-store" },
+        );
+        setContent(response);
+      } catch (error) {
+        setContent(null);
+        setLoadError(error instanceof Error ? error.message : "Club content could not be loaded.");
+      } finally {
+        setIsLoading(false);
+      }
+  }, []);
+
+  useEffect(() => {
+    void loadClubContent();
+    return subscribeToContentUpdates("clubs", () => void loadClubContent());
+  }, [loadClubContent]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -26,98 +75,11 @@ export default function Clubs() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
+  }, [content]);
 
-  const clubs = [
-    {
-      icon: "ri-map-pin-2-line",
-      name: "London",
-      description:
-        "The capital's professional club hosts master classes, technical talks, employer engagement events and mentoring circles. A hub for senior professionals and emerging talent.",
-      label: "Capital",
-    },
-    {
-      icon: "ri-map-pin-2-line",
-      name: "Nottingham",
-      description:
-        "A regional community connecting East Midlands professionals through talks, networking and student engagement with local universities and employers.",
-      label: "Regional",
-    },
-    {
-      icon: "ri-map-pin-2-line",
-      name: "Manchester",
-      description:
-        "Serving the North West with regular meetings, site visits, technical sessions and career support for project controls professionals across sectors.",
-      label: "Regional",
-    },
-    {
-      icon: "ri-map-pin-2-line",
-      name: "Kent – Maidstone",
-      description:
-        "Based at the Maidstone Innovation Centre, this club supports local practitioners, connects with the Institute office and hosts regular professional development events.",
-      label: "Headquarters",
-    },
-  ];
-
-  const activities = [
-    {
-      icon: "ri-slideshow-line",
-      title: "Technical Talks",
-      description:
-        "Practical sessions on planning, cost, risk, AI, sustainability, delay analysis and emerging controls methods.",
-    },
-    {
-      icon: "ri-team-line",
-      title: "Networking",
-      description:
-        "Meet professionals from different sectors, compare methods, hear lessons learned and build your professional network.",
-    },
-    {
-      icon: "ri-user-follow-line",
-      title: "Mentoring",
-      description:
-        "Structured peer and senior mentoring for early-career members, Associate Fellows and those preparing for higher grades.",
-    },
-    {
-      icon: "ri-building-line",
-      title: "Site Visits",
-      description:
-        "Visit live projects to understand how controls are applied in practice across construction, infrastructure and engineering.",
-    },
-    {
-      icon: "ri-briefcase-line",
-      title: "Career Support",
-      description:
-        "Guidance on progression, evidence preparation, CPD planning and professional identity building.",
-    },
-  ];
-
-  const audiences = [
-    {
-      icon: "ri-seedling-line",
-      title: "Early-Career Members",
-      description:
-        "Clubs reduce isolation and help new entrants understand the profession, meet employers and identify mentors.",
-    },
-    {
-      icon: "ri-user-star-line",
-      title: "Senior Professionals",
-      description:
-        "Create opportunities to speak, mentor, judge awards and influence the future direction of the profession.",
-    },
-    {
-      icon: "ri-tools-line",
-      title: "Practitioners",
-      description:
-        "Practical knowledge exchange across sectors and specialist disciplines that improves day-to-day practice.",
-    },
-    {
-      icon: "ri-building-2-line",
-      title: "Employers",
-      description:
-        "Build brand presence, support CPD for staff and connect with project controls talent in your region.",
-    },
-  ];
+  const clubs = content?.regional_clubs.filter((item) => item.is_active !== false) ?? [];
+  const activities = content?.activities.filter((item) => item.is_active !== false) ?? [];
+  const audiences = content?.audience_values.filter((item) => item.is_active !== false) ?? [];
 
   return (
     <div>
@@ -167,7 +129,9 @@ export default function Clubs() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {clubs.map((club, index) => (
+            {isLoading && <ClubContentLoading label="regional clubs" />}
+            {!isLoading && loadError && <ClubContentError message={loadError} />}
+            {!isLoading && !loadError && clubs.map((club, index) => (
               <div key={club.name} className="reveal" style={{ transitionDelay: `${index * 100}ms` }}>
                 <div className="bg-background-100 border border-background-200/70 p-6 md:p-7 h-full transition-all duration-300 hover:border-primary-200 hover:shadow-sm relative overflow-hidden">
                   <span className="inline-block px-3 py-1 bg-background-950 text-background-50 text-xs font-medium rounded-full mb-4">
@@ -198,7 +162,9 @@ export default function Clubs() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activities.map((activity, index) => (
+            {isLoading && <ClubContentLoading label="club activities" />}
+            {!isLoading && loadError && <ClubContentError message={loadError} />}
+            {!isLoading && !loadError && activities.map((activity, index) => (
               <div key={activity.title} className="reveal" style={{ transitionDelay: `${index * 80}ms` }}>
                 <FeatureCard icon={activity.icon} title={activity.title} description={activity.description} light />
               </div>
@@ -219,7 +185,9 @@ export default function Clubs() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {audiences.map((audience, index) => (
+            {isLoading && <ClubContentLoading label="audience values" />}
+            {!isLoading && loadError && <ClubContentError message={loadError} />}
+            {!isLoading && !loadError && audiences.map((audience, index) => (
               <div key={audience.title} className="reveal" style={{ transitionDelay: `${index * 100}ms` }}>
                 <AudienceCard icon={audience.icon} title={audience.title} description={audience.description} />
               </div>
@@ -255,6 +223,23 @@ export default function Clubs() {
         isOpen={isEnquiryModalOpen}
         onClose={() => setIsEnquiryModalOpen(false)}
       />
+    </div>
+  );
+}
+
+function ClubContentLoading({ label }: { label: string }) {
+  return (
+    <div className="col-span-full flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+      Loading {label}…
+    </div>
+  );
+}
+
+function ClubContentError({ message }: { message: string }) {
+  return (
+    <div className="col-span-full border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+      {message}
     </div>
   );
 }

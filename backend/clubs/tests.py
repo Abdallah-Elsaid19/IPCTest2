@@ -4,7 +4,53 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import ClubEnquiry
+from .models import ClubEnquiry, ClubPageContent
+
+
+class ClubPageContentApiTests(APITestCase):
+    def test_public_endpoint_returns_active_database_content(self):
+        ClubPageContent.objects.update_or_create(
+            key="main",
+            defaults={
+                "regional_clubs": [{
+                    "icon": "ri-map-pin-line",
+                    "name": "Database club",
+                    "description": "Club description from database.",
+                    "label": "Regional",
+                }],
+                "activities": [{
+                    "icon": "ri-test-line",
+                    "title": "Database activity",
+                    "description": "Activity description from database.",
+                }],
+                "audience_values": [{
+                    "icon": "ri-user-line",
+                    "title": "Database audience",
+                    "description": "Audience description from database.",
+                }],
+                "is_active": True,
+            },
+        )
+
+        response = self.client.get("/api/clubs/content")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["regional_clubs"][0]["name"], "Database club")
+        self.assertEqual(response.data["activities"][0]["title"], "Database activity")
+        self.assertEqual(response.data["audience_values"][0]["title"], "Database audience")
+
+    def test_inactive_content_is_not_public(self):
+        ClubPageContent.objects.update_or_create(
+            key="main",
+            defaults={
+                "regional_clubs": [{"icon": "icon", "name": "Club", "description": "Description", "label": "Regional"}],
+                "activities": [{"icon": "icon", "title": "Activity", "description": "Description"}],
+                "audience_values": [{"icon": "icon", "title": "Audience", "description": "Description"}],
+                "is_active": False,
+            },
+        )
+
+        self.assertEqual(self.client.get("/api/clubs/content").status_code, 404)
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")

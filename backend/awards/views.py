@@ -1,18 +1,32 @@
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.http import Http404
 from django.db.models.deletion import ProtectedError
 from django.utils.text import slugify
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
-from .models import AwardCategory, AwardProgramme, AwardsInterest
+from rest_framework.generics import RetrieveAPIView
+from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInterest
 from .serializers import (
     AdminAwardCategorySerializer,
     AdminAwardProgrammeSerializer,
     AwardCategorySerializer,
+    AwardPageContentSerializer,
     AwardProgrammeSerializer,
     AwardsInterestSerializer,
 )
+
+
+class AwardPageContentView(RetrieveAPIView):
+    serializer_class = AwardPageContentSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self):
+        content = AwardPageContent.objects.filter(key="main", is_active=True).first()
+        if content is None:
+            raise Http404("Awards content is not available.")
+        return content
 
 
 class AwardCategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):

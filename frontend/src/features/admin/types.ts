@@ -208,6 +208,7 @@ export interface AdminEvent {
   eventbrite_id: string | null;
   eventbrite_url: string;
   status: string;
+  lifecycle_status: string;
   is_online_event: boolean;
   is_featured: boolean;
   is_published: boolean;
@@ -224,7 +225,7 @@ export interface AdminEvent {
 
 export type AdminEventPayload = Omit<
   AdminEvent,
-  "id" | "is_hidden_on_site" | "created_at" | "updated_at"
+  "id" | "is_hidden_on_site" | "created_at" | "updated_at" | "lifecycle_status"
 >;
 
 export interface DashboardUser {

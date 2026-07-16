@@ -1,11 +1,62 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
 import FeatureCard from "@/components/base/FeatureCard";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
+import { apiJson } from "@/lib/api";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
+
+interface SponsorshipCardContent {
+  icon: string;
+  title: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface SponsorshipPartnerType {
+  type: string;
+  benefits: string;
+  is_active?: boolean;
+}
+
+interface SponsorshipContent {
+  routes: SponsorshipCardContent[];
+  partner_types: SponsorshipPartnerType[];
+  integrity_principles: SponsorshipCardContent[];
+  updated_at: string;
+}
 
 export default function Sponsorship() {
+  const [content, setContent] = useState<SponsorshipContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const routes = content?.routes.filter((item) => item.is_active !== false) ?? [];
+  const partners = content?.partner_types.filter((item) => item.is_active !== false) ?? [];
+  const integrity = content?.integrity_principles.filter((item) => item.is_active !== false) ?? [];
+
+  const loadSponsorshipContent = useCallback(async () => {
+      try {
+        setLoadError("");
+        const response = await apiJson<SponsorshipContent>(
+          "/api/sponsorship",
+          undefined,
+          { cache: "no-store" },
+        );
+        setContent(response);
+      } catch (error) {
+        setContent(null);
+        setLoadError(error instanceof Error ? error.message : "Sponsorship content could not be loaded.");
+      } finally {
+        setIsLoading(false);
+      }
+  }, []);
+
+  useEffect(() => {
+    void loadSponsorshipContent();
+    return subscribeToContentUpdates("sponsorship", () => void loadSponsorshipContent());
+  }, [loadSponsorshipContent]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -23,96 +74,7 @@ export default function Sponsorship() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
-
-  const routes = [
-    {
-      icon: "ri-graduation-cap-line",
-      title: "Sponsor Learners",
-      description:
-        "Fund access to project controls education and professional recognition. Support learners, career changers, apprentices and students entering the profession.",
-    },
-    {
-      icon: "ri-calendar-event-line",
-      title: "Sponsor Events",
-      description:
-        "Support master classes, venues, speakers, student places or regional clubs. Create spaces where professionals meet, learn and exchange practice.",
-    },
-    {
-      icon: "ri-award-line",
-      title: "Sponsor Awards",
-      description:
-        "Support academic, commercial, professional and special recognition prizes without influencing outcome. Celebrate excellence and contribution.",
-    },
-    {
-      icon: "ri-team-line",
-      title: "Sponsor Clubs",
-      description:
-        "Support London, Nottingham, Manchester or Kent – Maidstone professional clubs. Help build local communities for talks, networking and student engagement.",
-    },
-    {
-      icon: "ri-book-2-line",
-      title: "Sponsor Publications",
-      description:
-        "Support the professional magazine or research activity with transparent editorial independence. Help the Institute become a knowledge-producing body.",
-    },
-  ];
-
-  const partners = [
-    {
-      type: "Training Providers",
-      benefits:
-        "Align courses to IPC competence domains, support learners into membership, sponsor events and contribute technical content.",
-    },
-    {
-      type: "NGOs and Charities",
-      benefits:
-        "Sponsor learners, support second-chance career pathways, veterans, community leaders and people facing barriers to employment.",
-    },
-    {
-      type: "Recruitment Companies",
-      benefits:
-        "Sponsor career workshops, regional clubs, magazine career pages, emerging talent awards and ethical networking events.",
-    },
-    {
-      type: "Public Bodies",
-      benefits:
-        "Support professional capability, regional skills development, scholarships and public value through project controls education.",
-    },
-  ];
-
-  const integrity = [
-    {
-      icon: "ri-shield-check-line",
-      title: "Ethical Alignment",
-      description:
-        "Sponsorship must align with the Institute's values of integrity, competence, accountability and professional growth.",
-    },
-    {
-      icon: "ri-hand-heart-line",
-      title: "No Quid Pro Quuo",
-      description:
-        "Sponsors do not receive automatic influence over recognition decisions, award outcomes or editorial content.",
-    },
-    {
-      icon: "ri-eye-line",
-      title: "Transparency",
-      description:
-        "Sponsorship arrangements are transparent. The Institute publishes sponsor involvement and maintains clear boundaries.",
-    },
-    {
-      icon: "ri-government-line",
-      title: "Governance",
-      description:
-        "Sponsorship and partnership should not give organisations automatic access to private member data. Engagement is consent-based.",
-    },
-    {
-      icon: "ri-file-list-3-line",
-      title: "Reporting",
-      description:
-        "The Institute reports on how sponsorship funds are used and the impact on learners, events, awards and community activities.",
-    },
-  ];
+  }, [routes.length, partners.length, integrity.length]);
 
   return (
     <div>
@@ -159,7 +121,18 @@ export default function Sponsorship() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {routes.map((route, index) => (
+            {isLoading && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+                Loading sponsorship routes…
+              </div>
+            )}
+            {!isLoading && loadError && (
+              <div className="col-span-full border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                {loadError}
+              </div>
+            )}
+            {!isLoading && !loadError && routes.map((route, index) => (
               <div key={route.title} className="reveal" style={{ transitionDelay: `${index * 80}ms` }}>
                 <FeatureCard icon={route.icon} title={route.title} description={route.description} />
               </div>
@@ -192,7 +165,21 @@ export default function Sponsorship() {
                 </tr>
               </thead>
               <tbody>
-                {partners.map((row, index) => (
+                {isLoading && (
+                  <tr>
+                    <td colSpan={2} className="py-16 text-center text-foreground-600">
+                      Loading partner types…
+                    </td>
+                  </tr>
+                )}
+                {!isLoading && loadError && (
+                  <tr>
+                    <td colSpan={2} className="border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                      {loadError}
+                    </td>
+                  </tr>
+                )}
+                {!isLoading && !loadError && partners.map((row, index) => (
                   <tr
                     key={row.type}
                     className={`border-b border-background-200 ${index % 2 === 0 ? "bg-background-50/50" : ""}`}
@@ -220,7 +207,18 @@ export default function Sponsorship() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {integrity.map((item, index) => (
+            {isLoading && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-background-300" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />
+                Loading integrity principles…
+              </div>
+            )}
+            {!isLoading && loadError && (
+              <div className="col-span-full border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">
+                {loadError}
+              </div>
+            )}
+            {!isLoading && !loadError && integrity.map((item, index) => (
               <div key={item.title} className="reveal" style={{ transitionDelay: `${index * 80}ms` }}>
                 <FeatureCard icon={item.icon} title={item.title} description={item.description} light />
               </div>

@@ -22,6 +22,7 @@ import type {
   PaginatedAdminApplications,
   PaginatedAdminUsers,
 } from "./types";
+import type { AdminContentTable, ContentSectionValue } from "./content/types";
 
 export interface AdminUserQuery {
   page?: number;
@@ -68,6 +69,11 @@ function refreshEventbriteAttendees() {
 }
 
 export const adminApi = {
+  contentTables: () => apiJson<AdminContentTable[]>("/api/admin/content"),
+  updateContentTable: (
+    slug: string,
+    payload: { sections?: Record<string, ContentSectionValue>; is_active?: boolean },
+  ) => apiJson<AdminContentTable>(`/api/admin/content/${slug}`, payload, { method: "PATCH" }),
   dashboard: (forceRefresh = false) => apiJson<DashboardData>(`/api/admin/dashboard${forceRefresh ? "?refresh=1" : ""}`),
   enquiries: (signal?: AbortSignal) =>
     apiJson<DashboardEnquiry[]>("/api/admin/enquiries", undefined, { signal }),

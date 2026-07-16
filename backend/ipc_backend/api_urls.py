@@ -1,11 +1,12 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from applications.views import AdminApplicationViewSet, ApplicationViewSet
-from events.views import AdminEventRegistrationViewSet, AdminEventViewSet, AdminEventbriteAttendeesView, EventRegistrationCalendarView, EventRegistrationConfigView, EventRegistrationCreateView, EventRegistrationDetailView, EventRegistrationViewSet, EventViewSet, EventbriteAuthorizeView, EventbriteCallbackView, EventbriteEventsView, EventbriteOrganizationsView, EventbriteSyncView
+from events.views import AdminEventRegistrationViewSet, AdminEventViewSet, AdminEventbriteAttendeesView, EventPageContentView, EventRegistrationCalendarView, EventRegistrationConfigView, EventRegistrationCreateView, EventRegistrationDetailView, EventRegistrationViewSet, EventViewSet, EventbriteAuthorizeView, EventbriteCallbackView, EventbriteEventsView, EventbriteOrganizationsView, EventbriteSyncView
 from awards.views import (
     AdminAwardCategoryViewSet,
     AdminAwardProgrammeViewSet,
     AwardCategoryViewSet,
+    AwardPageContentView,
     AwardProgrammeViewSet,
     AwardsInterestViewSet,
 )
@@ -14,7 +15,11 @@ from newsletter.views import NewsletterSignupViewSet
 from memberships.views import AdminMembershipGradeViewSet, MembershipGradeViewSet
 from media_library.views import MediaAssetViewSet
 from ipc_backend.views import csrf_cookie
-from clubs.views import ClubEnquiryCreateView
+from ipc_backend.content_management import AdminContentDetailView, AdminContentListView
+from clubs.views import ClubEnquiryCreateView, ClubPageContentView
+from scholarships.views import ScholarshipContentView
+from sponsorship.views import SponsorshipContentView
+from about.views import AboutPageContentView
 from accounts.views import CurrentUserView, LoginView, LogoutView, RefreshView
 from accounts.dashboard import (
     AdminDashboardView,
@@ -52,11 +57,19 @@ urlpatterns = [
     path("auth/password-reset/request", PasswordResetRequestView.as_view(), name="password-reset-request"),
     path("auth/password-reset/confirm", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path("admin/dashboard", AdminDashboardView.as_view(), name="admin-dashboard"),
+    path("admin/content", AdminContentListView.as_view(), name="admin-content-list"),
+    path("admin/content/<slug:slug>", AdminContentDetailView.as_view(), name="admin-content-detail"),
     path("admin/eventbrite/attendees", AdminEventbriteAttendeesView.as_view(), name="admin-eventbrite-attendees"),
     path("admin/enquiries", AdminEnquiryListView.as_view(), name="admin-enquiry-list"),
     path("admin/enquiries/<str:source>/<str:enquiry_id>", AdminEnquiryDetailView.as_view(), name="admin-enquiry-detail"),
     path("admin/enquiries/<str:source>/<str:enquiry_id>/reply", AdminEnquiryReplyView.as_view(), name="admin-enquiry-reply"),
     path("clubs/enquiries/", ClubEnquiryCreateView.as_view(), name="club-enquiry-create"),
+    path("clubs/content", ClubPageContentView.as_view(), name="club-page-content"),
+    path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
+    path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
+    path("awards/content", AwardPageContentView.as_view(), name="award-page-content"),
+    path("events/content", EventPageContentView.as_view(), name="event-page-content"),
+    path("about/content", AboutPageContentView.as_view(), name="about-page-content"),
     path("events/eventbrite/authorize", EventbriteAuthorizeView.as_view(), name="eventbrite-authorize"),
     path("events/eventbrite/callback", EventbriteCallbackView.as_view(), name="eventbrite-callback"),
     path("events/eventbrite/organizations/", EventbriteOrganizationsView.as_view(), name="eventbrite-organizations"),

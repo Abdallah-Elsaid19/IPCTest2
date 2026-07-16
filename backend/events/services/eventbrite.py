@@ -103,7 +103,6 @@ class EventbriteClient:
             )
         return self._all_pages(
             f"organizations/{organization_id}/attendees/",
-            params={"page_size": 50},
             collection_key="attendees",
             max_items=100,
         )

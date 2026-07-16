@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import ClubEnquiry
+from .models import ClubEnquiry, ClubPageContent
+
+
+@admin.register(ClubPageContent)
+class ClubPageContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(ClubEnquiry)
@@ -10,4 +17,3 @@ class ClubEnquiryAdmin(admin.ModelAdmin):
     search_fields = ("email", "message", "club_name")
     ordering = ("-created_at",)
     readonly_fields = ("id", "created_at", "updated_at")
-

@@ -1,13 +1,27 @@
 from django.conf import settings
 from django.core.mail import send_mail
+from django.http import Http404
 from django.utils import timezone
 from rest_framework import permissions, status
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .serializers import ClubEnquiryCreateSerializer
+from .models import ClubPageContent
+from .serializers import ClubEnquiryCreateSerializer, ClubPageContentSerializer
+
+
+class ClubPageContentView(RetrieveAPIView):
+    serializer_class = ClubPageContentSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self):
+        content = ClubPageContent.objects.filter(key="main", is_active=True).first()
+        if content is None:
+            raise Http404("Club content is not available.")
+        return content
 
 
 class ClubEnquiryCreateView(APIView):
@@ -53,4 +67,3 @@ class ClubEnquiryCreateView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-

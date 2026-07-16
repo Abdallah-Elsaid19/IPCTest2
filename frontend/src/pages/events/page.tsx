@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
 import { apiJson, type EventItem } from "@/lib/api";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
 
 type UpcomingEvent = {
   id?: number;
@@ -20,6 +21,34 @@ type UpcomingEvent = {
   external?: boolean;
 };
 
+type EventContentCard = {
+  icon: string;
+  title: string;
+  description: string;
+  is_active?: boolean;
+};
+
+type EventFormatContent = EventContentCard & {
+  image: string;
+};
+
+type FeaturedProgrammeContent = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  image_url: string;
+  image_alt: string;
+  highlights: Array<EventContentCard & { tone?: "primary" | "accent" }>;
+  is_active?: boolean;
+};
+
+type EventPageContent = {
+  featured_programme: FeaturedProgrammeContent;
+  formats: EventFormatContent[];
+  audiences: EventContentCard[];
+  updated_at: string;
+};
+
 export default function Events() {
   const formatDate = (value?: string | null) => {
     if (!value) return "Date to be confirmed";
@@ -33,67 +62,26 @@ export default function Events() {
     return end ? `${startText} - ${formatter.format(new Date(end))}` : startText;
   };
 
-  const formats = [
-    {
-      icon: "ri-slideshow-line",
-      title: "Technical Sessions",
-      description:
-        "In-depth presentations on planning, cost, risk, change, delay analysis, AI, digital project controls, sustainability and commercial issues.",
-      image: "https://readdy.ai/api/search-image?query=Professional%20speaker%20presenting%20technical%20data%20on%20large%20screen%20in%20a%20modern%20conference%20room%2C%20audience%20taking%20notes%2C%20clean%20minimal%20aesthetic%2C%20warm%20lighting%2C%20corporate%20training%20atmosphere%2C%20shallow%20depth%20of%20field%2C%20editorial%20quality&width=500&height=350&seq=events-format-tech-01&orientation=landscape",
-    },
-    {
-      icon: "ri-discuss-line",
-      title: "Roundtables",
-      description:
-        "Senior conversations on project controls challenges, industry trends, data, AI, governance and capability.",
-      image: "https://readdy.ai/api/search-image?query=Small%20group%20of%20senior%20executives%20in%20deep%20discussion%20around%20a%20polished%20wooden%20table%2C%20elegant%20boardroom%20with%20subtle%20gold%20accent%20lighting%2C%20notebooks%20and%20tablets%20on%20table%2C%20refined%20corporate%20atmosphere%2C%20warm%20ambient%20light%2C%20editorial%20style&width=500&height=350&seq=events-format-roundtable-01&orientation=landscape",
-    },
-    {
-      icon: "ri-user-follow-line",
-      title: "Mentoring Circles",
-      description:
-        "Structured peer and senior mentoring opportunities for early-career members and Associate Fellows.",
-      image: "https://readdy.ai/api/search-image?query=Experienced%20professional%20mentoring%20a%20younger%20colleague%20in%20a%20bright%20modern%20office%20lounge%20area%2C%20natural%20daylight%2C%20comfortable%20armchairs%2C%20genuine%20engaged%20conversation%2C%20warm%20neutral%20tones%2C%20professional%20yet%20approachable%20atmosphere%2C%20editorial%20photography&width=500&height=350&seq=events-format-mentor-01&orientation=landscape",
-    },
-    {
-      icon: "ri-briefcase-line",
-      title: "Employer Engagement",
-      description:
-        "Events where employers, recruiters, consultants and academic partners can meet talent and share industry needs.",
-      image: "https://readdy.ai/api/search-image?query=Professional%20networking%20event%20in%20a%20modern%20venue%20with%20standing%20tables%2C%20diverse%20professionals%20exchanging%20business%20cards%20and%20conversing%2C%20warm%20evening%20lighting%2C%20elegant%20corporate%20setting%2C%20name%20badges%2C%20drinks%20in%20hand%2C%20sophisticated%20atmosphere%2C%20editorial%20quality&width=500&height=350&seq=events-format-employer-01&orientation=landscape",
-    },
-  ];
-
-  const audiences = [
-    {
-      icon: "ri-seedling-line",
-      title: "Early-Career Members",
-      description:
-        "Events reduce isolation and help new entrants understand the profession, build confidence and identify mentors.",
-    },
-    {
-      icon: "ri-vip-crown-line",
-      title: "Senior Professionals",
-      description:
-        "Clubs and master classes create opportunities to speak, mentor, judge awards and influence the profession.",
-    },
-    {
-      icon: "ri-tools-line",
-      title: "Practitioners",
-      description:
-        "Networking creates practical knowledge exchange across sectors and specialist disciplines.",
-    },
-    {
-      icon: "ri-building-2-line",
-      title: "Employers",
-      description:
-        "Events help employers build brand, support CPD and connect with project controls talent.",
-    },
-  ];
-
   const [eventbriteEvents, setEventbriteEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState("");
+  const [pageContent, setPageContent] = useState<EventPageContent | null>(null);
+  const [contentError, setContentError] = useState("");
+  const featuredProgrammeContent = pageContent?.featured_programme;
+  const featuredProgramme = featuredProgrammeContent && featuredProgrammeContent.is_active !== false
+    ? {
+        ...featuredProgrammeContent,
+        highlights: Array.isArray(featuredProgrammeContent.highlights)
+          ? featuredProgrammeContent.highlights.filter((item) => item.is_active !== false)
+          : [],
+      }
+    : undefined;
+  const formats = Array.isArray(pageContent?.formats)
+    ? pageContent.formats.filter((item) => item.is_active !== false)
+    : [];
+  const audiences = Array.isArray(pageContent?.audiences)
+    ? pageContent.audiences.filter((item) => item.is_active !== false)
+    : [];
 
   const upcomingEvents = useMemo(() => {
     if (!eventbriteEvents.length) return [];
@@ -129,7 +117,7 @@ export default function Events() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [upcomingEvents.length]);
+  }, [upcomingEvents.length, formats.length, audiences.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -155,6 +143,21 @@ export default function Events() {
       cancelled = true;
     };
   }, []);
+
+  const loadEventContent = useCallback(async () => {
+    setContentError("");
+    try {
+      setPageContent(await apiJson<EventPageContent>("/api/events/content", undefined, { cache: "no-store" }));
+    } catch (error) {
+      setPageContent(null);
+      setContentError(error instanceof Error ? error.message : "Events content could not be loaded.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadEventContent();
+    return subscribeToContentUpdates("events", () => void loadEventContent());
+  }, [loadEventContent]);
   return (
     <div>
       <SEO {...pageSeo.events} />
@@ -341,54 +344,39 @@ export default function Events() {
       {/* London Master Class */}
       <section className="bg-background-950 section-padding">
         <div className="container-content">
-          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
+          {!pageContent && !contentError && (
+            <div className="flex items-center justify-center gap-3 py-20 text-background-300" role="status">
+              <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />
+              Loading featured programme…
+            </div>
+          )}
+          {contentError && (
+            <div className="border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">
+              {contentError}
+            </div>
+          )}
+          {featuredProgramme && <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
             <div className="flex-1 reveal">
-              <span className="eyebrow text-primary-400 mb-4 block">Featured Programme</span>
+              <span className="eyebrow text-primary-400 mb-4 block">{featuredProgramme.eyebrow}</span>
               <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 mb-6">
-                London Master Class Events
+                {featuredProgramme.title}
               </h2>
               <p className="text-base md:text-lg text-background-300 leading-relaxed mb-8">
-                Premium events covering planning, cost, risk, change, delay, AI, digital project controls, 
-                sustainability, leadership and commercial issues. These are major membership value drivers 
-                that bring together practitioners, employers, academics and sponsors.
+                {featuredProgramme.description}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-background-900 p-5 reveal reveal-delay-1">
-                  <div className="w-10 h-10 bg-primary-500/20 flex items-center justify-center mb-3">
-                    <i className="ri-map-pin-line text-primary-400 text-lg" />
-                  </div>
-                  <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">Venues</h4>
-                  <p className="text-xs text-background-400 leading-relaxed">
-                    Premium central London venues including ICE, etc.venues and professional conference facilities.
-                  </p>
-                </div>
-                <div className="bg-background-900 p-5 reveal reveal-delay-2">
-                  <div className="w-10 h-10 bg-accent-500/20 flex items-center justify-center mb-3">
-                    <i className="ri-group-line text-accent-400 text-lg" />
-                  </div>
-                  <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">Audience</h4>
-                  <p className="text-xs text-background-400 leading-relaxed">
-                    Members, Fellows, employers and academic partners. Student places available through sponsorship.
-                  </p>
-                </div>
-                <div className="bg-background-900 p-5 reveal reveal-delay-3">
-                  <div className="w-10 h-10 bg-primary-500/20 flex items-center justify-center mb-3">
-                    <i className="ri-time-line text-primary-400 text-lg" />
-                  </div>
-                  <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">Format</h4>
-                  <p className="text-xs text-background-400 leading-relaxed">
-                    Full-day and half-day sessions with expert speakers, workshops, panels and networking.
-                  </p>
-                </div>
-                <div className="bg-background-900 p-5 reveal reveal-delay-4">
-                  <div className="w-10 h-10 bg-accent-500/20 flex items-center justify-center mb-3">
-                    <i className="ri-award-line text-accent-400 text-lg" />
-                  </div>
-                  <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">CPD Value</h4>
-                  <p className="text-xs text-background-400 leading-relaxed">
-                    Certificates of attendance provided for CPD portfolios and recognition applications.
-                  </p>
-                </div>
+                {featuredProgramme.highlights.map((highlight, index) => {
+                  const accent = highlight.tone === "accent";
+                  return (
+                    <div key={highlight.title} className={`bg-background-900 p-5 reveal reveal-delay-${index + 1}`}>
+                      <div className={`w-10 h-10 ${accent ? "bg-accent-500/20" : "bg-primary-500/20"} flex items-center justify-center mb-3`}>
+                        <i className={`${highlight.icon} ${accent ? "text-accent-400" : "text-primary-400"} text-lg`} />
+                      </div>
+                      <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">{highlight.title}</h4>
+                      <p className="text-xs text-background-400 leading-relaxed">{highlight.description}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="lg:w-[42%] shrink-0 reveal reveal-delay-1">
@@ -396,13 +384,13 @@ export default function Events() {
                 <img
             loading="lazy"
             decoding="async"
-                  src="https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/64e5fe4de8a5414eb9307f7ebe36b446.jpg"
-                  alt="London Master Class venue"
+                  src={featuredProgramme.image_url}
+                  alt={featuredProgramme.image_alt}
                   className="w-full h-auto image-zoom"
                 />
               </div>
             </div>
-          </div>
+          </div>}
         </div>
       </section>
 
@@ -418,7 +406,18 @@ export default function Events() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {formats.map((format, index) => (
+            {!pageContent && !contentError && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+                Loading event formats…
+              </div>
+            )}
+            {contentError && (
+              <div className="col-span-full border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                {contentError}
+              </div>
+            )}
+            {pageContent && formats.map((format, index) => (
               <div key={format.title} className={`reveal reveal-delay-${index + 1}`}>
                 <div className="bg-background-100 border border-background-200/70 overflow-hidden h-full transition-all duration-300 hover:border-primary-200 group">
                   <div className="relative overflow-hidden h-48">
@@ -469,7 +468,18 @@ export default function Events() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {audiences.map((audience, index) => (
+            {!pageContent && !contentError && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-background-300" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />
+                Loading event audiences…
+              </div>
+            )}
+            {contentError && (
+              <div className="col-span-full border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">
+                {contentError}
+              </div>
+            )}
+            {pageContent && audiences.map((audience, index) => (
               <div key={audience.title} className={`reveal reveal-delay-${index + 1}`}>
                 <FeatureCard icon={audience.icon} title={audience.title} description={audience.description} light />
               </div>

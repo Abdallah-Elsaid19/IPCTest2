@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import Event, EventAttendee, EventQuestion, EventRegistration, EventRegistrationAnswer, EventbriteConnection
+from .models import Event, EventAttendee, EventPageContent, EventQuestion, EventRegistration, EventRegistrationAnswer, EventbriteConnection
+
+
+@admin.register(EventPageContent)
+class EventPageContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 class EventQuestionInline(admin.TabularInline):
@@ -9,12 +16,16 @@ class EventQuestionInline(admin.TabularInline):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ("title", "event_type", "starts_at", "status", "is_published", "eventbrite_id", "capacity")
+    list_display = ("title", "event_type", "starts_at", "display_status", "is_published", "eventbrite_id", "capacity")
     list_filter = ("event_type", "status", "is_online_event", "is_featured", "is_published", "starts_at")
     search_fields = ("title", "description", "location", "region", "venue_name", "eventbrite_id")
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("created_at", "updated_at")
     inlines = (EventQuestionInline,)
+
+    @admin.display(description="Status")
+    def display_status(self, obj):
+        return obj.lifecycle_status or "—"
 
 
 @admin.register(EventRegistration)

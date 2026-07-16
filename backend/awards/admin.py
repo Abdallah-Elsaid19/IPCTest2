@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import AwardCategory, AwardProgramme, AwardsInterest
+from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInterest
+
+
+@admin.register(AwardPageContent)
+class AwardPageContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(AwardCategory)

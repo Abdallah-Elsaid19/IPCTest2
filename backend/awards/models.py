@@ -1,4 +1,32 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+
+
+def validate_award_cards(value):
+    _validate_award_content(value, ("icon", "title", "description"), "Card")
+
+
+def validate_award_timeline(value):
+    _validate_award_content(value, ("phase", "period", "description"), "Timeline")
+
+
+def _validate_award_content(value, required_fields, label):
+    if not isinstance(value, list):
+        raise ValidationError(f"{label} content must be a list.")
+    if not value:
+        raise ValidationError(f"Add at least one {label.lower()} item.")
+    if len(value) > 24:
+        raise ValidationError(f"Add no more than 24 {label.lower()} items.")
+
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, dict):
+            raise ValidationError(f"{label} item {index} must be an object.")
+        for field in required_fields:
+            field_value = item.get(field)
+            if not isinstance(field_value, str) or not field_value.strip():
+                raise ValidationError(
+                    f"{label} item {index} must include a non-empty {field}."
+                )
 
 
 class AwardCategory(models.Model):
@@ -48,6 +76,24 @@ class AwardProgramme(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class AwardPageContent(models.Model):
+    key = models.SlugField(max_length=40, unique=True, default="main")
+    nomination_timeline = models.JSONField(validators=[validate_award_timeline])
+    impact_benefits = models.JSONField(validators=[validate_award_cards])
+    integrity_principles = models.JSONField(validators=[validate_award_cards])
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "awards_content"
+        verbose_name = "Awards page content"
+        verbose_name_plural = "Awards page content"
+
+    def __str__(self):
+        return self.key
 
 
 class AwardsInterest(models.Model):

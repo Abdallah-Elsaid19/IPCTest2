@@ -6,11 +6,38 @@ import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
 import type { AwardCategory, AwardProgramme } from "@/features/awards/types";
 import { apiJson } from "@/lib/api";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
+
+interface AwardContentCard {
+  icon: string;
+  title: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface AwardTimelineStep {
+  phase: string;
+  period: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface AwardPageContent {
+  nomination_timeline: AwardTimelineStep[];
+  impact_benefits: AwardContentCard[];
+  integrity_principles: AwardContentCard[];
+  updated_at: string;
+}
 
 export default function Awards() {
   const [featuredAwards, setFeaturedAwards] = useState<AwardProgramme[] | null>(null);
   const [awardCategories, setAwardCategories] = useState<AwardCategory[] | null>(null);
   const [awardsError, setAwardsError] = useState("");
+  const [awardContent, setAwardContent] = useState<AwardPageContent | null>(null);
+  const [contentError, setContentError] = useState("");
+  const benefits = awardContent?.impact_benefits.filter((item) => item.is_active !== false) ?? [];
+  const timeline = awardContent?.nomination_timeline.filter((item) => item.is_active !== false) ?? [];
+  const integrityPrinciples = awardContent?.integrity_principles.filter((item) => item.is_active !== false) ?? [];
 
   const loadFeaturedAwards = useCallback(async (signal?: AbortSignal) => {
     setFeaturedAwards(null);
@@ -54,6 +81,21 @@ export default function Awards() {
     return () => controller.abort();
   }, []);
 
+  const loadAwardContent = useCallback(async () => {
+    setContentError("");
+    try {
+      setAwardContent(await apiJson<AwardPageContent>("/api/awards/content", undefined, { cache: "no-store" }));
+    } catch (error) {
+      setAwardContent(null);
+      setContentError(error instanceof Error ? error.message : "Awards content could not be loaded.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAwardContent();
+    return subscribeToContentUpdates("awards", () => void loadAwardContent());
+  }, [loadAwardContent]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -71,42 +113,7 @@ export default function Awards() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
-
-  const benefits = [
-    {
-      icon: "ri-trophy-line",
-      title: "For Members",
-      description:
-        "Awards and publications create a public platform for achievement, contribution and professional visibility.",
-    },
-    {
-      icon: "ri-school-line",
-      title: "For Academic Partners",
-      description:
-        "Student prizes and papers help connect education to industry needs and professional identity.",
-    },
-    {
-      icon: "ri-building-line",
-      title: "For Employers",
-      description:
-        "Awards help recognise team excellence, strengthen employer brand and celebrate staff achievement.",
-    },
-    {
-      icon: "ri-hand-heart-line",
-      title: "For Sponsors",
-      description:
-        "Sponsorship creates ethical visibility and supports social impact, access and professional development.",
-    },
-  ];
-
-  const timeline = [
-    { phase: "Call for Nominations", period: "January – March", description: "Submission window opens. Nominations accepted from members, employers, academic partners and sponsors. Self-nomination permitted for professional categories." },
-    { phase: "Evidence Submission", period: "April – May", description: "Nominees submit supporting portfolios, case studies, references and documented evidence against published award criteria." },
-    { phase: "Independent Review", period: "June – August", description: "Fellows and senior professionals review submissions against criteria. Shortlisting panels convene. Additional evidence may be requested." },
-    { phase: "Award Decisions", period: "September", description: "Final panels make award determinations. All nominees receive feedback. Winners and commendations confirmed." },
-    { phase: "Recognition Event", period: "October – November", description: "Awards presented at the annual London ceremony. Winners profiled in the professional magazine, website and LinkedIn." },
-  ];
+  }, [benefits.length, timeline.length, integrityPrinciples.length]);
 
   return (
     <div>
@@ -300,7 +307,18 @@ export default function Awards() {
             />
           </div>
           <div className="mt-12 md:mt-16 max-w-4xl mx-auto">
-            <div className="relative">
+            {awardContent === null && !contentError && (
+              <div className="flex items-center justify-center gap-3 py-16 text-background-300" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />
+                Loading nomination timeline…
+              </div>
+            )}
+            {contentError && (
+              <div className="border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">
+                {contentError}
+              </div>
+            )}
+            {awardContent && <div className="relative">
               <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-background-700" />
               {timeline.map((step, index) => (
                 <div key={step.phase} className={`reveal reveal-delay-${index + 1} relative pl-16 md:pl-20 pb-10 last:pb-0`}>
@@ -314,7 +332,7 @@ export default function Awards() {
                   <p className="text-sm text-background-400 leading-relaxed">{step.description}</p>
                 </div>
               ))}
-            </div>
+            </div>}
           </div>
         </div>
       </section>
@@ -331,7 +349,18 @@ export default function Awards() {
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => (
+            {awardContent === null && !contentError && (
+              <div className="col-span-full flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+                Loading award benefits…
+              </div>
+            )}
+            {contentError && (
+              <div className="col-span-full border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                {contentError}
+              </div>
+            )}
+            {awardContent && benefits.map((benefit, index) => (
               <div key={benefit.title} className={`reveal reveal-delay-${index + 1}`}>
                 <AudienceCard icon={benefit.icon} title={benefit.title} description={benefit.description} />
               </div>
@@ -364,21 +393,24 @@ export default function Awards() {
                 confidentiality and avoids unsupported claims.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-                <div className="bg-background-900 p-5 reveal reveal-delay-1">
-                  <i className="ri-shield-check-line text-primary-500 text-xl mb-3 block" />
-                  <h4 className="font-heading text-base font-semibold text-background-50 mb-2">Independent Judging</h4>
-                  <p className="text-sm text-background-400 leading-relaxed">Awards are judged by Fellows and senior professionals with no conflict of interest.</p>
-                </div>
-                <div className="bg-background-900 p-5 reveal reveal-delay-2">
-                  <i className="ri-file-shield-line text-primary-500 text-xl mb-3 block" />
-                  <h4 className="font-heading text-base font-semibold text-background-50 mb-2">Evidence Required</h4>
-                  <p className="text-sm text-background-400 leading-relaxed">Submissions must include supporting evidence, case studies or documented contribution.</p>
-                </div>
-                <div className="bg-background-900 p-5 reveal reveal-delay-3">
-                  <i className="ri-eye-off-line text-primary-500 text-xl mb-3 block" />
-                  <h4 className="font-heading text-base font-semibold text-background-50 mb-2">Confidentiality</h4>
-                  <p className="text-sm text-background-400 leading-relaxed">Sensitive project information should be anonymised. Commercial details remain protected.</p>
-                </div>
+                {awardContent === null && !contentError && (
+                  <div className="col-span-full flex items-center justify-center gap-3 py-12 text-background-300" role="status">
+                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />
+                    Loading integrity principles…
+                  </div>
+                )}
+                {contentError && (
+                  <div className="col-span-full border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">
+                    {contentError}
+                  </div>
+                )}
+                {awardContent && integrityPrinciples.map((principle, index) => (
+                  <div key={principle.title} className={`bg-background-900 p-5 reveal reveal-delay-${index + 1}`}>
+                    <i className={`${principle.icon} text-primary-500 text-xl mb-3 block`} />
+                    <h4 className="font-heading text-base font-semibold text-background-50 mb-2">{principle.title}</h4>
+                    <p className="text-sm text-background-400 leading-relaxed">{principle.description}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

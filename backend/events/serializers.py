@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ipc_backend.validators import clean_text
-from .models import Event, EventAttendee, EventQuestion, EventRegistration
+from .models import Event, EventAttendee, EventPageContent, EventQuestion, EventRegistration
 from .services.registration import registration_availability, registration_state
 
 
@@ -24,7 +24,16 @@ class EventSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class EventPageContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventPageContent
+        fields = ["featured_programme", "formats", "audiences", "updated_at"]
+        read_only_fields = fields
+
+
 class AdminEventSerializer(serializers.ModelSerializer):
+    lifecycle_status = serializers.CharField(read_only=True)
+
     class Meta:
         model = Event
         fields = [
@@ -32,7 +41,7 @@ class AdminEventSerializer(serializers.ModelSerializer):
             "region", "venue_name", "starts_at", "ends_at", "capacity",
             "image_url", "eventbrite_id", "eventbrite_url", "status",
             "is_online_event", "is_featured", "is_published", "created_at",
-            "is_hidden_on_site", "updated_at",
+            "is_hidden_on_site", "updated_at", "lifecycle_status",
             "registration_title", "registration_description", "registration_opens_at",
             "registration_closes_at", "max_tickets_per_registration", "timezone",
         ]

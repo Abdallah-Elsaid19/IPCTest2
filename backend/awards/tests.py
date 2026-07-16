@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 
-from .models import AwardCategory, AwardProgramme, AwardsInterest
+from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInterest
 
 
 class AwardsInterestApiTests(APITestCase):
@@ -197,3 +197,42 @@ class AwardsInterestApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 409, response.data)
         self.assertTrue(AwardCategory.objects.filter(pk=self.category.pk).exists())
+
+
+class AwardPageContentApiTests(APITestCase):
+    def save_content(self, *, is_active=True):
+        return AwardPageContent.objects.update_or_create(
+            key="main",
+            defaults={
+                "nomination_timeline": [{
+                    "phase": "Database phase",
+                    "period": "Database period",
+                    "description": "Timeline description from database.",
+                }],
+                "impact_benefits": [{
+                    "icon": "benefit-icon",
+                    "title": "Database benefit",
+                    "description": "Benefit description from database.",
+                }],
+                "integrity_principles": [{
+                    "icon": "integrity-icon",
+                    "title": "Database principle",
+                    "description": "Principle description from database.",
+                }],
+                "is_active": is_active,
+            },
+        )
+
+    def test_public_endpoint_returns_active_database_content(self):
+        self.save_content()
+
+        response = self.client.get("/api/awards/content")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["nomination_timeline"][0]["phase"], "Database phase")
+        self.assertEqual(response.data["impact_benefits"][0]["title"], "Database benefit")
+        self.assertEqual(response.data["integrity_principles"][0]["title"], "Database principle")
+
+    def test_inactive_content_is_not_public(self):
+        self.save_content(is_active=False)
+        self.assertEqual(self.client.get("/api/awards/content").status_code, 404)

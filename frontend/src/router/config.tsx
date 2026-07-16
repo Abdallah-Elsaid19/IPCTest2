@@ -27,6 +27,7 @@ import AdminEnquiriesPage from "@/features/admin/enquiries/page";
 import AdminEventsPage from "@/features/admin/events/page";
 import AdminAwardsPage from "@/features/admin/awards/page";
 import AdminMembershipGradesPage from "@/features/admin/membership-grades/page";
+import AdminContentPage from "@/features/admin/content/page";
 import AdminEventDetailsPage from "@/features/admin/events/details/page";
 import AdminLayout from "@/features/admin/layouts/AdminLayout";
 import AdminOverviewPage from "@/features/admin/overview/page";
@@ -78,6 +79,7 @@ const routes: RouteObject[] = [
       { path: "events", element: <AdminEventsPage /> },
       { path: "awards", element: <AdminAwardsPage /> },
       { path: "membership-grades", element: <AdminMembershipGradesPage /> },
+      { path: "content", element: <AdminContentPage /> },
       { path: "events/:id", element: <AdminEventDetailsPage /> },
       { path: "users", element: <ProtectedRoute requireAdmin><AdminUsersPage /></ProtectedRoute> },
       { path: "profile", element: <AdminProfilePage /> },

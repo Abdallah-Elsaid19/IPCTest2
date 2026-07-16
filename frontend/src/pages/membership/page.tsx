@@ -21,7 +21,7 @@ export default function Membership() {
         title: grade.short_title || grade.title,
         description: grade.description || "",
         image: grade.image_url,
-        postNominal: grade.short_title,
+        postNominal: grade.post_nominal,
       })),
     [membershipGrades],
   );
@@ -64,6 +64,8 @@ export default function Membership() {
         setLoadError("");
         const grades = await apiJson<MembershipGrade[]>(
           "/api/membership-grades",
+          undefined,
+          { cache: "no-store" },
         );
         if (!cancelled) setMembershipGrades(grades);
       } catch (error) {

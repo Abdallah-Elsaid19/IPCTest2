@@ -3,6 +3,57 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
 import { buildAboutPageSchema } from "@/lib/seo/structuredData";
+import { apiJson } from "@/lib/api";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
+
+interface AboutCardContent {
+  icon: string;
+  title: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface AboutStatistic {
+  number: string;
+  label: string;
+  is_active?: boolean;
+}
+
+interface VisionPillar {
+  icon: string;
+  title: string;
+  is_active?: boolean;
+}
+
+interface AboutPageContent {
+  statistics: AboutStatistic[];
+  why_exists: AboutCardContent[];
+  vision_pillars: VisionPillar[];
+  missions: AboutCardContent[];
+  core_values: AboutCardContent[];
+  identity_symbols: AboutCardContent[];
+  updated_at: string;
+}
+
+const emptyAboutContent: AboutPageContent = {
+  statistics: [],
+  why_exists: [],
+  vision_pillars: [],
+  missions: [],
+  core_values: [],
+  identity_symbols: [],
+  updated_at: "",
+};
+
+function AboutContentError({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background-950 px-6">
+      <div className="border border-red-900/60 bg-red-950/30 px-8 py-6 text-center text-red-200" role="alert">
+        {message}
+      </div>
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────
    SCROLL-DRIVEN ABOUT PAGE — OWL AS VISUAL GUIDE
@@ -13,8 +64,29 @@ import { buildAboutPageSchema } from "@/lib/seo/structuredData";
 export default function AboutPage() {
   const [globalScrollY, setGlobalScrollY] = useState(0);
   const [heroProgress, setHeroProgress] = useState(0);
+  const [content, setContent] = useState<AboutPageContent>(emptyAboutContent);
+  const [contentError, setContentError] = useState("");
   const heroRef = useRef<HTMLElement>(null);
   const rafRef = useRef<number | null>(null);
+
+  const loadContent = useCallback(async () => {
+      try {
+        const response = await apiJson<AboutPageContent>(
+          "/api/about/content",
+          undefined,
+          { cache: "no-store" },
+        );
+        setContent(response);
+        setContentError("");
+      } catch (error) {
+        setContentError(error instanceof Error ? error.message : "About content could not be loaded.");
+      }
+  }, []);
+
+  useEffect(() => {
+    void loadContent();
+    return subscribeToContentUpdates("about", () => void loadContent());
+  }, [loadContent]);
 
   /* ── Global scroll tracking ── */
   const onScroll = useCallback(() => {
@@ -54,7 +126,7 @@ export default function AboutPage() {
 
     document.querySelectorAll(".scene-reveal").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [content]);
 
   /* ── Ring rotation observer ── */
   useEffect(() => {
@@ -74,7 +146,9 @@ export default function AboutPage() {
 
     document.querySelectorAll(".radar-scene").forEach((el) => ringObserver.observe(el));
     return () => ringObserver.disconnect();
-  }, []);
+  }, [content]);
+
+  if (contentError) return <AboutContentError message={contentError} />;
 
   return (
     <div className="bg-background-950 text-background-50 overflow-x-hidden">
@@ -92,32 +166,32 @@ export default function AboutPage() {
       {/* ═══════════════════════════════════════════
           SCENE 2 — WHO WE ARE
           ═══════════════════════════════════════════ */}
-      <SceneWhoWeAre />
+      <SceneWhoWeAre statistics={content.statistics.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 3 — WHY IPC EXISTS (Eye Transition)
           ═══════════════════════════════════════════ */}
-      <SceneWhyExist />
+      <SceneWhyExist pillars={content.why_exists.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 4 — OUR VISION
           ═══════════════════════════════════════════ */}
-      <SceneVision />
+      <SceneVision pillars={content.vision_pillars.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 5 — OUR MISSION
           ═══════════════════════════════════════════ */}
-      <SceneMission />
+      <SceneMission missions={content.missions.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 6 — CORE VALUES (Radar + Owl Orbit)
           ═══════════════════════════════════════════ */}
-      <SceneCoreValues />
+      <SceneCoreValues values={content.core_values.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 7 — THE IPC IDENTITY
           ═══════════════════════════════════════════ */}
-      <SceneIdentity />
+      <SceneIdentity symbols={content.identity_symbols.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 8 — FINALE
@@ -341,7 +415,7 @@ function OwlTransitionBridge({ progress }: { progress: number }) {
    SCENE 2 — WHO WE ARE
    Owl wing extends, revealing the institution's identity
    ═══════════════════════════════════════════════════════════════ */
-function SceneWhoWeAre() {
+function SceneWhoWeAre({ statistics }: { statistics: AboutStatistic[] }) {
   return (
     <section id="scene-who" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
       {/* Wing-curve background accent */}
@@ -405,15 +479,10 @@ function SceneWhoWeAre() {
 
             {/* Stats row */}
             <div className="flex flex-wrap gap-8 md:gap-14 mt-10 pt-8 border-t border-background-200">
-              {[
-                { n: "5", l: "Membership Grades" },
-                { n: "35+", l: "Countries" },
-                { n: "8", l: "Competence Domains" },
-                { n: "12", l: "Years" },
-              ].map((s) => (
-                <div key={s.l}>
-                  <div className="font-heading text-3xl md:text-4xl font-bold text-primary-500">{s.n}</div>
-                  <div className="text-xs text-foreground-500 tracking-wider uppercase mt-1">{s.l}</div>
+              {statistics.map((statistic) => (
+                <div key={statistic.label}>
+                  <div className="font-heading text-3xl md:text-4xl font-bold text-primary-500">{statistic.number}</div>
+                  <div className="text-xs text-foreground-500 tracking-wider uppercase mt-1">{statistic.label}</div>
                 </div>
               ))}
             </div>
@@ -427,7 +496,7 @@ function SceneWhoWeAre() {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 3 — WHY IPC EXISTS (Owl Eye → Analytical Circles)
    ═══════════════════════════════════════════════════════════════ */
-function SceneWhyExist() {
+function SceneWhyExist({ pillars }: { pillars: AboutCardContent[] }) {
   return (
     <section id="scene-why" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
       {/* Dot matrix background */}
@@ -503,18 +572,14 @@ function SceneWhyExist() {
 
           {/* Three insight pillars */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-14">
-            {[
-              { icon: "ri-search-eye-line", t: "Foresight", d: "Project controls professionals see ahead — identifying risks, modelling outcomes and enabling informed choices before commitments are made." },
-              { icon: "ri-bar-chart-grouped-line", t: "Evidence", d: "Every recommendation, forecast and assessment is grounded in data, analysis and professional judgement — not assumption or optimism." },
-              { icon: "ri-scales-3-line", t: "Accountability", d: "Controls professionals take responsibility for the quality, validity and timeliness of the information that shapes major decisions." },
-            ].map((p) => (
-              <div key={p.t} className="scene-reveal transition-all duration-1000 group p-8 bg-background-900/60 border border-background-800 hover:border-primary-500/20"
+            {pillars.map((pillar) => (
+              <div key={pillar.title} className="scene-reveal transition-all duration-1000 group p-8 bg-background-900/60 border border-background-800 hover:border-primary-500/20"
                 style={{ opacity: 0, transform: "translateY(24px)", transitionDelay: "0.15s" }}>
                 <div className="w-12 h-12 bg-primary-500/10 flex items-center justify-center mb-5">
-                  <i className={`${p.icon} text-xl text-primary-400`} />
+                  <i className={`${pillar.icon} text-xl text-primary-400`} />
                 </div>
-                <h4 className="font-heading text-lg font-semibold text-background-50 mb-3">{p.t}</h4>
-                <p className="text-sm text-background-400 leading-relaxed">{p.d}</p>
+                <h4 className="font-heading text-lg font-semibold text-background-50 mb-3">{pillar.title}</h4>
+                <p className="text-sm text-background-400 leading-relaxed">{pillar.description}</p>
               </div>
             ))}
           </div>
@@ -527,7 +592,7 @@ function SceneWhyExist() {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 4 — OUR VISION (Owl gliding through horizon)
    ═══════════════════════════════════════════════════════════════ */
-function SceneVision() {
+function SceneVision({ pillars }: { pillars: VisionPillar[] }) {
   return (
     <section id="scene-vision" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
       {/* Architectural horizon lines */}
@@ -571,17 +636,13 @@ function SceneVision() {
 
             {/* Three vision pillars */}
             <div className="flex flex-col sm:flex-row gap-6 mt-10">
-              {[
-                { icon: "ri-home-smile-line", t: "Trusted Professional Home" },
-                { icon: "ri-seedling-line", t: "Stronger Talent Pipeline" },
-                { icon: "ri-vip-crown-line", t: "A Respected Profession" },
-              ].map((v) => (
-                <div key={v.t} className="flex items-start gap-3">
+              {pillars.map((pillar) => (
+                <div key={pillar.title} className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-primary-100 flex items-center justify-center shrink-0">
-                    <i className={`${v.icon} text-base text-primary-600`} />
+                    <i className={`${pillar.icon} text-base text-primary-600`} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-background-950">{v.t}</p>
+                    <p className="text-sm font-semibold text-background-950">{pillar.title}</p>
                   </div>
                 </div>
               ))}
@@ -612,14 +673,7 @@ function SceneVision() {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 5 — OUR MISSION (Owl path → mission framework)
    ═══════════════════════════════════════════════════════════════ */
-function SceneMission() {
-  const missions = [
-    { icon: "ri-award-line", title: "Advance Professional Recognition", desc: "A structured route for professionals to demonstrate competence, integrity, development and contribution through clear membership grades." },
-    { icon: "ri-bar-chart-grouped-line", title: "Strengthen Project Delivery", desc: "Promote project controls as an integrated discipline that improves time, cost, risk, quality, safety, carbon, transparency and accountability." },
-    { icon: "ri-team-line", title: "Build Professional Community", desc: "Bring together practitioners, employers, consultants, training providers, academics and learners through events, clubs, awards and publications." },
-    { icon: "ri-door-open-line", title: "Open Access to Opportunity", desc: "Support learners and career changers through scholarships, bursaries, mentoring, master classes and employer partnerships." },
-  ];
-
+function SceneMission({ missions }: { missions: AboutCardContent[] }) {
   return (
     <section id="scene-mission" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
       {/* Owl silhouette passing through */}
@@ -671,7 +725,7 @@ function SceneMission() {
                 <i className={`${m.icon} text-lg text-primary-400`} />
               </div>
               <h4 className="font-heading text-base font-semibold text-background-50 mb-2">{m.title}</h4>
-              <p className="text-sm text-background-400 leading-relaxed">{m.desc}</p>
+              <p className="text-sm text-background-400 leading-relaxed">{m.description}</p>
             </div>
           ))}
         </div>
@@ -683,18 +737,7 @@ function SceneMission() {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 6 — CORE VALUES (Radar + Owl circulating)
    ═══════════════════════════════════════════════════════════════ */
-function SceneCoreValues() {
-  const values = [
-    { icon: "ri-shield-check-line", title: "Integrity", desc: "Present data and professional standing honestly. Reports, forecasts and claims should be evidence-led." },
-    { icon: "ri-brain-line", title: "Competence", desc: "Recognition based on relevant knowledge, skills, behaviours, judgement and evidence." },
-    { icon: "ri-hand-heart-line", title: "Accountability", desc: "Take responsibility for the quality, validity and timeliness of project information." },
-    { icon: "ri-lightbulb-flash-line", title: "Independence", desc: "Support project management while retaining independence to challenge weak assumptions." },
-    { icon: "ri-group-line", title: "Collaboration", desc: "Work with engineers, commercial teams, planners, PMO, finance and clients." },
-    { icon: "ri-arrow-up-circle-line", title: "Growth", desc: "Maintain CPD, learn from projects, share lessons and improve tools and standards." },
-    { icon: "ri-cpu-line", title: "Technology", desc: "Use AI, digital systems and analytics to improve insight while protecting data quality." },
-    { icon: "ri-leaf-line", title: "Sustainability", desc: "Help projects understand environmental impact, carbon consequences and responsible delivery." },
-  ];
-
+function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
   return (
     <section id="scene-values" className="relative bg-background-50 py-24 md:py-36 overflow-hidden radar-scene">
       {/* Large radar ring system */}
@@ -745,7 +788,7 @@ function SceneCoreValues() {
                 <i className={`${v.icon} text-lg text-primary-600`} />
               </div>
               <h4 className="font-heading text-sm font-semibold text-background-950 mb-2">{v.title}</h4>
-              <p className="text-xs text-foreground-600 leading-relaxed">{v.desc}</p>
+              <p className="text-xs text-foreground-600 leading-relaxed">{v.description}</p>
             </div>
           ))}
         </div>
@@ -776,15 +819,7 @@ function SceneCoreValues() {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 7 — THE IPC IDENTITY (All elements converge)
    ═══════════════════════════════════════════════════════════════ */
-function SceneIdentity() {
-  const symbols = [
-    { icon: "ri-eye-line", title: "Wisdom & Judgement", desc: "The owl represents the professional insight and calm authority that project controls brings to complex decisions." },
-    { icon: "ri-focus-3-line", title: "Insight & Foresight", desc: "The eye represents the analytical clarity and forward-looking perspective that defines the discipline." },
-    { icon: "ri-donut-chart-line", title: "Control & Evidence", desc: "The circles represent the structured frameworks, data integrity and evidence-based approach of professional controls." },
-    { icon: "ri-flight-takeoff-line", title: "Progression & Ambition", desc: "The wings represent professional growth, institutional ambition and the career pathway that IPC provides." },
-    { icon: "ri-share-line", title: "Connection & Contribution", desc: "The dot patterns represent the global community of professionals connected through shared standards and purpose." },
-  ];
-
+function SceneIdentity({ symbols }: { symbols: AboutCardContent[] }) {
   return (
     <section id="scene-identity" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
       {/* Dot matrix + halftone map */}
@@ -830,7 +865,7 @@ function SceneIdentity() {
                 <i className={`${s.icon} text-2xl text-primary-400`} />
               </div>
               <h4 className="font-heading text-sm font-semibold text-background-50 mb-2">{s.title}</h4>
-              <p className="text-xs text-background-400 leading-relaxed">{s.desc}</p>
+              <p className="text-xs text-background-400 leading-relaxed">{s.description}</p>
             </div>
           ))}
         </div>

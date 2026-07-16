@@ -1,6 +1,18 @@
 from rest_framework import serializers
 from ipc_backend.validators import clean_text
-from .models import AwardCategory, AwardProgramme, AwardsInterest
+from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInterest
+
+
+class AwardPageContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AwardPageContent
+        fields = [
+            "nomination_timeline",
+            "impact_benefits",
+            "integrity_principles",
+            "updated_at",
+        ]
+        read_only_fields = fields
 
 
 class AwardCategorySerializer(serializers.ModelSerializer):

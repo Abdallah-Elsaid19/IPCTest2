@@ -59,6 +59,7 @@ function EventCard({
   onToggleVisibility: () => void;
 }) {
   const isEventbriteEvent = Boolean(event.eventbrite_id);
+  const isEnded = event.lifecycle_status === "ended";
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E2D7C9] bg-[#FFFDF9] p-3 text-[#221E1A] shadow-[0_10px_30px_rgba(66,48,31,0.08)] transition hover:-translate-y-1 hover:shadow-[0_16px_38px_rgba(66,48,31,0.14)]">
       <div className="relative h-56 overflow-hidden rounded-xl bg-[#E9DFD2]">
@@ -72,6 +73,7 @@ function EventCard({
           <span className="rounded-full bg-primary-500 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-[#0B0B0B]">{formatEventType(event.event_type)}</span>
           {event.is_featured && <span className="rounded-full bg-white px-3 py-1 text-[9px] font-black uppercase tracking-wider text-[#0B0B0B]">Featured</span>}
           {isEventbriteEvent && <span className="rounded-full bg-[#F4ECE1] px-3 py-1 text-[9px] font-black uppercase tracking-wider text-[#4F4841]">Eventbrite · Read only</span>}
+          {isEnded && <span className="rounded-full bg-[#322D28] px-3 py-1 text-[9px] font-black uppercase tracking-wider text-white">Ended</span>}
         </div>
         <span className={`absolute bottom-4 right-4 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wider ${event.is_published ? "bg-emerald-100 text-emerald-800" : "bg-white/90 text-[#554E47]"}`}>{event.is_published ? "Published" : "Draft"}</span>
         {event.is_hidden_on_site && <span className="absolute bottom-4 left-4 rounded-full bg-red-100 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-red-800">Hidden from site</span>}
@@ -85,7 +87,7 @@ function EventCard({
             <p className="flex items-center gap-3"><Clock3 size={18} className="shrink-0 text-[#B4AAA0]" />Ends at {formatTime(event.ends_at)}</p>
           </div>
         </div>
-        <p className="sr-only">{event.status || "No status"}</p>
+        <p className="sr-only">{event.lifecycle_status || event.status || "No status"}</p>
         <h2 className="order-1 min-h-14 text-xl font-black leading-snug text-[#202A38]">{event.title}</h2>
         <p className="hidden">{event.description || "Event details have not been added yet."}</p>
         <div className="order-3 mt-4 space-y-2 text-sm font-semibold text-[#6F6861]">
@@ -101,11 +103,11 @@ function EventCard({
           <button
             type="button"
             onClick={onToggleVisibility}
-            disabled={isVisibilitySaving || (!event.is_published && !event.is_hidden_on_site)}
+            disabled={isVisibilitySaving || isEnded || (!event.is_published && !event.is_hidden_on_site)}
             className={`${isEventbriteEvent ? "col-span-2" : ""} inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#D8CCBD] bg-[#F4ECE1] text-xs font-bold text-[#554E47] transition hover:border-primary-500 hover:text-primary-800 disabled:cursor-not-allowed disabled:opacity-45`}
           >
             {isVisibilitySaving ? <LoaderCircle size={15} className="animate-spin" /> : event.is_hidden_on_site ? <Eye size={15} /> : <EyeOff size={15} />}
-            {event.is_hidden_on_site ? "Show on IPC website" : event.is_published ? "Hide from IPC website" : "Not published on website"}
+            {isEnded ? "Ended · hidden from website" : event.is_hidden_on_site ? "Show on IPC website" : event.is_published ? "Hide from IPC website" : "Not published on website"}
           </button>
           {!isEventbriteEvent && (
             <button type="button" onClick={onDelete} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-700 transition hover:bg-red-100" aria-label={`Delete ${event.title}`}><Trash2 size={15}/> Delete</button>
@@ -350,15 +352,17 @@ export default function AdminEventsPage() {
       event.region,
       event.venue_name,
       event.status,
+      event.lifecycle_status,
     ].some((value) => value.toLowerCase().includes(normalizedEventSearch));
     const matchesSource = !eventSource || (
       eventSource === "eventbrite" ? Boolean(event.eventbrite_id) : !event.eventbrite_id
     );
     const matchesType = !eventType || event.event_type === eventType;
     const matchesVisibility = !eventVisibility
-      || (eventVisibility === "visible" && event.is_published && !event.is_hidden_on_site)
+      || (eventVisibility === "visible" && event.is_published && !event.is_hidden_on_site && event.lifecycle_status !== "ended")
       || (eventVisibility === "hidden" && event.is_hidden_on_site)
-      || (eventVisibility === "draft" && !event.is_published);
+      || (eventVisibility === "draft" && !event.is_published)
+      || (eventVisibility === "ended" && event.lifecycle_status === "ended");
     return matchesSearch && matchesSource && matchesType && matchesVisibility;
   });
   const registrationEventOptions = Array.from(
@@ -425,7 +429,7 @@ export default function AdminEventsPage() {
             <div className="flex flex-wrap gap-2">
               <select value={eventSource} onChange={(changeEvent) => { setEventSource(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event source"><option value="">All sources</option><option value="local">IPC local</option><option value="eventbrite">Eventbrite</option></select>
               <select value={eventType} onChange={(changeEvent) => { setEventType(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event type"><option value="">All event types</option><option value="london_master_class">London Master Class</option><option value="regional_club">Regional Club</option><option value="other">Other</option></select>
-              <select value={eventVisibility} onChange={(changeEvent) => { setEventVisibility(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event visibility"><option value="">All visibility</option><option value="visible">Visible on site</option><option value="hidden">Hidden from site</option><option value="draft">Draft / unpublished</option></select>
+              <select value={eventVisibility} onChange={(changeEvent) => { setEventVisibility(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event visibility"><option value="">All visibility</option><option value="visible">Visible on site</option><option value="hidden">Hidden from site</option><option value="draft">Draft / unpublished</option><option value="ended">Ended</option></select>
             </div>
           </div>
           {visibleEvents.length ? <div className="grid gap-6 p-5 md:grid-cols-2 2xl:grid-cols-3">

@@ -8,7 +8,22 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from datetime import timedelta
 
-from .models import Event, EventRegistration, EventbriteAttendeeSnapshot
+from .models import Event, EventPageContent, EventRegistration, EventbriteAttendeeSnapshot
+from .services.eventbrite import EventbriteClient
+
+
+class EventbriteClientTests(TestCase):
+    @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
+    @patch.object(EventbriteClient, "_request")
+    def test_organization_attendees_does_not_send_unsupported_page_size(self, request):
+        request.return_value = {
+            "attendees": [],
+            "pagination": {"has_more_items": False},
+        }
+
+        EventbriteClient(token="test-token").get_organization_attendees()
+
+        request.assert_called_once_with("organizations/org-123/attendees/", {})
 
 
 class AdminEventApiTests(TestCase):
@@ -153,6 +168,36 @@ class AdminEventApiTests(TestCase):
             404,
         )
 
+    def test_ended_event_is_labelled_in_admin_and_hidden_from_public_site(self):
+        ended_event = Event.objects.create(
+            title="Ended IPC event",
+            slug="ended-ipc-event",
+            event_type=Event.EventType.OTHER,
+            starts_at=timezone.now() - timedelta(hours=2),
+            ends_at=timezone.now() - timedelta(hours=1),
+            status="live",
+            is_published=True,
+        )
+        upcoming_event = Event.objects.create(
+            title="Upcoming IPC event",
+            slug="upcoming-ipc-event",
+            event_type=Event.EventType.OTHER,
+            starts_at=timezone.now() + timedelta(days=1),
+            ends_at=timezone.now() + timedelta(days=1, hours=2),
+            status="live",
+            is_published=True,
+        )
+
+        public_response = self.client.get("/api/events")
+        public_ids = [event["id"] for event in public_response.data]
+        self.assertNotIn(ended_event.pk, public_ids)
+        self.assertIn(upcoming_event.pk, public_ids)
+
+        self.client.force_authenticate(self.admin)
+        admin_response = self.client.get(f"/api/admin/events/{ended_event.pk}")
+        self.assertEqual(admin_response.status_code, 200, admin_response.data)
+        self.assertEqual(admin_response.data["lifecycle_status"], "ended")
+
     @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
     @patch("events.views.get_configured_client")
     def test_staff_can_view_normalized_eventbrite_attendees(self, get_client):
@@ -225,6 +270,55 @@ class AdminEventApiTests(TestCase):
         self.client.force_authenticate(self.member)
         response = self.client.get("/api/admin/eventbrite/attendees")
         self.assertEqual(response.status_code, 403)
+
+
+class EventPageContentApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def save_content(self, *, is_active=True):
+        return EventPageContent.objects.update_or_create(
+            key="main",
+            defaults={
+                "featured_programme": {
+                    "eyebrow": "Database programme",
+                    "title": "Database title",
+                    "description": "Database programme description.",
+                    "image_url": "https://example.com/programme.jpg",
+                    "image_alt": "Database programme",
+                    "highlights": [{
+                        "icon": "highlight-icon",
+                        "title": "Database highlight",
+                        "description": "Database highlight description.",
+                    }],
+                },
+                "formats": [{
+                    "icon": "format-icon",
+                    "title": "Database format",
+                    "description": "Database format description.",
+                    "image": "https://example.com/format.jpg",
+                }],
+                "audiences": [{
+                    "icon": "audience-icon",
+                    "title": "Database audience",
+                    "description": "Database audience description.",
+                }],
+                "is_active": is_active,
+            },
+        )
+
+    def test_public_endpoint_returns_active_database_content(self):
+        self.save_content()
+        response = self.client.get("/api/events/content")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["featured_programme"]["title"], "Database title")
+        self.assertEqual(response.data["formats"][0]["title"], "Database format")
+        self.assertEqual(response.data["audiences"][0]["title"], "Database audience")
+
+    def test_inactive_content_is_not_public(self):
+        self.save_content(is_active=False)
+        self.assertEqual(self.client.get("/api/events/content").status_code, 404)
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
