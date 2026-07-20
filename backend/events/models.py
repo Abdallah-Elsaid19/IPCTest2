@@ -127,6 +127,7 @@ class EventPageContent(models.Model):
 class EventbriteAttendeeSnapshot(models.Model):
     organization_id = models.CharField(max_length=128, unique=True)
     payload = models.JSONField(default=list)
+    total_count = models.PositiveIntegerField(default=0)
     synced_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -2,7 +2,7 @@ export const adminUrl = (import.meta.env.VITE_DJANGO_ADMIN_URL || "http://localh
 
 const statusLabels: Record<string, string> = {
   submitted: "Submitted", under_review: "Under Review", more_info_required: "More information",
-  approved: "Approved", rejected: "Rejected", new: "New", in_progress: "In progress",
+  approved: "Approved", refused: "Refused", rejected: "Rejected", new: "New", in_progress: "In progress",
   handled: "Handled", contacted: "Contacted", closed: "Closed", spam: "Spam",
   registered: "Registered", waitlisted: "Waitlisted", cancelled: "Cancelled",
 };

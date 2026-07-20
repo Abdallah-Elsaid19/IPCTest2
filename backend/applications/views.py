@@ -26,6 +26,7 @@ from .services import (
     ApprovalConflict,
     approve_application,
     resend_welcome_email as resend_membership_welcome_email,
+    refuse_application,
 )
 
 
@@ -157,9 +158,9 @@ class AdminApplicationViewSet(
     @action(detail=True, methods=["patch"], url_path="status")
     def status(self, request, pk=None):
         current = get_object_or_404(Application, pk=pk)
-        if current.status == Application.Status.APPROVED:
+        if current.status in (Application.Status.APPROVED, Application.Status.REFUSED):
             return Response(
-                {"detail": "Approved applications are locked and their status cannot be changed."},
+                {"detail": "Completed applications are locked and their status cannot be changed."},
                 status=http_status.HTTP_409_CONFLICT,
             )
 
@@ -190,13 +191,36 @@ class AdminApplicationViewSet(
             payload["welcome_email_error"] = outcome.welcome_email_error
             return Response(payload)
 
+        if requested_status == Application.Status.REFUSED:
+            try:
+                outcome = refuse_application(
+                    application_id=current.pk,
+                    refused_by=request.user,
+                    reason=status_validator.validated_data["refusal_reason"],
+                )
+            except ApprovalConflict as error:
+                return Response(
+                    {"detail": str(error)},
+                    status=http_status.HTTP_409_CONFLICT,
+                )
+            cache.delete("ipc:admin-dashboard:v2")
+            payload = AdminApplicationSerializer(
+                self.get_queryset().get(pk=outcome.application.pk),
+                context={"request": request},
+            ).data
+            payload["refusal_email_sent"] = outcome.refusal_email_sent
+            payload["refusal_email_error"] = outcome.refusal_email_error
+            return Response(payload)
+
         allowed_transitions = {
             Application.Status.SUBMITTED: {
                 Application.Status.SUBMITTED,
                 Application.Status.UNDER_REVIEW,
+                Application.Status.REFUSED,
             },
             Application.Status.UNDER_REVIEW: {
                 Application.Status.UNDER_REVIEW,
+                Application.Status.REFUSED,
             },
         }
         if requested_status not in allowed_transitions.get(current.status, set()):
@@ -210,6 +234,12 @@ class AdminApplicationViewSet(
                 Application.objects.select_for_update(),
                 pk=pk,
             )
+            allowed = allowed_transitions.get(application.status, set())
+            if requested_status not in allowed:
+                return Response(
+                    {"detail": "This status transition is not allowed."},
+                    status=http_status.HTTP_409_CONFLICT,
+                )
             serializer = ApplicationStatusUpdateSerializer(
                 application,
                 data=request.data,

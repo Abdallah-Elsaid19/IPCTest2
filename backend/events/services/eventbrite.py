@@ -7,6 +7,12 @@ from django.conf import settings
 API_BASE_URL = "https://www.eventbriteapi.com/v3/"
 
 
+class EventbriteAttendeeCollection(list):
+    def __init__(self, items, total_count):
+        super().__init__(items)
+        self.total_count = total_count
+
+
 class EventbriteError(Exception):
     """A safe, user-readable Eventbrite integration error."""
 
@@ -101,11 +107,33 @@ class EventbriteClient:
                 "Eventbrite organization is not configured. Set EVENTBRITE_ORGANIZATION_ID=your_org_id.",
                 503,
             )
-        return self._all_pages(
-            f"organizations/{organization_id}/attendees/",
-            collection_key="attendees",
-            max_items=100,
-        )
+        path = f"organizations/{organization_id}/attendees/"
+        attendees = []
+        query = {}
+        total_count = None
+        max_items = 100
+        while True:
+            data = self._request(path, query)
+            page_attendees = data.get("attendees") or []
+            attendees.extend(page_attendees)
+            pagination = data.get("pagination") or {}
+            if total_count is None:
+                try:
+                    total_count = int(pagination.get("object_count"))
+                except (TypeError, ValueError):
+                    total_count = None
+            if len(attendees) >= max_items:
+                return EventbriteAttendeeCollection(
+                    attendees[:max_items],
+                    max(total_count or 0, len(attendees)),
+                )
+            continuation = pagination.get("continuation")
+            if not pagination.get("has_more_items") or not continuation:
+                return EventbriteAttendeeCollection(
+                    attendees,
+                    max(total_count or 0, len(attendees)),
+                )
+            query["continuation"] = continuation
 
 
 def get_configured_client():
@@ -115,4 +143,7 @@ def get_configured_client():
         from events.models import EventbriteConnection
         connection = EventbriteConnection.objects.first()
         token = connection.access_token if connection else ""
-    return EventbriteClient(token=token)
+    return EventbriteClient(
+        token=token,
+        timeout=getattr(settings, "EVENTBRITE_REQUEST_TIMEOUT", 60),
+    )

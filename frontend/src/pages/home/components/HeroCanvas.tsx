@@ -137,7 +137,7 @@ export default function HeroCanvas() {
       <div className="absolute top-[70%] left-[44%] technical-crosshair opacity-25 z-10" />
 
       {/* ── Headline — Integrated into composition ── */}
-      <div className="relative z-20 flex items-end min-h-[100dvh] pb-24 md:pb-32 px-8 md:px-14 lg:px-20 pr-6 md:pr-12">
+      <div className="relative z-20 flex items-end min-h-[100dvh] pb-24 md:pb-32 px-8 md:px-14 lg:px-32 pr-6 md:pr-12">
         <div className="w-full max-w-[600px]">
           <div
             className={`mb-8 md:mb-10 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
@@ -146,10 +146,9 @@ export default function HeroCanvas() {
             <span className="text-[10px] font-mono text-primary-500/70 tracking-[0.3em] uppercase block mb-5">
               Institute of Project Controls
             </span>
-            <h1 className="font-heading text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em]">
-              Evidence-led<br />
-              <span className="text-primary-500">professional</span><br />
-              <span className="text-background-300">judgement.</span>
+            <h1 className="font-heading text-7xl font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em]">
+                The professional home for<br />
+              <span className="text-primary-500">Project Controls</span><br />
             </h1>
           </div>
 
@@ -159,13 +158,12 @@ export default function HeroCanvas() {
           >
             <div className="w-20 gold-rule mb-2 sm:mb-0 sm:self-end" />
             <p className="text-sm md:text-base text-background-400 max-w-[400px] leading-[1.7] font-medium">
-              The institution for professionals who plan, control and deliver the world&rsquo;s most complex projects — from nuclear energy to national infrastructure.
-            </p>
+              A standards-informed, evidence-based pathway for professionals who plan, control, assure and improve project delivery.            </p>
             <Link
               to="/membership"
               className="group hidden sm:inline-flex items-center gap-3 px-5 py-3 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-colors duration-400 whitespace-nowrap shrink-0"
             >
-              <span>Recognition Pathway</span>
+              <span>Explore recognition</span>
               <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
@@ -173,12 +171,12 @@ export default function HeroCanvas() {
       </div>
 
       {/* ── Mobile CTA ── */}
-      <div className="sm:hidden absolute bottom-20 left-8 right-6 z-20">
+      <div className="sm:hidden absolute bottom-16  right-6 z-20">
         <Link
           to="/membership"
           className="inline-flex items-center gap-3 px-5 py-3 bg-primary-500 text-background-950 text-sm font-bold tracking-wide"
         >
-          <span>Recognition Pathway</span>
+          <span>Explore recognition</span>
           <i className="ri-arrow-right-line" />
         </Link>
       </div>

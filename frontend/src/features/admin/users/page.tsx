@@ -45,8 +45,14 @@ export default function AdminUsersPage() {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const requestId = useRef(0);
+  const requestController = useRef<AbortController | null>(null);
+  const saveLock = useRef(false);
+  const actionLock = useRef(false);
 
   const loadUsers = useCallback(async () => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
     const id = ++requestId.current;
     setIsLoading(true);
     try {
@@ -54,15 +60,15 @@ export default function AdminUsersPage() {
         page,
         search: search.trim(),
         ...filters,
-      });
-      if (id === requestId.current) setResult(response);
+      }, controller.signal);
+      if (!controller.signal.aborted && id === requestId.current) setResult(response);
     } catch (error) {
-      if (id === requestId.current)
+      if (!controller.signal.aborted && id === requestId.current)
         notifications.error(
           error instanceof Error ? error.message : "Could not load users.",
         );
     } finally {
-      if (id === requestId.current) setIsLoading(false);
+      if (!controller.signal.aborted && id === requestId.current) setIsLoading(false);
     }
   }, [filters, page, search]);
 
@@ -71,9 +77,12 @@ export default function AdminUsersPage() {
       () => {
         void loadUsers();
       },
-      search ? 300 : 0,
+      search ? 350 : 0,
     );
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      requestController.current?.abort();
+    };
   }, [loadUsers, search]);
 
   const openCreate = () => {
@@ -86,6 +95,8 @@ export default function AdminUsersPage() {
   };
 
   const saveUser = async (payload: AdminUserPayload) => {
+    if (saveLock.current) return;
+    saveLock.current = true;
     setIsSaving(true);
     try {
       if (editingUser) {
@@ -114,12 +125,14 @@ export default function AdminUsersPage() {
         error instanceof Error ? error.message : "Could not save the user.",
       );
     } finally {
+      saveLock.current = false;
       setIsSaving(false);
     }
   };
 
   const runConfirmedAction = async () => {
-    if (!confirmAction) return;
+    if (!confirmAction || actionLock.current) return;
+    actionLock.current = true;
     const { type, user } = confirmAction;
     setBusyUserId(user.id);
     try {
@@ -143,6 +156,7 @@ export default function AdminUsersPage() {
           : "The action could not be completed.",
       );
     } finally {
+      actionLock.current = false;
       setBusyUserId(null);
     }
   };

@@ -320,6 +320,7 @@ class AdminApplicationSerializer(ApplicationSerializer):
             "approved_user", "approved_user_email", "approved_user_is_managed_account",
             "approved_by", "approved_by_name",
             "approved_at", "account_created_at", "welcome_email_sent_at", "reviewer_note",
+            "refusal_reason", "refused_by", "refused_at", "refusal_email_sent_at",
         ]
         read_only_fields = [
             "id", "application_id", "application_reference", "created_at", "updated_at", "submitted_at", "status",
@@ -327,6 +328,7 @@ class AdminApplicationSerializer(ApplicationSerializer):
             "reviewer_notes", "status_history",
             "reviewed_by", "reviewed_at", "approved_user", "approved_by", "approved_at",
             "account_created_at", "welcome_email_sent_at",
+            "refusal_reason", "refused_by", "refused_at", "refusal_email_sent_at",
         ]
 
     def get_reviewed_by_name(self, application):
@@ -391,11 +393,22 @@ class AdminApplicationListSerializer(serializers.ModelSerializer):
 
 
 class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
+    refusal_reason = serializers.CharField(required=False, allow_blank=True, max_length=4000)
+
     class Meta:
         model = Application
-        fields = ["status"]
+        fields = ["status", "refusal_reason"]
+
+    def validate(self, attrs):
+        if attrs.get("status") == Application.Status.REFUSED:
+            reason = clean_text(attrs.get("refusal_reason", ""))
+            if not reason:
+                raise serializers.ValidationError({"refusal_reason": "A refusal reason is required."})
+            attrs["refusal_reason"] = reason
+        return attrs
 
     def update(self, instance, validated_data):
+        validated_data.pop("refusal_reason", None)
         new_status = validated_data["status"]
         if new_status == instance.status:
             return instance

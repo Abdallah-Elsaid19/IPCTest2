@@ -28,7 +28,7 @@ export interface DashboardApplication {
   submitted_at: string;
 }
 
-export type ApplicationStatus = "submitted" | "under_review" | "approved";
+export type ApplicationStatus = "submitted" | "under_review" | "approved" | "refused";
 
 export interface ApplicationEvidence {
   id: number;
@@ -113,6 +113,12 @@ export interface AdminApplicationDetail {
   welcome_email_sent_at: string | null;
   welcome_email_sent?: boolean;
   welcome_email_error?: string | null;
+  refusal_reason: string;
+  refused_by: number | null;
+  refused_at: string | null;
+  refusal_email_sent_at: string | null;
+  refusal_email_sent?: boolean;
+  refusal_email_error?: string | null;
 }
 
 export interface DashboardEnquiry {
@@ -147,6 +153,7 @@ export interface DashboardRegistration {
 
 export interface EventbriteAttendeeResponse {
   results: DashboardRegistration[];
+  total_count: number;
   is_stale: boolean;
   synced_at: string | null;
 }

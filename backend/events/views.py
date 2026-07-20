@@ -365,11 +365,18 @@ class AdminEventbriteAttendeesView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get(self, request):
-        cache_key = "ipc:admin:eventbrite-attendees:v3"
+        # Versioned so deployments that remove result limits do not reuse an
+        # older, truncated attendee cache entry.
+        cache_key = "ipc:admin:eventbrite-attendees:v5"
         force_refresh = request.query_params.get("refresh") == "1"
         cached = None if force_refresh else cache.get(cache_key)
         if cached is not None:
-            return Response({"results": cached, "is_stale": False, "synced_at": None})
+            return Response({
+                "results": cached["results"],
+                "total_count": cached["total_count"],
+                "is_stale": False,
+                "synced_at": None,
+            })
 
         from .models import EventbriteConnection
 
@@ -385,11 +392,12 @@ class AdminEventbriteAttendeesView(APIView):
         if snapshot is not None and not force_refresh:
             return Response({
                 "results": snapshot.payload,
+                "total_count": snapshot.total_count or len(snapshot.payload),
                 "is_stale": True,
                 "synced_at": snapshot.synced_at.isoformat(),
             })
         if not force_refresh:
-            return Response({"results": [], "is_stale": True, "synced_at": None})
+            return Response({"results": [], "total_count": 0, "is_stale": True, "synced_at": None})
 
         try:
             client = get_configured_client()
@@ -404,6 +412,10 @@ class AdminEventbriteAttendeesView(APIView):
                     status=None,
                 )
                 attendees = attendees_future.result()
+                attendee_total = max(
+                    int(getattr(attendees, "total_count", 0) or 0),
+                    len(attendees),
+                )
                 try:
                     remote_events = events_future.result()
                 except EventbriteError:
@@ -455,14 +467,19 @@ class AdminEventbriteAttendeesView(APIView):
             })
 
         payload.sort(key=lambda item: item.get("created_at") or "", reverse=True)
-        payload = payload[:100]
-        cache.set(cache_key, payload, 600)
+        cache.set(
+            cache_key,
+            {"results": payload, "total_count": attendee_total},
+            600,
+        )
         snapshot, _ = EventbriteAttendeeSnapshot.objects.update_or_create(
             organization_id=organization_id,
-            defaults={"payload": payload},
+            defaults={"payload": payload, "total_count": attendee_total},
         )
+        cache.delete("ipc:admin-dashboard:v2")
         return Response({
             "results": payload,
+            "total_count": attendee_total,
             "is_stale": False,
             "synced_at": snapshot.synced_at.isoformat(),
         })

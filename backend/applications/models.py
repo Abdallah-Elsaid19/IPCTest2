@@ -40,6 +40,7 @@ class Application(models.Model):
         SUBMITTED = "submitted", "Submitted"
         UNDER_REVIEW = "under_review", "Under Review"
         APPROVED = "approved", "Approved"
+        REFUSED = "refused", "Refused"
 
     class ContactPreference(models.TextChoices):
         EMAIL = "email", "Email"
@@ -98,6 +99,16 @@ class Application(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     account_created_at = models.DateTimeField(null=True, blank=True)
     welcome_email_sent_at = models.DateTimeField(null=True, blank=True)
+    refusal_reason = models.TextField(blank=True)
+    refused_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="refused_membership_applications",
+    )
+    refused_at = models.DateTimeField(null=True, blank=True)
+    refusal_email_sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "applications_application"
@@ -133,12 +144,17 @@ class Application(models.Model):
             previous = type(self).objects.filter(pk=self.pk).values(
                 "status",
                 "approved_user_id",
+                "refusal_reason",
             ).first()
             if previous:
-                if previous["status"] == self.Status.APPROVED and self.status != self.Status.APPROVED:
-                    errors["status"] = "Approved applications are locked and their status cannot be changed."
+                if previous["status"] in (self.Status.APPROVED, self.Status.REFUSED) and self.status != previous["status"]:
+                    errors["status"] = "Completed applications are locked and their status cannot be changed."
                 if previous["approved_user_id"] and previous["approved_user_id"] != self.approved_user_id:
                     errors["approved_user"] = "The approved user relationship cannot be changed."
+                if previous["status"] == self.Status.REFUSED and previous["refusal_reason"] != self.refusal_reason:
+                    errors["refusal_reason"] = "The refusal reason is locked and cannot be changed."
+        if self.status == self.Status.REFUSED and not self.refusal_reason.strip():
+            errors["refusal_reason"] = "A refusal reason is required."
         if not isinstance(self.grade_specific_data, dict):
             errors["grade_specific_data"] = "Grade-specific data must be a JSON object."
         if self.form_definition_id:
@@ -154,15 +170,20 @@ class Application(models.Model):
             previous = type(self).objects.filter(pk=self.pk).values(
                 "status",
                 "approved_user_id",
+                "refusal_reason",
             ).first()
             if previous:
                 errors = {}
-                if previous["status"] == self.Status.APPROVED and self.status != self.Status.APPROVED:
-                    errors["status"] = "Approved applications are locked and their status cannot be changed."
+                if previous["status"] in (self.Status.APPROVED, self.Status.REFUSED) and self.status != previous["status"]:
+                    errors["status"] = "Completed applications are locked and their status cannot be changed."
                 if previous["approved_user_id"] and previous["approved_user_id"] != self.approved_user_id:
                     errors["approved_user"] = "The approved user relationship cannot be changed."
+                if previous["status"] == self.Status.REFUSED and previous["refusal_reason"] != self.refusal_reason:
+                    errors["refusal_reason"] = "The refusal reason is locked and cannot be changed."
                 if errors:
                     raise ValidationError(errors)
+        if self.status == self.Status.REFUSED and not self.refusal_reason.strip():
+            raise ValidationError({"refusal_reason": "A refusal reason is required."})
         if not self.application_reference:
             self.application_reference = generate_application_reference()
         if self.form_definition_id:

@@ -217,3 +217,50 @@ Institute of Project Controls
         text_body=text_body,
         html_body=html_body,
     )
+
+
+def send_membership_refusal_email(
+    *, recipient, name, application_reference, membership_grade, reason
+):
+    safe_name = html.escape(name or "Applicant")
+    safe_reference = html.escape(application_reference)
+    safe_grade = html.escape(membership_grade)
+    safe_reason = html.escape(reason).replace("\n", "<br>")
+    text_body = f"""Hello {name or 'Applicant'},
+
+Thank you for applying for IPC membership. After reviewing your application, we are unable to approve it at this time.
+
+Application Reference: {application_reference}
+Membership Grade: {membership_grade}
+
+Reason:
+{reason}
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.6;max-width:620px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:24px">Membership application update</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Hello {safe_name},</p>
+          <p>Thank you for applying for IPC membership. After reviewing your application, we are unable to approve it at this time.</p>
+          <div style="background:#f4ece1;padding:16px 18px;margin:20px 0">
+            <p style="margin:0 0 6px"><strong>Application Reference:</strong> {safe_reference}</p>
+            <p style="margin:0"><strong>Membership Grade:</strong> {safe_grade}</p>
+          </div>
+          <p><strong>Reason:</strong></p>
+          <p>{safe_reason}</p>
+          <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    _send_mime_message(
+        recipient=recipient,
+        subject="Your IPC Membership Application",
+        text_body=text_body,
+        html_body=html_body,
+    )

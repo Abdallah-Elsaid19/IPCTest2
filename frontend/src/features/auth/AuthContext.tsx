@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { LoaderCircle, LogOut } from "lucide-react";
 import { authApi } from "./authApi";
 import type { AuthUser } from "./types";
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
+  isLoggingOut: boolean;
   login: (credentials: { email: string; password: string }) => Promise<AuthUser>;
   logout: () => Promise<void>;
   updateProfile: (payload: FormData) => Promise<AuthUser>;
@@ -43,7 +45,9 @@ function broadcastSignOut() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const sessionRevision = useRef(0);
+  const logoutPromise = useRef<Promise<void> | null>(null);
 
   const clearSession = useCallback(() => {
     sessionRevision.current += 1;
@@ -113,13 +117,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return response.user;
   }, []);
 
-  const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } finally {
+  const logout = useCallback(() => {
+    if (logoutPromise.current) return logoutPromise.current;
+
+    setIsLoggingOut(true);
+    const request = authApi.logout().finally(() => {
       clearSession();
       broadcastSignOut();
-    }
+      setIsLoggingOut(false);
+      logoutPromise.current = null;
+    });
+    logoutPromise.current = request;
+    return request;
   }, [clearSession]);
 
   const updateProfile = useCallback(async (payload: FormData) => {
@@ -129,10 +138,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, logout, updateProfile }),
-    [user, isLoading, login, logout, updateProfile],
+    () => ({ user, isLoading, isLoggingOut, login, logout, updateProfile }),
+    [user, isLoading, isLoggingOut, login, logout, updateProfile],
   );
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {isLoggingOut && <LogoutOverlay />}
+    </AuthContext.Provider>
+  );
+}
+
+function LogoutOverlay() {
+  return (
+    <div
+      className="fixed inset-0 z-[9999] grid place-items-center bg-black/70 px-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="logout-title"
+      aria-describedby="logout-description"
+    >
+      <div className="w-full max-w-sm border border-primary-500/45 bg-background-950 px-8 py-9 text-center shadow-[0_28px_80px_rgba(0,0,0,0.65)]">
+        <div className="relative mx-auto grid h-16 w-16 place-items-center">
+          <LoaderCircle className="absolute animate-spin text-primary-500" size={64} strokeWidth={1.5} aria-hidden="true" />
+          <LogOut className="text-background-100" size={22} aria-hidden="true" />
+        </div>
+        <h2 id="logout-title" className="mt-6 font-heading text-xl font-bold text-background-50">
+          Signing out
+        </h2>
+        <p id="logout-description" className="mt-2 text-sm text-background-400">
+          Ending your secure session…
+        </p>
+      </div>
+    </div>
+  );
 }
 
 // The provider and its colocated hook intentionally share this small auth module.

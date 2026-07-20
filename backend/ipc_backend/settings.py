@@ -46,6 +46,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "ipc_backend.idempotency.IdempotencyMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -182,3 +183,4 @@ EVENTBRITE_CLIENT_SECRET = env("EVENTBRITE_CLIENT_SECRET", default="")
 EVENTBRITE_PRIVATE_TOKEN = env("EVENTBRITE_PRIVATE_TOKEN", default="")
 EVENTBRITE_REDIRECT_URI = env("EVENTBRITE_REDIRECT_URI", default="http://localhost:8000/api/events/eventbrite/callback")
 EVENTBRITE_ORGANIZATION_ID = env("EVENTBRITE_ORGANIZATION_ID", default="")
+EVENTBRITE_REQUEST_TIMEOUT = env.int("EVENTBRITE_REQUEST_TIMEOUT", default=60)

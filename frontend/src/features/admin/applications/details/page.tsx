@@ -210,7 +210,7 @@ export default function AdminApplicationDetailsPage() {
         action={
           <Link
             to="/admin/applications"
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold text-primary-800 shadow-sm hover:bg-[#FFF9F1]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#171411] px-5 text-sm font-bold text-white shadow-md transition hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
           >
             <ArrowLeft size={15} /> Back to Applications
           </Link>
@@ -236,6 +236,11 @@ export default function AdminApplicationDetailsPage() {
               {application.status === "approved" && (
                 <p className="mt-2 max-w-xs text-xs leading-5 text-[#6F665D]">
                   This application has been approved and its status can no longer be changed.
+                </p>
+              )}
+              {application.status === "refused" && (
+                <p className="mt-2 max-w-xs text-xs leading-5 text-red-800">
+                  This application has been refused and is permanently locked.
                 </p>
               )}
             </div>
@@ -396,6 +401,21 @@ export default function AdminApplicationDetailsPage() {
                 </button>
               )}
             </div>
+          </DetailSection>
+        )}
+
+        {application.status === "refused" && (
+          <DetailSection
+            title="Refusal details"
+            description="The reason below was sent to the applicant by email."
+          >
+            <DetailGrid items={[
+              { label: "Applicant", value: applicantName },
+              { label: "Applicant email", value: application.email },
+              { label: "Refused at", value: application.refused_at ? formatDate(application.refused_at) : "—" },
+              { label: "Refusal email sent", value: application.refusal_email_sent_at ? formatDate(application.refusal_email_sent_at) : "Not sent" },
+              { label: "Reason for refusal", value: application.refusal_reason, wide: true },
+            ]} />
           </DetailSection>
         )}
 

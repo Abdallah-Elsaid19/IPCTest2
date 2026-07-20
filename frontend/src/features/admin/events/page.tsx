@@ -341,8 +341,7 @@ export default function AdminEventsPage() {
   ]
     .sort((left, right) => (
       new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
-    ))
-    .slice(0, 200);
+    ));
   const normalizedEventSearch = eventSearch.trim().toLowerCase();
   const filteredEvents = events.filter((event) => {
     const matchesSearch = !normalizedEventSearch || [

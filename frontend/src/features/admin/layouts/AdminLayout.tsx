@@ -100,7 +100,7 @@ export default function AdminLayout() {
             </span>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold">IPC Admin</p>
-              <p className="text-[9px] uppercase tracking-[0.18em] text-white/40">
+              <p className="text-[9px] uppercase tracking-[0.18em] text-white/60">
                 Control centre
               </p>
             </div>
@@ -123,7 +123,7 @@ export default function AdminLayout() {
         aria-label="Admin navigation"
       >
         {!compact && (
-          <p className="mb-3 px-3 font-mono text-[9px] uppercase tracking-[0.24em] text-white/30">
+          <p className="mb-3 px-3 font-mono text-[9px] uppercase tracking-[0.24em] text-white/60">
             Workspace
           </p>
         )}
@@ -135,7 +135,7 @@ export default function AdminLayout() {
               to={to}
               title={compact ? label : undefined}
               onClick={closeMobile}
-              className={`flex items-center rounded-xl py-3 text-sm transition-colors ${compact ? "justify-center px-2" : "gap-3 px-3"} ${active ? "bg-primary-500 font-semibold text-[#0B0B0B]" : "text-white/60 hover:bg-white/5 hover:text-white"}`}
+              className={`flex items-center rounded-xl py-3 text-sm transition-colors ${compact ? "justify-center px-2" : "gap-3 px-3"} ${active ? "bg-primary-500 font-semibold text-[#0B0B0B]" : "text-white/70 hover:bg-white/20 hover:text-white"}`}
             >
               <Icon size={18} />
               {!compact && label}
@@ -148,7 +148,7 @@ export default function AdminLayout() {
           target="_blank"
           rel="noreferrer"
           title={compact ? "Django Admin" : undefined}
-          className={`flex items-center rounded-xl py-3 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white ${compact ? "justify-center px-2" : "gap-3 px-3"}`}
+          className={`flex items-center rounded-xl py-3 text-sm text-white/70 transition-colors hover:bg-white/20 hover:text-white ${compact ? "justify-center px-2" : "gap-3 px-3"}`}
         >
           <ExternalLink size={17} />
           {!compact && "Django Admin"}
@@ -156,7 +156,7 @@ export default function AdminLayout() {
         <Link
           to="/home"
           title={compact ? "Back to website" : undefined}
-          className={`flex items-center rounded-xl py-3 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white ${compact ? "justify-center px-2" : "gap-3 px-3"}`}
+          className={`flex items-center rounded-xl py-3 text-sm text-white/70 transition-colors hover:bg-white/20 hover:text-white ${compact ? "justify-center px-2" : "gap-3 px-3"}`}
         >
           <ChevronLeft size={17} />
           {!compact && "Back to website"}
@@ -230,7 +230,7 @@ export default function AdminLayout() {
         </>
       )}
 
-      <div className="min-w-0 p-4 xl:py-5 xl:pr-5">
+      <div className="min-w-0 p-4 xl:py-5 xl:pr-5 ">
         <header className="sticky top-4 z-40 flex h-16 items-center justify-between rounded-2xl border border-white/80 bg-[#FFFDF9]/95 px-4 shadow-[0_8px_30px_rgba(66,48,31,0.06)] backdrop-blur-xl md:px-6">
           <div className="flex items-center gap-3">
             <button

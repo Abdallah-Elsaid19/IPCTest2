@@ -39,17 +39,19 @@ export interface AdminApplicationQuery {
 }
 
 let eventbriteAttendeeCache: DashboardRegistration[] | null = null;
+let eventbriteAttendeeTotal = 0;
 let eventbriteAttendeeCacheExpiresAt = 0;
 let eventbriteAttendeeRequest: Promise<EventbriteAttendeeResponse> | null = null;
 
 function loadEventbriteAttendees() {
   if (eventbriteAttendeeCache && Date.now() < eventbriteAttendeeCacheExpiresAt) {
-    return Promise.resolve({ results: eventbriteAttendeeCache, is_stale: false, synced_at: null });
+    return Promise.resolve({ results: eventbriteAttendeeCache, total_count: eventbriteAttendeeTotal, is_stale: false, synced_at: null });
   }
   if (eventbriteAttendeeRequest) return eventbriteAttendeeRequest;
   eventbriteAttendeeRequest = apiJson<EventbriteAttendeeResponse>("/api/admin/eventbrite/attendees")
     .then((response) => {
       eventbriteAttendeeCache = response.results;
+      eventbriteAttendeeTotal = response.total_count;
       eventbriteAttendeeCacheExpiresAt = Date.now() + 5 * 60 * 1000;
       return response;
     })
@@ -63,6 +65,7 @@ function refreshEventbriteAttendees() {
   return apiJson<EventbriteAttendeeResponse>("/api/admin/eventbrite/attendees?refresh=1")
     .then((response) => {
       eventbriteAttendeeCache = response.results;
+      eventbriteAttendeeTotal = response.total_count;
       eventbriteAttendeeCacheExpiresAt = Date.now() + 5 * 60 * 1000;
       return response;
     });
@@ -142,20 +145,23 @@ export const adminApi = {
       `/api/admin/applications/${id}/resend-welcome-email`,
       {},
     ),
-  updateApplicationStatus: (id: number, status: ApplicationStatus) =>
+  updateApplicationStatus: (id: number, status: ApplicationStatus, refusalReason?: string) =>
     apiJson<AdminApplicationDetail>(
       `/api/admin/applications/${id}/status`,
-      { status },
+      { status, ...(status === "refused" ? { refusal_reason: refusalReason } : {}) },
       { method: "PATCH" },
     ),
-  users: (query: AdminUserQuery) => {
+  users: (query: AdminUserQuery, signal?: AbortSignal) => {
     const params = new URLSearchParams();
     if (query.page && query.page > 1) params.set("page", String(query.page));
     if (query.search) params.set("search", query.search);
     if (query.active) params.set("active", query.active);
     if (query.role) params.set("role", query.role);
     const suffix = params.size ? `?${params}` : "";
-    return apiJson<PaginatedAdminUsers>(`/api/admin/users${suffix}`);
+    return apiJson<PaginatedAdminUsers>(`/api/admin/users${suffix}`, undefined, {
+      signal,
+      requestSource: "AdminUsersPage",
+    });
   },
   user: (id: number) => apiJson<AdminUser>(`/api/admin/users/${id}`),
   createUser: (payload: AdminUserPayload) => apiJson<AdminUser>("/api/admin/users", payload),

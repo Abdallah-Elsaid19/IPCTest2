@@ -18,7 +18,7 @@ from applications.models import Application
 from awards.models import AwardProgramme, AwardsInterest
 from clubs.models import ClubEnquiry
 from contact.models import ContactSubmission
-from events.models import Event, EventRegistration
+from events.models import Event, EventRegistration, EventbriteAttendeeSnapshot
 from media_library.models import MediaAsset
 from memberships.models import MembershipGrade
 from newsletter.models import NewsletterSignup
@@ -73,7 +73,23 @@ def _dashboard_counts():
     ]
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        return dict(zip(keys, cursor.fetchone()))
+        counts = dict(zip(keys, cursor.fetchone()))
+
+    # Eventbrite attendees are stored as a normalized snapshot so the overview
+    # remains fast and never blocks on a live third-party API request.
+    eventbrite_snapshot = (
+        EventbriteAttendeeSnapshot.objects.order_by("-synced_at")
+        .values("payload", "total_count")
+        .first()
+    )
+    if eventbrite_snapshot:
+        eventbrite_payload = eventbrite_snapshot["payload"]
+        snapshot_count = eventbrite_snapshot["total_count"]
+        counts["event_registrations"] += max(
+            snapshot_count,
+            len(eventbrite_payload) if isinstance(eventbrite_payload, list) else 0,
+        )
+    return counts
 
 
 def _status_counts():

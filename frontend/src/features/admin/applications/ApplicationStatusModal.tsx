@@ -11,7 +11,7 @@ import type {
 } from "@/features/admin/types";
 
 const schema = z.object({
-  status: z.enum(["submitted", "under_review", "approved"]),
+  status: z.enum(["submitted", "under_review", "approved", "refused"]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -25,11 +25,13 @@ export default function ApplicationStatusModal({
   application: DashboardApplication | null;
   isSaving: boolean;
   onClose: () => void;
-  onSave: (status: ApplicationStatus) => Promise<void>;
+  onSave: (status: ApplicationStatus, refusalReason?: string) => Promise<void>;
 }) {
   const [approvalStatus, setApprovalStatus] = useState<ApplicationStatus | null>(
     null,
   );
+  const [refusalReason, setRefusalReason] = useState("");
+  const [refusalError, setRefusalError] = useState("");
   const {
     register,
     handleSubmit,
@@ -44,6 +46,8 @@ export default function ApplicationStatusModal({
     if (!application) return;
     reset({ status: application.status as ApplicationStatus });
     setApprovalStatus(null);
+    setRefusalReason("");
+    setRefusalError("");
   }, [application, reset]);
 
   useEffect(() => {
@@ -62,7 +66,7 @@ export default function ApplicationStatusModal({
       onClose();
       return;
     }
-    if (status === "approved") {
+    if (status === "approved" || status === "refused") {
       setApprovalStatus(status);
       return;
     }
@@ -129,7 +133,7 @@ export default function ApplicationStatusModal({
             </div>
           </dl>
 
-          {approvalStatus ? (
+          {approvalStatus === "approved" ? (
             <div className="rounded-xl border border-[#D79525]/35 bg-[#F6E8D2] p-4">
               <div className="flex gap-3">
                 <AlertTriangle className="mt-0.5 shrink-0 text-[#83540C]" size={20} />
@@ -146,6 +150,41 @@ export default function ApplicationStatusModal({
                 </div>
               </div>
             </div>
+          ) : approvalStatus === "refused" ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-red-700/20 bg-red-50 p-4">
+                <div className="flex gap-3">
+                  <AlertTriangle className="mt-0.5 shrink-0 text-red-700" size={20} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-red-900">Refuse application?</p>
+                    <p className="mt-2 text-sm font-bold text-[#332D27]">{application.name}</p>
+                    <p className="mt-0.5 break-all text-xs text-[#6F665D]">{application.email}</p>
+                    <p className="mt-3 text-xs leading-5 text-red-800">
+                      The applicant will receive one email containing the reason below. This action cannot be reversed or submitted twice.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <label className="block text-xs font-bold uppercase tracking-wide text-[#655D55]">
+                Reason for refusal <span className="text-red-700">*</span>
+                <textarea
+                  autoFocus
+                  value={refusalReason}
+                  onChange={(event) => {
+                    setRefusalReason(event.target.value);
+                    if (event.target.value.trim()) setRefusalError("");
+                  }}
+                  rows={5}
+                  maxLength={4000}
+                  disabled={isSaving}
+                  className="mt-2 w-full resize-y rounded-xl border border-[#D9CDBE] bg-white px-3 py-3 text-sm font-medium normal-case outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-60"
+                  placeholder="Explain clearly why this application was refused..."
+                  aria-invalid={Boolean(refusalError)}
+                  aria-describedby={refusalError ? "refusal-reason-error" : undefined}
+                />
+                {refusalError && <span id="refusal-reason-error" className="mt-1 block text-[11px] normal-case text-red-600">{refusalError}</span>}
+              </label>
+            </div>
           ) : (
             <label className="block text-xs font-bold uppercase tracking-wide text-[#655D55]">
               New status
@@ -159,6 +198,7 @@ export default function ApplicationStatusModal({
                 )}
                 <option value="under_review">Under Review</option>
                 <option value="approved">Approved</option>
+                <option value="refused">Refused</option>
               </select>
               {errors.status && (
                 <span className="mt-1 block text-[11px] normal-case text-red-600">
@@ -178,7 +218,7 @@ export default function ApplicationStatusModal({
           >
             {approvalStatus ? "Back" : "Cancel"}
           </button>
-          {approvalStatus ? (
+          {approvalStatus === "approved" ? (
             <button
               type="button"
               onClick={() => void onSave(approvalStatus)}
@@ -187,6 +227,23 @@ export default function ApplicationStatusModal({
             >
               {isSaving && <LoaderCircle size={15} className="animate-spin" />}
               Approve and Create Account
+            </button>
+          ) : approvalStatus === "refused" ? (
+            <button
+              type="button"
+              onClick={() => {
+                const reason = refusalReason.trim();
+                if (!reason) {
+                  setRefusalError("A refusal reason is required.");
+                  return;
+                }
+                void onSave("refused", reason);
+              }}
+              disabled={isSaving}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-700 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving && <LoaderCircle size={15} className="animate-spin" />}
+              Refuse and Send Email
             </button>
           ) : (
             <button

@@ -57,7 +57,7 @@ class ApplicationAdmin(admin.ModelAdmin):
     readonly_fields = (
         "application_reference", "form_version", "submitted_at", "created_at", "updated_at",
         "reviewed_at", "approved_user", "approved_by", "approved_at", "account_created_at",
-        "welcome_email_sent_at",
+        "welcome_email_sent_at", "refusal_reason", "refused_by", "refused_at", "refusal_email_sent_at",
     )
     autocomplete_fields = ("membership_grade", "form_definition", "reviewed_by")
     inlines = [ApplicationEvidenceInline, ApplicationReferenceInline, ReviewerNoteInline, ApplicationStatusHistoryInline]
@@ -70,6 +70,7 @@ class ApplicationAdmin(admin.ModelAdmin):
             "approved_user", "approved_by", "approved_at", "account_created_at",
             "welcome_email_sent_at",
         )}),
+        ("Refusal", {"fields": ("refusal_reason", "refused_by", "refused_at", "refusal_email_sent_at")}),
         ("Timestamps", {"fields": ("submitted_at", "created_at", "updated_at")}),
     )
 
@@ -79,7 +80,7 @@ class ApplicationAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
-        if obj and obj.status == Application.Status.APPROVED:
+        if obj and obj.status in (Application.Status.APPROVED, Application.Status.REFUSED):
             readonly.extend(["status", "reviewed_by"])
         return tuple(dict.fromkeys(readonly))
 

@@ -5,6 +5,7 @@ from .approval import (
     generate_unique_ipc_email,
     resend_welcome_email,
 )
+from .refusal import RefusalOutcome, refuse_application
 
 __all__ = [
     "ApprovalConflict",
@@ -12,4 +13,6 @@ __all__ = [
     "approve_application",
     "generate_unique_ipc_email",
     "resend_welcome_email",
+    "RefusalOutcome",
+    "refuse_application",
 ]

@@ -49,9 +49,9 @@ export default function RecognitionPathway() {
           {/* ── Left ── */}
           <div className="lg:col-span-5 mb-12 lg:mb-0 lg:sticky lg:top-28">
             <h2 className="font-heading text-[clamp(1.8rem,3.5vw,3rem)] font-extrabold text-foreground-950 leading-[1.08] tracking-[-0.03em] mb-6">
-              A progression<br />
-              <span className="text-primary-600">built on evidence,</span><br />
-              not time served.
+             Find the level<br />
+              <span className="text-primary-600">that reflects</span><br />
+              your current contribution.
             </h2>
             <p className="text-sm md:text-base text-foreground-600 leading-[1.8] font-medium max-w-[400px] mb-8">
               Each grade is earned through independent assessment of your competence portfolio. There are no automatic upgrades — every step represents a genuine advancement in professional capability.

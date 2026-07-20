@@ -470,6 +470,50 @@ class AdminApplicationApiTests(TestCase):
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, "submitted")
 
+    @patch("applications.services.refusal.send_membership_refusal_email")
+    def test_admin_can_refuse_once_with_required_reason_and_email(self, send_refusal_email):
+        self.client.force_authenticate(self.admin)
+
+        missing_reason = self.patch_request(
+            f"/api/admin/applications/{self.application.pk}/status",
+            {"status": "refused", "refusal_reason": "   "},
+            format="json",
+        )
+        self.assertEqual(missing_reason.status_code, 400, missing_reason.data)
+        send_refusal_email.assert_not_called()
+
+        response = self.patch_request(
+            f"/api/admin/applications/{self.application.pk}/status",
+            {"status": "refused", "refusal_reason": "The evidence did not meet the grade requirements."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, "refused")
+        self.assertEqual(self.application.refused_by, self.admin)
+        self.assertIsNotNone(self.application.refused_at)
+        self.assertIsNotNone(self.application.refusal_email_sent_at)
+        self.assertEqual(send_refusal_email.call_count, 1)
+        mail_kwargs = send_refusal_email.call_args.kwargs
+        self.assertEqual(mail_kwargs["recipient"], "nora@example.com")
+        self.assertEqual(mail_kwargs["name"], "Nora Ali")
+        self.assertEqual(mail_kwargs["reason"], self.application.refusal_reason)
+        self.assertTrue(self.application.status_history.filter(
+            to_status="refused",
+            note=self.application.refusal_reason,
+            changed_by=self.admin,
+        ).exists())
+
+        repeated = self.patch_request(
+            f"/api/admin/applications/{self.application.pk}/status",
+            {"status": "refused", "refusal_reason": "A different reason."},
+            format="json",
+        )
+        self.assertEqual(repeated.status_code, 409, repeated.data)
+        self.application.refresh_from_db()
+        self.assertEqual(send_refusal_email.call_count, 1)
+        self.assertEqual(self.application.refusal_reason, "The evidence did not meet the grade requirements.")
+
     def test_status_endpoint_does_not_change_other_fields(self):
         self.client.force_authenticate(self.admin)
         response = self.patch_request(

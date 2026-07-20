@@ -76,7 +76,7 @@ export default function AdminApplicationsPage() {
   useEffect(() => {
     const timer = window.setTimeout(
       () => void loadApplications(),
-      search ? 150 : 0,
+      search ? 350 : 0,
     );
     return () => window.clearTimeout(timer);
   }, [loadApplications, search]);
@@ -86,7 +86,7 @@ export default function AdminApplicationsPage() {
     [],
   );
 
-  const saveStatus = async (status: ApplicationStatus) => {
+  const saveStatus = async (status: ApplicationStatus, refusalReason?: string) => {
     if (!editingApplication || saveLock.current) return;
     saveLock.current = true;
     setIsSaving(true);
@@ -94,6 +94,7 @@ export default function AdminApplicationsPage() {
       const updated = await adminApi.updateApplicationStatus(
         editingApplication.id,
         status,
+        refusalReason,
       );
       updateRecentApplication(updated, editingApplication.status);
       // Keep every overview metric authoritative (for example the user count
@@ -109,6 +110,13 @@ export default function AdminApplicationsPage() {
           notifications.error(
             "The account was created, but the welcome email could not be sent. It can be retried from the application details page.",
           );
+        }
+      } else if (status === "refused") {
+        if (updated.refusal_email_sent) {
+          notifications.success("Application refused and the refusal email was sent.");
+        } else {
+          notifications.success("Application refused successfully.");
+          notifications.error("The application was refused, but the email could not be sent.");
         }
       } else {
         notifications.success("Application status updated successfully.");
@@ -185,6 +193,7 @@ export default function AdminApplicationsPage() {
               <option value="submitted">Submitted</option>
               <option value="under_review">Under Review</option>
               <option value="approved">Approved</option>
+              <option value="refused">Refused</option>
             </select>
             <select
               aria-label="Filter membership grade"
@@ -269,12 +278,12 @@ export default function AdminApplicationsPage() {
                         <button
                           type="button"
                           onClick={() => setEditingApplication(item)}
-                          disabled={item.status === "approved"}
+                          disabled={item.status === "approved" || item.status === "refused"}
                           className="grid h-9 w-9 place-items-center rounded-lg border border-[#D8CCBD] bg-white text-[#554E47] shadow-sm transition hover:border-primary-500 hover:bg-primary-500 hover:text-[#0B0B0B] focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:cursor-not-allowed disabled:bg-[#F1ECE5] disabled:text-[#A89E93] disabled:shadow-none"
-                          aria-label={item.status === "approved" ? `Application ${item.reference} status is locked` : `Edit status for application ${item.reference}`}
-                          title={item.status === "approved" ? "This application has been approved and its status can no longer be changed." : "Edit status"}
+                          aria-label={["approved", "refused"].includes(item.status) ? `Application ${item.reference} status is locked` : `Edit status for application ${item.reference}`}
+                          title={["approved", "refused"].includes(item.status) ? "This application is complete and its status can no longer be changed." : "Edit status"}
                         >
-                          {item.status === "approved" ? <LockKeyhole size={15} /> : <Pencil size={15} />}
+                          {["approved", "refused"].includes(item.status) ? <LockKeyhole size={15} /> : <Pencil size={15} />}
                         </button>
                       </div>
                     </td>

@@ -165,6 +165,30 @@ class AdminDashboardApiTests(APITestCase):
         self.assertEqual(response.data["counts"]["club_enquiries"], 1)
         self.assertEqual(len(response.data["recent_enquiries"]), 2)
 
+    def test_dashboard_registration_count_includes_ipc_and_eventbrite(self):
+        from events.models import EventRegistration, EventbriteAttendeeSnapshot
+
+        EventRegistration.objects.create(
+            event_name="IPC Controls Forum",
+            event_type=EventRegistration.EventType.OTHER,
+            name="Local attendee",
+            email="local-attendee@example.com",
+        )
+        EventbriteAttendeeSnapshot.objects.create(
+            organization_id="eventbrite-org-1",
+            total_count=7,
+            payload=[
+                {"id": "eventbrite-1", "source": "eventbrite"},
+                {"id": "eventbrite-2", "source": "eventbrite"},
+            ],
+        )
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get("/api/admin/dashboard", {"refresh": "1"})
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["counts"]["event_registrations"], 8)
+
     def test_staff_can_view_complete_enquiry_details(self):
         enquiry = ContactSubmission.objects.get(email="contact@example.com")
         self.client.force_authenticate(self.staff)
