@@ -30,7 +30,7 @@ export default function HeroCanvas() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full min-h-[100dvh] bg-background-950 overflow-hidden"
+      className="relative w-full min-h-[100dvh] bg-background-950 overflow-hidden "
     >
       {/* ── Dot Grid Pattern ── */}
       <div className="absolute inset-0 dot-grid-gold opacity-35" />

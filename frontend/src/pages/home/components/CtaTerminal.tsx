@@ -1,16 +1,59 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
+interface ApplicationStep {
+  id: string;
+  title: string;
+  description: string;
+  position: string;
+}
+
+const applicationSteps: ApplicationStep[] = [
+  {
+    id: "01",
+    title: "Choose your pathway",
+    description: "Identify the professional grade that best reflects your current experience and level of responsibility.",
+    position: "left-1/2 top-0 -translate-x-1/2",
+  },
+  {
+    id: "02",
+    title: "Prepare your evidence",
+    description: "Provide relevant qualifications, experience and evidence of professional competence.",
+    position: "right-0 top-[26%]",
+  },
+  {
+    id: "03",
+    title: "Submit your application",
+    description: "Complete the application and submit the required supporting documents for review.",
+    position: "bottom-[8%] right-[10%]",
+  },
+  {
+    id: "04",
+    title: "Professional assessment",
+    description: "Your application is assessed proportionately against the relevant professional requirements.",
+    position: "bottom-[8%] left-[10%]",
+  },
+  {
+    id: "05",
+    title: "Recognition",
+    description: "Approved applicants receive their professional grade, digital credential and title-use guidance.",
+    position: "left-0 top-[26%]",
+  },
+];
+
 export default function CtaTerminal() {
+  const [activeStep, setActiveStep] = useState(4);
+
   return (
-    <section className="relative bg-background-950 section-padding overflow-hidden">
+    <section className="relative bg-background-50 section-padding overflow-hidden">
       {/* ── Gold rule top ── */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
 
       {/* ── Halftone map ── */}
-      <div className="absolute inset-0 halftone-map opacity-40" />
+      <div className="absolute inset-0 halftone-map opacity-10" />
 
       {/* ── Dot grid ── */}
-      <div className="absolute inset-0 dot-grid opacity-[0.04]" />
+      <div className="absolute inset-0 dot-grid opacity-20" />
 
       {/* ── Massive owl ring composition ── */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -58,16 +101,16 @@ export default function CtaTerminal() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-0 items-center">
           {/* ── Left: Statement ── */}
           <div className="lg:col-span-6">
-            <span className="text-[10px] font-mono text-primary-400 tracking-[0.3em] uppercase block mb-6">
-              Begin your professional journey
+            <span className="text-[10px] font-mono text-primary-600 tracking-[0.3em] uppercase block mb-6">
+              Evidence-based application
             </span>
-            <h2 className="font-heading text-[clamp(2rem,4.5vw,3.5rem)] font-extrabold text-background-50 leading-[1.05] tracking-[-0.03em] mb-8">
-              Recognition is<br />
-              <span className="text-primary-500">earned,</span> not<br />
-              given.
+            <h2 className="font-heading text-[clamp(2rem,4.5vw,3.5rem)] font-extrabold text-foreground-950 leading-[1.05] tracking-[-0.03em] mb-8">
+              A clear route to<br />
+              <span className="text-primary-500">professional</span><br />
+              recognition.
             </h2>
-            <p className="text-sm md:text-base text-background-400 leading-[1.8] font-medium max-w-[440px] mb-10">
-              Submit your evidence portfolio for independent assessment. Join a community of professionals whose competence is visible, verifiable, and respected across the sectors that matter most.
+            <p className="text-sm md:text-base text-foreground-600 leading-[1.8] font-medium max-w-[440px] mb-10">
+              Every application should be assessed proportionately, consistently and with respect for the applicant’s current level of responsibility.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -75,23 +118,16 @@ export default function CtaTerminal() {
                 to="/membership"
                 className="group inline-flex items-center gap-3 px-6 py-3.5 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-colors duration-400 whitespace-nowrap"
               >
-                <span>Explore Membership</span>
+                <span>Find your starting grade</span>
                 <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
-              <Link
-                to="/contact"
-                className="group inline-flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-background-300 hover:text-background-50 transition-colors duration-300 whitespace-nowrap border border-background-700/30 hover:border-primary-500/40"
-              >
-                <span>Contact the Institute</span>
-                <i className="ri-arrow-right-line text-xs group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </div>
           </div>
 
           {/* ── Right: Abstract ring compass ── */}
-          <div className="lg:col-span-5 lg:col-start-8 relative hidden lg:flex items-center justify-center">
-            <div className="relative w-[340px] h-[340px]">
-              <svg viewBox="0 0 340 340" className="w-full h-full">
+          <div className="relative flex items-center justify-center lg:col-span-5 lg:col-start-8">
+            <div className="relative h-[340px] w-full max-w-[480px] sm:h-[400px]">
+              <svg viewBox="0 0 340 340" className="absolute inset-0 h-full w-full">
                 <circle cx="170" cy="170" r="155" fill="none" stroke="oklch(0.685 0.132 72 / 0.06)" strokeWidth="0.5" strokeDasharray="1 5" />
                 <circle cx="170" cy="170" r="135" fill="none" stroke="oklch(0.685 0.132 72 / 0.1)" strokeWidth="0.5" />
                 <circle cx="170" cy="170" r="110" fill="none" stroke="oklch(0.685 0.132 72 / 0.18)" strokeWidth="1.5" strokeDasharray="60 8" />
@@ -120,23 +156,56 @@ export default function CtaTerminal() {
 
                 {/* ── Centre ── */}
                 <circle cx="170" cy="170" r="16" fill="oklch(0.685 0.132 72 / 0.12)" stroke="oklch(0.685 0.132 72 / 0.35)" strokeWidth="1" />
-                <text x="170" y="166" textAnchor="middle" className="text-[10px] font-bold fill-background-50 tracking-[0.1em]" style={{ fontFamily: "var(--font-label)" }}>IPC</text>
-                <text x="170" y="180" textAnchor="middle" className="text-[7px] fill-background-400 tracking-[0.15em]" style={{ fontFamily: "var(--font-label)" }}>EARNED</text>
+                <text x="170" y="166" textAnchor="middle" className="text-[10px] font-bold fill-foreground-950 tracking-[0.1em]" style={{ fontFamily: "var(--font-label)" }}>IPC</text>
+                <text x="170" y="180" textAnchor="middle" className="text-[7px] fill-foreground-500 tracking-[0.15em]" style={{ fontFamily: "var(--font-label)" }}>ROUTE</text>
               </svg>
 
               {/* ── Floating technical labels ── */}
-              <div className="absolute top-[15%] right-[8%] text-right">
-                <span className="text-[9px] font-mono text-primary-500/50 tracking-[0.2em] block">EVIDENCE</span>
-                <span className="text-[9px] font-mono text-background-600 block">Portfolio</span>
+              {applicationSteps.map((step, index) => (
+                <button
+                  key={step.id}
+                  type="button"
+                  className={`absolute z-20 flex h-11 w-11 items-center justify-center rounded-full border font-mono text-[10px] font-bold shadow-sm transition-all duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background-50 ${step.position} ${
+                    activeStep === index
+                      ? "scale-110 border-primary-500 bg-primary-500 text-background-950 shadow-lg"
+                      : "border-primary-500/35 bg-background-50 text-primary-700 hover:border-primary-500/75"
+                  }`}
+                  aria-label={`${step.title}: ${step.description}`}
+                  aria-pressed={activeStep === index}
+                  onMouseEnter={() => setActiveStep(index)}
+                  onFocus={() => setActiveStep(index)}
+                  onClick={() => setActiveStep(index)}
+                >
+                  {step.id}
+                </button>
+              ))}
+
+              <div
+                className="absolute left-1/2 top-1/2 z-10 w-[min(72vw,320px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-foreground-200/70 bg-background-100 px-6 py-6 text-left shadow-[0_18px_50px_rgba(66,48,31,0.14)]"
+                aria-live="polite"
+              >
+                <div key={applicationSteps[activeStep].id} className="cta-step-content animate-fade-in">
+                  <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-primary-700">
+                    Step {activeStep + 1} of {applicationSteps.length}
+                  </span>
+                  <span className="mt-3 block font-heading text-xl font-bold leading-tight text-primary-700">
+                    {applicationSteps[activeStep].title}
+                  </span>
+                  <span className="mt-3 block text-sm leading-relaxed text-foreground-600">
+                    {applicationSteps[activeStep].description}
+                  </span>
+                </div>
+                <div className="mt-5 h-1 overflow-hidden rounded-full bg-primary-500/15">
+                  <span
+                    className="cta-step-progress block h-full rounded-full bg-primary-500 transition-[width] duration-500 ease-out"
+                    style={{ width: `${((activeStep + 1) / applicationSteps.length) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="absolute bottom-[20%] left-[5%]">
-                <span className="text-[9px] font-mono text-primary-500/50 tracking-[0.2em] block">ASSESSMENT</span>
-                <span className="text-[9px] font-mono text-background-600 block">Independent</span>
-              </div>
-              <div className="absolute top-[42%] right-[3%]">
-                <span className="text-[9px] font-mono text-primary-500/50 tracking-[0.2em] block">RECOGNITION</span>
-                <span className="text-[9px] font-mono text-background-600 block">Professional</span>
-              </div>
+
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.2em] text-foreground-500">
+                Hover or select to explore
+              </span>
             </div>
           </div>
         </div>

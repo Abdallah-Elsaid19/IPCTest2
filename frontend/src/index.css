@@ -367,6 +367,16 @@
     animation: fade-in 0.3s ease-out forwards;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .cta-step-content {
+      animation: none;
+    }
+
+    .cta-step-progress {
+      transition: none;
+    }
+  }
+
   @keyframes float {
     0%, 100% { transform: translateY(0px) rotate(0deg); }
     50% { transform: translateY(-18px) rotate(3deg); }

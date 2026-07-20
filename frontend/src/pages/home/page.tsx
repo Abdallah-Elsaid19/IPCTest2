@@ -7,6 +7,8 @@ import KnowledgeMosaic from "./components/KnowledgeMosaic";
 import CommunityMetrics from "./components/CommunityMetrics";
 import CtaTerminal from "./components/CtaTerminal";
 import HeroCanvas from "./components/HeroCanvas";
+import MemberValue from "./components/MemberValue";
+import OrganisationalValue from "./components/OrganisationalValue";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
 
@@ -38,8 +40,10 @@ export default function Home() {
       <DisciplineSystem />
       <RecognitionPathway />
       <IntelligenceLayer />
-      <KnowledgeMosaic />
-      <CommunityMetrics />
+      {/* <KnowledgeMosaic /> */}
+      <MemberValue />
+      <OrganisationalValue />
+      {/* <CommunityMetrics /> */}
       <CtaTerminal />
     </div>
   );

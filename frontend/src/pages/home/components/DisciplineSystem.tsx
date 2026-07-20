@@ -2,13 +2,50 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 const disciplines = [
-  { id: "d1", label: "Cost Engineering", angle: 0, icon: "ri-money-pound-circle-line", desc: "Budgeting, cost control and commercial management across the project lifecycle." },
-  { id: "d2", label: "Planning & Scheduling", angle: 51.4, icon: "ri-calendar-schedule-line", desc: "Critical path analysis, resource loading and schedule risk assessment." },
-  { id: "d3", label: "Risk Management", angle: 102.8, icon: "ri-shield-flash-line", desc: "Quantitative risk analysis, Monte Carlo simulation and risk response planning." },
-  { id: "d4", label: "Earned Value", angle: 154.3, icon: "ri-line-chart-line", desc: "Performance measurement baseline, variance analysis and forecasting." },
-  { id: "d5", label: "Estimating", angle: 205.7, icon: "ri-calculator-line", desc: "Top-down, bottom-up and parametric estimating methodologies." },
-  { id: "d6", label: "Change Control", angle: 257.1, icon: "ri-git-branch-line", desc: "Configuration management, trend analysis and baseline maintenance." },
-  { id: "d7", label: "Forensic Analysis", angle: 308.6, icon: "ri-search-eye-line", desc: "Delay analysis, disruption assessment and claims evaluation." },
+  {
+    id: "d1",
+    label: "Governance & assurance",
+    angle: 0,
+    // TODO(reference-image): The icon for item 01 is cropped out and unreadable.
+    icon: "",
+    desc: "Support stage gates, approvals, escalation, reporting cycles and decision confidence.",
+  },
+  {
+    id: "d2",
+    label: "Scope & structures",
+    angle: 60,
+    // TODO(reference-image): The icon for item 02 is cropped out and unreadable.
+    icon: "",
+    desc: "Align WBS, CBS and coding so schedule, cost, risk and reporting describe the same project.",
+  },
+  {
+    id: "d3",
+    label: "Planning & scheduling",
+    angle: 120,
+    icon: "P",
+    desc: "Build credible logic, maintain baselines and explain constraints, variance and recovery.",
+  },
+  {
+    id: "d4",
+    label: "Cost & forecasting",
+    angle: 180,
+    icon: "£",
+    desc: "Turn estimates, commitments, actuals and trends into realistic forecasts and choices.",
+  },
+  {
+    id: "d5",
+    label: "Risk, change & commercial",
+    angle: 240,
+    icon: "R",
+    desc: "Connect uncertainty, contingency, change control and defensible project records.",
+  },
+  {
+    id: "d6",
+    label: "Digital, AI & sustainability",
+    angle: 300,
+    icon: "AI",
+    desc: "Improve insight while protecting data quality, explainability, accountability and public value.",
+  },
 ];
 
 export default function DisciplineSystem() {
@@ -77,7 +114,7 @@ export default function DisciplineSystem() {
       <div className="container-content relative z-10">
         {/* ── Header ── */}
         <div className="flex items-center gap-4 mb-14 md:mb-20">
-          <span className="text-[10px] font-mono text-primary-400 tracking-[0.3em] uppercase">Disciplines</span>
+          <span className="text-[10px] font-mono text-primary-400 tracking-[0.3em] uppercase">The integrated discipline</span>
           <span className="flex-1 h-px bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
@@ -114,7 +151,31 @@ export default function DisciplineSystem() {
                   const endAngle = i < disciplines.length - 1 ? disciplines[i + 1].angle : 360;
                   const isActive = activeId === d.id;
                   return (
-                    <g key={d.id} className="cursor-pointer">
+                    <g
+                      key={d.id}
+                      className="cursor-pointer outline-none"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${d.label}: ${d.desc}`}
+                      onClick={() => setActiveId(isActive ? null : d.id)}
+                      onMouseEnter={() => setActiveId(d.id)}
+                      onMouseLeave={() => setActiveId(null)}
+                      onFocus={() => setActiveId(d.id)}
+                      onBlur={() => setActiveId(null)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setActiveId(isActive ? null : d.id);
+                        }
+                      }}
+                    >
+                      <path
+                        d={segmentPath(d.angle, endAngle, (outerR + innerR) / 2)}
+                        fill="none"
+                        stroke="transparent"
+                        strokeWidth={outerR - innerR}
+                        pointerEvents="stroke"
+                      />
                       {/* ── Outer arc ── */}
                       <path
                         d={segmentPath(d.angle, endAngle, outerR)}
@@ -122,9 +183,6 @@ export default function DisciplineSystem() {
                         stroke={isActive ? "oklch(0.685 0.132 72 / 0.55)" : "oklch(0.685 0.132 72 / 0.15)"}
                         strokeWidth={isActive ? 2.5 : 1}
                         className="transition-all duration-500"
-                        onClick={() => setActiveId(isActive ? null : d.id)}
-                        onMouseEnter={() => setActiveId(d.id)}
-                        onMouseLeave={() => setActiveId(null)}
                       />
                       {/* ── Mid arc ── */}
                       <path
@@ -133,9 +191,6 @@ export default function DisciplineSystem() {
                         stroke={isActive ? "oklch(0.685 0.132 72 / 0.4)" : "oklch(0.685 0.132 72 / 0.08)"}
                         strokeWidth={isActive ? 2 : 0.8}
                         className="transition-all duration-500"
-                        onClick={() => setActiveId(isActive ? null : d.id)}
-                        onMouseEnter={() => setActiveId(d.id)}
-                        onMouseLeave={() => setActiveId(null)}
                       />
                       {/* ── Inner arc ── */}
                       <path
@@ -144,9 +199,6 @@ export default function DisciplineSystem() {
                         stroke={isActive ? "oklch(0.685 0.132 72 / 0.3)" : "oklch(0.685 0.132 72 / 0.05)"}
                         strokeWidth={isActive ? 1.5 : 0.5}
                         className="transition-all duration-500"
-                        onClick={() => setActiveId(isActive ? null : d.id)}
-                        onMouseEnter={() => setActiveId(d.id)}
-                        onMouseLeave={() => setActiveId(null)}
                       />
                       {/* ── Active fill ── */}
                       {isActive && (
@@ -198,9 +250,10 @@ export default function DisciplineSystem() {
 
               {/* ── Active tooltip ── */}
               {active && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-background-900/90 backdrop-blur-sm border border-primary-500/20 px-5 py-3 max-w-[280px] text-center transition-all duration-300 z-10">
-                  <span className="text-[10px] font-mono text-primary-400 tracking-[0.2em] uppercase block mb-1">{active.label}</span>
-                  <span className="text-xs text-background-300 leading-relaxed block">{active.desc}</span>
+                <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-[min(88%,340px)] -translate-x-1/2 border border-primary-500/25 bg-background-900/95 px-6 py-4 text-center shadow-2xl backdrop-blur-md transition-all duration-300">
+                  <span className="mx-auto mb-3 block h-px w-10 bg-primary-500/60" />
+                  <span className="mb-1.5 block font-heading text-sm font-bold text-primary-400">{active.label}</span>
+                  <span className="block text-xs leading-relaxed text-background-300">{active.desc}</span>
                 </div>
               )}
             </div>
@@ -209,11 +262,11 @@ export default function DisciplineSystem() {
           {/* ── Right: Context ── */}
           <div className="lg:col-span-5 lg:col-start-8">
             <h3 className="font-heading text-[clamp(1.5rem,3vw,2.5rem)] font-extrabold text-background-50 leading-[1.1] tracking-[-0.02em] mb-6">
-              Seven disciplines.<br />
-              <span className="text-primary-500">One profession.</span>
+              Better information. Earlier insight.<br />
+              <span className="text-primary-500">Stronger decisions.</span>
             </h3>
             <p className="text-sm md:text-base text-background-400 leading-[1.8] font-medium mb-8 max-w-[420px]">
-              Project controls is not a single skill — it is an integrated set of technical disciplines. IPC recognition validates competence across the full spectrum, with each discipline assessed independently.
+              Project controls turns project information into credible decisions by connecting governance, scope, planning, cost, risk, change, data, sustainability and leadership.
             </p>
             <div className="flex items-center gap-6">
               <div className="w-10 h-px bg-primary-500/40" />
@@ -223,7 +276,7 @@ export default function DisciplineSystem() {
               to="/membership"
               className="group inline-flex items-center gap-3 mt-8 text-sm font-semibold text-primary-400 hover:text-primary-300 transition-colors duration-300"
             >
-              <span>Explore the framework</span>
+              <span>Explore the recognition framework</span>
               <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
