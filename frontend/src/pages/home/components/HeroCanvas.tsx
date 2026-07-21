@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
+import { useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const dataAnnotations = [
   { top: "22%", left: "48%", label: "Schedule Confidence 97%" },
@@ -10,6 +11,8 @@ const dataAnnotations = [
 ];
 
 export default function HeroCanvas() {
+  const content = useManagedSection("hero", { eyebrow: "Institute of Project Controls", title: "The professional home for Project Controls", description: "A standards-informed, evidence-based pathway for professionals who plan, control, assure and improve project delivery.", cta_label: "Explore recognition", cta_url: "/membership", image_url: "https://readdy.ai/api/search-image?query=Highly%20detailed%20realistic%20extreme%20close-up%20portrait%20of%20a%20majestic%20owl%20with%20one%20large%20piercing%20amber-gold%20eye%20clearly%20visible%20intricate%20layered%20feather%20textures%20in%20charcoal%20grey%20and%20warm%20brown%20tones%20the%20feathers%20gradually%20dissolve%20into%20abstract%20geometric%20dot%20patterns%20toward%20the%20edges%20deep%20black%20background%20with%20subtle%20radial%20rings%20dramatic%20side%20lighting%20casting%20architectural%20shadows%20the%20owl%20appears%20as%20an%20institutional%20symbol%20of%20wisdom%20intelligence%20and%20foresight%20editorial%20photography%20high%20contrast%20moody%20atmosphere&width=1400&height=900&seq=ipc-owl-hero-2026&orientation=landscape", image_alt: "IPC - Institute of Project Controls symbol of wisdom, foresight and professional judgement", annotations: dataAnnotations.map((item) => item.label) });
+  const annotations = content.annotations.map((item, index) => ({ ...dataAnnotations[index % dataAnnotations.length], label: typeof item === "string" ? item : String(item) }));
   const [scrollY, setScrollY] = useState(0);
   const [visible, setVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,8 +94,8 @@ export default function HeroCanvas() {
       >
         <div className="relative w-full h-full">
           <ResponsiveImage
-            src="https://readdy.ai/api/search-image?query=Highly%20detailed%20realistic%20extreme%20close-up%20portrait%20of%20a%20majestic%20owl%20with%20one%20large%20piercing%20amber-gold%20eye%20clearly%20visible%20intricate%20layered%20feather%20textures%20in%20charcoal%20grey%20and%20warm%20brown%20tones%20the%20feathers%20gradually%20dissolve%20into%20abstract%20geometric%20dot%20patterns%20toward%20the%20edges%20deep%20black%20background%20with%20subtle%20radial%20rings%20dramatic%20side%20lighting%20casting%20architectural%20shadows%20the%20owl%20appears%20as%20an%20institutional%20symbol%20of%20wisdom%20intelligence%20and%20foresight%20editorial%20photography%20high%20contrast%20moody%20atmosphere&width=1400&height=900&seq=ipc-owl-hero-2026&orientation=landscape"
-            alt="IPC - Institute of Project Controls symbol of wisdom, foresight and professional judgement"
+            src={content.image_url}
+            alt={content.image_alt}
             width={1400}
             height={900}
             sizes="(max-width: 768px) 100vw, 58vw"
@@ -110,7 +113,7 @@ export default function HeroCanvas() {
       }} />
 
       {/* ── Data Annotations ── */}
-      {dataAnnotations.map((dp, i) => (
+      {annotations.map((dp, i) => (
         <div
           key={i}
           className="absolute group cursor-default z-20"
@@ -137,33 +140,32 @@ export default function HeroCanvas() {
       <div className="absolute top-[70%] left-[44%] technical-crosshair opacity-25 z-10" />
 
       {/* ── Headline — Integrated into composition ── */}
-      <div className="relative z-20 flex items-end min-h-[100dvh] pb-24 md:pb-32 px-8 md:px-14 lg:px-32 pr-6 md:pr-12">
-        <div className="w-full max-w-[600px]">
+      <div className="relative  z-20 flex items-end min-h-[80dvh] pt-20 pb-24 md:pb-32 px-8 md:px-14 lg:px-80 pr-6 md:pr-12 ">
+        <div className="w-full max-w-[600px]  ">
           <div
             className={`mb-8 md:mb-10 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
           >
             <span className="text-[10px] font-mono text-primary-500/70 tracking-[0.3em] uppercase block mb-5">
-              Institute of Project Controls
+              {content.eyebrow}
             </span>
             <h1 className="font-heading text-7xl font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em]">
-                The professional home for<br />
-              <span className="text-primary-500">Project Controls</span><br />
+                {content.title}
             </h1>
           </div>
 
           <div
-            className={`flex flex-col sm:flex-row sm:items-end gap-6 md:gap-10 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`flex flex-col  sm:flex-row sm:items-end gap-6 md:gap-10 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "500ms" }}
           >
-            <div className="w-20 gold-rule mb-2 sm:mb-0 sm:self-end" />
-            <p className="text-sm md:text-base text-background-400 max-w-[400px] leading-[1.7] font-medium">
-              A standards-informed, evidence-based pathway for professionals who plan, control, assure and improve project delivery.            </p>
+            <div className="w-20 gold-rule mb-2 sm:mb-0 sm:self-end mt-0 lg:mt-32" />
+            <p className="max-w-[400px] text-sm font-medium leading-loose text-background-400 md:text-base">
+              {content.description}</p>
             <Link
-              to="/membership"
+              to={content.cta_url}
               className="group hidden sm:inline-flex items-center gap-3 px-5 py-3 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-colors duration-400 whitespace-nowrap shrink-0"
             >
-              <span>Explore recognition</span>
+              <span>{content.cta_label}</span>
               <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
@@ -173,16 +175,16 @@ export default function HeroCanvas() {
       {/* ── Mobile CTA ── */}
       <div className="sm:hidden absolute bottom-16  right-6 z-20">
         <Link
-          to="/membership"
+          to={content.cta_url}
           className="inline-flex items-center gap-3 px-5 py-3 bg-primary-500 text-background-950 text-sm font-bold tracking-wide"
         >
-          <span>Explore recognition</span>
+          <span>{content.cta_label}</span>
           <i className="ri-arrow-right-line" />
         </Link>
       </div>
 
       {/* ── Bottom Edge ── */}
-      <div className="absolute inset-x-0 bottom-0 z-20">
+      <div className="absolute inset-x-0 bottom-28 z-20">
         <div className="h-px bg-gradient-to-r from-transparent via-primary-500/30 to-transparent" />
         <div className="flex items-center justify-between px-8 md:px-14 lg:px-20 py-3">
           <span className="text-[9px] font-mono text-background-500 tracking-[0.2em] uppercase">
@@ -196,4 +198,3 @@ export default function HeroCanvas() {
     </section>
   );
 }
-

@@ -1,8 +1,21 @@
 from django.core.cache import cache
+from django.http import Http404
 from rest_framework import filters, mixins, permissions, viewsets
+from rest_framework.generics import RetrieveAPIView
 
-from .models import MembershipGrade
-from .serializers import AdminMembershipGradeSerializer, MembershipGradeSerializer
+from .models import MembershipContent, MembershipGrade
+from .serializers import AdminMembershipGradeSerializer, MembershipContentSerializer, MembershipGradeSerializer
+
+
+class MembershipContentView(RetrieveAPIView):
+    serializer_class = MembershipContentSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self):
+        content = MembershipContent.objects.filter(key="main", is_active=True, status=MembershipContent.Status.PUBLISHED).first()
+        if content is None:
+            raise Http404("Membership content is not available.")
+        return content
 
 
 class MembershipGradeViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):

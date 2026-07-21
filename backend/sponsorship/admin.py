@@ -5,7 +5,6 @@ from .models import SponsorshipContent
 
 @admin.register(SponsorshipContent)
 class SponsorshipContentAdmin(admin.ModelAdmin):
-    list_display = ("key", "is_active", "updated_at")
-    list_filter = ("is_active",)
+    list_display = ("key", "status", "is_active", "updated_at")
+    list_filter = ("status", "is_active")
     readonly_fields = ("created_at", "updated_at")
-

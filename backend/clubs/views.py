@@ -18,7 +18,7 @@ class ClubPageContentView(RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_object(self):
-        content = ClubPageContent.objects.filter(key="main", is_active=True).first()
+        content = ClubPageContent.objects.filter(key="main", is_active=True, status=ClubPageContent.Status.PUBLISHED).first()
         if content is None:
             raise Http404("Club content is not available.")
         return content

@@ -39,16 +39,16 @@ export const pageSeo = {
     keywords: ["project controls membership", "professional recognition", "AffIPC", "MIPC", "AFIPC", "FIPC"],
   },
   scholarships: {
-    title: "Scholarships",
+    title: "Scholarships & Bursaries",
     description:
-      "Scholarships and bursaries from the Institute of Project Controls open access to project controls education for students, career changers and new entrants.",
+      "IPC scholarships and bursaries support access to project-controls learning, professional community, mentoring and career development, subject to eligibility and available funding.",
     canonicalPath: "/scholarships",
-    keywords: ["project controls scholarships", "bursaries", "career change", "student membership"],
+    keywords: ["project controls scholarships", "bursaries", "career access", "student membership", "professional development"],
   },
   sponsorship: {
-    title: "Sponsorship",
+    title: "Sponsorship & Partnerships",
     description:
-      "Partner with the Institute of Project Controls to sponsor learners, events, awards, clubs and publications, creating ethical visibility and social impact.",
+      "IPC sponsorship opportunities support scholarships, events, awards, regional clubs, publications and professional-development activity through transparent and ethical partnerships.",
     canonicalPath: "/sponsorship",
     keywords: ["project controls sponsorship", "corporate partnership", "event sponsorship"],
   },
@@ -120,10 +120,10 @@ export const pageSeo = {
     noIndex: true,
   },
   booking: {
-    title: "Discuss Sponsorship — Book a Meeting",
+    title: "IPC Information Session",
     description:
-      "Book a meeting with the IPC team to discuss sponsorship opportunities, partnership options and the most suitable package for your organisation.",
-    canonicalPath: "/booking",
+      "Book an information session with the IPC team to discuss membership, organisational capability and the most suitable pathway for your organisation.",
+    canonicalPath: "/information-session",
     noIndex: true,
   },
   notFound: {

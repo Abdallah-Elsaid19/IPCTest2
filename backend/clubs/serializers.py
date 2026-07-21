@@ -7,7 +7,11 @@ from .models import ClubEnquiry, ClubPageContent
 class ClubPageContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClubPageContent
-        fields = ["regional_clubs", "activities", "audience_values", "updated_at"]
+        fields = [
+            "hero", "principles", "purpose", "locations_intro", "regional_clubs",
+            "programme_intro", "activities", "audiences_intro", "audience_values",
+            "upcoming", "contribution", "partners", "faq", "final_cta", "seo", "updated_at",
+        ]
         read_only_fields = fields
 
 

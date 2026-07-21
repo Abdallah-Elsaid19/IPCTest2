@@ -18,7 +18,8 @@ def create_grade(code, display_order=0, is_active=True, **overrides):
         "is_active": is_active,
     }
     defaults.update(overrides)
-    return MembershipGrade.objects.create(code=code, **defaults)
+    grade, _ = MembershipGrade.objects.update_or_create(code=code, defaults=defaults)
+    return grade
 
 
 class AdminMembershipGradeApiTests(APITestCase):

@@ -6,5 +6,8 @@ export interface AdminContentTable {
   table_name: string;
   is_active: boolean;
   updated_at: string;
+  status?: "draft" | "published";
+  published_at?: string | null;
+  updated_by?: number | null;
   sections: Record<string, ContentSectionValue>;
 }

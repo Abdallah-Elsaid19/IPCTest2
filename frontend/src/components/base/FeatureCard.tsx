@@ -13,7 +13,7 @@ export default function FeatureCard({
 }: FeatureCardProps) {
   return (
     <div
-      className={`p-5 md:p-6 transition-all duration-300 hover:translate-y-[-2px] ${
+      className={`h-full p-5 md:p-6 transition-all duration-300 hover:translate-y-[-2px] ${
         light
           ? "bg-background-50/5 border border-background-50/10"
           : "bg-background-50 border border-background-200/70 hover:border-primary-200"

@@ -1,7 +1,9 @@
 import {
   Braces,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Database,
   Eye,
   LoaderCircle,
@@ -13,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import { adminApi } from "@/features/admin/adminApi";
 import {
@@ -32,7 +35,13 @@ type ContentItem = Record<string, unknown>;
 type ItemTarget = { section: string; index: number | null; item: ContentItem };
 type DeleteTarget = { section: string; index: number; item: ContentItem };
 
+const newContentId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `content-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 export default function AdminContentPage() {
+  const { slug: requestedSlug } = useParams<{ slug?: string }>();
   const [tables, setTables] = useState<AdminContentTable[] | null>(null);
   const [activeSlug, setActiveSlug] = useState("");
   const [editing, setEditing] = useState<ItemTarget | null>(null);
@@ -51,7 +60,7 @@ export default function AdminContentPage() {
       .then((response) => {
         if (cancelled) return;
         setTables(response);
-        setActiveSlug(response[0]?.slug ?? "");
+        setActiveSlug(response.find((table) => table.slug === requestedSlug)?.slug ?? response[0]?.slug ?? "");
       })
       .catch((error) => {
         if (cancelled) return;
@@ -65,7 +74,7 @@ export default function AdminContentPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [requestedSlug]);
 
   const activeTable = useMemo(
     () =>
@@ -172,12 +181,29 @@ export default function AdminContentPage() {
     }
   };
 
+  const changePublishingStatus = async () => {
+    if (!activeTable?.status || isChangingStatus) return;
+    setIsChangingStatus(true);
+    try {
+      const updated = await adminApi.updateContentTable(activeTable.slug, {
+        status: activeTable.status === "published" ? "draft" : "published",
+      });
+      replaceTable(updated);
+      publishContentUpdate(updated.slug as ContentPageSlug);
+      notifications.success(`${updated.label} saved as ${updated.status}.`);
+    } catch (error) {
+      notifications.error(error instanceof Error ? error.message : "Publishing status could not be changed.");
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
   const createItem = (section: string, value: ContentSectionValue) => {
     if (!Array.isArray(value) || value.length === 0) return;
     setEditing({
       section,
       index: null,
-      item: { ...(emptyLike(value[0]) as ContentItem), is_active: true },
+      item: { ...(emptyLike(value[0]) as ContentItem), id: newContentId(), is_active: true },
     });
   };
 
@@ -228,7 +254,16 @@ export default function AdminContentPage() {
             eyebrow="Website content"
             title="Content management"
             description="Create, preview and edit the content cards displayed across the IPC website."
-            action={
+            action={<div className="flex flex-wrap gap-2">
+              {activeTable.status && <button
+                type="button"
+                onClick={() => void changePublishingStatus()}
+                disabled={isChangingStatus}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm disabled:opacity-60"
+              >
+                {isChangingStatus && <LoaderCircle size={15} className="animate-spin" />}
+                {activeTable.status === "published" ? "Save as draft" : "Publish content"}
+              </button>}
               <button
                 type="button"
                 onClick={() => void changeStatus()}
@@ -242,7 +277,7 @@ export default function AdminContentPage() {
                   ? "Deactivate content"
                   : "Activate content"}
               </button>
-            }
+            </div>}
           />
 
           <div
@@ -708,7 +743,11 @@ function ContentFormModal({
       }
     >
       <div className="space-y-5 p-6 md:p-8">
-        <ObjectFieldsEditor value={draft} onChange={setDraft} />
+        <ObjectFieldsEditor
+          value={draft}
+          onChange={setDraft}
+          hideIconField={target.section === "discipline_system"}
+        />
       </div>
     </ModalShell>
   );
@@ -718,10 +757,12 @@ function ObjectFieldsEditor({
   value,
   onChange,
   nested = false,
+  hideIconField = false,
 }: {
   value: ContentItem;
   onChange: (value: ContentItem) => void;
   nested?: boolean;
+  hideIconField?: boolean;
 }) {
   return (
     <div
@@ -729,7 +770,9 @@ function ObjectFieldsEditor({
         nested ? "grid gap-4 md:grid-cols-2" : "grid gap-5 md:grid-cols-2"
       }
     >
-      {Object.entries(value).map(([field, fieldValue]) => {
+      {Object.entries(value)
+        .filter(([field]) => !(hideIconField && field === "icon"))
+        .map(([field, fieldValue]) => {
         const wide =
           isLongField(field) ||
           Array.isArray(fieldValue) ||
@@ -742,6 +785,7 @@ function ObjectFieldsEditor({
             <FieldEditor
               field={field}
               value={fieldValue}
+              hideIconField={hideIconField}
               onChange={(next) => onChange({ ...value, [field]: next })}
             />
           </div>
@@ -755,10 +799,12 @@ function FieldEditor({
   field,
   value,
   onChange,
+  hideIconField = false,
 }: {
   field: string;
   value: unknown;
   onChange: (value: unknown) => void;
+  hideIconField?: boolean;
 }) {
   const inputClass =
     "w-full rounded-xl border border-[#D4C6B5] bg-white px-4 text-sm font-semibold text-[#4F4943] outline-none focus:border-primary-500";
@@ -810,13 +856,36 @@ function FieldEditor({
       <div className="space-y-4">
         {objects.map((item, index) => (
           <div
-            key={index}
+            key={typeof item.id === "string" ? item.id : index}
             className="rounded-xl border border-[#DED2C3] bg-[#F7F0E7] p-4"
           >
             <div className="mb-4 flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-wider text-primary-800">
                 {formatLabel(field)} {index + 1}
               </p>
+              <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => {
+                  const next = [...objects];
+                  [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                  onChange(next);
+                }}
+                className="grid h-8 w-8 place-items-center rounded-lg text-[#655D55] hover:bg-white disabled:opacity-30"
+                aria-label={`Move ${formatLabel(field)} ${index + 1} up`}
+              ><ChevronUp size={15} /></button>
+              <button
+                type="button"
+                disabled={index === objects.length - 1}
+                onClick={() => {
+                  const next = [...objects];
+                  [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                  onChange(next);
+                }}
+                className="grid h-8 w-8 place-items-center rounded-lg text-[#655D55] hover:bg-white disabled:opacity-30"
+                aria-label={`Move ${formatLabel(field)} ${index + 1} down`}
+              ><ChevronDown size={15} /></button>
               <button
                 type="button"
                 onClick={() =>
@@ -829,10 +898,12 @@ function FieldEditor({
               >
                 <Trash2 size={15} />
               </button>
+              </div>
             </div>
             <ObjectFieldsEditor
               nested
               value={item}
+              hideIconField={hideIconField}
               onChange={(next) =>
                 onChange(
                   objects.map((current, itemIndex) =>
@@ -846,7 +917,7 @@ function FieldEditor({
         {objects[0] && (
           <button
             type="button"
-            onClick={() => onChange([...objects, emptyLike(objects[0])])}
+            onClick={() => onChange([...objects, { ...(emptyLike(objects[0]) as ContentItem), id: newContentId(), is_active: true }])}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-primary-500 bg-white px-4 text-xs font-black text-primary-800"
           >
             <Plus size={14} /> Add {formatLabel(field)}
@@ -861,6 +932,7 @@ function FieldEditor({
         <ObjectFieldsEditor
           nested
           value={value as ContentItem}
+          hideIconField={hideIconField}
           onChange={onChange}
         />
       </div>

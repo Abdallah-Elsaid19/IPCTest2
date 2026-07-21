@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const disciplines = [
   {
@@ -49,6 +50,8 @@ const disciplines = [
 ];
 
 export default function DisciplineSystem() {
+  const content = useManagedSection("discipline_system", { eyebrow: "The integrated discipline", title: "Better information. Earlier insight. Stronger decisions.", description: "Project controls turns project information into credible decisions by connecting governance, scope, planning, cost, risk, change, data, sustainability and leadership.", items: disciplines });
+  const managedDisciplines = content.items.filter(isManagedItemActive).map((item, index) => ({ ...item, angle: "angle" in item ? Number(item.angle) : index * (360 / content.items.length), desc: (item as { description?: string }).description ?? item.desc }));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -64,7 +67,7 @@ export default function DisciplineSystem() {
     return () => obs.disconnect();
   }, []);
 
-  const active = disciplines.find((d) => d.id === activeId);
+  const active = managedDisciplines.find((d) => d.id === activeId);
   const cx = 260;
   const cy = 260;
   const outerR = 235;
@@ -114,7 +117,7 @@ export default function DisciplineSystem() {
       <div className="container-content relative z-10">
         {/* ── Header ── */}
         <div className="flex items-center gap-4 mb-14 md:mb-20">
-          <span className="text-[10px] font-mono text-primary-400 tracking-[0.3em] uppercase">The integrated discipline</span>
+          <span className="text-[10px] font-mono text-primary-400 tracking-[0.3em] uppercase">{content.eyebrow}</span>
           <span className="flex-1 h-px bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
@@ -129,7 +132,7 @@ export default function DisciplineSystem() {
                 <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="oklch(0.685 0.132 72 / 0.2)" strokeWidth="1" />
 
                 {/* ── Radial dividers ── */}
-                {disciplines.map((d) => {
+                {managedDisciplines.map((d) => {
                   const a = (d.angle - 90) * (Math.PI / 180);
                   const x = cx + outerR * Math.cos(a);
                   const y = cy + outerR * Math.sin(a);
@@ -147,8 +150,8 @@ export default function DisciplineSystem() {
                 })}
 
                 {/* ── Discipline arcs ── */}
-                {disciplines.map((d, i) => {
-                  const endAngle = i < disciplines.length - 1 ? disciplines[i + 1].angle : 360;
+                {managedDisciplines.map((d, i) => {
+                  const endAngle = i < managedDisciplines.length - 1 ? managedDisciplines[i + 1].angle : 360;
                   const isActive = activeId === d.id;
                   return (
                     <g
@@ -262,11 +265,10 @@ export default function DisciplineSystem() {
           {/* ── Right: Context ── */}
           <div className="lg:col-span-5 lg:col-start-8">
             <h3 className="font-heading text-[clamp(1.5rem,3vw,2.5rem)] font-extrabold text-background-50 leading-[1.1] tracking-[-0.02em] mb-6">
-              Better information. Earlier insight.<br />
-              <span className="text-primary-500">Stronger decisions.</span>
+              {content.title}
             </h3>
             <p className="text-sm md:text-base text-background-400 leading-[1.8] font-medium mb-8 max-w-[420px]">
-              Project controls turns project information into credible decisions by connecting governance, scope, planning, cost, risk, change, data, sustainability and leadership.
+              {content.description}
             </p>
             <div className="flex items-center gap-6">
               <div className="w-10 h-px bg-primary-500/40" />

@@ -1,5 +1,17 @@
 from rest_framework import serializers
-from .models import MembershipGrade, MembershipGradeBenefit, MembershipGradeRequirement
+from .models import MembershipContent, MembershipGrade, MembershipGradeBenefit, MembershipGradeRequirement
+
+
+class MembershipContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MembershipContent
+        fields = [
+            "hero", "grades_intro", "comparison", "member_value",
+            "professional_visibility", "application_journey",
+            "organisational_membership", "questions", "grade_finder",
+            "final_cta", "seo", "updated_at",
+        ]
+        read_only_fields = fields
 
 
 class MembershipGradeBenefitSerializer(serializers.ModelSerializer):

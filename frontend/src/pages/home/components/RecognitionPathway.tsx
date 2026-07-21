@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const grades = [
   { id: "affiliate", label: "Affiliate", level: "Entry", path: "/membership/affiliate", desc: "For those building foundational knowledge in project controls." },
@@ -10,6 +11,8 @@ const grades = [
 ];
 
 export default function RecognitionPathway() {
+  const content = useManagedSection("recognition_pathway", { eyebrow: "Recognition", title: "Find the level that reflects your current contribution.", description: "Evidence, professional judgement, accountability and influence deepen as members progress.", cta_label: "View all grades", cta_url: "/membership", items: grades });
+  const managedGrades = content.items.filter(isManagedItemActive);
   const [hovered, setHovered] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -41,7 +44,7 @@ export default function RecognitionPathway() {
       <div className="container-content relative z-10">
         {/* ── Header ── */}
         <div className="flex items-center gap-4 mb-14 md:mb-20">
-          <span className="text-[10px] font-mono text-primary-500 tracking-[0.3em] uppercase">Recognition</span>
+          <span className="text-[10px] font-mono text-primary-500 tracking-[0.3em] uppercase">{content.eyebrow}</span>
           <span className="flex-1 h-px bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
@@ -49,17 +52,15 @@ export default function RecognitionPathway() {
           {/* ── Left ── */}
           <div className="lg:col-span-5 mb-12 lg:mb-0 lg:sticky lg:top-28">
             <h2 className="font-heading text-[clamp(1.8rem,3.5vw,3rem)] font-extrabold text-foreground-950 leading-[1.08] tracking-[-0.03em] mb-6">
-             Find the level<br />
-              <span className="text-primary-600">that reflects</span><br />
-              your current contribution.
+             {content.title}
             </h2>
             <p className="text-sm md:text-base text-foreground-600 leading-[1.8] font-medium max-w-[400px] mb-8">
-             Evidence, professional judgement, accountability and influence deepen as members progress.            </p>
+             {content.description}</p>
             <Link
-              to="/membership"
+              to={content.cta_url}
               className="group inline-flex items-center gap-2 text-sm font-semibold text-foreground-900 hover:text-primary-600 transition-colors duration-300"
             >
-              <span>View all grades</span>
+              <span>{content.cta_label}</span>
               <i className="ri-arrow-right-line text-xs group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
@@ -67,7 +68,7 @@ export default function RecognitionPathway() {
           {/* ── Right: Wing-shaped progression ── */}
           <div className="lg:col-span-7 lg:col-start-6">
             <div className="flex flex-col gap-0">
-              {grades.map((grade, i) => {
+              {managedGrades.map((grade, i) => {
                 const isHovered = hovered === grade.id;
                 const isAdjacent = hovered !== null && hovered !== grade.id;
 
@@ -109,7 +110,7 @@ export default function RecognitionPathway() {
                       <p className={`text-sm leading-relaxed mt-1 transition-all duration-400 max-w-[420px] ${
                         isHovered ? "text-foreground-700" : "text-foreground-500"
                       }`}>
-                        {grade.desc}
+                        {(grade as { description?: string }).description ?? grade.desc}
                       </p>
                     </div>
 

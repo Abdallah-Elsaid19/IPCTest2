@@ -70,3 +70,8 @@ def media_upload_to(instance, filename):
 def profile_image_upload_to(instance, filename):
     ext = Path(filename).suffix.lower()
     return os.path.join("profiles", str(instance.user_id or "pending"), f"{uuid4().hex}{ext}")
+
+
+def validate_content_section(value):
+    if not isinstance(value, (dict, list)):
+        raise ValidationError("Content sections must be an object or a list.")

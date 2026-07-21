@@ -11,8 +11,7 @@ class SponsorshipContentView(RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_object(self):
-        content = SponsorshipContent.objects.filter(key="main", is_active=True).first()
+        content = SponsorshipContent.objects.filter(key="main", is_active=True, status=SponsorshipContent.Status.PUBLISHED).first()
         if content is None:
             raise Http404("Sponsorship content is not available.")
         return content
-

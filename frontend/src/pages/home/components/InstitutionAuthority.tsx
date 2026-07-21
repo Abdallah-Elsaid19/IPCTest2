@@ -1,3 +1,5 @@
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+
 const dividerClasses = [
   "",
   "border-t border-background-200 sm:border-l sm:border-t-0",
@@ -25,13 +27,15 @@ const principles = [
 
 
 export default function InstitutionAuthority() {
+  const content = useManagedSection("principles", { items: principles });
+  const items = content.items.filter(isManagedItemActive);
   return (
     <section
       aria-label="IPC professional principles"
       className="border-b border-background-200 bg-background-50"
     >
       <div className="mx-auto grid max-w-[1600px] sm:grid-cols-2 lg:grid-cols-4">
-        {principles.map((principle, index) => (
+        {items.map((principle, index) => (
           <article
             key={principle.title}
             className={`min-h-[166px] px-8 py-9 md:px-10 lg:px-12 ${dividerClasses[index]}`}

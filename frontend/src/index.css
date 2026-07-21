@@ -664,3 +664,8 @@
     background-image: radial-gradient(ellipse at center, var(--tw-gradient-from) 0%, var(--tw-gradient-via) 50%, var(--tw-gradient-to) 100%);
   }
 }
+
+
+.leading-loose {
+  line-height: 2 !important;
+}

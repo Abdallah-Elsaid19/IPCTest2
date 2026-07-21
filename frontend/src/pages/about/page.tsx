@@ -192,6 +192,11 @@ export default function AboutPage() {
           SCENE 7 — THE IPC IDENTITY
           ═══════════════════════════════════════════ */}
       <SceneIdentity symbols={content.identity_symbols.filter((item) => item.is_active !== false)} />
+      <SceneIntegratedDiscipline />
+      <SceneStandardsRecognition />
+      <SceneAudiences />
+      <SceneProfessionalPromise />
+      <SceneAboutFaq />
 
       {/* ═══════════════════════════════════════════
           SCENE 8 — FINALE
@@ -317,7 +322,7 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
         {/* Institutional label */}
         <div className="mb-6">
           <span className="text-[10px] md:text-[11px] font-mono text-primary-400/80 tracking-[0.35em] uppercase">
-            Institute of Project Controls
+            About the Institute of Project Controls
           </span>
         </div>
 
@@ -326,15 +331,15 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
 
         {/* Headline */}
         <h1 className="font-heading text-[clamp(2.2rem,5vw,4.8rem)] font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em] mb-6">
-          Wisdom guides
+          Making project reality
           <br />
-          <span className="text-primary-400">every decision</span>
+          <span className="text-primary-400">visible.</span>
         </h1>
 
         {/* Subtitle */}
         <p className="text-sm md:text-[15px] text-background-300 max-w-[480px] mx-auto leading-relaxed mb-10">
-          The Institute of Project Controls exists to bring structure, evidence and professional
-          judgement to the projects that shape our world.
+          IPC is a professional home for the people who plan, control, assure and improve project
+          delivery—helping professionals demonstrate the competence behind better decisions.
         </p>
 
         {/* CTA */}
@@ -342,7 +347,7 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
           to="/membership"
           className="inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer"
         >
-          <span>Discover the Institution</span>
+          <span>Explore our mission</span>
           <i className="ri-arrow-right-line" />
         </Link>
       </div>
@@ -451,29 +456,27 @@ function SceneWhoWeAre({ statistics }: { statistics: AboutStatistic[] }) {
           <div className="flex-1 scene-reveal transition-all duration-1000"
             style={{ opacity: 0, transform: "translateX(40px)", transitionDelay: "0.2s" }}>
             <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-              Who We Are
+              Our reason for being
             </span>
             <div className="w-16 h-[2px] bg-primary-500 mb-6" />
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-              The professional home
+              Project controls turns project
               <br />
-              for <span className="text-primary-600">project controls</span>
+              <span className="text-primary-600">information into decisions.</span>
             </h2>
             <div className="space-y-4 text-foreground-600 leading-relaxed text-base md:text-lg max-w-xl">
               <p>
-                The Institute of Project Controls is a serious professional body for people
-                who plan, control, assure and improve project delivery. We provide a structured
-                recognition pathway, a professional community and a credible institutional identity.
+                The discipline connects scope, time, cost, risk, change, commercial matters, data,
+                governance, sustainability and performance into one integrated control environment.
               </p>
               <p>
-                Founded in 2014 by practitioners who recognised that project controls lacked
-                a dedicated professional home, the Institute has grown into an international
-                community of professionals across more than 35 countries.
+                “Professional recognition converts experience into a visible signal—but it never
+                replaces competence, evidence or ethical conduct.”
               </p>
               <p>
-                Our members work in construction, infrastructure, energy, defence, manufacturing,
-                technology and public sector programmes — wherever projects need evidence-led
-                decisions.
+                IPC exists to organise those elements into a credible pathway. The goal is to help
+                professionals explain their standing and help employers understand capability
+                without exaggeration or unnecessary complexity.
               </p>
             </div>
 
@@ -554,20 +557,16 @@ function SceneWhyExist({ pillars }: { pillars: AboutCardContent[] }) {
           </div>
 
           <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
-            Why We Exist
+            Why project controls matters
           </span>
           <div className="w-16 gold-rule mx-auto mb-7" />
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-8">
-            Insight before
+            Project reality
             <br />
-            <span className="text-primary-400">every decision</span>
+            <span className="text-primary-400">visible early</span>
           </h2>
           <p className="text-base md:text-lg text-background-300 leading-relaxed max-w-2xl mx-auto">
-            The Institute exists because project controls has never had a dedicated professional
-            home. Planners, cost engineers, risk analysts and project data specialists work across
-            every major sector — yet until IPC, there was no structured pathway to demonstrate
-            competence, no professional community to belong to, and no institutional voice to
-            represent the discipline.
+            Project controls turns project information into decisions.
           </p>
 
           {/* Three insight pillars */}
@@ -617,15 +616,14 @@ function SceneVision({ pillars }: { pillars: VisionPillar[] }) {
             </span>
             <div className="w-16 h-[2px] bg-primary-500 mb-6" />
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-              A profession
+              A trusted home, a stronger talent pipeline
               <br />
-              <span className="text-primary-600">elevated</span>
+              <span className="text-primary-600">and a more respected profession.</span>
             </h2>
             <div className="space-y-3 text-foreground-600 leading-relaxed text-base max-w-lg">
               <p>
-                We envision a future where project controls is recognised as a strategic
-                discipline — not an administrative reporting function. Where professionals
-                have a clear, credible pathway from entry to senior leadership.
+                IPC&apos;s long-term ambition is to raise project controls from a perceived reporting
+                function to a strategic discipline that improves decision quality and delivery outcomes.
               </p>
               <p>
                 Where employers can trust that IPC recognition represents real competence.
@@ -703,12 +701,11 @@ function SceneMission({ missions }: { missions: AboutCardContent[] }) {
           </span>
           <div className="w-16 gold-rule mx-auto mb-7" />
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-6">
-            The path we follow
+            Advance professional recognition.
           </h2>
           <p className="text-base text-background-300 max-w-xl mx-auto leading-relaxed">
-            The Institute&apos;s mission describes the practical work of advancing project
-            controls as a profession — creating structure, building community and opening
-            opportunity.
+            Create a structured route that allows professionals to demonstrate competence,
+            integrity, development and contribution through clear membership and recognition grades.
           </p>
         </div>
 
@@ -773,8 +770,8 @@ function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
             <span className="text-primary-600">recognition</span>
           </h2>
           <p className="text-base text-foreground-600 max-w-xl mx-auto leading-relaxed">
-            Recognition is powerful only if it is trusted. These values underpin every
-            membership decision, every assessment and every interaction.
+            Recognition is powerful only when it is trusted. These values should be visible in
+            membership decisions, professional conduct, certificates, applications and public communication.
           </p>
         </div>
 
@@ -807,7 +804,7 @@ function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
               />
             </div>
             <span className="text-xs font-mono text-accent-700 tracking-wider">
-              Values activated by professional judgement
+              Recognition grounded in evidence, conduct and professional judgement
             </span>
           </div>
         </div>
@@ -890,6 +887,253 @@ function SceneIdentity({ symbols }: { symbols: AboutCardContent[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 8 — FINALE (Owl complete + institutional close)
    ═══════════════════════════════════════════════════════════════ */
+function SceneIntegratedDiscipline() {
+  const domains = [
+    ["Leadership", "ethics, influence"],
+    ["Scope", "WBS, CBS, coding"],
+    ["Planning", "schedule, baseline"],
+    ["Cost", "budget, forecast"],
+    ["Risk & Change", "uncertainty, contingency"],
+    ["Commercial", "contracts, claims"],
+    ["Digital", "data, AI, BIM"],
+    ["Sustainability", "carbon, public value"],
+  ];
+  const levels = [
+    ["Foundation", "Understand terminology, follow procedures, collect reliable information and support project-controls tasks under direction."],
+    ["Applied", "Work independently, select techniques, interpret variance, integrate data and advise project teams."],
+    ["Strategic", "Design frameworks, assure data integrity, lead teams, challenge assumptions and influence senior decisions."],
+  ];
+
+  return (
+    <section className="relative overflow-hidden bg-background-100 py-24 md:py-36">
+      <div className="container-content grid items-start gap-14 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
+        <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(-30px)" }}>
+          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
+            Project controls as an integrated discipline
+          </span>
+          <div className="w-16 h-[2px] bg-primary-500 mb-6" />
+          <h2 className="font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">
+            One control environment—not disconnected technical silos.
+          </h2>
+          <p className="mt-7 max-w-lg text-base leading-relaxed text-foreground-600">
+            Weakness in one area can undermine the credibility of the entire project-control system. IPC therefore treats planning, cost, risk, commercial, data and governance as connected disciplines.
+          </p>
+          <p className="mt-7 border border-primary-500/50 bg-primary-50 px-5 py-4 text-xs leading-relaxed text-primary-800">
+            Core principle: make project reality visible early enough for action.
+          </p>
+        </div>
+
+        <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(30px)", transitionDelay: "0.15s" }}>
+          <div className="hidden md:block">
+            <div className="relative mx-auto h-[500px] max-w-[650px]">
+              <div className="absolute left-1/2 top-1/2 h-[390px] w-[390px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-background-300" />
+              <div className="absolute left-1/2 top-1/2 z-10 flex h-44 w-44 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-primary-500 bg-background-950 text-center text-background-50 shadow-xl">
+                <strong className="font-heading text-xl font-semibold">Project Controls</strong>
+                <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-primary-400">Integrated competence</span>
+              </div>
+              {domains.map(([title, detail], index) => {
+                const angle = (index * 360) / domains.length - 90;
+                return (
+                  <div
+                    key={title}
+                    className="absolute z-20 w-32 -translate-x-1/2 -translate-y-1/2 border border-background-300 bg-background-50 px-3 py-3 text-center shadow-lg"
+                    style={{
+                      left: `${50 + Math.cos((angle * Math.PI) / 180) * 42}%`,
+                      top: `${50 + Math.sin((angle * Math.PI) / 180) * 41}%`,
+                    }}
+                  >
+                    <strong className="block text-xs text-background-950">{title}</strong>
+                    <span className="mt-1 block text-[9px] text-foreground-500">{detail}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 md:hidden">
+            <div className="col-span-2 border border-primary-500 bg-background-950 p-6 text-center text-background-50">
+              <strong className="font-heading text-xl">Project Controls</strong>
+              <span className="mt-2 block text-[10px] uppercase tracking-wider text-primary-400">Integrated competence</span>
+            </div>
+            {domains.map(([title, detail]) => (
+              <div key={title} className="border border-background-300 bg-background-50 p-4 text-center">
+                <strong className="block text-xs text-background-950">{title}</strong>
+                <span className="mt-1 block text-[10px] text-foreground-500">{detail}</span>
+              </div>
+            ))}
+          </div>
+
+          <dl className="mt-7 space-y-2">
+            {levels.map(([title, description]) => (
+              <div key={title} className="grid gap-3 border border-background-300 bg-background-50 p-5 sm:grid-cols-[7rem_1fr]">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary-600">{title}</dt>
+                <dd className="text-xs leading-relaxed text-foreground-600">{description}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SceneStandardsRecognition() {
+  const principles = [
+    ["Evidence over title", "Job titles alone do not establish competence or professional standing."],
+    ["Proportionate depth", "Evidence requirements increase with independence, accountability and influence."],
+    ["Professional discussion", "Applied and senior routes may test judgement, authenticity and ethical reasoning."],
+    ["Explainable decisions", "Recognition should be capable of being explained to applicants, employers and peers."],
+  ];
+  const levels = [
+    ["Level 3 — Foundation practice", "Analyse data, support baselines, prepare reports, use assigned tools, monitor progress and demonstrate professional behaviours."],
+    ["Level 4 — Applied judgement", "Apply controls independently on live projects, integrate schedule, cost, risk and change, and communicate credible recommendations."],
+    ["Level 6 — Strategic leadership", "Assure data integrity, lead frameworks, challenge assumptions, influence decision-makers and provide strategic controls advice."],
+  ];
+
+  return (
+    <section className="relative overflow-hidden bg-background-950 py-24 text-background-50 md:py-36">
+      <div className="absolute inset-0 dot-grid-gold opacity-[0.04]" />
+      <div className="container-content relative z-10 grid items-start gap-14 lg:grid-cols-[.82fr_1.18fr] lg:gap-20">
+        <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(-30px)" }}>
+          <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">Standards-informed recognition</span>
+          <div className="w-16 gold-rule mb-6" />
+          <h2 className="font-heading text-4xl font-bold leading-[1.05] md:text-5xl lg:text-6xl">Recognition grounded in practice, responsibility and professional behaviour.</h2>
+          <p className="mt-7 max-w-xl leading-relaxed text-background-300">
+            IPC uses recognised project-controls practice to inform competence expectations while keeping professional recognition distinct from qualifications or apprenticeship awards.
+          </p>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {principles.map(([title, description]) => (
+              <article key={title} className="border border-background-800 bg-background-900/60 p-5">
+                <h3 className="text-xs font-bold text-primary-300">{title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-background-400">{description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3 scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(30px)", transitionDelay: "0.15s" }}>
+          {levels.map(([title, description], index) => (
+            <article key={title} className="border border-background-800 bg-background-900/60 p-6 md:p-7" style={{ marginLeft: `${index * 6}%` }}>
+              <h3 className="font-heading text-base font-semibold text-primary-300">{title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-background-400">{description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SceneAudiences() {
+  const audiences = [
+    ["Professionals", "Recognition, progression, CPD, events, clubs, publications, awards and a specialist professional identity.", "Explore membership", "/membership"],
+    ["Employers", "Capability mapping, staff development, succession planning, tender credibility and stronger professional culture.", "Explore employer pathways", "/membership"],
+    ["Consultants", "Market differentiation, professional credibility, thought leadership and stronger client confidence.", "Explore consultancy value", "/membership"],
+    ["Academic partners", "Student membership, scholarships, employability, applied research, papers and employer engagement.", "Explore academic partnership", "/scholarships"],
+    ["Sponsors and supporters", "Ethical routes to support learners, events, awards, clubs, publications and wider social impact.", "Explore sponsorship", "/sponsorship"],
+  ];
+  const cardStyles = [
+    "bg-background-950 text-background-50 lg:col-span-5",
+    "bg-background-50 text-background-950 lg:col-span-4",
+    "bg-accent-700 text-background-50 lg:col-span-3",
+    "bg-background-50 text-background-950 lg:col-span-7",
+    "bg-background-100 text-background-950 lg:col-span-5",
+  ];
+
+  return (
+    <section className="bg-background-50 py-24 md:py-36">
+      <div className="container-content">
+        <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateY(30px)" }}>
+          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">Who IPC serves</span>
+          <div className="w-16 h-[2px] bg-primary-500 mb-6" />
+          <h2 className="max-w-5xl font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">
+            A professional framework with value across the project-controls ecosystem.
+          </h2>
+        </div>
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+          {audiences.map(([title, description, label, to], index) => (
+            <article key={title} className={`flex min-h-64 flex-col border border-background-300 p-7 ${cardStyles[index]}`}>
+              <h3 className="font-heading text-lg font-semibold">{title}</h3>
+              <p className="mt-4 text-sm leading-relaxed opacity-65">{description}</p>
+              <Link to={to} className="mt-auto pt-8 text-sm font-bold">{label} →</Link>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SceneProfessionalPromise() {
+  const promises = [
+    ["To professionals", "A structured route for recognition, development, community and visible professional contribution."],
+    ["To employers", "A clear and practical language for capability, progression, development and staff recognition."],
+    ["To the profession", "A serious commitment to evidence-led judgement, ethical conduct and better project decisions."],
+    ["To learners", "Access routes through affiliation, scholarships, mentoring, Master Classes and employer connection."],
+    ["To partners", "Transparent opportunities to support knowledge, talent and community without weakening independence."],
+  ];
+
+  return (
+    <section className="bg-background-100 py-24 md:py-36">
+      <div className="container-content grid items-start gap-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-14">
+        <div className="flex min-h-[28rem] flex-col bg-accent-700 p-8 text-background-50 md:p-10">
+          <span className="text-[11px] font-mono text-primary-300 tracking-[0.25em] uppercase">Our professional promise</span>
+          <div className="mt-4 w-12 gold-rule" />
+          <h2 className="mt-7 font-heading text-4xl font-bold leading-[1.05]">A pathway, a community and a recognised identity.</h2>
+          <p className="mt-7 text-sm leading-relaxed text-background-200">IPC promises the wider sector a commitment to evidence, ethics, learning and project-delivery improvement.</p>
+          <Link to="/contact" className="mt-auto inline-flex min-h-12 items-center justify-center bg-primary-500 px-6 text-sm font-bold text-background-950 hover:bg-primary-400">Contact the Institute</Link>
+        </div>
+        <dl className="space-y-3">
+          {promises.map(([title, description]) => (
+            <div key={title} className="grid gap-3 border border-background-300 bg-background-50 p-6 sm:grid-cols-[8rem_1fr]">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary-600">{title}</dt>
+              <dd className="text-sm leading-relaxed text-foreground-600">{description}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+
+function SceneAboutFaq() {
+  const items = [
+    ["What is the Institute of Project Controls?", "IPC is a professional membership and recognition body for people who plan, control, assure and improve project delivery."],
+    ["What makes project controls a distinct discipline?", "Project controls integrates scope, schedule, cost, risk, change, commercial matters, performance, data, governance and forecasting to support credible decisions."],
+    ["Who does IPC serve?", "IPC serves professionals, employers, consultants, academic partners, sponsors, learners and organisations supporting professional development or access."],
+    ["Does IPC award qualifications or chartered status?", "No. IPC provides standards-informed, evidence-based professional membership and recognition. It should not be described as a regulated qualification, apprenticeship award, chartered status or statutory licence."],
+    ["How does IPC approach AI and digital tools?", "IPC treats technology competence as important, while emphasising data quality, confidentiality, explainability, validation and human accountability."],
+  ];
+  const [openItem, setOpenItem] = useState(0);
+
+  return (
+    <section className="bg-background-50 py-24 md:py-36">
+      <div className="container-content grid items-start gap-14 lg:grid-cols-[.75fr_1.25fr] lg:gap-20">
+        <div>
+          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">About IPC</span>
+          <div className="w-16 h-[2px] bg-primary-500 mb-6" />
+          <h2 className="font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">Clear answers about the Institute and its professional scope.</h2>
+          <p className="mt-7 max-w-lg leading-relaxed text-foreground-600">Understand what IPC does, who it serves and how its recognition should be described.</p>
+        </div>
+        <div className="space-y-3">
+          {items.map(([question, answer], index) => {
+            const isOpen = openItem === index;
+            return (
+              <article key={question} className="border border-background-300 bg-background-50">
+                <button type="button" onClick={() => setOpenItem(isOpen ? -1 : index)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-5 p-6 text-left font-bold text-background-950">
+                  <span>{question}</span>
+                  <span className="text-primary-600" aria-hidden="true">{isOpen ? "−" : "+"}</span>
+                </button>
+                {isOpen && <p className="px-6 pb-6 text-sm leading-relaxed text-foreground-600">{answer}</p>}
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SceneFinale() {
   return (
     <section id="scene-finale" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
@@ -939,37 +1183,34 @@ function SceneFinale() {
           <div className="flex-1 scene-reveal transition-all duration-1000"
             style={{ opacity: 0, transform: "translateX(30px)", transitionDelay: "0.2s" }}>
             <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-              The Institute
+              Join the professional movement
             </span>
             <div className="w-16 h-[2px] bg-primary-500 mb-6" />
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-              Wisdom guides
+              Make competence visible. Build professional standing.
               <br />
-              <span className="text-primary-600">every decision</span>
+              <span className="text-primary-600">Improve project decisions.</span>
             </h2>
             <p className="text-base md:text-lg text-foreground-600 leading-relaxed max-w-lg mb-8">
-              IPC is an institution guided by wisdom, structure, evidence and professional
-              foresight. From the moment a professional considers membership to the point
-              they achieve recognition, the Institute provides a pathway that is clear,
-              credible and progressive.
+              Explore individual membership or discuss an employer, consultancy, academic or
+              sponsorship pathway.
             </p>
             <p className="text-sm text-foreground-500 leading-relaxed max-w-lg mb-10">
-              The owl — our symbol of wisdom — reminds us that project controls is not
-              about paperwork or process. It is about turning project information into
-              decisions. About seeing ahead. About earning the trust that comes from
-              evidence, not assumption.
+              IPC recognition is a professional membership and recognition pathway. It is
+              standards-informed and evidence-based, and is not a regulated qualification,
+              apprenticeship award, chartered status or statutory licence unless separately held.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/membership"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer">
                 <i className="ri-award-line" />
-                <span>Explore Membership</span>
+                <span>Explore membership</span>
               </Link>
               <Link to="/contact"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-background-950 text-sm font-bold tracking-wide border border-background-300 hover:border-primary-500 transition-all duration-300 whitespace-nowrap cursor-pointer">
                 <i className="ri-mail-line" />
-                <span>Get in Touch</span>
+                <span>Contact IPC</span>
               </Link>
             </div>
           </div>

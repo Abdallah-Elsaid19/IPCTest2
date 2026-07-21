@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "scholarships",
     "sponsorship",
     "about",
+    "home",
 ]
 
 MIDDLEWARE = [

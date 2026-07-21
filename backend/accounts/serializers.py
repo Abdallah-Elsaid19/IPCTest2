@@ -14,10 +14,12 @@ class UserSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
     profile_image_url = serializers.SerializerMethodField()
+    membership_active = serializers.SerializerMethodField()
+    membership_grade = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url")
+        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url", "membership_active", "membership_grade")
         read_only_fields = fields
 
     def get_name(self, user):
@@ -32,6 +34,20 @@ class UserSerializer(serializers.ModelSerializer):
     def get_profile_image_url(self, user):
         profile = getattr(user, "admin_profile", None)
         return profile.profile_image.url if profile and profile.profile_image else None
+
+    def get_membership_active(self, user):
+        try:
+            application = user.membership_application
+        except User.membership_application.RelatedObjectDoesNotExist:
+            return False
+        return application.status == "approved"
+
+    def get_membership_grade(self, user):
+        try:
+            application = user.membership_application
+        except User.membership_application.RelatedObjectDoesNotExist:
+            return None
+        return application.membership_grade.code if application.status == "approved" else None
 
 
 class UserProfileUpdateSerializer(serializers.Serializer):

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 interface MemberValueItem {
   id: string;
@@ -59,6 +60,8 @@ const memberValues: MemberValueItem[] = [
 ];
 
 export default function MemberValue() {
+  const content = useManagedSection("member_value", { eyebrow: "Member value", title: "Recognition, opportunity and a community in which to progress.", description: "Membership creates professional identity while opening routes into development, events, mentoring, awards, publications and contribution.", items: memberValues });
+  const items = content.items.filter(isManagedItemActive);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLElement>(null);
 
@@ -88,21 +91,21 @@ export default function MemberValue() {
 
       <div className="container-content relative z-10">
         <div className="mb-12 flex items-center gap-4 md:mb-16">
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary-600">Member value</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary-600">{content.eyebrow}</span>
           <span className="h-px flex-1 bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
         <div className="mb-12 max-w-[820px] md:mb-16">
           <h2 className="font-heading text-[clamp(2rem,4.5vw,4rem)] font-extrabold leading-[1.04] tracking-[-0.04em] text-foreground-950">
-            Recognition, opportunity and a community in which to progress.
+            {content.title}
           </h2>
           <p className="mt-6 max-w-[700px] text-sm font-medium leading-[1.8] text-foreground-600 md:text-base">
-            Membership creates professional identity while opening routes into development, events, mentoring, awards, publications and contribution.
+            {content.description}
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
-          {memberValues.map((item, index) => (
+          {items.map((item, index) => (
             <article
               key={item.id}
               className={`group border-t border-primary-500/45 px-1 py-7 transition-all duration-700 hover:border-primary-500 ${

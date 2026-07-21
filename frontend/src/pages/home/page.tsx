@@ -9,7 +9,8 @@ import CtaTerminal from "./components/CtaTerminal";
 import HeroCanvas from "./components/HeroCanvas";
 import MemberValue from "./components/MemberValue";
 import OrganisationalValue from "./components/OrganisationalValue";
-import SEO from "@/components/seo/SEO";
+import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
+import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 
 export default function Home() {
@@ -33,8 +34,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-background-50">
-      <SEO {...pageSeo.home} />
+    <ManagedContentProvider endpoint="/api/home/content" slug="home">
+      <div className="bg-background-50">
+      <ManagedPageSeo fallback={{ ...pageSeo.home, canonical_path: pageSeo.home.canonicalPath }} />
       <HeroCanvas />
       <InstitutionAuthority />
       <DisciplineSystem />
@@ -45,6 +47,7 @@ export default function Home() {
       <OrganisationalValue />
       {/* <CommunityMetrics /> */}
       <CtaTerminal />
-    </div>
+      </div>
+    </ManagedContentProvider>
   );
 }

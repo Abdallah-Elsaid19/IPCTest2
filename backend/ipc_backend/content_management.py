@@ -10,9 +10,24 @@ from clubs.models import ClubPageContent
 from events.models import EventPageContent
 from scholarships.models import ScholarshipContent
 from sponsorship.models import SponsorshipContent
+from memberships.models import MembershipContent
+from home.models import HomeContent
+from django.utils import timezone
 
 
 CONTENT_TABLES = {
+    "home": {
+        "label": "Home Content",
+        "model": HomeContent,
+        "fields": ("hero", "principles", "discipline_system", "recognition_pathway", "intelligence_layer", "member_value", "organisational_value", "application_journey", "seo"),
+        "publishing": True,
+    },
+    "membership": {
+        "label": "Membership Content",
+        "model": MembershipContent,
+        "fields": ("hero", "grades_intro", "comparison", "member_value", "professional_visibility", "application_journey", "organisational_membership", "questions", "grade_finder", "final_cta", "seo"),
+        "publishing": True,
+    },
     "about": {
         "label": "About",
         "model": AboutPageContent,
@@ -24,9 +39,14 @@ CONTENT_TABLES = {
         "fields": ("nomination_timeline", "impact_benefits", "integrity_principles"),
     },
     "clubs": {
-        "label": "Clubs",
+        "label": "Clubs Content",
         "model": ClubPageContent,
-        "fields": ("regional_clubs", "activities", "audience_values"),
+        "fields": (
+            "hero", "principles", "purpose", "locations_intro", "regional_clubs",
+            "programme_intro", "activities", "audiences_intro", "audience_values",
+            "upcoming", "contribution", "partners", "faq", "final_cta", "seo",
+        ),
+        "publishing": True,
     },
     "events": {
         "label": "Events",
@@ -34,14 +54,16 @@ CONTENT_TABLES = {
         "fields": ("featured_programme", "formats", "audiences"),
     },
     "scholarships": {
-        "label": "Scholarships",
+        "label": "Scholarship Content",
         "model": ScholarshipContent,
-        "fields": ("audiences", "values"),
+        "fields": ("hero", "commitment", "principles", "audiences_intro", "audiences", "values_intro", "values", "eligibility", "application_process", "partners", "impact", "faq", "final_cta", "seo"),
+        "publishing": True,
     },
     "sponsorship": {
-        "label": "Sponsorship",
+        "label": "Sponsorship Content",
         "model": SponsorshipContent,
-        "fields": ("routes", "partner_types", "integrity_principles"),
+        "fields": ("hero", "principles", "purpose", "routes_intro", "routes", "benefits", "integrity_intro", "integrity_principles", "route_builder", "process", "impact", "partners_intro", "partner_types", "faq", "final_cta", "seo"),
+        "publishing": True,
     },
 }
 
@@ -57,7 +79,7 @@ def add_active_defaults(value):
 
 
 def serialize_content(slug, config, instance):
-    return {
+    payload = {
         "slug": slug,
         "label": config["label"],
         "table_name": instance._meta.db_table,
@@ -65,6 +87,13 @@ def serialize_content(slug, config, instance):
         "updated_at": instance.updated_at,
         "sections": {field: add_active_defaults(getattr(instance, field)) for field in config["fields"]},
     }
+    if config.get("publishing"):
+        payload.update({
+            "status": instance.status,
+            "published_at": instance.published_at,
+            "updated_by": instance.updated_by_id,
+        })
+    return payload
 
 
 class AdminContentListView(APIView):
@@ -93,6 +122,8 @@ class AdminContentDetailView(APIView):
             return Response({"detail": "Content row was not found."}, status=status.HTTP_404_NOT_FOUND)
 
         allowed_payload_fields = {"sections", "is_active"}
+        if config.get("publishing"):
+            allowed_payload_fields.add("status")
         unknown_payload_fields = set(request.data) - allowed_payload_fields
         if unknown_payload_fields:
             return Response(
@@ -116,6 +147,14 @@ class AdminContentDetailView(APIView):
             if not isinstance(request.data["is_active"], bool):
                 return Response({"is_active": ["This field must be true or false."]}, status=status.HTTP_400_BAD_REQUEST)
             instance.is_active = request.data["is_active"]
+        if "status" in request.data:
+            if request.data["status"] not in ("draft", "published"):
+                return Response({"status": ["Status must be draft or published."]}, status=status.HTTP_400_BAD_REQUEST)
+            instance.status = request.data["status"]
+            if instance.status == "published" and instance.published_at is None:
+                instance.published_at = timezone.now()
+        if config.get("publishing"):
+            instance.updated_by = request.user
 
         try:
             instance.full_clean()

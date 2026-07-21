@@ -1,7 +1,9 @@
 import uuid
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from ipc_backend.validators import validate_content_section
 
 
 def validate_content_collection(value, required_fields, label):
@@ -36,11 +38,31 @@ def validate_club_cards(value):
 
 
 class ClubPageContent(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
     key = models.SlugField(max_length=40, unique=True, default="main")
+    hero = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    principles = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    purpose = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    locations_intro = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
     regional_clubs = models.JSONField(validators=[validate_regional_clubs])
+    programme_intro = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
     activities = models.JSONField(validators=[validate_club_cards])
+    audiences_intro = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
     audience_values = models.JSONField(validators=[validate_club_cards])
+    upcoming = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    contribution = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    partners = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    faq = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    final_cta = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    seo = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
+    legacy_content = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PUBLISHED)
     is_active = models.BooleanField(default=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="updated_club_content")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

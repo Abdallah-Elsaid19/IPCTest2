@@ -11,8 +11,7 @@ class ScholarshipContentView(RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_object(self):
-        content = ScholarshipContent.objects.filter(key="main", is_active=True).first()
+        content = ScholarshipContent.objects.filter(key="main", is_active=True, status=ScholarshipContent.Status.PUBLISHED).first()
         if content is None:
             raise Http404("Scholarship content is not available.")
         return content
-

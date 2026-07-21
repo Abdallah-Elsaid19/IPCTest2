@@ -204,7 +204,7 @@ export async function apiJson<T>(path: string, body?: unknown, options: ApiReque
       ? idempotencyKey || crypto.randomUUID()
       : undefined;
     details.idempotencyKey = actionKey;
-    const requestOptions: RequestInit = {
+    const requestOptions: NonNullable<Parameters<typeof fetch>[1]> = {
       ...fetchOptions,
       signal: canDedupe ? controller.signal : fetchOptions.signal,
       method,

@@ -4,8 +4,16 @@ import SectionHeader from "@/components/base/SectionHeader";
 import PathwayCard from "@/components/base/PathwayCard";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { apiJson, type MembershipGrade } from "@/lib/api";
-import SEO from "@/components/seo/SEO";
+import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
+import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
+import MembershipComparisonTable from "@/pages/membership/components/MembershipComparisonTable";
+import MembershipValuePathway from "@/pages/membership/components/MembershipValuePathway";
+import OrganisationalMembership from "@/pages/membership/components/OrganisationalMembership";
+import ApplicationJourney from "@/pages/membership/components/ApplicationJourney";
+import ProfessionalVisibility from "@/pages/membership/components/ProfessionalVisibility";
+import MembershipQuestions from "@/pages/membership/components/MembershipQuestions";
+import GradeFinderModal from "@/pages/membership/components/GradeFinderModal";
 
 export default function Membership() {
   const [membershipGrades, setMembershipGrades] = useState<MembershipGrade[]>(
@@ -13,6 +21,7 @@ export default function Membership() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [gradeFinderTrigger, setGradeFinderTrigger] = useState<HTMLButtonElement | null>(null);
 
   const gradeCards = useMemo(
     () =>
@@ -89,8 +98,9 @@ export default function Membership() {
     };
   }, []);
   return (
+    <ManagedContentProvider endpoint="/api/membership/content" slug="membership">
     <div>
-      <SEO {...pageSeo.membership} />
+      <ManagedPageSeo fallback={{ ...pageSeo.membership, canonical_path: pageSeo.membership.canonicalPath }} />
       {/* ===== HERO ===== */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-background-950 pb-20">
         <div className="absolute inset-0">
@@ -216,102 +226,23 @@ export default function Membership() {
         </div>
       </section>
 
-      {/* ===== PATHWAY CARDS ===== */}
-      <section className="bg-background-100 section-padding">
-        <div className="container-content">
-          <div className="reveal text-center mb-12">
-            <span className="eyebrow text-primary-500 mb-3 block">
-              Progressive Pathway
-            </span>
-            <h2 className="font-heading text-3xl md:text-4xl font-semibold text-background-950 mb-4">
-              Your Career Pathway
-            </h2>
-            <p className="text-foreground-600 max-w-2xl mx-auto">
-              From first affiliation to senior Fellowship, each grade builds on
-              the last with clear evidence requirements and professional
-              development support.
-            </p>
-          </div>
-          <div className="mt-12 md:mt-16">
-            <div className="flex gap-5 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide justify-start md:justify-center">
-              {pathwaySteps.map((step, index) => (
-                <div key={step.abbreviation} className="snap-start">
-                  <PathwayCard
-                    grade={step.grade}
-                    abbreviation={step.abbreviation}
-                    title={step.title}
-                    description={step.description}
-                    step={index + 1}
-                    isLast={index === pathwaySteps.length - 1}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <MembershipComparisonTable />
 
-      {/* ===== STANDARDS-INFORMED ===== */}
-      <section className="bg-background-50 section-padding">
-        <div className="container-content">
-          <div className="reveal">
-            <SectionHeader
-              eyebrow="Standards-Informed"
-              title="A standards-informed basis for recognition"
-              subtitle="The IPC framework is built on recognised project controls practice rather than generic membership language. The foundation includes the Project Controls Technician Level 3 standard and the Project Controls Professional Level 6 standard."
-              centered
-            />
-          </div>
-          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="reveal bg-background-100 border border-background-200/70 p-8 text-center hover:border-primary-300 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto bg-accent-100 flex items-center justify-center mb-5">
-                <span className="font-heading text-2xl font-bold text-accent-600">
-                  L3
-                </span>
-              </div>
-              <h3 className="font-heading text-xl font-semibold text-background-950 mb-3">
-                Foundation
-              </h3>
-              <p className="text-sm text-foreground-600 leading-relaxed">
-                The Level 3 standard describes a technician who controls,
-                monitors and analyses progress and performance data on
-                engineering, manufacturing, construction and infrastructure
-                projects.
-              </p>
-            </div>
-            <div className="reveal bg-background-100 border border-background-200/70 p-8 text-center hover:border-primary-300 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto bg-primary-100 flex items-center justify-center mb-5">
-                <span className="font-heading text-2xl font-bold text-primary-600">
-                  L4
-                </span>
-              </div>
-              <h3 className="font-heading text-xl font-semibold text-background-950 mb-3">
-                Applied
-              </h3>
-              <p className="text-sm text-foreground-600 leading-relaxed">
-                Applied practitioner recognition for professionals who can apply
-                project controls independently on live projects or programmes.
-              </p>
-            </div>
-            <div className="reveal bg-background-100 border border-background-200/70 p-8 text-center hover:border-primary-300 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto bg-background-800 flex items-center justify-center mb-5">
-                <span className="font-heading text-2xl font-bold text-background-50">
-                  L6
-                </span>
-              </div>
-              <h3 className="font-heading text-xl font-semibold text-background-950 mb-3">
-                Strategic
-              </h3>
-              <p className="text-sm text-foreground-600 leading-relaxed">
-                The Level 6 standard describes a professional who assures
-                information, interprets controls reports, develops controls
-                frameworks and influences senior decision-making on complex
-                projects.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <MembershipValuePathway />
+
+      <ProfessionalVisibility />
+
+      <ApplicationJourney onOpenGradeFinder={setGradeFinderTrigger} />
+
+      <OrganisationalMembership />
+
+      <MembershipQuestions onOpenGradeFinder={setGradeFinderTrigger} />
+
+      <GradeFinderModal
+        isOpen={gradeFinderTrigger !== null}
+        onClose={() => setGradeFinderTrigger(null)}
+        returnFocusElement={gradeFinderTrigger}
+      />
 
       {/* ===== FINAL CTA ===== */}
       <section className="bg-background-950 py-20 md:py-28">
@@ -348,5 +279,6 @@ export default function Membership() {
         </div>
       </section>
     </div>
+    </ManagedContentProvider>
   );
 }

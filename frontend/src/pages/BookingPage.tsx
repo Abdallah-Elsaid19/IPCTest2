@@ -6,6 +6,9 @@ import { pageSeo } from "@/config/pageSeo";
 const bookingUrl =
   "https://outlook.office.com/book/IPC@kentbusinesscollege.com/s/ZND9gXN_Ckuhz75PflhCdQ2?ismsaljsauthenabled";
 
+const ipcLogoUrl =
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
+
 export default function BookingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -24,39 +27,43 @@ export default function BookingPage() {
       <SEO {...pageSeo.booking} />
       <section
         aria-labelledby="booking-page-heading"
-        className="border-b border-background-800 bg-background-950 pb-12 pt-28 sm:pb-16 sm:pt-32 lg:pt-36"
+        className="relative overflow-hidden bg-[#0B0B0B] pb-10 pt-28 sm:pb-12 sm:pt-32 lg:pt-36"
       >
-        <div className="container-content">
-          <Link
-            to="/sponsorship"
-            className="inline-flex items-center gap-2 text-sm font-medium text-background-300 transition-colors hover:text-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-4 focus-visible:ring-offset-background-950"
+        <div className="absolute inset-0 dot-grid opacity-[0.025]" aria-hidden="true" />
+        <div className="container-content relative z-10">
+          <Link 
+            to="/membership"
+            className="inline-flex items-center gap-2 text-sm font-medium text-foreground-600 transition-colors hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-background-100"
           >
             <i className="ri-arrow-left-line" aria-hidden="true" />
-            Back to Sponsorship
+            Back to Membership
           </Link>
 
-          <div className="mt-8 max-w-3xl">
-            <span className="eyebrow mb-4 block text-primary-400">
-              Partnership
+          <div className="mx-auto mt-8 max-w-3xl text-center">
+            <span className="eyebrow mb-4 block text-primary-600">
+              Meet the IPC team
             </span>
             <h1
               id="booking-page-heading"
-              className="font-heading text-4xl font-bold leading-tight text-background-50 sm:text-5xl lg:text-6xl"
+              className="font-heading text-4xl font-bold leading-tight text-white  sm:text-5xl lg:text-6xl"
             >
-              Discuss Sponsorship
+              Information Session
             </h1>
-            <p className="mt-5 text-base leading-relaxed text-background-300 sm:text-lg">
-              Book a meeting with the IPC team to discuss sponsorship
-              opportunities, partnership options, and the most suitable package
-              for your organisation.
+            <p className="mt-5 text-base leading-relaxed text-foreground-600 sm:text-lg">
+              Book a focused conversation with the IPC team to discuss
+              membership, organisational capability and the most suitable
+              pathway for your organisation.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="py-10 sm:py-14 lg:py-16" aria-label="Sponsorship meeting booking">
+      <section className="pb-10 sm:pb-14 lg:pb-16" aria-label="IPC information session booking">
         <div className="container-content">
-          <div className="overflow-hidden rounded-xl border border-background-200/80 bg-background-50 shadow-xl shadow-background-950/5">
+          <div className="mx-auto  overflow-hidden border border-background-200/80 bg-background-50 shadow-xl shadow-background-950/5">
+       
+       
+
             {isLoading && !hasError && (
               <div
                 className="flex items-center justify-center gap-3 border-b border-background-200 bg-background-50 px-5 py-4 text-sm font-medium text-foreground-600"
@@ -78,7 +85,7 @@ export default function BookingPage() {
                     <i className="ri-external-link-line text-2xl" aria-hidden="true" />
                   </div>
                   <h2 className="mt-6 font-heading text-2xl font-semibold text-background-950">
-                    Continue your booking with Microsoft
+                    Continue your information session booking
                   </h2>
                   <p className="mt-3 leading-relaxed text-foreground-600">
                     Microsoft Bookings could not be displayed here. Open the
@@ -98,9 +105,10 @@ export default function BookingPage() {
             ) : (
               <iframe
                 src={bookingUrl}
-                title="Discuss IPC Sponsorship"
-                className="block h-[850px] min-h-[800px] w-full border-0 md:h-[900px] lg:h-[1000px]"
+                title="Book an IPC information session"
+                className="block h-[2000px] w-full overflow-hidden border-0 sm:h-[1800px] lg:h-[1900px] "
                 loading="lazy"
+                scrolling="no"
                 allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"
                 allowFullScreen
                 onLoad={handleLoad}
@@ -109,7 +117,7 @@ export default function BookingPage() {
             )}
 
             {!hasError && (
-              <div className="border-t border-background-200 bg-background-50 px-5 py-5 text-center sm:px-8">
+              <div className="border-t border-background-200 bg-background-50  px-5 py-5 text-center sm:px-8">
                 <p className="text-sm leading-relaxed text-foreground-600">
                   If the booking form does not appear, you can continue on the
                   secure Microsoft Bookings website.
@@ -131,4 +139,3 @@ export default function BookingPage() {
     </div>
   );
 }
-

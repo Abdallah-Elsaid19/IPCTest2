@@ -16,6 +16,11 @@ const navItems = [
   { label: "About", path: "/about" },
 ];
 
+const fullLogoUrl =
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
+const scrolledIconUrl =
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f8147ef4aa324aa9873f6e074f0ffa89.png";
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -26,6 +31,9 @@ export default function Header() {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
+    const scrolledIcon = new Image();
+    scrolledIcon.src = scrolledIconUrl;
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -35,8 +43,20 @@ export default function Header() {
       <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${scrolled ? "border-b border-background-800/60 bg-background-950/90 shadow-[0_1px_0_0_rgba(0,0,0,0.1)] backdrop-blur-xl" : "border-b border-transparent bg-transparent"}`}>
         <div className="container-content">
           <div className="flex h-16 items-center justify-between md:h-18">
-            <Link to="/home" className="inline-flex shrink-0 items-center" aria-label="Institute of Project Controls home">
-              <img src="https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png" alt="Institute of Project Controls" width={160} height={48} loading="eager" decoding="async" className="h-10 w-auto object-contain md:h-12" />
+            <Link
+              to="/home"
+              className={`inline-flex shrink-0 items-center transition-[width] duration-300 ${scrolled ? "w-10 md:w-12" : "w-40"}`}
+              aria-label="Institute of Project Controls home"
+            >
+              <img
+                src={scrolled ? scrolledIconUrl : fullLogoUrl}
+                alt="Institute of Project Controls"
+                width={scrolled ? 48 : 160}
+                height={48}
+                loading="eager"
+                decoding="async"
+                className="h-10 w-full object-contain md:h-12"
+              />
             </Link>
 
             <nav className="hidden items-center gap-7 lg:flex">

@@ -75,7 +75,7 @@ export const adminApi = {
   contentTables: () => apiJson<AdminContentTable[]>("/api/admin/content"),
   updateContentTable: (
     slug: string,
-    payload: { sections?: Record<string, ContentSectionValue>; is_active?: boolean },
+    payload: { sections?: Record<string, ContentSectionValue>; is_active?: boolean; status?: "draft" | "published" },
   ) => apiJson<AdminContentTable>(`/api/admin/content/${slug}`, payload, { method: "PATCH" }),
   dashboard: (forceRefresh = false) => apiJson<DashboardData>(`/api/admin/dashboard${forceRefresh ? "?refresh=1" : ""}`),
   enquiries: (signal?: AbortSignal) =>

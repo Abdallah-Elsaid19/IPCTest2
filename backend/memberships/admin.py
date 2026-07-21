@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import MembershipGrade, MembershipGradeBenefit, MembershipGradeRequirement
+from .models import MembershipContent, MembershipGrade, MembershipGradeBenefit, MembershipGradeRequirement
+
+
+@admin.register(MembershipContent)
+class MembershipContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "status", "is_active", "updated_at")
+    list_filter = ("status", "is_active")
+    readonly_fields = ("created_at", "updated_at")
 
 
 class MembershipGradeBenefitInline(admin.TabularInline):

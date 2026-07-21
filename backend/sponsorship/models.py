@@ -1,5 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.conf import settings
+from ipc_backend.validators import validate_content_section
 
 
 def validate_object_collection(value, required_fields, label):
@@ -30,11 +32,32 @@ def validate_partner_types(value):
 
 
 class SponsorshipContent(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
     key = models.SlugField(max_length=40, unique=True, default="main")
+    hero = models.JSONField(default=dict, validators=[validate_content_section])
+    principles = models.JSONField(default=dict, validators=[validate_content_section])
+    purpose = models.JSONField(default=dict, validators=[validate_content_section])
+    routes_intro = models.JSONField(default=dict, validators=[validate_content_section])
     routes = models.JSONField(validators=[validate_sponsorship_cards])
+    benefits = models.JSONField(default=dict, validators=[validate_content_section])
     partner_types = models.JSONField(validators=[validate_partner_types])
     integrity_principles = models.JSONField(validators=[validate_sponsorship_cards])
+    integrity_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    route_builder = models.JSONField(default=dict, validators=[validate_content_section])
+    process = models.JSONField(default=dict, validators=[validate_content_section])
+    impact = models.JSONField(default=dict, validators=[validate_content_section])
+    partners_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    faq = models.JSONField(default=dict, validators=[validate_content_section])
+    final_cta = models.JSONField(default=dict, validators=[validate_content_section])
+    seo = models.JSONField(default=dict, validators=[validate_content_section])
+    legacy_content = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PUBLISHED)
     is_active = models.BooleanField(default=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="updated_sponsorship_content")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -45,4 +68,3 @@ class SponsorshipContent(models.Model):
 
     def __str__(self):
         return self.key
-

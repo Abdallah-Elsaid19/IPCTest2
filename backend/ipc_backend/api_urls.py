@@ -12,7 +12,7 @@ from awards.views import (
 )
 from contact.views import ContactSubmissionViewSet
 from newsletter.views import NewsletterSignupViewSet
-from memberships.views import AdminMembershipGradeViewSet, MembershipGradeViewSet
+from memberships.views import AdminMembershipGradeViewSet, MembershipContentView, MembershipGradeViewSet
 from media_library.views import MediaAssetViewSet
 from ipc_backend.views import csrf_cookie
 from ipc_backend.content_management import AdminContentDetailView, AdminContentListView
@@ -20,6 +20,7 @@ from clubs.views import ClubEnquiryCreateView, ClubPageContentView
 from scholarships.views import ScholarshipContentView
 from sponsorship.views import SponsorshipContentView
 from about.views import AboutPageContentView
+from home.views import HomeContentView
 from accounts.views import CurrentUserView, LoginView, LogoutView, RefreshView
 from accounts.dashboard import (
     AdminDashboardView,
@@ -67,6 +68,8 @@ urlpatterns = [
     path("clubs/content", ClubPageContentView.as_view(), name="club-page-content"),
     path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
     path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
+    path("home/content", HomeContentView.as_view(), name="home-content"),
+    path("membership/content", MembershipContentView.as_view(), name="membership-content"),
     path("awards/content", AwardPageContentView.as_view(), name="award-page-content"),
     path("events/content", EventPageContentView.as_view(), name="event-page-content"),
     path("about/content", AboutPageContentView.as_view(), name="about-page-content"),

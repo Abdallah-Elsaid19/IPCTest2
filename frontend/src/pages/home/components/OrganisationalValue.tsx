@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 interface PartnerValue {
   id: string;
@@ -34,6 +35,8 @@ const partnerValues: PartnerValue[] = [
 ];
 
 export default function OrganisationalValue() {
+  const content = useManagedSection("organisational_value", { eyebrow: "Organisational value", title: "Develop capability across people, projects and organisations.", description: "IPC partnerships support talent pathways, professional recognition, research, industry engagement and organisational credibility.", primary_cta_label: "Corporate partnership", primary_cta_url: "/sponsorship", secondary_cta_label: "Academic partnership", secondary_cta_url: "/sponsorship", items: partnerValues });
+  const items = content.items.filter(isManagedItemActive);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLElement>(null);
 
@@ -64,32 +67,32 @@ export default function OrganisationalValue() {
 
       <div className="container-content relative z-10">
         <div className="mb-12 flex items-center gap-4 md:mb-16">
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary-400">Organisational value</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary-400">{content.eyebrow}</span>
           <span className="h-px flex-1 bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-0">
           <div className="lg:col-span-5 lg:sticky lg:top-28 lg:self-start">
             <h2 className="max-w-[540px] font-heading text-[clamp(2rem,4.5vw,4rem)] font-extrabold leading-[1.04] tracking-[-0.04em] text-background-50">
-              Develop capability across people, projects and organisations.
+              {content.title}
             </h2>
             <p className="mt-6 max-w-[440px] text-sm font-medium leading-[1.8] text-background-400 md:text-base">
-              IPC partnerships support talent pathways, professional recognition, research, industry engagement and organisational credibility.
+              {content.description}
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                to="/sponsorship"
+                to={content.primary_cta_url}
                 className="group inline-flex items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-xs font-bold text-background-950 transition-colors duration-300 hover:bg-primary-400"
               >
-                <span>Corporate partnership</span>
+                <span>{content.primary_cta_label}</span>
                 <i className="ri-arrow-right-line transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
               <Link
-                to="/sponsorship"
+                to={content.secondary_cta_url}
                 className="group inline-flex items-center justify-center gap-2 border border-background-700/50 bg-background-900/60 px-5 py-3 text-xs font-bold text-background-100 transition-colors duration-300 hover:border-primary-500/50 hover:text-primary-400"
               >
-                <span>Academic partnership</span>
+                <span>{content.secondary_cta_label}</span>
                 <i className="ri-arrow-right-line transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </div>
@@ -97,7 +100,7 @@ export default function OrganisationalValue() {
 
           <div className="lg:col-span-7 lg:col-start-6">
             <div className="space-y-4">
-              {partnerValues.map((item, index) => (
+              {items.map((item, index) => (
                 <article
                   key={item.id}
                   className={`group relative overflow-hidden border border-background-800/70 bg-background-900/65 p-6 transition-all duration-700 hover:-translate-y-1 hover:border-primary-500/35 hover:bg-background-900 hover:shadow-2xl md:p-8 ${

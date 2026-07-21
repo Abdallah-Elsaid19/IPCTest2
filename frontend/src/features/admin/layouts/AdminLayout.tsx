@@ -30,7 +30,7 @@ const navigation = [
   { to: "/admin/events", label: "Events", icon: CalendarDays },
   { to: "/admin/awards", label: "Awards", icon: Trophy },
   { to: "/admin/membership-grades", label: "Member grades", icon: GraduationCap },
-  { to: "/admin/content", label: "Content", icon: FileJson },
+  { to: "/admin/content", label: "All Content", icon: FileJson },
   { to: "/dashboard/users", label: "Users", icon: UsersRound },
   { to: "/admin/profile", label: "Profile", icon: UserRound },
 ];
