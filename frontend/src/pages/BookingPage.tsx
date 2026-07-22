@@ -49,7 +49,7 @@ export default function BookingPage() {
             >
               Information Session
             </h1>
-            <p className="mt-5 text-base leading-relaxed text-foreground-600 sm:text-lg">
+            <p className="mt-5 text-base leading-relaxed text-foreground-300 sm:text-lg">
               Book a focused conversation with the IPC team to discuss
               membership, organisational capability and the most suitable
               pathway for your organisation.

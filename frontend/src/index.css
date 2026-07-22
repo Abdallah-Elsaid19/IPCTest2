@@ -231,6 +231,56 @@
     text-transform: uppercase;
   }
 
+  .contact-motion-track {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background-color: oklch(var(--background-50));
+  }
+
+  .contact-motion-line {
+    position: absolute;
+    top: 0;
+    display: block;
+    width: 7.5rem;
+    height: 100%;
+    background-image: linear-gradient(
+      90deg,
+      oklch(var(--primary-300) / 0),
+      oklch(var(--primary-500)),
+      oklch(var(--primary-700) / 0)
+    );
+    will-change: left;
+  }
+
+  .contact-motion-line-forward {
+    animation: contact-line-forward 4s linear infinite;
+  }
+
+  .contact-motion-line-reverse {
+    animation: contact-line-reverse 4s linear infinite;
+  }
+
+  @keyframes contact-line-forward {
+    from { left: -9.5rem; }
+    to { left: 100%; }
+  }
+
+  @keyframes contact-line-reverse {
+    from { left: 100%; }
+    to { left: -9.5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-motion-line-forward,
+    .contact-motion-line-reverse {
+      left: 50%;
+      animation: none;
+      transform: translateX(-50%);
+      will-change: auto;
+    }
+  }
+
   .reveal {
     opacity: 0;
     transform: translateY(28px);

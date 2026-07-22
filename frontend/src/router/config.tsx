@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
+import { Navigate, type RouteObject } from "react-router-dom";
 import { GuestOnlyRoute, ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
 const NotFound = lazy(() => import("../pages/NotFound"));
@@ -14,6 +14,8 @@ const FellowGradePage = lazy(() => import("../pages/membership/grades/fellow/pag
 const MembershipApplicationPage = lazy(() => import("../pages/membership/apply/page"));
 const Scholarships = lazy(() => import("../pages/scholarships/page"));
 const Sponsorship = lazy(() => import("../pages/sponsorship/page"));
+const Services = lazy(() => import("../pages/services/page"));
+const Contribute = lazy(() => import("../pages/contribute/page"));
 const BookingPage = lazy(() => import("../pages/BookingPage"));
 const Awards = lazy(() => import("../pages/awards/page"));
 const Events = lazy(() => import("../pages/events/page"));
@@ -59,6 +61,9 @@ const routes: RouteObject[] = [
   { path: "/membership/:grade/apply", element: <MembershipApplicationPage /> },
   { path: "/scholarships", element: <Scholarships /> },
   { path: "/sponsorship", element: <Sponsorship /> },
+  { path: "/services", element: <Services /> },
+  { path: "/fund", element: <Contribute /> },
+  { path: "/contribute", element: <Navigate to="/fund" replace /> },
   { path: "/booking", element: <BookingPage /> },
   { path: "/information-session", element: <BookingPage /> },
   { path: "/awards", element: <Awards /> },

@@ -52,6 +52,20 @@ export const pageSeo = {
     canonicalPath: "/sponsorship",
     keywords: ["project controls sponsorship", "corporate partnership", "event sponsorship"],
   },
+  services: {
+    title: "Professional Services",
+    description:
+      "Explore IPC professional services for recognition, workforce capability, learning, academic partnership, events, awards, scholarships and professional impact.",
+    canonicalPath: "/services",
+    keywords: ["project controls services", "professional recognition", "workforce capability", "IPC services"],
+  },
+  contribute: {
+    title: "Funded Opportunities",
+    description:
+      "Support future project-controls talent, professional learning, regional capability and applied research through IPC funded opportunities.",
+    canonicalPath: "/fund",
+    keywords: ["IPC impact fund", "project controls funding", "professional development funding", "scholarships and bursaries"],
+  },
   awards: {
     title: "Awards, Prizes and Recognition",
     description:

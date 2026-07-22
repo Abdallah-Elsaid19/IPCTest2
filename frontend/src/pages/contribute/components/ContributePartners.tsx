@@ -1,0 +1,21 @@
+import { Link } from "react-router-dom";
+import SectionHeader from "@/components/base/SectionHeader";
+import { informationSessionPath } from "./data";
+
+const levels=[
+  ["FOUNDING","Founding Impact Partner","Supports the creation of a flagship programme and its governance, delivery or launch.","Discuss partnership"],
+  ["TALENT","Strategic Skills Partner","Supports future talent, workforce capability, mentoring or learning access.","Discuss partnership"],
+  ["RESEARCH","Research & Innovation Partner","Supports applied evidence, practitioner access, publications and dissemination.","Discuss partnership"],
+  ["REGIONAL","Regional Opportunity Partner","Supports clubs, learner access, technical talks, mentoring and local engagement.","Discuss partnership"],
+  ["SUPPORTER","Professional Supporter","Provides funding, expertise, speakers, mentors, venues, tools or funded places.","Discuss support"],
+];
+
+const partners=[
+  ["Employers","Fund workforce development, learner access, CPD, regional skills and visible social value.","Explore employer funding"],
+  ["Consultancies","Support talent, thought leadership, mentoring, events, research and professional visibility.","Explore consultancy funding"],
+  ["Academic & training partners","Connect learners, courses, employability, research and professional progression.","Explore academic funding"],
+  ["Charities & public bodies","Support social mobility, second-chance careers, veterans, regional capability and public value.","Explore public-value funding"],
+  ["Recruitment & service partners","Back career workshops, emerging-talent awards, regional clubs and ethical networking.","Explore talent funding"],
+];
+
+export default function ContributePartners(){return <section className="border-b border-background-800 bg-background-950 section-padding text-background-50"><div className="container-content"><div className="reveal max-w-5xl"><SectionHeader eyebrow="Who can fund professional impact" title="Partnership routes for organisations across the talent and project-delivery ecosystem." subtitle="Funding can come through employers, consultancies, academic and training partners, charities, public bodies, recruitment organisations and responsible service providers." light eyebrowClassName="text-primary-400"/></div><div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-5">{levels.map(([label,title,copy,cta])=><article key={title} className="reveal flex min-h-72 flex-col border border-background-800 border-t-2 border-t-primary-500 bg-background-900/70 p-6"><span className="font-mono text-[10px] font-bold tracking-widest text-primary-400">{label}</span><h3 className="mt-7 text-lg font-semibold">{title}</h3><p className="mt-3 text-sm leading-relaxed text-background-400">{copy}</p><Link to={informationSessionPath} state={{enquiry:title}} className="mt-auto pt-7 text-sm font-semibold text-primary-300">{cta} <i className="ri-arrow-right-line" /></Link></article>)}</div><p className="mt-5 border-l-2 border-primary-500 pl-4 text-xs leading-relaxed text-background-400">Partner levels describe contribution type. Financial thresholds should be published only after commercial and legal approval.</p><div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-6">{partners.map(([title,copy,cta],index)=><article key={title} className={`reveal flex min-h-64 flex-col border border-background-800 bg-background-900/50 p-7 ${index<3?"lg:col-span-2":"lg:col-span-3"}`}><h3 className="text-xl font-semibold">{title}</h3><p className="mt-4 text-sm leading-relaxed text-background-300">{copy}</p><Link to={informationSessionPath} state={{enquiry:title}} className="mt-auto inline-flex items-center gap-2 pt-8 text-sm font-semibold text-primary-300">{cta}<i className="ri-arrow-right-line" /></Link></article>)}</div></div></section>}

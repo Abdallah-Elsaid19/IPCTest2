@@ -8,11 +8,13 @@ import ProfileMenu from "./ProfileMenu";
 const navItems = [
   { label: "Home", path: "/home" },
   { label: "Membership", path: "/membership" },
+  { label: "Fund", path: "/fund" },
   { label: "Scholarships", path: "/scholarships" },
   { label: "Sponsorship", path: "/sponsorship" },
   { label: "Awards", path: "/awards" },
   { label: "Events", path: "/events" },
   { label: "Clubs", path: "/clubs" },
+  { label: "Services", path: "/services" },
   { label: "About", path: "/about" },
 ];
 
@@ -68,7 +70,7 @@ export default function Header() {
               />
             </Link>
 
-            <nav className="hidden items-center gap-7 lg:flex">
+            <nav className="hidden items-center gap-5 xl:flex">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
@@ -82,14 +84,14 @@ export default function Header() {
 
             <div className="flex items-center gap-3">
               {isLoading ? (
-                <span className={`hidden h-[38px] w-12 animate-pulse rounded-full border lg:inline-flex ${scrolled ? "border-background-700/20 bg-background-800/20" : "border-background-300 bg-background-200/60"}`} aria-label="Checking sign-in status" role="status" />
+                <span className={`hidden h-[38px] w-12 animate-pulse rounded-full border xl:inline-flex ${scrolled ? "border-background-700/20 bg-background-800/20" : "border-background-300 bg-background-200/60"}`} aria-label="Checking sign-in status" role="status" />
               ) : user ? (
                 <ProfileMenu dark={scrolled} />
               ) : (
-                <Link to="/login" className={`hidden items-center whitespace-nowrap border px-4 py-2 text-[13px] font-medium transition-all duration-300 lg:inline-flex ${scrolled ? "border-background-700/30 text-background-400 hover:border-background-600/50 hover:bg-primary-500 hover:text-background-50" : "border-background-300 text-foreground-700 hover:border-primary-500 hover:bg-primary-500 hover:text-background-950"}`}>Sign In</Link>
+                <Link to="/login" className={`hidden items-center whitespace-nowrap border px-4 py-2 text-[13px] font-medium transition-all duration-300 xl:inline-flex ${scrolled ? "border-background-700/30 text-background-400 hover:border-background-600/50 hover:bg-primary-500 hover:text-background-50" : "border-background-300 text-foreground-700 hover:border-primary-500 hover:bg-primary-500 hover:text-background-950"}`}>Sign In</Link>
               )}
-              <Link to="/contact" className={`hidden items-center whitespace-nowrap border px-4 py-2 text-[13px] font-medium transition-all duration-300 lg:inline-flex ${scrolled ? "border-background-700/30 text-background-400 hover:border-background-600/50 hover:bg-background-800/40 hover:text-background-100" : "border-background-300 text-foreground-700 hover:border-background-500 hover:bg-background-100 hover:text-background-950"}`}>Contact</Link>
-              <button onClick={() => setMobileOpen(true)} className={`flex h-10 w-10 items-center justify-center transition-colors lg:hidden ${scrolled ? "text-background-400 hover:bg-background-800/50 hover:text-background-100" : "text-background-950 hover:bg-background-100"}`} aria-label="Open menu">
+              <Link to="/contact" className={`hidden items-center whitespace-nowrap border px-4 py-2 text-[13px] font-medium transition-all duration-300 xl:inline-flex ${scrolled ? "border-background-700/30 text-background-400 hover:border-background-600/50 hover:bg-background-800/40 hover:text-background-100" : "border-background-300 text-foreground-700 hover:border-background-500 hover:bg-background-100 hover:text-background-950"}`}>Contact</Link>
+              <button onClick={() => setMobileOpen(true)} className={`flex h-10 w-10 items-center justify-center transition-colors xl:hidden ${scrolled ? "text-background-400 hover:bg-background-800/50 hover:text-background-100" : "text-background-950 hover:bg-background-100"}`} aria-label="Open menu">
                 <i className="ri-menu-3-line text-xl" />
               </button>
             </div>
