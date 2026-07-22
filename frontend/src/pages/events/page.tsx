@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
 import AudienceCard from "@/components/base/AudienceCard";
 import FeatureCard from "@/components/base/FeatureCard";
@@ -190,10 +191,10 @@ export default function Events() {
                 <i className="ri-calendar-event-line" />
                 View Upcoming Events
               </a>
-              <a href="#register" className="btn-secondary inline-flex items-center gap-2">
+              <Link to="/information-session" className="btn-secondary inline-flex items-center gap-2">
                 <i className="ri-mail-line" />
                 Enquire About Events
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -465,6 +466,7 @@ export default function Events() {
               subtitle="Events serve the full spectrum of the project controls community, from learners to senior leaders."
               light
               centered
+              eyebrowClassName="text-white"
             />
           </div>
           <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -510,12 +512,12 @@ export default function Events() {
               Enquire about upcoming master classes, regional club events, roundtables and mentoring circles. 
               Register your interest for specific events or discuss speaking, sponsorship and partnership opportunities.
             </p>
-            <a href="#register" className="btn-primary inline-flex items-center gap-3">
+            <Link to="/information-session" className="btn-primary inline-flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center">
                 <i className="ri-mail-line text-background-50 text-sm" />
               </span>
               Enquire About Events
-            </a>
+            </Link>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-2xl mx-auto">
               <div className="bg-background-100 p-4 reveal reveal-delay-1">
                 <span className="text-xs font-semibold text-accent-700 uppercase tracking-wide block mb-1">Attend</span>

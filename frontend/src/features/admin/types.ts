@@ -275,6 +275,7 @@ export interface AdminUser {
   last_login: string | null;
   ipc_email: string;
   personal_email: string | null;
+  telephone: string;
   membership_application_id: number | null;
   membership_reference: string | null;
   membership_grade: string | null;
@@ -289,6 +290,7 @@ export interface AdminUserPayload {
   email: string;
   first_name: string;
   last_name: string;
+  telephone: string;
   role: AdminRole;
   is_active: boolean;
 }

@@ -4,9 +4,9 @@ from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInter
 
 @admin.register(AwardPageContent)
 class AwardPageContentAdmin(admin.ModelAdmin):
-    list_display = ("key", "is_active", "updated_at")
-    list_filter = ("is_active",)
-    readonly_fields = ("created_at", "updated_at")
+    list_display = ("key", "status", "is_active", "published_at", "updated_at")
+    list_filter = ("status", "is_active")
+    readonly_fields = ("created_at", "updated_at", "published_at", "updated_by")
 
 
 @admin.register(AwardCategory)

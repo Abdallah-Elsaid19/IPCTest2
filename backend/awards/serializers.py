@@ -7,9 +7,23 @@ class AwardPageContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = AwardPageContent
         fields = [
+            "hero",
+            "framework_intro",
+            "featured_intro",
+            "timeline_intro",
             "nomination_timeline",
+            "benefits_intro",
             "impact_benefits",
+            "beneficiaries_intro",
+            "beneficiaries",
+            "integrity_intro",
             "integrity_principles",
+            "partnerships_intro",
+            "partnerships",
+            "faq",
+            "interest_intro",
+            "final_cta",
+            "seo",
             "updated_at",
         ]
         read_only_fields = fields

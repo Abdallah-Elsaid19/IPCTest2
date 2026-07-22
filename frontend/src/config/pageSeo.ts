@@ -53,9 +53,9 @@ export const pageSeo = {
     keywords: ["project controls sponsorship", "corporate partnership", "event sponsorship"],
   },
   awards: {
-    title: "Awards & Prizes",
+    title: "Awards, Prizes and Recognition",
     description:
-      "Celebrate excellence in project controls. Explore IPC's academic, commercial and professional awards, nomination timeline and independent judging process.",
+      "IPC awards and prizes recognise academic excellence, commercial innovation, professional contribution and emerging talent across the project-controls community.",
     canonicalPath: "/awards",
     keywords: ["project controls awards", "professional recognition prizes", "IPC awards"],
   },

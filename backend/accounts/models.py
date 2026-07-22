@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from ipc_backend.validators import profile_image_upload_to, validate_image
+from ipc_backend.validators import profile_image_upload_to, validate_image, validate_uk_telephone
 
 
 class AdminProfile(models.Model):
@@ -10,6 +10,7 @@ class AdminProfile(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="admin_profile")
     role = models.CharField(max_length=24, choices=Role.choices, default=Role.USER)
+    telephone = models.CharField(max_length=16, validators=[validate_uk_telephone], blank=True)
     profile_image = models.ImageField(
         upload_to=profile_image_upload_to,
         validators=[validate_image],

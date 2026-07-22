@@ -21,7 +21,14 @@ const personalFields: ApplicationField[] = [
   { name: "last_name", label: "Last name", type: "text", required: true },
   { name: "username", label: "Username", type: "text", required: true, placeholder: "e.g. abdoelsaid368", help: "3-30 lowercase letters, numbers, dots, underscores or hyphens." },
   { name: "email", label: "Email address", type: "email", required: true },
-  { name: "phone", label: "Phone number", type: "tel", required: true },
+  {
+    name: "phone",
+    label: "UK telephone number",
+    type: "tel",
+    required: true,
+    placeholder: "07700 900123 or +44 7700 900123",
+    help: "Enter a valid UK telephone number.",
+  },
   { name: "organisation", label: "Organisation / employer", type: "text" },
   { name: "country", label: "Country of residence", type: "text", required: true },
   { name: "contact_preference", label: "Preferred contact method", type: "select", required: true, options: ["Email", "Phone", "Either email or phone"] },
@@ -194,7 +201,8 @@ export default function MembershipApplicationPage() {
     formState: { errors, isSubmitting },
   } = useForm<GradeApplicationData>({
     resolver: zodResolver(schema),
-    mode: "onTouched",
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: emptyValues(activeConfig),
   });
   const values = watch();
@@ -234,7 +242,11 @@ export default function MembershipApplicationPage() {
     return typeof error?.message === "string" ? error.message : undefined;
   };
   const valueFor = (name: string) => (values[name] ?? "") as FormValue;
-  const updateValue = (name: string, value: FormValue) => setValue(name, value, { shouldDirty: true, shouldTouch: true });
+  const updateValue = (name: string, value: FormValue) => setValue(name, value, {
+    shouldDirty: true,
+    shouldTouch: true,
+    shouldValidate: true,
+  });
 
   async function goNext() {
     const names = currentStep === 0

@@ -5,6 +5,7 @@ import type { MembershipGradeData } from "@/mocks/membershipGrades";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
 import SEO from "@/components/seo/SEO";
 import { buildBreadcrumbSchema } from "@/lib/seo/structuredData";
+import { useAuth } from "@/features/auth/AuthContext";
 
 interface Step {
   step: number;
@@ -15,6 +16,24 @@ interface Step {
   ctaText?: string;
   ctaHref?: string;
 }
+
+const normaliseIdentifier = (value?: string | null) =>
+  value?.replace(/[^a-z0-9]/gi, "").toLowerCase() ?? "";
+
+const isMembershipApplicationCta = (label?: string) =>
+  ["join", "joinnow", "apply", "applynow"].includes(normaliseIdentifier(label));
+
+const shouldRenderCta = (
+  label: string | undefined,
+  currentGrade: string,
+  user: ReturnType<typeof useAuth>["user"],
+  isAuthLoading: boolean,
+) => {
+  if (!isMembershipApplicationCta(label)) return true;
+  if (isAuthLoading) return false;
+  if (!user?.membership_active) return true;
+  return normaliseIdentifier(user.membership_grade) !== normaliseIdentifier(currentGrade);
+};
 
 function StepLink({ href, children }: { href: string; children: ReactNode }) {
   const isExternal = href.startsWith("mailto:") || href.startsWith("http");
@@ -32,8 +51,9 @@ function StepLink({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
-function HowToApplyAccordion({ steps, applicationPath }: { steps: Step[]; applicationPath: string }) {
+function HowToApplyAccordion({ steps, applicationPath, currentGrade }: { steps: Step[]; applicationPath: string; currentGrade: string }) {
   const [activeStep, setActiveStep] = useState<number>(0);
+  const { user, isLoading: isAuthLoading } = useAuth();
   const active = steps[activeStep];
 
   return (
@@ -116,7 +136,7 @@ function HowToApplyAccordion({ steps, applicationPath }: { steps: Step[]; applic
                   active.content
                 )}
               </p>
-              {active.ctaText && active.ctaHref && (
+              {active.ctaText && active.ctaHref && shouldRenderCta(active.ctaText, currentGrade, user, isAuthLoading) && (
                 <StepLink href={applicationPath}>
                   <span className="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group/btn">
                     {active.ctaText}
@@ -168,7 +188,7 @@ function HowToApplyAccordion({ steps, applicationPath }: { steps: Step[]; applic
                       </>
                     ) : (s.content)}
                   </p>
-                  {s.ctaText && s.ctaHref && (
+                  {s.ctaText && s.ctaHref && shouldRenderCta(s.ctaText, currentGrade, user, isAuthLoading) && (
                     <StepLink href={applicationPath}>
                       <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
                         {s.ctaText}<i className="ri-arrow-right-line" />
@@ -193,7 +213,10 @@ export default function MembershipGradeTemplate({ data }: Props) {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [videoConsent, setVideoConsent] = useState(false);
   const location = useLocation();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const applicationPath = `/membership/${data.slug}/apply`;
+  const showApplicationCta = shouldRenderCta(data.howToApply.ctaText, data.abbreviation, user, isAuthLoading);
+  const showPricingCta = shouldRenderCta(data.pricingBanner.ctaText, data.abbreviation, user, isAuthLoading);
 
   useScrollReveal(0.08);
 
@@ -240,10 +263,12 @@ export default function MembershipGradeTemplate({ data }: Props) {
               <p className="text-base md:text-lg text-background-400 leading-relaxed max-w-lg mb-10">
                 {data.heroDescription}
               </p>
-              <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
-                {data.howToApply.ctaText}
-                <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
-              </Link>
+              {showApplicationCta && (
+                <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
+                  {data.howToApply.ctaText}
+                  <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              )}
             </div>
             <div className="hidden lg:block flex-shrink-0 w-[300px] xl:w-[360px]">
               <div className="relative">
@@ -332,10 +357,12 @@ export default function MembershipGradeTemplate({ data }: Props) {
                     </div>
                   </div>
                 )}
-                <Link to={applicationPath} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
-                  {data.howToApply.ctaText}
-                  <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
-                </Link>
+                {showApplicationCta && (
+                  <Link to={applicationPath} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
+                    {data.howToApply.ctaText}
+                    <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -350,7 +377,7 @@ export default function MembershipGradeTemplate({ data }: Props) {
               {data.howToApply.description}
             </p>
           </div>
-          <HowToApplyAccordion steps={data.howToApply.steps} applicationPath={applicationPath} />
+          <HowToApplyAccordion steps={data.howToApply.steps} applicationPath={applicationPath} currentGrade={data.abbreviation} />
         </div>
       </section>
 
@@ -373,12 +400,14 @@ export default function MembershipGradeTemplate({ data }: Props) {
               </div>
             ))}
           </div>
-          <div className="mt-12 text-center reveal">
-            <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
-              {data.howToApply.ctaText}
-              <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
+          {showApplicationCta && (
+            <div className="mt-12 text-center reveal">
+              <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
+                {data.howToApply.ctaText}
+                <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -495,10 +524,12 @@ export default function MembershipGradeTemplate({ data }: Props) {
             <p className="text-sm text-background-500 mb-8 max-w-md mx-auto">
               Join a growing community of project controls professionals and unlock your career potential.
             </p>
-            <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
-              {data.pricingBanner.ctaText}
-              <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            {showPricingCta && (
+              <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
+                {data.pricingBanner.ctaText}
+                <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -599,10 +630,12 @@ export default function MembershipGradeTemplate({ data }: Props) {
                 </span>
               </div>
             </div>
-            <Link to={applicationPath} className="inline-flex items-center gap-2 px-6 py-3 border border-background-700 text-background-300 text-sm font-medium hover:bg-background-800 hover:text-background-100 transition-all duration-200 whitespace-nowrap">
-              {data.howToApply.ctaText}
-              <i className="ri-arrow-right-line" />
-            </Link>
+            {showApplicationCta && (
+              <Link to={applicationPath} className="inline-flex items-center gap-2 px-6 py-3 border border-background-700 text-background-300 text-sm font-medium hover:bg-background-800 hover:text-background-100 transition-all duration-200 whitespace-nowrap">
+                {data.howToApply.ctaText}
+                <i className="ri-arrow-right-line" />
+              </Link>
+            )}
           </div>
         </div>
       </section>

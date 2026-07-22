@@ -1,5 +1,7 @@
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db import models
+from ipc_backend.validators import validate_content_section
 
 
 def validate_award_cards(value):
@@ -79,11 +81,33 @@ class AwardProgramme(models.Model):
 
 
 class AwardPageContent(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
     key = models.SlugField(max_length=40, unique=True, default="main")
+    hero = models.JSONField(default=dict, validators=[validate_content_section])
+    framework_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    featured_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    timeline_intro = models.JSONField(default=dict, validators=[validate_content_section])
     nomination_timeline = models.JSONField(validators=[validate_award_timeline])
+    benefits_intro = models.JSONField(default=dict, validators=[validate_content_section])
     impact_benefits = models.JSONField(validators=[validate_award_cards])
+    beneficiaries_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    beneficiaries = models.JSONField(default=list, validators=[validate_content_section])
+    integrity_intro = models.JSONField(default=dict, validators=[validate_content_section])
     integrity_principles = models.JSONField(validators=[validate_award_cards])
+    partnerships_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    partnerships = models.JSONField(default=list, validators=[validate_content_section])
+    faq = models.JSONField(default=dict, validators=[validate_content_section])
+    interest_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    final_cta = models.JSONField(default=dict, validators=[validate_content_section])
+    seo = models.JSONField(default=dict, validators=[validate_content_section])
+    legacy_content = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PUBLISHED)
     is_active = models.BooleanField(default=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="updated_awards_content")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -93,6 +93,7 @@ export default function AdminUserDetailsPage() {
             { label: "Username", value: user.username.includes("@") ? user.username : `@${user.username}` },
             { label: "IPC email", value: user.ipc_email },
             { label: "Personal email", value: user.personal_email || "—" },
+            { label: "UK telephone number", value: user.telephone || "—" },
             { label: "Role", value: <span className="uppercase">{user.role}</span> },
             { label: "Status", value: user.is_active ? "Active" : "Inactive" },
             { label: "Account created", value: formatDate(user.account_created_at) },

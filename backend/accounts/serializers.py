@@ -3,7 +3,9 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import transaction
 from rest_framework import serializers
 
-from ipc_backend.validators import validate_image
+from django.core.exceptions import ValidationError as DjangoValidationError
+
+from ipc_backend.validators import normalise_uk_telephone, validate_image
 from .models import AdminProfile
 
 
@@ -16,10 +18,11 @@ class UserSerializer(serializers.ModelSerializer):
     profile_image_url = serializers.SerializerMethodField()
     membership_active = serializers.SerializerMethodField()
     membership_grade = serializers.SerializerMethodField()
+    telephone = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url", "membership_active", "membership_grade")
+        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url", "telephone", "membership_active", "membership_grade")
         read_only_fields = fields
 
     def get_name(self, user):
@@ -34,6 +37,10 @@ class UserSerializer(serializers.ModelSerializer):
     def get_profile_image_url(self, user):
         profile = getattr(user, "admin_profile", None)
         return profile.profile_image.url if profile and profile.profile_image else None
+
+    def get_telephone(self, user):
+        profile = getattr(user, "admin_profile", None)
+        return profile.telephone if profile else ""
 
     def get_membership_active(self, user):
         try:
@@ -53,6 +60,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=300, trim_whitespace=True)
     username = serializers.CharField(max_length=150, validators=[UnicodeUsernameValidator()])
+    telephone = serializers.CharField(max_length=24, required=False, allow_blank=False)
     profile_image = serializers.ImageField(required=False, validators=[validate_image])
 
     def validate_full_name(self, value):
@@ -68,6 +76,12 @@ class UserProfileUpdateSerializer(serializers.Serializer):
             raise serializers.ValidationError("A user with this username already exists.")
         return value
 
+    def validate_telephone(self, value):
+        try:
+            return normalise_uk_telephone(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages) from error
+
     @transaction.atomic
     def update(self, user, validated_data):
         full_name = validated_data["full_name"]
@@ -78,16 +92,25 @@ class UserProfileUpdateSerializer(serializers.Serializer):
         user.save(update_fields=["first_name", "last_name", "username"])
 
         image = validated_data.get("profile_image")
-        if image is not None:
+        telephone = validated_data.get("telephone")
+        if image is not None or telephone is not None:
             profile, _ = AdminProfile.objects.get_or_create(
                 user=user,
                 defaults={
                     "role": AdminProfile.Role.ADMIN if user.is_staff else AdminProfile.Role.USER,
                 },
             )
-            old_image = profile.profile_image
-            profile.profile_image = image
-            profile.save(update_fields=["profile_image", "updated_at"])
+            updated_fields = ["updated_at"]
+            if telephone is not None:
+                profile.telephone = telephone
+                updated_fields.append("telephone")
+            if image is not None:
+                old_image = profile.profile_image
+                profile.profile_image = image
+                updated_fields.append("profile_image")
+            else:
+                old_image = None
+            profile.save(update_fields=updated_fields)
             if old_image and old_image.name != profile.profile_image.name:
                 old_image.delete(save=False)
         return user

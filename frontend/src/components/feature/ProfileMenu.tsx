@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/features/auth/AuthContext";
 
-export default function ProfileMenu() {
+export default function ProfileMenu({ dark = true }: { dark?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
@@ -44,7 +44,7 @@ export default function ProfileMenu() {
 
   return (
     <div ref={menuRef} className="relative hidden lg:block">
-      <button type="button" onClick={() => setIsOpen((value) => !value)} className="flex items-center gap-2 text-background-300 transition-colors hover:text-background-50" aria-haspopup="menu" aria-expanded={isOpen} aria-label="Open account menu">
+      <button type="button" onClick={() => setIsOpen((value) => !value)} className={`flex items-center gap-2 transition-colors ${dark ? "text-background-300 hover:text-background-50" : "text-foreground-700 hover:text-background-950"}`} aria-haspopup="menu" aria-expanded={isOpen} aria-label="Open account menu">
         <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-primary-500/60 bg-primary-500/15 text-xs font-bold text-primary-400">
           {user.profile_image_url ? <img src={user.profile_image_url} alt="" className="h-full w-full object-cover" /> : initials}
         </span>

@@ -21,6 +21,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from requests import RequestException
 
+from ipc_backend.validators import normalise_uk_telephone
 from .graph_mail import GraphMailError, send_password_reset_email
 from .models import AdminProfile
 
@@ -77,6 +78,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
     application_submitted_at = serializers.SerializerMethodField()
     application_approved_at = serializers.SerializerMethodField()
     account_created_at = serializers.SerializerMethodField()
+    telephone = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -86,6 +88,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
             "ipc_email", "personal_email", "membership_application_id",
             "membership_reference", "membership_grade", "application_status",
             "application_submitted_at", "application_approved_at", "account_created_at",
+            "telephone",
         )
         read_only_fields = ("id", "name", "is_superuser", "date_joined", "last_login")
 
@@ -108,6 +111,13 @@ class AdminUserSerializer(serializers.ModelSerializer):
     def get_personal_email(self, user):
         application = self._application(user)
         return application.email if application else None
+
+    def get_telephone(self, user):
+        profile = getattr(user, "admin_profile", None)
+        if profile and profile.telephone:
+            return profile.telephone
+        application = self._application(user)
+        return application.phone if application else ""
 
     def get_membership_application_id(self, user):
         application = self._application(user)
@@ -144,10 +154,11 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         default=AdminProfile.Role.USER,
         required=False,
     )
+    telephone = serializers.CharField(max_length=24, required=True, allow_blank=False)
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "role", "is_active")
+        fields = ("username", "email", "first_name", "last_name", "telephone", "role", "is_active")
 
     def validate_email(self, value):
         if not value:
@@ -158,6 +169,12 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value.lower()
+
+    def validate_telephone(self, value):
+        try:
+            return normalise_uk_telephone(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages) from error
 
     def validate(self, attrs):
         request = self.context["request"]
@@ -173,8 +190,11 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"role": "A superuser cannot be changed to the user role."})
         return attrs
 
-    def _save_role(self, user, role):
-        AdminProfile.objects.update_or_create(user=user, defaults={"role": role})
+    def _save_profile(self, user, role, telephone):
+        AdminProfile.objects.update_or_create(
+            user=user,
+            defaults={"role": role, "telephone": telephone},
+        )
         should_be_staff = role == AdminProfile.Role.ADMIN or user.is_superuser
         if user.is_staff != should_be_staff:
             user.is_staff = should_be_staff
@@ -183,20 +203,22 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         role = validated_data.pop("role", AdminProfile.Role.USER)
+        telephone = validated_data.pop("telephone")
         user = User(is_staff=role == AdminProfile.Role.ADMIN, **validated_data)
         user.set_unusable_password()
         user.save()
-        self._save_role(user, role)
+        self._save_profile(user, role, telephone)
         return user
 
     @transaction.atomic
     def update(self, instance, validated_data):
         existing_profile = getattr(instance, "admin_profile", None)
         role = validated_data.pop("role", existing_profile.role if existing_profile else (AdminProfile.Role.ADMIN if instance.is_staff else AdminProfile.Role.USER))
+        telephone = validated_data.pop("telephone", existing_profile.telephone if existing_profile else "")
         for field, value in validated_data.items():
             setattr(instance, field, value)
         instance.save()
-        self._save_role(instance, role)
+        self._save_profile(instance, role, telephone)
         return instance
 
 
@@ -241,7 +263,9 @@ class AdminUserViewSet(ModelViewSet):
                 | Q(email__icontains=search)
                 | Q(first_name__icontains=search)
                 | Q(last_name__icontains=search)
+                | Q(admin_profile__telephone__icontains=search)
                 | Q(membership_application__email__icontains=search)
+                | Q(membership_application__phone__icontains=search)
                 | Q(membership_application__application_reference__icontains=search)
                 | Q(membership_application__membership_grade__code__icontains=search)
             ).distinct()

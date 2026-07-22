@@ -23,7 +23,11 @@ class AwardPageContentView(RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_object(self):
-        content = AwardPageContent.objects.filter(key="main", is_active=True).first()
+        content = AwardPageContent.objects.filter(
+            key="main",
+            is_active=True,
+            status=AwardPageContent.Status.PUBLISHED,
+        ).first()
         if content is None:
             raise Http404("Awards content is not available.")
         return content

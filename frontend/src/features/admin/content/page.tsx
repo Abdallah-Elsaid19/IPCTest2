@@ -1165,11 +1165,11 @@ function emptyLike(value: unknown): unknown {
   if (typeof value === "number") return 0;
   return "";
 }
-function hasBlankRequiredValue(value: unknown): boolean {
-  if (typeof value === "string") return !value.trim();
+function hasBlankRequiredValue(value: unknown, field = ""): boolean {
+  if (typeof value === "string") return field !== "image_alt" && !value.trim();
   if (Array.isArray(value))
-    return value.length === 0 || value.some(hasBlankRequiredValue);
+    return value.length === 0 || value.some((item) => hasBlankRequiredValue(item));
   if (value && typeof value === "object")
-    return Object.values(value).some(hasBlankRequiredValue);
+    return Object.entries(value).some(([key, child]) => hasBlankRequiredValue(child, key));
   return value === null || value === undefined;
 }

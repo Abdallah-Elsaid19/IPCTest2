@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight, Eye, Layers3, LoaderCircle, Pencil, Plus, Search, Trash2, Trophy, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, FileJson, Layers3, LoaderCircle, Pencil, Plus, Search, Trash2, Trophy, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { adminApi } from "@/features/admin/adminApi";
 import AwardCategoryDetailsModal from "@/features/admin/awards/AwardCategoryDetailsModal";
@@ -13,6 +14,7 @@ import type {
   AwardCategoryPayload,
   AwardProgrammePayload,
 } from "@/features/awards/types";
+import { publishContentUpdate } from "@/lib/contentSync";
 import { notifications } from "@/lib/notifications";
 
 type AwardsTab = "programmes" | "categories";
@@ -77,6 +79,7 @@ export default function AdminAwardsPage() {
       setProgrammeFormOpen(false);
       if (!editingProgramme) setProgrammePage(1);
       setEditingProgramme(null);
+      publishContentUpdate("awards");
       notifications.success(editingProgramme ? "Award programme updated successfully." : "Award programme created successfully.");
     } catch (error) {
       notifications.error(error instanceof Error ? error.message : "Award programme could not be saved.");
@@ -104,6 +107,7 @@ export default function AdminAwardsPage() {
       setCategoryFormOpen(false);
       if (!editingCategory) setCategoryPage(1);
       setEditingCategory(null);
+      publishContentUpdate("awards");
       notifications.success(editingCategory ? "Award category updated successfully." : "Award category created successfully.");
     } catch (error) {
       notifications.error(error instanceof Error ? error.message : "Award category could not be saved.");
@@ -127,6 +131,7 @@ export default function AdminAwardsPage() {
         notifications.success("Award category deleted successfully.");
       }
       setDeleteTarget(null);
+      publishContentUpdate("awards");
     } catch (error) {
       notifications.error(error instanceof Error ? error.message : "The item could not be deleted.");
     } finally {
@@ -191,7 +196,12 @@ export default function AdminAwardsPage() {
             eyebrow="Recognition"
             title="Awards"
             description="Manage the programmes and category cards displayed on the IPC awards page."
-            action={<button type="button" onClick={openCreate} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm hover:bg-primary-400"><Plus size={16}/> Create {activeTab === "programmes" ? "programme" : "category"}</button>}
+            action={<div className="flex flex-wrap gap-2">
+              <Link to="/admin/content/awards" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-black text-primary-800 shadow-sm">
+                <FileJson size={16} /> Edit page content
+              </Link>
+              <button type="button" onClick={openCreate} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm hover:bg-primary-400"><Plus size={16}/> Create {activeTab === "programmes" ? "programme" : "category"}</button>
+            </div>}
           />
 
           <div className="mt-7 inline-flex rounded-xl border border-[#D8CCBD] bg-[#E9DED0] p-1" role="tablist" aria-label="Awards management">

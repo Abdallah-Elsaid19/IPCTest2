@@ -79,15 +79,15 @@ export interface MembershipGradeData {
 
 const membershipOverviewImages = {
   affiliate:
-    "AFFIPC.png",
+    "/images/membership/AFFIPC.png",
   professional:
-    "Professional membership.png",
+    "/images/membership/Professional membership.png",
   associateFellowL3:
-    "Associate Fellow Level 3.png",
+    "/images/membership/Associate Fellow Level 3.png",
   associateFellowL4:
-    "Associate Fellow Level 4.png",
+    "/images/membership/Associate Fellow Level 4.png",
   fellow:
-    "Fellow.png",
+    "/images/membership/Fellow.png",
 };
 export const membershipGrades: Record<string, MembershipGradeData> = {
   affiliate: {

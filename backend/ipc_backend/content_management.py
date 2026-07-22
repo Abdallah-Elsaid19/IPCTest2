@@ -34,9 +34,16 @@ CONTENT_TABLES = {
         "fields": ("statistics", "why_exists", "vision_pillars", "missions", "core_values", "identity_symbols"),
     },
     "awards": {
-        "label": "Awards",
+        "label": "Awards Content",
         "model": AwardPageContent,
-        "fields": ("nomination_timeline", "impact_benefits", "integrity_principles"),
+        "fields": (
+            "hero", "framework_intro", "featured_intro", "timeline_intro",
+            "nomination_timeline", "benefits_intro", "impact_benefits",
+            "beneficiaries_intro", "beneficiaries", "integrity_intro",
+            "integrity_principles", "partnerships_intro", "partnerships",
+            "faq", "interest_intro", "final_cta", "seo",
+        ),
+        "publishing": True,
     },
     "clubs": {
         "label": "Clubs Content",

@@ -1,44 +1,51 @@
+import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
-import NotFound from "../pages/NotFound";
-import LandingPage from "../pages/landing/page";
-import Home from "../pages/home/page";
-import Membership from "../pages/membership/page";
-import AffiliateGradePage from "../pages/membership/grades/affiliate/page";
-import ProfessionalGradePage from "../pages/membership/grades/professional/page";
-import AssociateFellowL3GradePage from "../pages/membership/grades/associate-fellow-l3/page";
-import AssociateFellowL4GradePage from "../pages/membership/grades/associate-fellow-l4/page";
-import FellowGradePage from "../pages/membership/grades/fellow/page";
-import MembershipApplicationPage from "../pages/membership/apply/page";
-import Scholarships from "../pages/scholarships/page";
-import Sponsorship from "../pages/sponsorship/page";
-import BookingPage from "../pages/BookingPage";
-import Awards from "../pages/awards/page";
-import Events from "../pages/events/page";
-import EventDetailPage from "@/features/events/registration/EventDetailPage";
-import RegistrationPage from "@/features/events/registration/RegistrationPage";
-import RegistrationDetailsPage, { RegistrationCalendarRedirect } from "@/features/events/registration/RegistrationDetailsPage";
-import Clubs from "../pages/clubs/page";
-import About from "../pages/about/page";
-import Contact from "../pages/contact/page";
-import Privacy from "../pages/privacy/page";
-import AdminApplicationsPage from "@/features/admin/applications/page";
-import AdminApplicationDetailsPage from "@/features/admin/applications/details/page";
-import AdminEnquiriesPage from "@/features/admin/enquiries/page";
-import AdminEventsPage from "@/features/admin/events/page";
-import AdminAwardsPage from "@/features/admin/awards/page";
-import AdminMembershipGradesPage from "@/features/admin/membership-grades/page";
-import AdminContentPage from "@/features/admin/content/page";
-import AdminEventDetailsPage from "@/features/admin/events/details/page";
-import AdminLayout from "@/features/admin/layouts/AdminLayout";
-import AdminOverviewPage from "@/features/admin/overview/page";
-import AdminProfilePage from "@/features/admin/profile/page";
-import AdminUsersPage from "@/features/admin/users/page";
-import AdminUserDetailsPage from "@/features/admin/users/details/page";
-import Login from "@/features/auth/login/Login";
-import PasswordResetPage from "@/features/auth/password-reset/page";
-import ForgotPasswordPage from "@/features/auth/forgot-password/page";
-import UserProfilePage from "@/features/profile/page";
 import { GuestOnlyRoute, ProtectedRoute } from "@/features/auth/ProtectedRoute";
+
+const NotFound = lazy(() => import("../pages/NotFound"));
+const LandingPage = lazy(() => import("../pages/landing/page"));
+const Home = lazy(() => import("../pages/home/page"));
+const Membership = lazy(() => import("../pages/membership/page"));
+const AffiliateGradePage = lazy(() => import("../pages/membership/grades/affiliate/page"));
+const ProfessionalGradePage = lazy(() => import("../pages/membership/grades/professional/page"));
+const AssociateFellowL3GradePage = lazy(() => import("../pages/membership/grades/associate-fellow-l3/page"));
+const AssociateFellowL4GradePage = lazy(() => import("../pages/membership/grades/associate-fellow-l4/page"));
+const FellowGradePage = lazy(() => import("../pages/membership/grades/fellow/page"));
+const MembershipApplicationPage = lazy(() => import("../pages/membership/apply/page"));
+const Scholarships = lazy(() => import("../pages/scholarships/page"));
+const Sponsorship = lazy(() => import("../pages/sponsorship/page"));
+const BookingPage = lazy(() => import("../pages/BookingPage"));
+const Awards = lazy(() => import("../pages/awards/page"));
+const Events = lazy(() => import("../pages/events/page"));
+const EventDetailPage = lazy(() => import("@/features/events/registration/EventDetailPage"));
+const RegistrationPage = lazy(() => import("@/features/events/registration/RegistrationPage"));
+const RegistrationDetailsPage = lazy(() => import("@/features/events/registration/RegistrationDetailsPage"));
+const RegistrationCalendarRedirect = lazy(() =>
+  import("@/features/events/registration/RegistrationDetailsPage").then((module) => ({
+    default: module.RegistrationCalendarRedirect,
+  })),
+);
+const Clubs = lazy(() => import("../pages/clubs/page"));
+const About = lazy(() => import("../pages/about/page"));
+const Contact = lazy(() => import("../pages/contact/page"));
+const Privacy = lazy(() => import("../pages/privacy/page"));
+const AdminApplicationsPage = lazy(() => import("@/features/admin/applications/page"));
+const AdminApplicationDetailsPage = lazy(() => import("@/features/admin/applications/details/page"));
+const AdminEnquiriesPage = lazy(() => import("@/features/admin/enquiries/page"));
+const AdminEventsPage = lazy(() => import("@/features/admin/events/page"));
+const AdminAwardsPage = lazy(() => import("@/features/admin/awards/page"));
+const AdminMembershipGradesPage = lazy(() => import("@/features/admin/membership-grades/page"));
+const AdminContentPage = lazy(() => import("@/features/admin/content/page"));
+const AdminEventDetailsPage = lazy(() => import("@/features/admin/events/details/page"));
+const AdminLayout = lazy(() => import("@/features/admin/layouts/AdminLayout"));
+const AdminOverviewPage = lazy(() => import("@/features/admin/overview/page"));
+const AdminProfilePage = lazy(() => import("@/features/admin/profile/page"));
+const AdminUsersPage = lazy(() => import("@/features/admin/users/page"));
+const AdminUserDetailsPage = lazy(() => import("@/features/admin/users/details/page"));
+const Login = lazy(() => import("@/features/auth/login/Login"));
+const PasswordResetPage = lazy(() => import("@/features/auth/password-reset/page"));
+const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password/page"));
+const UserProfilePage = lazy(() => import("@/features/profile/page"));
 
 const routes: RouteObject[] = [
   { path: "/", element: <LandingPage /> },

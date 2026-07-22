@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requiredDocumentSchema } from "./uploadSchema";
+import { ukTelephoneSchema } from "./ukTelephoneSchema";
 
 const namePattern = /^[A-Za-z\u00C0-\u024F\u0600-\u06FF' -]+$/;
 const usernamePattern = /^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$/;
@@ -9,7 +10,7 @@ export const membershipApplicationSchema = z.object({
   last_name: z.string().trim().min(2, "Last name is required.").regex(namePattern, "Last name can contain letters, spaces, apostrophes and hyphens only."),
   username: z.string().trim().toLowerCase().regex(usernamePattern, "Use 3-30 letters, numbers, dots, underscores or hyphens."),
   email: z.string().trim().email("Enter a valid email address."),
-  phone: z.string().trim(),
+  phone: ukTelephoneSchema,
   country: z.string().trim(),
   organisation: z.string().trim(),
   job_title: z.string().trim(),

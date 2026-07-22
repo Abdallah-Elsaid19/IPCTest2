@@ -9,6 +9,7 @@ export interface AuthUser {
   is_superuser: boolean;
   role: "admin" | "user";
   profile_image_url: string | null;
+  telephone: string;
   membership_active: boolean;
   membership_grade: string | null;
 }

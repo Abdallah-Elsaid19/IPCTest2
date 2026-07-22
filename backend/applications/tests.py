@@ -26,7 +26,7 @@ class ApplicationApiTests(TestCase):
             "last_name": "Hassan",
             "username": "amira.hassan",
             "email": "AMIRA@example.com",
-            "phone": "+20 100 000 0000",
+            "phone": "+44 7700 900123",
             "country": "Egypt",
             "organisation": "Example Projects",
             "job_title": "Project Controls Engineer",
@@ -57,6 +57,7 @@ class ApplicationApiTests(TestCase):
         self.assertEqual(application.membership_grade.code, "MIPC")
         self.assertEqual(application.form_definition.code, "MIPC")
         self.assertEqual(application.form_version, 1)
+        self.assertEqual(application.phone, "+447700900123")
         self.assertEqual(application.grade_specific_data["job_title"], "Project Controls Engineer")
         self.assertEqual(response.data["grade"], "MIPC")
         self.assertEqual(response.data["application_id"], application.pk)
@@ -72,6 +73,7 @@ class ApplicationApiTests(TestCase):
             "last_name": "Adel",
             "username": "mina.adel",
             "email": "mina@example.com",
+            "phone": "020 7946 0958",
             "country": "Egypt",
             "code_of_conduct_consent": True,
             "privacy_consent": True,
@@ -99,6 +101,7 @@ class ApplicationApiTests(TestCase):
             "last_name": "Adel",
             "username": "mina.unfinished",
             "email": "mina@example.com",
+            "phone": "07700 900123",
             "code_of_conduct_consent": True,
             "grade_specific_data": {"professional_status": "Student"},
         }
@@ -119,6 +122,23 @@ class ApplicationApiTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("cv", response.data)
+
+    def test_non_uk_telephone_number_is_rejected(self):
+        for telephone in ("+20 100 000 0000", "01067055973"):
+            with self.subTest(telephone=telephone):
+                response = self.client.post(
+                    "/api/applications",
+                    {
+                        **self.legacy_payload,
+                        "phone": telephone,
+                        "cv": self.document("cv.pdf"),
+                        "cpd_file": self.document("cpd.pdf"),
+                    },
+                    format="multipart",
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("phone", response.data)
 
     def test_database_no_longer_contains_legacy_table(self):
         table_names = connection.introspection.table_names()
@@ -155,7 +175,7 @@ class AdminApplicationApiTests(TestCase):
             last_name="Ali",
             username="nora.ali",
             email="nora@example.com",
-            phone="+20 100 000 0000",
+            phone="+447700900123",
             country="Egypt",
             organisation="IPC Projects",
             grade_specific_data={"professional_status": "Student"},
@@ -176,7 +196,7 @@ class AdminApplicationApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data["application_reference"], self.application.application_reference)
-        self.assertEqual(response.data["phone"], "+20 100 000 0000")
+        self.assertEqual(response.data["phone"], "+447700900123")
         self.assertEqual(response.data["grade_specific_data"]["professional_status"], "Student")
         self.assertIn("evidence_files", response.data)
         self.assertIn("status_history", response.data)
@@ -300,6 +320,7 @@ class AdminApplicationApiTests(TestCase):
         self.assertTrue(user.is_active)
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.admin_profile.role, "user")
+        self.assertEqual(user.admin_profile.telephone, "+447700900123")
         self.assertEqual(self.application.approved_by, self.admin)
         self.assertIsNotNone(self.application.approved_at)
         self.assertIsNotNone(self.application.account_created_at)

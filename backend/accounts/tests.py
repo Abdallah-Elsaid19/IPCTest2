@@ -298,6 +298,7 @@ class AdminUserManagementApiTests(APITestCase):
             first_name="Existing",
             last_name="Member",
             email="personal-member@example.com",
+            phone="+447700900123",
             grade_specific_data={"professional_status": "Student"},
             code_of_conduct_consent=True,
             privacy_consent=True,
@@ -334,6 +335,7 @@ class AdminUserManagementApiTests(APITestCase):
         self.assertEqual(user["membership_grade"], "AffIPC")
         self.assertEqual(user["personal_email"], application.email)
         self.assertEqual(user["ipc_email"], self.member.email)
+        self.assertEqual(user["telephone"], "+447700900123")
 
     def test_users_without_applications_return_null_reference(self):
         self.client.force_authenticate(self.staff)
@@ -370,6 +372,7 @@ class AdminUserManagementApiTests(APITestCase):
             "email": "new-admin@example.com",
             "first_name": "New",
             "last_name": "Admin",
+            "telephone": "020 7946 0958",
             "is_active": True,
             "role": "admin",
         }, format="json")
@@ -378,6 +381,7 @@ class AdminUserManagementApiTests(APITestCase):
         self.assertFalse(created.has_usable_password())
         self.assertTrue(created.is_staff)
         self.assertEqual(created.admin_profile.role, "admin")
+        self.assertEqual(created.admin_profile.telephone, "+442079460958")
 
     def test_create_user_role_does_not_grant_staff_access(self):
         self.client.force_authenticate(self.staff)
@@ -386,6 +390,7 @@ class AdminUserManagementApiTests(APITestCase):
             "email": "new-user@example.com",
             "first_name": "New",
             "last_name": "User",
+            "telephone": "+44 7700 900123",
             "is_active": True,
             "role": "user",
         }, format="json")
@@ -394,6 +399,22 @@ class AdminUserManagementApiTests(APITestCase):
         created = get_user_model().objects.get(pk=response.data["id"])
         self.assertFalse(created.is_staff)
         self.assertEqual(created.admin_profile.role, "user")
+        self.assertEqual(created.admin_profile.telephone, "+447700900123")
+
+    def test_create_user_rejects_non_uk_telephone(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.post("/api/admin/users", {
+            "username": "invalid.telephone",
+            "email": "invalid-telephone@example.com",
+            "first_name": "Invalid",
+            "last_name": "Telephone",
+            "telephone": "+20 100 000 0000",
+            "is_active": True,
+            "role": "user",
+        }, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("telephone", response.data)
 
     def test_admin_cannot_delete_self(self):
         self.client.force_authenticate(self.staff)

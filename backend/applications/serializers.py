@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-from ipc_backend.validators import clean_text, validate_upload
+from ipc_backend.validators import clean_text, normalise_uk_telephone, validate_upload
 from memberships.models import MembershipGrade
 
 from .models import (
@@ -85,6 +85,7 @@ class ApplicationStatusHistorySerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     grade = serializers.CharField(write_only=True)
+    phone = serializers.CharField(required=True, allow_blank=False, max_length=80)
     application_id = serializers.IntegerField(source="pk", read_only=True)
     membership_grade_code = serializers.CharField(source="membership_grade.code", read_only=True)
     form_definition_code = serializers.CharField(source="form_definition.code", read_only=True)
@@ -123,6 +124,12 @@ class ApplicationSerializer(serializers.ModelSerializer):
         for field in LEGACY_DETAIL_FIELDS:
             representation[field] = instance.grade_specific_data.get(field, "")
         return representation
+
+    def validate_phone(self, value):
+        try:
+            return normalise_uk_telephone(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages) from error
 
     def validate(self, attrs):
         explicit_specific_data = "grade_specific_data" in attrs

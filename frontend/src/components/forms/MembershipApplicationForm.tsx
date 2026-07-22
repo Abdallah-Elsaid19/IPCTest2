@@ -101,7 +101,8 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
     formState: { errors, isSubmitting },
   } = useForm<MembershipApplicationValues>({
     resolver: zodResolver(membershipApplicationSchema),
-    mode: "onTouched",
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       first_name: "",
       last_name: "",
@@ -180,7 +181,19 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
       {textInput(register, errors, "last_name", "Last name")}
       {textInput(register, errors, "username", "Username")}
       {textInput(register, errors, "email", "Email", {}, "email")}
-      {textInput(register, errors, "phone", "Phone")}
+      <label className="space-y-2">
+        <span className={labelClass}>UK telephone number <span className="text-red-600">*</span></span>
+        <input
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="07700 900123"
+          aria-invalid={Boolean(errors.phone)}
+          className={`${inputClass} ${errors.phone ? "border-red-500" : ""}`}
+          {...register("phone")}
+        />
+        {fieldError(errors, "phone")}
+      </label>
       {textInput(register, errors, "country", "Country")}
       {textInput(register, errors, "organisation", "Organisation")}
       {textInput(register, errors, "job_title", "Job title")}
@@ -223,4 +236,3 @@ export default function MembershipApplicationForm({ gradeOptions = fallbackGrade
     </form>
   );
 }
-

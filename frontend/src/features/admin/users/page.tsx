@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Search name, email, reference, or grade…"
+              placeholder="Search name, email, telephone, reference, or grade…"
               className="h-11 w-full rounded-xl border border-[#D9CDBE] bg-white pl-10 pr-10 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
             />
             {search && (
@@ -267,11 +267,12 @@ export default function AdminUsersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] text-left text-sm">
+            <table className="w-full min-w-[1260px] text-left text-sm">
               <thead className="bg-[#ECE2D6] text-[10px] uppercase tracking-wider text-[#766C62]">
                 <tr>
                   <th className="px-5 py-3.5">User</th>
                   <th className="px-5 py-3.5">IPC Email</th>
+                  <th className="px-5 py-3.5">Telephone</th>
                   <th className="px-5 py-3.5">Reference</th>
                   <th className="px-5 py-3.5">Membership Grade</th>
                   <th className="px-5 py-3.5">Role</th>
@@ -309,6 +310,9 @@ export default function AdminUsersPage() {
                         <p className="truncate text-xs font-semibold text-[#554E47]" title={account.ipc_email}>
                           {account.ipc_email}
                         </p>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs font-semibold text-[#554E47]">
+                        {account.telephone || "—"}
                       </td>
                       <td className="px-5 py-4">
                         {account.membership_application_id && account.membership_reference ? (

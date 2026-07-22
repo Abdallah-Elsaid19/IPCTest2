@@ -5,6 +5,7 @@ interface SectionHeaderProps {
   centered?: boolean;
   light?: boolean;
   className?: string;
+  eyebrowClassName?: string;
 }
 
 export default function SectionHeader({
@@ -14,11 +15,12 @@ export default function SectionHeader({
   centered = false,
   light = false,
   className = "",
+  eyebrowClassName = "",
 }: SectionHeaderProps) {
   return (
     <div className={`${centered ? "text-center" : ""} ${className}`}>
       {eyebrow && (
-        <span className="eyebrow block mb-3">{eyebrow}</span>
+        <span className={`eyebrow mb-3 block ${eyebrowClassName}`}>{eyebrow}</span>
       )}
       <h2
         className={`font-heading text-3xl md:text-4xl lg:text-[2.75rem] leading-tight ${

@@ -262,7 +262,7 @@ export default function AdminApplicationDetailsPage() {
             <DetailGrid
               items={[
                 { label: "Email address", value: application.email },
-                { label: "Phone", value: application.phone },
+                { label: "UK telephone number", value: application.phone },
                 { label: "Contact preference", value: application.contact_preference_label },
               ]}
             />

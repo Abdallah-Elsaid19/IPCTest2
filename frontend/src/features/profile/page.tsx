@@ -9,6 +9,7 @@ import { pageSeo } from "@/config/pageSeo";
 import { useAuth } from "@/features/auth/AuthContext";
 import { notifications } from "@/lib/notifications";
 import { ACCEPTED_IMAGE_TYPES, getSelectedFile, MAX_IMAGE_SIZE } from "@/lib/validations/uploadSchema";
+import { ukTelephoneSchema } from "@/lib/validations/ukTelephoneSchema";
 import AccountProfile from "./AccountProfile";
 
 const schema = z.object({
@@ -19,6 +20,7 @@ const schema = z.object({
     .min(1, "Username is required")
     .max(150, "Username is too long")
     .regex(/^[\p{L}\p{N}@.+_-]+$/u, "Use letters, numbers, and @/./+/-/_ only"),
+  telephone: ukTelephoneSchema,
   image: z
     .custom<FileList | undefined>()
     .refine((value) => !getSelectedFile(value) || (getSelectedFile(value)?.size || 0) <= MAX_IMAGE_SIZE, "Image must be less than 2MB")
@@ -40,7 +42,7 @@ export default function UserProfilePage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { fullName: user?.name || "", username: user?.username || "" },
+    defaultValues: { fullName: user?.name || "", username: user?.username || "", telephone: user?.telephone || "" },
   });
   const selectedImage = watch("image");
 
@@ -58,12 +60,12 @@ export default function UserProfilePage() {
   if (!user) return null;
 
   const startEditing = () => {
-    reset({ fullName: user.name, username: user.username, image: undefined });
+    reset({ fullName: user.name, username: user.username, telephone: user.telephone || "", image: undefined });
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
-    reset({ fullName: user.name, username: user.username, image: undefined });
+    reset({ fullName: user.name, username: user.username, telephone: user.telephone || "", image: undefined });
     setPreviewUrl(null);
     setIsEditing(false);
   };
@@ -72,6 +74,7 @@ export default function UserProfilePage() {
     const payload = new FormData();
     payload.append("full_name", values.fullName.trim());
     payload.append("username", values.username.trim());
+    payload.append("telephone", values.telephone);
     const image = getSelectedFile(values.image);
     if (image) payload.append("profile_image", image);
 
@@ -112,6 +115,9 @@ export default function UserProfilePage() {
             </EditField>
             <EditField label="Username" error={errors.username?.message}>
               <input autoComplete="username" className={inputClass(Boolean(errors.username))} {...register("username")} />
+            </EditField>
+            <EditField label="UK telephone number" error={errors.telephone?.message}>
+              <input type="tel" autoComplete="tel" placeholder="07700 900123" className={inputClass(Boolean(errors.telephone))} {...register("telephone")} />
             </EditField>
             <ReadOnlyField label="Email address" value={user.email || "No email address"} />
             <ReadOnlyField label="Access level" value="User" icon={<UserRound size={16} className="text-primary-700" />} />

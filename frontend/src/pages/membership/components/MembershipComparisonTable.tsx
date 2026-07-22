@@ -13,12 +13,16 @@ interface ComparisonRow {
 }
 
 const gradeColumns: GradeColumn[] = [
-  { key: "affipc", label: "AffIPC" },
-  { key: "mipc", label: "MIPC" },
-  { key: "afipcL3", label: "AFIPC L3" },
-  { key: "afipcL4", label: "AFIPC L4" },
-  { key: "fipc", label: "FIPC" },
+  { key: "affipc", label: "Affiliate Member" },
+  { key: "mipc", label: "Professional Member" },
+  { key: "afipcL3", label: "Associate Fellow Level 3" },
+  { key: "afipcL4", label: "Associate Fellow Level 4" },
+  { key: "fipc", label: "Fellow" },
 ];
+
+const fullGradeNames: Record<GradeKey, string> = Object.fromEntries(
+  gradeColumns.map((column) => [column.key, column.label]),
+) as Record<GradeKey, string>;
 
 const comparisonRows: ComparisonRow[] = [
   {
@@ -94,36 +98,24 @@ export default function MembershipComparisonTable() {
           </p>
         </div>
 
-        <p
-          id="membership-comparison-scroll-hint"
-          className="mb-3 flex items-center gap-2 text-xs font-medium text-foreground-500 lg:hidden"
-        >
-          <i className="ri-drag-move-2-line text-primary-600" aria-hidden="true" />
-          Swipe or scroll horizontally to compare every grade.
-        </p>
-
         <div
-          className="overflow-x-auto border border-background-300 bg-background-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background-100"
-          role="region"
-          aria-label="IPC membership grades comparison"
-          aria-describedby="membership-comparison-scroll-hint"
-          tabIndex={0}
+          className="w-full border border-background-300 bg-background-50"
         >
-          <table className="w-full min-w-[1080px] table-fixed border-collapse text-left">
+          <table className="w-full  table-fixed border-collapse text-left" aria-label="IPC membership grades comparison">
             <caption className="sr-only">
               Comparison of the professional position, evidence depth, primary signal and post-nominal for IPC membership grades.
             </caption>
             <colgroup>
-              <col className="w-[190px]" />
+              <col className="w-[15%]" />
               {columns.map((column) => (
-                <col key={column.key} className="w-[178px]" />
+                <col key={column.key} className="w-[17%]" />
               ))}
             </colgroup>
             <thead className="bg-background-950 text-background-50">
               <tr>
                 <th
                   scope="col"
-                  className="sticky left-0 z-20 border-r border-background-800 bg-background-950 px-5 py-5 font-heading text-sm font-semibold text-primary-400"
+                  className="border-r border-background-800 bg-background-950 px-2 py-3 font-heading text-[10px] font-semibold leading-tight text-primary-400 sm:px-3 sm:py-4 sm:text-xs md:px-4 md:text-sm lg:px-5 lg:py-5"
                 >
                   Comparison
                 </th>
@@ -131,9 +123,9 @@ export default function MembershipComparisonTable() {
                   <th
                     key={column.key}
                     scope="col"
-                    className="border-r border-background-800/70 px-5 py-5 font-heading text-sm font-semibold last:border-r-0"
+                    className="break-words border-r border-background-800/70 px-2 py-3 font-heading text-[10px] font-semibold leading-tight last:border-r-0 sm:px-3 sm:py-4 sm:text-xs md:px-4 md:text-sm lg:px-3 lg:py-5"
                   >
-                    {column.label}
+                    {fullGradeNames[column.key] || column.label}
                   </th>
                 ))}
               </tr>
@@ -143,14 +135,14 @@ export default function MembershipComparisonTable() {
                 <tr key={row.label} className="border-t border-background-300 first:border-t-0">
                   <th
                     scope="row"
-                    className="sticky left-0 z-10 border-r border-background-300 bg-background-200 px-5 py-5 font-heading text-sm font-semibold text-background-950"
+                    className="break-words border-r border-background-300 bg-background-200 px-2 py-3 font-heading text-[10px] font-semibold leading-snug text-background-950 sm:px-3 sm:py-4 sm:text-xs md:px-4 md:text-sm lg:px-5 lg:py-5"
                   >
                     {row.label}
                   </th>
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className="border-r border-background-300 px-5 py-5 text-sm leading-relaxed text-foreground-700 last:border-r-0"
+                      className="break-words border-r border-background-300 px-2 py-3 text-[10px] leading-snug text-foreground-700 last:border-r-0 sm:px-3 sm:py-4 sm:text-xs md:px-4 md:text-sm md:leading-relaxed lg:px-5 lg:py-5"
                     >
                       {row.values[column.key]}
                     </td>

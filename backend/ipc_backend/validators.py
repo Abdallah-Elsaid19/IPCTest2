@@ -14,12 +14,33 @@ ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/png", "image/jpeg", "image/webp"}
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 MAX_IMAGE_SIZE = 2 * 1024 * 1024
+UK_TELEPHONE_ERROR = "Enter a valid UK telephone number, for example 07700 900123 or +44 7700 900123."
 
 
 def clean_text(value):
     if value is None:
         return value
     return re.sub(r"[<>]", "", str(value)).strip()
+
+
+def normalise_uk_telephone(value):
+    """Validate a UK number and return its canonical +44 E.164 representation."""
+    compact = re.sub(r"[\s().-]", "", clean_text(value) or "")
+    if compact.startswith("0044"):
+        compact = f"+44{compact[4:]}"
+    if compact.startswith("+440"):
+        compact = f"+44{compact[4:]}"
+    elif compact.startswith("0"):
+        compact = f"+44{compact[1:]}"
+    # UK national numbers use 01 (excluding the unallocated 010 range),
+    # 02, 03, 07, 08 or 09 prefixes after the domestic trunk zero.
+    if not re.fullmatch(r"\+44(?:1[1-9]\d{8}|[23789]\d{9})", compact):
+        raise ValidationError(UK_TELEPHONE_ERROR)
+    return compact
+
+
+def validate_uk_telephone(value):
+    normalise_uk_telephone(value)
 
 
 def validate_upload(file):

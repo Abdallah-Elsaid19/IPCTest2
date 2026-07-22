@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { AdminUser, AdminUserPayload } from "@/features/admin/types";
+import { ukTelephoneSchema } from "@/lib/validations/ukTelephoneSchema";
 
 const schema = z.object({
   first_name: z.string().trim().max(150),
@@ -16,6 +17,7 @@ const schema = z.object({
     .max(150)
     .regex(/^[\w.@+-]+$/, "Use letters, numbers, or @/./+/-/_ only"),
   email: z.email("Enter a valid email address").max(254),
+  telephone: ukTelephoneSchema,
   role: z.enum(["admin", "user"]),
   is_active: z.boolean(),
 });
@@ -47,6 +49,7 @@ export default function UserFormModal({
       last_name: "",
       username: "",
       email: "",
+      telephone: "",
       role: "user",
       is_active: true,
     },
@@ -60,6 +63,7 @@ export default function UserFormModal({
             last_name: user.last_name,
             username: user.username,
             email: user.email,
+            telephone: user.telephone,
             role: user.role,
             is_active: user.is_active,
           }
@@ -68,6 +72,7 @@ export default function UserFormModal({
             last_name: "",
             username: "",
             email: "",
+            telephone: "",
             role: "user",
             is_active: true,
           },
@@ -146,6 +151,21 @@ export default function UserFormModal({
             {errors.email && (
               <span className="mt-1 block text-[11px] normal-case text-red-600">
                 {errors.email.message}
+              </span>
+            )}
+          </label>
+          <label className="text-xs font-bold uppercase tracking-wide text-[#655D55]">
+            UK telephone number
+            <input
+              type="tel"
+              autoComplete="tel"
+              placeholder="07700 900123"
+              {...register("telephone")}
+              className={inputClass}
+            />
+            {errors.telephone && (
+              <span className="mt-1 block text-[11px] normal-case text-red-600">
+                {errors.telephone.message}
               </span>
             )}
           </label>
