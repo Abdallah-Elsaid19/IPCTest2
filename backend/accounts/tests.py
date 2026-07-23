@@ -86,6 +86,13 @@ class AuthenticationApiTests(APITestCase):
         self.assertEqual(self.post("/api/auth/logout").status_code, 204)
         self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
 
+    def test_django_admin_session_cannot_restore_frontend_authentication(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get("/api/auth/me")
+
+        self.assertEqual(response.status_code, 401)
+
     def test_user_can_update_own_name_username_and_profile_image(self):
         self.post("/api/auth/login", {
             "email": "member@example.com",
