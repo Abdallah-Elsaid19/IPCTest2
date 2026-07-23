@@ -1,5 +1,6 @@
 import { useState } from "react";
 import SectionHeader from "@/components/base/SectionHeader";
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const faqs = [
   ["What services does IPC provide?", "Professional membership and recognition, workforce capability pathways, CPD and events, regional clubs, mentoring, academic partnerships, scholarships, awards, publications and sponsorship routes."],
@@ -12,11 +13,17 @@ const faqs = [
 
 export default function ServicesFaq() {
   const [open, setOpen] = useState<number | null>(0);
+  const section = useManagedSection("faq", {
+    eyebrow: "Service questions",
+    title: "Clear guidance before making an enquiry.",
+    description: "Understand scope, pricing, recognition and organisational services.",
+    items: faqs.map(([question, answer]) => ({question, answer})),
+  });
   return (
     <section className="bg-background-100 section-padding">
       <div className="container-content grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
-        <div className="reveal"><SectionHeader eyebrow="Service questions" title="Clear guidance before making an enquiry." subtitle="Understand scope, pricing, recognition and organisational services." /></div>
-        <div className="reveal space-y-3">{faqs.map(([question, answer], index) => { const expanded = open === index; return <article key={question} className="border border-background-200/80 bg-background-50"><h3><button type="button" aria-expanded={expanded} aria-controls={`service-faq-${index}`} onClick={() => setOpen(expanded ? null : index)} className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left text-sm font-semibold text-background-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 md:text-base"><span>{question}</span><i className={`${expanded ? "ri-subtract-line" : "ri-add-line"} shrink-0 text-primary-700`} aria-hidden="true" /></button></h3>{expanded && <div id={`service-faq-${index}`} className="px-5 pb-5"><p className="text-sm leading-relaxed text-foreground-600">{answer}</p></div>}</article>; })}</div>
+        <div className="reveal"><SectionHeader eyebrow={section.eyebrow} title={section.title} subtitle={section.description} /></div>
+        <div className="reveal space-y-3">{section.items.filter(isManagedItemActive).map(({question, answer}, index) => { const expanded = open === index; return <article key={question} className="border border-background-200/80 bg-background-50"><h3><button type="button" aria-expanded={expanded} aria-controls={`service-faq-${index}`} onClick={() => setOpen(expanded ? null : index)} className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left text-sm font-semibold text-background-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 md:text-base"><span>{question}</span><i className={`${expanded ? "ri-subtract-line" : "ri-add-line"} shrink-0 text-primary-700`} aria-hidden="true" /></button></h3>{expanded && <div id={`service-faq-${index}`} className="px-5 pb-5"><p className="text-sm leading-relaxed text-foreground-600">{answer}</p></div>}</article>; })}</div>
       </div>
     </section>
   );

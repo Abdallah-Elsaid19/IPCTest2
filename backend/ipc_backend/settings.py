@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "sponsorship",
     "about",
     "home",
+    "services",
+    "fund",
 ]
 
 MIDDLEWARE = [
@@ -70,6 +72,13 @@ ASGI_APPLICATION = "ipc_backend.asgi.application"
 DATABASES = {
     "default": env.db("DATABASE_URL", default="postgres://ipc:ipc@localhost:5432/ipc")
 }
+if env.bool("USE_SQLITE_TEST_DB", default=False):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / ".cms-test.sqlite3",
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

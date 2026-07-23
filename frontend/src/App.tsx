@@ -8,6 +8,7 @@ import Footer from "./components/feature/Footer";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import useScrollReveal from "./hooks/useScrollReveal";
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -31,6 +32,12 @@ function AppLayout() {
   if (isAdmin) {
     return <AppRoutes />;
   }
+
+  return <PublicLayout />;
+}
+
+function PublicLayout() {
+  useScrollReveal();
 
   return (
     <div className="flex flex-col min-h-screen">

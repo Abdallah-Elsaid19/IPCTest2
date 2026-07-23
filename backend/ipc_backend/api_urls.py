@@ -21,6 +21,8 @@ from scholarships.views import ScholarshipContentView
 from sponsorship.views import SponsorshipContentView
 from about.views import AboutPageContentView
 from home.views import HomeContentView
+from services.views import ServiceContentView
+from fund.views import FundContentView
 from accounts.views import CurrentUserView, LoginView, LogoutView, RefreshView
 from accounts.dashboard import (
     AdminDashboardView,
@@ -69,6 +71,8 @@ urlpatterns = [
     path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
     path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
     path("home/content", HomeContentView.as_view(), name="home-content"),
+    path("services/content", ServiceContentView.as_view(), name="service-content"),
+    path("fund/content", FundContentView.as_view(), name="fund-content"),
     path("membership/content", MembershipContentView.as_view(), name="membership-content"),
     path("awards/content", AwardPageContentView.as_view(), name="award-page-content"),
     path("events/content", EventPageContentView.as_view(), name="event-page-content"),

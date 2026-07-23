@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
+import { tmpdir } from "node:os";
 import AutoImport from "unplugin-auto-import/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 // import { readdyJsxRuntimeProxyPlugin } from "./vite.jsx-runtime-proxy";
@@ -10,6 +11,7 @@ const isPreview = process.env.IS_PREVIEW ? true : false;
 //const proxyPlugins = isPreview ? [readdyJsxRuntimeProxyPlugin()] : [];
 // https://vite.dev/config/
 export default defineConfig({
+  cacheDir: resolve(tmpdir(), "ipc-vite-cache-v2"),
   define: {
     __BASE_PATH__: JSON.stringify(base),
     __IS_PREVIEW__: JSON.stringify(isPreview),

@@ -12,6 +12,8 @@ from scholarships.models import ScholarshipContent
 from sponsorship.models import SponsorshipContent
 from memberships.models import MembershipContent
 from home.models import HomeContent
+from services.models import ServiceContent
+from fund.models import FundContent
 from django.utils import timezone
 
 
@@ -70,6 +72,26 @@ CONTENT_TABLES = {
         "label": "Sponsorship Content",
         "model": SponsorshipContent,
         "fields": ("hero", "principles", "purpose", "routes_intro", "routes", "benefits", "integrity_intro", "integrity_principles", "route_builder", "process", "impact", "partners_intro", "partner_types", "faq", "final_cta", "seo"),
+        "publishing": True,
+    },
+    "services": {
+        "label": "Service Content",
+        "model": ServiceContent,
+        "fields": (
+            "hero", "principles", "portfolio", "audiences", "journey",
+            "route_builder", "quality", "faq", "final_cta", "seo",
+        ),
+        "publishing": True,
+    },
+    "fund": {
+        "label": "Fund Content",
+        "model": FundContent,
+        "fields": (
+            "hero", "purpose", "programmes", "routes", "applicant_matcher",
+            "impact", "research", "employer", "partners", "principles",
+            "route_builder", "governance", "process", "assurance", "faq",
+            "final_cta", "seo",
+        ),
         "publishing": True,
     },
 }

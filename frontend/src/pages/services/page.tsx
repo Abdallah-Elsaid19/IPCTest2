@@ -1,5 +1,9 @@
 import { useEffect } from "react";
-import SEO from "@/components/seo/SEO";
+import {
+  ManagedContentProvider,
+  ManagedSectionGate,
+} from "@/components/content/ManagedContentProvider";
+import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 import ServicesAudiences from "./components/ServicesAudiences";
 import ServicesFaq from "./components/ServicesFaq";
@@ -21,17 +25,21 @@ export default function ServicesPage() {
   }, []);
 
   return (
+    <ManagedContentProvider endpoint="/api/services/content" slug="services">
     <div>
-      <SEO {...pageSeo.services} />
-      <ServicesHero />
-      <ServicesPrinciples />
-      <ServicesPortfolio />
-      <ServicesAudiences />
-      <ServicesJourney />
-      <ServicesRouteBuilder />
-      <ServicesQuality />
-      <ServicesFaq />
-      <ServicesFinalCta />
+      <ManagedSectionGate name="seo">
+        <ManagedPageSeo fallback={{ ...pageSeo.services, canonical_path: pageSeo.services.canonicalPath }} />
+      </ManagedSectionGate>
+      <ManagedSectionGate name="hero"><ServicesHero /></ManagedSectionGate>
+      <ManagedSectionGate name="principles"><ServicesPrinciples /></ManagedSectionGate>
+      <ManagedSectionGate name="portfolio"><ServicesPortfolio /></ManagedSectionGate>
+      <ManagedSectionGate name="audiences"><ServicesAudiences /></ManagedSectionGate>
+      <ManagedSectionGate name="journey"><ServicesJourney /></ManagedSectionGate>
+      <ManagedSectionGate name="route_builder"><ServicesRouteBuilder /></ManagedSectionGate>
+      <ManagedSectionGate name="quality"><ServicesQuality /></ManagedSectionGate>
+      <ManagedSectionGate name="faq"><ServicesFaq /></ManagedSectionGate>
+      <ManagedSectionGate name="final_cta"><ServicesFinalCta /></ManagedSectionGate>
     </div>
+    </ManagedContentProvider>
   );
 }

@@ -25,7 +25,11 @@ export function ManagedContentProvider({ endpoint, slug, children }: { endpoint:
     return () => { cancelled = true; unsubscribe(); };
   }, [endpoint, slug]);
 
-  return <ManagedContentContext.Provider value={content}>{children}</ManagedContentContext.Provider>;
+  return (
+    <ManagedContentContext.Provider value={content}>
+      {content.is_active === false ? null : children}
+    </ManagedContentContext.Provider>
+  );
 }
 
 export function useManagedSection<T>(name: string, fallback: T): T {
@@ -36,4 +40,9 @@ export function useManagedSection<T>(name: string, fallback: T): T {
 
 export function isManagedItemActive(item: unknown): boolean {
   return !item || typeof item !== "object" || !("is_active" in item) || (item as { is_active?: boolean }).is_active !== false;
+}
+
+export function ManagedSectionGate({ name, children }: { name: string; children: React.ReactNode }) {
+  const content = useContext(ManagedContentContext);
+  return isManagedItemActive(content[name]) ? children : null;
 }

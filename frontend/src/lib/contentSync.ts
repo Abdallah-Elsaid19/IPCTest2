@@ -1,4 +1,4 @@
-export type ContentPageSlug = "home" | "membership" | "about" | "awards" | "clubs" | "events" | "scholarships" | "sponsorship";
+export type ContentPageSlug = "home" | "membership" | "about" | "awards" | "clubs" | "events" | "scholarships" | "sponsorship" | "services" | "fund";
 
 const EVENT_NAME = "ipc:content-updated";
 const STORAGE_KEY = "ipc:content-update";

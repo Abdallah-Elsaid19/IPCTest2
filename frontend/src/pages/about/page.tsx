@@ -313,7 +313,12 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
 
       {/* ── Hero content overlay ── */}
       <div
-        className="relative z-20 text-center px-6 md:px-10 transition-all duration-700 ease-out"
+        className="pointer-events-none absolute inset-0 z-[15] bg-[radial-gradient(ellipse_at_center,rgba(8,8,8,0.86)_0%,rgba(8,8,8,0.66)_28%,rgba(8,8,8,0.2)_56%,transparent_76%)]"
+        aria-hidden="true"
+      />
+
+      <div
+        className="relative z-20 w-full max-w-5xl px-6 text-center transition-all duration-700 ease-out md:px-10"
         style={{
           transform: "translateY(var(--content-y))",
           opacity: "var(--content-opacity)",
@@ -321,7 +326,7 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
       >
         {/* Institutional label */}
         <div className="mb-6">
-          <span className="text-[10px] md:text-[11px] font-mono text-primary-400/80 tracking-[0.35em] uppercase">
+          <span className="text-[10px] md:text-[11px] font-mono font-semibold text-primary-300 tracking-[0.35em] uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,1)]">
             About the Institute of Project Controls
           </span>
         </div>
@@ -330,14 +335,14 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
         <div className="w-16 gold-rule mx-auto mb-7" />
 
         {/* Headline */}
-        <h1 className="font-heading text-[clamp(2.2rem,5vw,4.8rem)] font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em] mb-6">
+        <h1 className="mb-6 font-heading text-[clamp(2.2rem,5vw,4.8rem)] font-extrabold leading-[0.95] tracking-[-0.03em] text-background-50 [text-shadow:0_3px_24px_rgba(0,0,0,1),0_1px_3px_rgba(0,0,0,1)]">
           Making project reality
           <br />
-          <span className="text-primary-400">visible.</span>
+          <span className="text-primary-300">visible.</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-sm md:text-[15px] text-background-300 max-w-[480px] mx-auto leading-relaxed mb-10">
+        <p className="mx-auto mb-10 max-w-[520px] text-sm font-medium leading-relaxed text-background-100 drop-shadow-[0_2px_10px_rgba(0,0,0,1)] md:text-[15px]">
           IPC is a professional home for the people who plan, control, assure and improve project
           delivery—helping professionals demonstrate the competence behind better decisions.
         </p>

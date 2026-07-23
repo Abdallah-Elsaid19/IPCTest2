@@ -1,3 +1,5 @@
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+
 const principles = [
   ["Project-controls specific", "Built around integrated controls rather than generic language."],
   ["Evidence-led", "Professional claims should be credible and explainable."],
@@ -13,12 +15,19 @@ const model = [
 ];
 
 export default function ServicesPrinciples() {
+  const section = useManagedSection("principles", {
+    eyebrow: "A specialist service model",
+    title: "More than membership. A complete professional ecosystem.",
+    description: "Recognition is the anchor, but lasting value comes from connecting identity with learning, workforce capability, research and opportunity.",
+    items: principles.map(([title, description]) => ({title, description})),
+    model: model.map(([label, title, description]) => ({label, title, description})),
+  });
   return (
     <>
       <section className="border-b border-background-200 bg-background-50 py-12 md:py-16" aria-label="Service principles">
         <div className="container-content">
           <dl className="grid border-l border-t border-background-300 sm:grid-cols-2 lg:grid-cols-4">
-            {principles.map(([title, description], index) => (
+            {section.items.filter(isManagedItemActive).map(({title, description}, index) => (
               <div
                 key={title}
                 className="group relative min-h-56 overflow-hidden border-b border-r border-background-300 bg-background-50 p-6 transition-colors duration-300 hover:bg-background-100 md:p-8"
@@ -48,13 +57,13 @@ export default function ServicesPrinciples() {
       <section className="bg-background-50 section-padding">
         <div className="container-content grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
           <div className="reveal lg:sticky lg:top-28 lg:self-start">
-            <span className="eyebrow mb-4 block text-primary-700">A specialist service model</span>
-            <h2 className="font-heading text-3xl font-semibold leading-tight text-background-950 md:text-5xl">More than membership. A complete professional ecosystem.</h2>
-            <p className="mt-5 text-base leading-relaxed text-foreground-600 md:text-lg">Recognition is the anchor, but lasting value comes from connecting identity with learning, workforce capability, research and opportunity.</p>
+            <span className="eyebrow mb-4 block text-primary-700">{section.eyebrow}</span>
+            <h2 className="font-heading text-3xl font-semibold leading-tight text-background-950 md:text-5xl">{section.title}</h2>
+            <p className="mt-5 text-base leading-relaxed text-foreground-600 md:text-lg">{section.description}</p>
             <a href="#services" className="btn-ghost mt-7">View service routes <i className="ri-arrow-down-line" aria-hidden="true" /></a>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            {model.map(([label, title, description], index) => {
+            {section.model.filter(isManagedItemActive).map(({label, title, description}, index) => {
               const dark = index === 0 || index === 2;
               return (
                 <article key={label} className={`reveal flex min-h-64 flex-col justify-between border p-6 transition-transform duration-300 hover:-translate-y-1 md:p-7 ${index === 2 ? "border-accent-700 bg-accent-700" : dark ? "border-background-950 bg-background-950" : "border-background-200/70 bg-background-50 hover:border-primary-300"}`}>

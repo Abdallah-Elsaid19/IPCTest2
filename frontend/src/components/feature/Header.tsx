@@ -8,9 +8,9 @@ import ProfileMenu from "./ProfileMenu";
 const navItems = [
   { label: "Home", path: "/home" },
   { label: "Membership", path: "/membership" },
-  { label: "Fund", path: "/fund" },
   { label: "Scholarships", path: "/scholarships" },
   { label: "Sponsorship", path: "/sponsorship" },
+  { label: "Fund", path: "/fund" },
   { label: "Awards", path: "/awards" },
   { label: "Events", path: "/events" },
   { label: "Clubs", path: "/clubs" },
@@ -21,7 +21,7 @@ const navItems = [
 const fullLogoUrl =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
 const scrolledIconUrl =
-  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f8147ef4aa324aa9873f6e074f0ffa89.png";
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/6a97d877629743568d5134c4ff2255b8.png";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -56,17 +56,17 @@ export default function Header() {
                 height={48}
                 loading="eager"
                 decoding="async"
-                className={`absolute inset-0 m-auto h-10 w-40 object-contain transition-opacity duration-300 md:h-12 ${scrolled ? "opacity-0" : "opacity-100"}`}
+                className={`absolute inset-0 m-auto h-10 w-40 object-contain transition-opacity duration-300 md:h-12 md:w-40 ${scrolled ? "opacity-0" : "opacity-100"}`}
               />
               <img
                 src={scrolledIconUrl}
                 alt=""
                 aria-hidden="true"
-                width={48}
+                width={160}
                 height={48}
                 loading="eager"
                 decoding="async"
-                className={`absolute inset-0 m-auto h-10 w-10 object-contain transition-opacity duration-300 md:h-12 md:w-12 ${scrolled ? "opacity-100" : "opacity-0"}`}
+                className={`absolute inset-0 m-auto h-10 w-40 object-contain transition-opacity duration-300 md:h-12 md:w-40 ${scrolled ? "opacity-100" : "opacity-0"}`}
               />
             </Link>
 

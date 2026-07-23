@@ -34,9 +34,7 @@ export default function SponsorshipImpact() {
             </div>
           ))}
         </div>
-        <div className="mt-10 text-center">
-          <Link to={content.cta_url} className="btn-primary inline-flex items-center gap-2">{content.cta_label}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
-        </div>
+       
       </div>
     </section>
   );

@@ -1,3 +1,5 @@
+import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+
 const proofPoints = [
   ["For professionals", "Recognition, CPD, mentoring, events and visible progression."],
   ["For organisations", "Capability mapping, development, retention and client confidence."],
@@ -16,25 +18,41 @@ const servicesHeroImage =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/64e5fe4de8a5414eb9307f7ebe36b446.jpg";
 
 export default function ServicesHero() {
+  const section = useManagedSection("hero", {
+    eyebrow: "Professional services & programmes",
+    title: "Turn competence into",
+    highlight: "visible capability.",
+    description: "IPC connects professional recognition, workforce development, learning, academic partnership and community into one specialist project-controls ecosystem.",
+    primary_cta_label: "Explore services",
+    primary_cta_url: "#services",
+    secondary_cta_label: "Find the right route",
+    secondary_cta_url: "#route-builder",
+    image: servicesHeroImage,
+    image_alt: "IPC professional services and learning environment",
+    proof_points: proofPoints.map(([title, description]) => ({ title, description })),
+    capabilities: capabilities.map(([title, description, icon]) => ({ title, description, icon })),
+  });
+  const managedProofPoints = section.proof_points.filter(isManagedItemActive);
+  const managedCapabilities = section.capabilities.filter(isManagedItemActive);
   return (
     <section className="relative overflow-hidden bg-background-950 pb-16 pt-28 text-background-50 md:pb-20 md:pt-36 lg:min-h-[760px] lg:pb-24">
       <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(214,161,68,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(214,161,68,.08)_1px,transparent_1px)] [background-size:48px_48px]" aria-hidden="true" />
       <div className="absolute -right-40 top-12 h-[520px] w-[520px] rounded-full bg-primary-500/10 blur-3xl" aria-hidden="true" />
       <div className="container-content relative grid items-center gap-14 lg:grid-cols-[1.04fr_0.96fr] lg:gap-20">
         <div className="reveal">
-          <span className="eyebrow mb-5 block text-primary-400">Professional services & programmes</span>
+          <span className="eyebrow mb-5 block text-primary-400">{section.eyebrow}</span>
           <h1 className="max-w-3xl font-heading text-4xl font-semibold leading-[1.05] text-background-50 sm:text-5xl md:text-6xl lg:text-7xl">
-            Turn competence into <span className="text-primary-400">visible capability.</span>
+            {section.title} <span className="text-primary-400">{section.highlight}</span>
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-background-300 md:text-lg">
-            IPC connects professional recognition, workforce development, learning, academic partnership and community into one specialist project-controls ecosystem.
+            {section.description}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#services" className="btn-primary">Explore services <i className="ri-arrow-down-line" aria-hidden="true" /></a>
-            <a href="#route-builder" className="btn-secondary">Find the right route</a>
+            <a href={section.primary_cta_url} className="btn-primary">{section.primary_cta_label} <i className="ri-arrow-down-line" aria-hidden="true" /></a>
+            <a href={section.secondary_cta_url} className="btn-secondary">{section.secondary_cta_label}</a>
           </div>
           <dl className="mt-10 grid border-y border-background-50/15 sm:grid-cols-3">
-            {proofPoints.map(([title, description], index) => (
+            {managedProofPoints.map(({title, description}, index) => (
               <div key={title} className={`py-5 sm:px-5 ${index > 0 ? "border-t border-background-50/15 sm:border-l sm:border-t-0" : ""} ${index === 0 ? "sm:pl-0" : ""}`}>
                 <dt className="text-sm font-semibold text-primary-300">{title}</dt>
                 <dd className="mt-1 text-xs leading-relaxed text-background-400">{description}</dd>
@@ -45,8 +63,8 @@ export default function ServicesHero() {
 
         <div className="reveal relative min-h-[560px] overflow-hidden border border-background-50/10 bg-background-900" aria-label="IPC professional service capabilities">
           <img
-            src={servicesHeroImage}
-            alt="IPC professional services and learning environment"
+            src={section.image}
+            alt={section.image_alt}
             className="absolute inset-0 h-full w-full object-cover"
             loading="eager"
             decoding="async"
@@ -58,7 +76,7 @@ export default function ServicesHero() {
               <h2 className="mt-3 font-heading text-2xl font-semibold leading-tight text-background-50 md:text-3xl">One professional ecosystem, built around project controls.</h2>
             </div>
             <div className="divide-y divide-background-50/10 border-y border-background-50/10 bg-background-950/45 backdrop-blur-md">
-              {capabilities.map(([title, description, icon]) => (
+              {managedCapabilities.map(({title, description, icon}) => (
                 <article key={title} className="grid grid-cols-[40px_1fr] gap-4 px-4 py-3.5">
                   <div className="flex h-10 w-10 items-center justify-center bg-primary-500/15 text-primary-300"><i className={`${icon} text-lg`} aria-hidden="true" /></div>
                   <div><h3 className="text-sm font-semibold text-background-50">{title}</h3><p className="mt-1 text-xs leading-relaxed text-background-400">{description}</p></div>
