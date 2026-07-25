@@ -73,8 +73,8 @@ export function InstitutionalCards({ name, fallback, dark = false, id }: { name:
           </div>
           {items.length > 0 && <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {items.map((item, index) => (
-              <article key={item.id} className={`group border p-6 transition hover:-translate-y-1 md:p-8 ${dark ? "border-background-800 bg-background-900/70 hover:border-primary-500/40" : "border-background-200 bg-white hover:border-primary-500/50 hover:shadow-xl"}`}>
-                <div className="mb-7 flex items-center justify-between">
+                  <article key={item.id} className={`group border p-6 transition hover:-translate-y-1 md:p-8 ${dark ? "border-background-800 bg-background-900/70 hover:border-primary-500/40" : "border-background-200 bg-white hover:border-primary-500/50 hover:shadow-xl"}`}> 
+                  <div className="mb-7 flex items-center justify-between">
                   <span className="font-mono text-[10px] text-primary-500">{String(index + 1).padStart(2, "0")}</span>
                   {item.icon && <i className={`${item.icon} text-xl text-primary-500`} aria-hidden="true" />}
                 </div>

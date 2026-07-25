@@ -11,6 +11,7 @@ import type {
   AdminEventPayload,
   AdminMembershipGrade,
   AdminMembershipGradePayload,
+  AdminNotification,
   AdminEnquiryDetail,
   AdminUser,
   AdminUserPayload,
@@ -20,6 +21,7 @@ import type {
   DashboardRegistration,
   EventbriteAttendeeResponse,
   PaginatedAdminApplications,
+  PaginatedAdminNotifications,
   PaginatedAdminUsers,
 } from "./types";
 import type { AdminContentTable, ContentSectionValue } from "./content/types";
@@ -78,6 +80,26 @@ export const adminApi = {
     payload: { sections?: Record<string, ContentSectionValue>; is_active?: boolean; status?: "draft" | "published" },
   ) => apiJson<AdminContentTable>(`/api/admin/content/${slug}`, payload, { method: "PATCH" }),
   dashboard: (forceRefresh = false) => apiJson<DashboardData>(`/api/admin/dashboard${forceRefresh ? "?refresh=1" : ""}`),
+  notifications: (signal?: AbortSignal) =>
+    apiJson<PaginatedAdminNotifications>(
+      "/api/admin/notifications?page_size=12",
+      undefined,
+      { signal, requestSource: "AdminNotificationBell" },
+    ),
+  notificationUnreadCount: () =>
+    apiJson<{ unread_count: number }>("/api/admin/notifications/unread-count"),
+  markNotificationRead: (id: number) =>
+    apiJson<AdminNotification>(
+      `/api/admin/notifications/${id}/read`,
+      {},
+      { method: "PATCH" },
+    ),
+  markAllNotificationsRead: () =>
+    apiJson<{ updated: number; unread_count: number }>(
+      "/api/admin/notifications/read-all",
+      {},
+      { method: "PATCH" },
+    ),
   enquiries: (signal?: AbortSignal) =>
     apiJson<DashboardEnquiry[]>("/api/admin/enquiries", undefined, { signal }),
   replyToEnquiry: (source: DashboardEnquiry["type"], id: string, message: string) =>

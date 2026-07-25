@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Leave backend and uploaded-file routes for the server/proxy.
+  RewriteRule ^(?:api|media|static)(?:/|$) - [L]
+
+  # Serve real frontend assets directly.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # React Router handles every other URL, including /admin routes.
+  RewriteRule ^ index.html [L]
+</IfModule>

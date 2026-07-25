@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
-from .models import AdminProfile
+from .models import AdminNotification, AdminProfile
 
 
 @admin.register(AdminProfile)
@@ -10,6 +10,32 @@ class AdminProfileAdmin(admin.ModelAdmin):
     list_filter = ("role", "created_at")
     search_fields = ("user__username", "user__email", "user__first_name", "user__last_name", "telephone")
     autocomplete_fields = ("user",)
+
+
+@admin.register(AdminNotification)
+class AdminNotificationAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "recipient",
+        "notification_type",
+        "source_type",
+        "source_id",
+        "is_read",
+        "created_at",
+    )
+    list_filter = ("notification_type", "source_type", "is_read", "created_at")
+    search_fields = ("title", "message", "recipient__username", "recipient__email")
+    readonly_fields = (
+        "recipient",
+        "notification_type",
+        "title",
+        "message",
+        "source_type",
+        "source_id",
+        "target_url",
+        "created_at",
+        "updated_at",
+    )
 
 
 try:

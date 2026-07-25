@@ -13,7 +13,7 @@ export default function AwardsFramework({ content, categories }: { content: Awar
           {categories === null && [0, 1, 2].map((item) => <div key={item} className="h-[500px] animate-pulse bg-background-100" />)}
           {categories?.map((category) => (
             <div key={category.id}>
-              <div className="group h-full overflow-hidden border border-background-200/70 bg-background-100 transition-all duration-300 hover:border-primary-200">
+              <div className="group card-hover h-full overflow-hidden border border-background-200/70 bg-background-100 transition-all duration-300 hover:border-primary-200">
                 <div className="relative h-44 overflow-hidden">
                   <img loading="lazy" decoding="async" src={category.image_url} alt={category.title} className="h-full w-full object-cover image-zoom" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background-950/70 to-transparent" />

@@ -14,7 +14,7 @@ export default function AwardsIntegrity({ content, principles, isLoading, error 
             <div className="grid grid-cols-1 gap-4 text-left sm:grid-cols-3">
               {isLoading && <div className="col-span-full flex items-center justify-center gap-3 py-12 text-background-300" role="status"><span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />Loading integrity principles…</div>}
               {error && <div className="col-span-full border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">{error}</div>}
-              {!isLoading && !error && principles.map((principle, index) => <div key={principle.title} className={`bg-background-900 p-5 reveal reveal-delay-${index + 1}`}><i className={`${principle.icon} mb-3 block text-xl text-primary-500`} /><h4 className="mb-2 font-heading text-base font-semibold text-background-50">{principle.title}</h4><p className="text-sm leading-relaxed text-background-400">{principle.description}</p></div>)}
+              {!isLoading && !error && principles.map((principle, index) => <div key={principle.title} className={`bg-background-900 p-5 card-hover reveal reveal-delay-${index + 1}`}><i className={`${principle.icon} mb-3 block text-xl text-primary-500`} /><h4 className="mb-2 font-heading text-base font-semibold text-background-50">{principle.title}</h4><p className="text-sm leading-relaxed text-background-400">{principle.description}</p></div>)}
             </div>
           </div>
         </div>

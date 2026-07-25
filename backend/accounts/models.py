@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from ipc_backend.validators import profile_image_upload_to, validate_image, validate_uk_telephone
 
 
@@ -53,3 +54,68 @@ class ApiIdempotencyRecord(models.Model):
 
     def __str__(self):
         return f"{self.method} {self.path} - {self.processing_status}"
+
+
+class AdminNotification(models.Model):
+    class NotificationType(models.TextChoices):
+        CONTACT = "contact", "Contact"
+        APPLICATION = "application", "Application"
+        SUBSCRIBER = "subscriber", "Subscriber"
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="admin_notifications",
+    )
+    notification_type = models.CharField(
+        max_length=24,
+        choices=NotificationType.choices,
+        db_index=True,
+    )
+    title = models.CharField(max_length=180)
+    message = models.TextField(max_length=1000)
+    source_type = models.CharField(max_length=64, db_index=True)
+    source_id = models.PositiveBigIntegerField()
+    target_url = models.CharField(max_length=500)
+    is_read = models.BooleanField(default=False, db_index=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(
+                fields=["recipient", "is_read", "created_at"],
+                name="admin_notif_rec_read_idx",
+            ),
+            models.Index(
+                fields=["recipient", "notification_type", "created_at"],
+                name="admin_notif_rec_type_idx",
+            ),
+            models.Index(
+                fields=["source_type", "source_id"],
+                name="admin_notif_source_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "recipient",
+                    "notification_type",
+                    "source_type",
+                    "source_id",
+                ],
+                name="uniq_admin_notification_source_recipient",
+            ),
+        ]
+
+    def mark_read(self):
+        if self.is_read:
+            return
+        self.is_read = True
+        self.read_at = timezone.now()
+        self.save(update_fields=["is_read", "read_at", "updated_at"])
+
+    def __str__(self):
+        return f"{self.recipient.get_username()} - {self.title}"

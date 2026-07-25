@@ -32,6 +32,7 @@ from accounts.dashboard import (
     AdminEnquiryReplyView,
 )
 from accounts.user_management import AdminUserViewSet, PasswordResetConfirmView, PasswordResetRequestView
+from accounts.notification_api import AdminNotificationViewSet
 
 router = DefaultRouter(trailing_slash=False)
 router.register("membership-grades", MembershipGradeViewSet, basename="membership-grade")
@@ -47,6 +48,7 @@ router.register("newsletter", NewsletterSignupViewSet, basename="newsletter")
 router.register("media", MediaAssetViewSet, basename="media")
 router.register("admin/applications", AdminApplicationViewSet, basename="admin-application")
 router.register("admin/users", AdminUserViewSet, basename="admin-user")
+router.register("admin/notifications", AdminNotificationViewSet, basename="admin-notification")
 router.register("admin/events", AdminEventViewSet, basename="admin-event")
 router.register("admin/award-programmes", AdminAwardProgrammeViewSet, basename="admin-award-programme")
 router.register("admin/award-categories", AdminAwardCategoryViewSet, basename="admin-award-category")

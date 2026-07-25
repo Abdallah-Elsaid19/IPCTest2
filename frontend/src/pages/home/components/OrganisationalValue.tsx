@@ -87,7 +87,7 @@ export default function OrganisationalValue() {
               {content.description}
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            {/* <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 to={content.primary_cta_url}
                 className="group inline-flex items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-xs font-bold text-background-950 transition-colors duration-300 hover:bg-primary-400"
@@ -102,7 +102,7 @@ export default function OrganisationalValue() {
                 <span>{content.secondary_cta_label}</span>
                 <i className="ri-arrow-right-line transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
-            </div>
+            </div> */}
           </div>
 
           <div className="lg:col-span-7 lg:col-start-6">

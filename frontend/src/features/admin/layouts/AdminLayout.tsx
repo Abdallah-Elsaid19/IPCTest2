@@ -21,6 +21,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/features/auth/AuthContext";
 import { AdminDashboardProvider } from "@/features/admin/context/AdminDashboardContext";
+import AdminNotificationBell from "@/features/admin/components/AdminNotificationBell";
 import SEO from "@/components/seo/SEO";
 
 const navigation = [
@@ -248,20 +249,23 @@ export default function AdminLayout() {
               </p>
             </div>
           </div>
-          <Link
-            to="/admin/profile"
-            className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-[#F4ECE1]"
-          >
-            <div className="hidden text-right sm:block">
-              <p className="text-xs font-bold">{user?.name}</p>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-primary-800">
-                {user?.role || "Administrator"}
-              </p>
-            </div>
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#0B0B0B] text-xs font-bold text-white">
-              {initials}
-            </span>
-          </Link>
+          <div className="flex items-center gap-1">
+            <AdminNotificationBell />
+            <Link
+              to="/admin/profile"
+              className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-[#F4ECE1]"
+            >
+              <div className="hidden text-right sm:block">
+                <p className="text-xs font-bold">{user?.name}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-primary-800">
+                  {user?.role || "Administrator"}
+                </p>
+              </div>
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#0B0B0B] text-xs font-bold text-white">
+                {initials}
+              </span>
+            </Link>
+          </div>
         </header>
 
         <main className="mt-4 min-h-[calc(100vh-6.75rem)] rounded-2xl border border-white/70 bg-white/65 shadow-[0_8px_30px_rgba(66,48,31,0.04)]">

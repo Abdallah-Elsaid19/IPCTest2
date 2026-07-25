@@ -258,6 +258,31 @@ export interface DashboardData {
   recent_users: DashboardUser[];
 }
 
+export type AdminNotificationType = "contact" | "application" | "subscriber";
+
+export interface AdminNotification {
+  id: number;
+  notification_type: AdminNotificationType;
+  notification_type_label: string;
+  title: string;
+  message: string;
+  source_type: AdminNotificationType;
+  source_id: number;
+  target_url: string;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaginatedAdminNotifications {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  unread_count: number;
+  results: AdminNotification[];
+}
+
 export type AdminRole = "admin" | "user";
 
 export interface AdminUser {

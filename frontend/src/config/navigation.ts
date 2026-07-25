@@ -29,7 +29,7 @@ export const footerNavigation = [
     links: [
       { label: "Home", path: "/home" },
       { label: "About IPC", path: "/about" },
-      { label: "Employers", path: "/employers" },
+      // { label: "Employers", path: "/employers" },
       // { label: "Partnerships", path: "/partnerships" },
       { label: "Contact", path: "/contact" },
     ],

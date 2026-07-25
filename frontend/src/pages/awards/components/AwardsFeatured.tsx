@@ -17,7 +17,7 @@ export default function AwardsFeatured({ content, programmes, error, onRetry }: 
             <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-2">
               {programmes === null && [0, 1, 2, 3].map((item) => <div key={item} className="h-72 animate-pulse border border-background-200/70 bg-background-50" />)}
               {programmes?.map((award) => (
-                <div key={award.id} className="border border-background-200/70 bg-background-50 p-6 transition-all duration-300 hover:border-primary-200 md:p-7">
+                <div key={award.id} className="border card-hover border-background-200/70 bg-background-50 p-6 transition-all duration-300 hover:border-primary-200 md:p-7">
                   <div className="mb-4 flex items-start gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-primary-500"><i className="ri-award-line text-lg text-background-950" /></div>
                     <div><span className="mb-2 inline-block rounded-full bg-primary-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-primary-600">{award.category_title}</span><h3 className="font-heading text-lg font-semibold leading-tight text-background-950">{award.title}</h3></div>

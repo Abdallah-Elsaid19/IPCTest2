@@ -21,6 +21,8 @@ from contact.models import ContactSubmission
 from awards.models import AwardsInterest
 from applications.models import Application, FormDefinition
 from memberships.models import MembershipGrade
+from newsletter.models import NewsletterSignup
+from accounts.models import AdminNotification
 from accounts.graph_mail import (
     GraphMailError,
     send_enquiry_reply_email,
@@ -274,6 +276,193 @@ class AdminDashboardApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 403)
+
+
+class AdminNotificationApiTests(APITestCase):
+    def setUp(self):
+        users = get_user_model()
+        self.staff = users.objects.create_user(
+            username="notification.admin",
+            email="notification-admin@example.com",
+            password="test",
+            is_staff=True,
+        )
+        self.second_staff = users.objects.create_user(
+            username="notification.admin.two",
+            email="notification-admin-two@example.com",
+            password="test",
+            is_staff=True,
+        )
+        self.inactive_staff = users.objects.create_user(
+            username="notification.inactive",
+            email="notification-inactive@example.com",
+            password="test",
+            is_staff=True,
+            is_active=False,
+        )
+        self.member = users.objects.create_user(
+            username="notification.member",
+            email="notification-member@example.com",
+            password="test",
+        )
+
+    def create_application(self):
+        form = FormDefinition.objects.get(code="AffIPC", version=1)
+        return Application.objects.create(
+            form_definition=form,
+            form_version=form.version,
+            membership_grade=MembershipGrade.objects.get(code="AffIPC"),
+            first_name="Notification",
+            last_name="Applicant",
+            email="notification-applicant@example.com",
+            phone="+447700900123",
+            grade_specific_data={"professional_status": "Student"},
+            code_of_conduct_consent=True,
+            privacy_consent=True,
+        )
+
+    def test_source_creation_creates_unread_notification_per_active_staff(self):
+        contact = ContactSubmission.objects.create(
+            name="Contact Person",
+            email="contact-notification@example.com",
+            category="Membership",
+            message="Please send membership information.",
+        )
+        application = self.create_application()
+        subscriber = NewsletterSignup.objects.create(
+            name="Newsletter Reader",
+            email="reader@example.com",
+            source="footer",
+        )
+
+        for recipient in (self.staff, self.second_staff):
+            notifications = AdminNotification.objects.filter(recipient=recipient)
+            self.assertEqual(notifications.count(), 3)
+            self.assertEqual(notifications.filter(is_read=False, read_at__isnull=True).count(), 3)
+            self.assertSetEqual(
+                set(notifications.values_list("notification_type", flat=True)),
+                {"contact", "application", "subscriber"},
+            )
+        self.assertFalse(
+            AdminNotification.objects.filter(
+                recipient__in=[self.inactive_staff, self.member],
+            ).exists()
+        )
+        self.assertTrue(AdminNotification.objects.filter(
+            recipient=self.staff,
+            source_type="contact",
+            source_id=contact.pk,
+            target_url="/admin/enquiries",
+        ).exists())
+        self.assertTrue(AdminNotification.objects.filter(
+            recipient=self.staff,
+            source_type="application",
+            source_id=application.pk,
+            target_url=f"/admin/applications/{application.pk}",
+        ).exists())
+        self.assertTrue(AdminNotification.objects.filter(
+            recipient=self.staff,
+            source_type="subscriber",
+            source_id=subscriber.pk,
+            target_url=f"/admin/newsletter/newslettersignup/{subscriber.pk}/change/",
+        ).exists())
+
+    def test_source_updates_do_not_create_duplicate_notifications(self):
+        contact = ContactSubmission.objects.create(
+            name="Contact Person",
+            email="dedupe-contact@example.com",
+            category="Events",
+            message="Please send event information.",
+        )
+        subscriber = NewsletterSignup.objects.create(email="dedupe-reader@example.com")
+        application = self.create_application()
+        initial_count = AdminNotification.objects.count()
+
+        contact.status = ContactSubmission.Status.IN_PROGRESS
+        contact.save(update_fields=["status"])
+        NewsletterSignup.objects.update_or_create(
+            email=subscriber.email,
+            defaults={"is_active": True, "name": "Updated Reader"},
+        )
+        application.organisation = "Updated organisation"
+        application.save(update_fields=["organisation", "updated_at"])
+
+        self.assertEqual(AdminNotification.objects.count(), initial_count)
+
+    def test_notification_api_is_staff_only_and_recipient_scoped(self):
+        notification = AdminNotification.objects.create(
+            recipient=self.staff,
+            notification_type=AdminNotification.NotificationType.CONTACT,
+            title="Scoped notification",
+            message="Only the intended recipient can see this.",
+            source_type="contact",
+            source_id=999,
+            target_url="/admin/enquiries",
+        )
+        AdminNotification.objects.create(
+            recipient=self.second_staff,
+            notification_type=AdminNotification.NotificationType.SUBSCRIBER,
+            title="Other recipient",
+            message="This belongs to another administrator.",
+            source_type="subscriber",
+            source_id=1000,
+            target_url="/admin/",
+        )
+
+        self.assertEqual(self.client.get("/api/admin/notifications").status_code, 401)
+        self.client.force_authenticate(self.member)
+        self.assertEqual(self.client.get("/api/admin/notifications").status_code, 403)
+
+        self.client.force_authenticate(self.staff)
+        response = self.client.get("/api/admin/notifications")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["unread_count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], notification.pk)
+        self.assertEqual(response.data["results"][0]["notification_type_label"], "Contact")
+        self.assertIsNotNone(response.data["results"][0]["created_at"])
+
+    def test_staff_can_mark_one_or_all_notifications_read(self):
+        first = AdminNotification.objects.create(
+            recipient=self.staff,
+            notification_type=AdminNotification.NotificationType.CONTACT,
+            title="First notification",
+            message="First message.",
+            source_type="contact",
+            source_id=1001,
+            target_url="/admin/enquiries",
+        )
+        second = AdminNotification.objects.create(
+            recipient=self.staff,
+            notification_type=AdminNotification.NotificationType.APPLICATION,
+            title="Second notification",
+            message="Second message.",
+            source_type="application",
+            source_id=1002,
+            target_url="/admin/applications/1002",
+        )
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.patch(
+            f"/api/admin/notifications/{first.pk}/read",
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertTrue(response.data["is_read"])
+        self.assertIsNotNone(response.data["read_at"])
+
+        response = self.client.patch(
+            "/api/admin/notifications/read-all",
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["updated"], 1)
+        self.assertEqual(response.data["unread_count"], 0)
+        second.refresh_from_db()
+        self.assertTrue(second.is_read)
+        self.assertIsNotNone(second.read_at)
 
 
 @override_settings(
