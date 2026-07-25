@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 interface MemberValueItem {
@@ -6,37 +7,38 @@ interface MemberValueItem {
   title: string;
   description: string;
   icon: string;
+  path?: string;
 }
 
 const memberValues: MemberValueItem[] = [
   {
     id: "recognition",
     title: "Recognition",
-    description: "Membership grade, certificate, post-nominal and visible professional identity.",
+    description: "Membership grade, certificate, digital credential, post-nominal and professional identity.",
     icon: "ri-award-line",
   },
   {
     id: "cpd-development",
-    title: "CPD & development",
-    description: "Technical content, structured reflection and continuing professional development.",
+    title: "CPD and development",
+    description: "Structured learning, reflection, evidence and progression.",
     icon: "ri-book-open-line",
   },
   {
     id: "master-classes",
-    title: "Master classes",
-    description: "Planning, cost, risk, delay, leadership, AI, sustainability and commercial practice.",
+    title: "London Master Class Series",
+    description: "Planning, schedule, cost, risk, change, delay, commercial practice, leadership, AI, data and sustainability.",
     icon: "ri-presentation-line",
   },
   {
     id: "regional-clubs",
     title: "Regional clubs",
-    description: "Professional talks, networking, site visits and local community engagement.",
+    description: "London, Nottingham, Manchester and Kent–Maidstone activity where available.",
     icon: "ri-community-line",
   },
   {
     id: "mentoring",
-    title: "Mentoring",
-    description: "Peer and senior mentoring for new entrants, practitioners and future leaders.",
+    title: "Mentoring and contribution",
+    description: "Mentor, volunteer, speak, write and support the profession.",
     icon: "ri-user-heart-line",
   },
   {
@@ -50,12 +52,14 @@ const memberValues: MemberValueItem[] = [
     title: "Publications",
     description: "Professional magazine content, case studies, lessons learned and thought leadership.",
     icon: "ri-article-line",
+    path: "/publications",
   },
   {
     id: "research",
-    title: "Research",
-    description: "Applied research and collaboration between education, employers and practice.",
+    title: "Journal and research",
+    description: "Academic papers, research notes and collaboration between education, employers and practice.",
     icon: "ri-flask-line",
+    path: "/publications",
   },
 ];
 
@@ -122,6 +126,7 @@ export default function MemberValue() {
               <p className="mt-3 text-sm leading-[1.7] text-foreground-600">
                 {item.description}
               </p>
+              {item.path && <Link to={item.path} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-primary-700">Explore route <i className="ri-arrow-right-line" /></Link>}
             </article>
           ))}
         </div>

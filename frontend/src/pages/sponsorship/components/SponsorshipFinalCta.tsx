@@ -22,6 +22,11 @@ export default function SponsorshipFinalCta() {
             </Link>
             <a href={content.secondary_cta_url} className="inline-flex min-h-[50px] items-center justify-center gap-2 border border-background-300 px-8 font-label text-sm font-semibold uppercase tracking-[0.02em] text-background-950 transition-colors hover:border-background-950">{content.secondary_cta_label}<i className="ri-arrow-up-line" aria-hidden="true" /></a>
           </div>
+          <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm">
+            <Link to="/partnerships" className="font-semibold text-primary-700 hover:text-primary-800">Compare partnerships</Link>
+            <Link to="/fund" className="font-semibold text-primary-700 hover:text-primary-800">Explore funded opportunities</Link>
+          </div>
+          <p className="mx-auto mt-6 max-w-2xl text-xs leading-relaxed text-foreground-500">Sponsorship supports a defined activity with agreed ethical visibility. It is not automatic partnership, professional endorsement or influence over IPC decisions.</p>
         </div>
       </div>
     </section>

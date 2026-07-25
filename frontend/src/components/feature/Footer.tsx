@@ -1,18 +1,6 @@
 import { Link } from "react-router-dom";
 import { SimpleInterestForm } from "@/components/forms/SimpleInterestForm";
-
-const footerNav = [
-  { label: "Home", path: "/" },
-  { label: "Membership & Recognition", path: "/membership" },
-  { label: "Scholarships", path: "/scholarships" },
-  { label: "Sponsorship", path: "/sponsorship" },
-  { label: "Awards & Prizes", path: "/awards" },
-  { label: "Events", path: "/events" },
-  { label: "Clubs", path: "/clubs" },
-  { label: "About Us", path: "/about" },
-  { label: "Contact", path: "/contact" },
-  { label: "Privacy & Policies", path: "/privacy" },
-];
+import { footerNavigation } from "@/config/navigation";
 
 export default function Footer() {
   return (
@@ -43,59 +31,18 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="md:col-span-2 md:col-start-6">
-            <h4 className="text-xs font-semibold text-background-500 uppercase tracking-wider mb-4">
-              Institute
-            </h4>
+          {footerNavigation.map((group, index) => (
+          <div key={group.label} className={`md:col-span-2 ${index === 0 ? "md:col-start-6" : ""}`}>
+            <h4 className="text-xs font-semibold text-background-500 uppercase tracking-wider mb-4">{group.label}</h4>
             <ul className="flex flex-col gap-2">
-              {footerNav.slice(0, 3).map((item) => (
+              {group.links.map((item) => (
                 <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className="text-sm text-background-400 hover:text-background-200 transition-colors"
-                  >
-                    {item.label}
-                  </Link>
+                  <Link to={item.path} className="text-sm text-background-400 hover:text-background-200 transition-colors">{item.label}</Link>
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="md:col-span-2">
-            <h4 className="text-xs font-semibold text-background-500 uppercase tracking-wider mb-4">
-              Programmes
-            </h4>
-            <ul className="flex flex-col gap-2">
-              {footerNav.slice(3, 7).map((item) => (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className="text-sm text-background-400 hover:text-background-200 transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="md:col-span-2">
-            <h4 className="text-xs font-semibold text-background-500 uppercase tracking-wider mb-4">
-              Information
-            </h4>
-            <ul className="flex flex-col gap-2">
-              {footerNav.slice(7).map((item) => (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className="text-sm text-background-400 hover:text-background-200 transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          ))}
         </div>
 
         <div className="mt-12 md:mt-16 pt-8 border-t border-background-800">

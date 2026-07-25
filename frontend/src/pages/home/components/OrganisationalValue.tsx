@@ -32,10 +32,17 @@ const partnerValues: PartnerValue[] = [
     description: "Link programmes, learners, research, employers and professional communities.",
     icon: "ri-graduation-cap-line",
   },
+  {
+    id: "public-social-impact",
+    audience: "Public and social-impact organisations",
+    title: "Connect capability with public value.",
+    description: "Support access, responsible development, regional capability and knowledge exchange.",
+    icon: "ri-government-line",
+  },
 ];
 
 export default function OrganisationalValue() {
-  const content = useManagedSection("organisational_value", { eyebrow: "Organisational value", title: "Develop capability across people, projects and organisations.", description: "IPC partnerships support talent pathways, professional recognition, research, industry engagement and organisational credibility.", primary_cta_label: "Corporate partnership", primary_cta_url: "/sponsorship", secondary_cta_label: "Academic partnership", secondary_cta_url: "/sponsorship", items: partnerValues });
+  const content = useManagedSection("organisational_value", { eyebrow: "Organisational value", title: "Develop capability across people, projects and organisations.", description: "IPC supports employers, consultancies, academic partners and public or social-impact organisations through talent pathways, recognition, research and professional engagement.", primary_cta_label: "Employers", primary_cta_url: "/employers", secondary_cta_label: "Partnerships", secondary_cta_url: "/partnerships", items: partnerValues });
   const items = content.items.filter(isManagedItemActive);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLElement>(null);

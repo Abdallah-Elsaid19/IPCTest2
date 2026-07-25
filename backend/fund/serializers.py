@@ -16,6 +16,7 @@ class FundContentSerializer(serializers.ModelSerializer):
             "impact",
             "research",
             "employer",
+            "individual_support",
             "partners",
             "principles",
             "route_builder",

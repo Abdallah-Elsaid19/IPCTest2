@@ -11,7 +11,7 @@ class FundContentApiTests(APITestCase):
 
     def test_public_endpoint_returns_only_published_active_content(self):
         response = self.client.get("/api/fund/content")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data["hero"]["eyebrow"], "IPC funded opportunities")
 
         content = FundContent.objects.get(key="main")
@@ -38,5 +38,5 @@ class FundContentApiTests(APITestCase):
             },
             format="json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data["sections"]["final_cta"]["title"], "Updated Fund CTA")

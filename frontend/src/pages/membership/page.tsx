@@ -4,7 +4,7 @@ import SectionHeader from "@/components/base/SectionHeader";
 import PathwayCard from "@/components/base/PathwayCard";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { apiJson, type MembershipGrade } from "@/lib/api";
-import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
+import { ManagedContentProvider, useManagedSection } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 import MembershipComparisonTable from "@/pages/membership/components/MembershipComparisonTable";
@@ -14,6 +14,30 @@ import ApplicationJourney from "@/pages/membership/components/ApplicationJourney
 import ProfessionalVisibility from "@/pages/membership/components/ProfessionalVisibility";
 import MembershipQuestions from "@/pages/membership/components/MembershipQuestions";
 import GradeFinderModal from "@/pages/membership/components/GradeFinderModal";
+
+function MembershipHero() {
+  const content = useManagedSection("hero", {
+    eyebrow: "Professional recognition",
+    title: "Membership and recognition",
+    description: "Five progressive routes connect professional identity, evidence, development and contribution—from an entry relationship through active professional membership, evidence-based competence and senior recognition.",
+    cta_label: "Explore membership grades",
+    cta_url: "#grades",
+  });
+  return (
+    <section className="relative flex min-h-[70vh] items-center overflow-hidden bg-background-950 pb-20">
+      <div className="absolute inset-0"><ResponsiveImage src="/images/membership/hero.svg" alt="" width={1600} height={900} sizes="100vw" priority className="h-full w-full object-cover opacity-30" /></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-background-950 via-background-950/95 to-background-950/70" />
+      <div className="container-content relative z-10 w-full pt-24 md:pt-32">
+        <div className="max-w-3xl reveal">
+          <span className="eyebrow mb-4 block text-primary-400">{content.eyebrow}</span>
+          <h1 className="mb-6 font-heading text-4xl font-bold leading-[1.1] text-background-50 sm:text-5xl md:text-6xl lg:text-7xl">{content.title}</h1>
+          <p className="mb-8 max-w-2xl text-base leading-relaxed text-background-200 md:text-lg">{content.description}</p>
+          <a href={content.cta_url} className="btn-primary inline-flex items-center gap-2"><i className="ri-layout-grid-line" />{content.cta_label}</a>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Membership() {
   const [membershipGrades, setMembershipGrades] = useState<MembershipGrade[]>(
@@ -101,7 +125,8 @@ export default function Membership() {
     <ManagedContentProvider endpoint="/api/membership/content" slug="membership">
     <div>
       <ManagedPageSeo fallback={{ ...pageSeo.membership, canonical_path: pageSeo.membership.canonicalPath }} />
-      {/* ===== HERO ===== */}
+      <MembershipHero />
+      <div hidden aria-hidden="true">
       <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-background-950 pb-20">
         <div className="absolute inset-0">
           <ResponsiveImage
@@ -139,6 +164,7 @@ export default function Membership() {
           </div>
         </div>
       </section>
+      </div>
 
       {/* ===== GRADE CARDS GRID ===== */}
       <section
@@ -243,6 +269,20 @@ export default function Membership() {
         onClose={() => setGradeFinderTrigger(null)}
         returnFocusElement={gradeFinderTrigger}
       />
+
+      <section className="border-y border-background-200 bg-background-100 py-12">
+        <div className="container-content">
+          <h2 className="font-heading text-2xl font-semibold text-background-950">Continue your professional route</h2>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["Publications and research", "/publications"],
+              ["Events and Master Classes", "/events"],
+              ["Regional clubs", "/clubs"],
+              ["Employer capability", "/employers"],
+            ].map(([label, path]) => <Link key={path} to={path} className="flex items-center justify-between border border-background-300 bg-background-50 p-4 text-sm font-semibold text-foreground-800 hover:border-primary-500">{label}<i className="ri-arrow-right-line text-primary-600" /></Link>)}
+          </div>
+        </div>
+      </section>
 
       {/* ===== FINAL CTA ===== */}
       <section className="bg-background-950 py-20 md:py-28">

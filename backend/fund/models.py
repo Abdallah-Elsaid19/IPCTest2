@@ -18,6 +18,7 @@ class FundContent(models.Model):
     impact = models.JSONField(default=dict, validators=[validate_content_section])
     research = models.JSONField(default=dict, validators=[validate_content_section])
     employer = models.JSONField(default=dict, validators=[validate_content_section])
+    individual_support = models.JSONField(default=dict, blank=True, validators=[validate_content_section])
     partners = models.JSONField(default=dict, validators=[validate_content_section])
     principles = models.JSONField(default=dict, validators=[validate_content_section])
     route_builder = models.JSONField(default=dict, validators=[validate_content_section])
@@ -47,4 +48,3 @@ class FundContent(models.Model):
 
     def __str__(self):
         return self.key
-

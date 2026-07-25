@@ -14,6 +14,7 @@ from memberships.models import MembershipContent
 from home.models import HomeContent
 from services.models import ServiceContent
 from fund.models import FundContent
+from institutional.models import EmployerContent, PartnershipContent, PublicationContent
 from django.utils import timezone
 
 
@@ -88,10 +89,28 @@ CONTENT_TABLES = {
         "model": FundContent,
         "fields": (
             "hero", "purpose", "programmes", "routes", "applicant_matcher",
-            "impact", "research", "employer", "partners", "principles",
+            "impact", "research", "employer", "individual_support", "partners", "principles",
             "route_builder", "governance", "process", "assurance", "faq",
             "final_cta", "seo",
         ),
+        "publishing": True,
+    },
+    "employers": {
+        "label": "Employer Content",
+        "model": EmployerContent,
+        "fields": ("hero", "value_intro", "values", "pathways_intro", "pathways", "capability_model", "evidence", "impact", "faq", "final_cta", "seo"),
+        "publishing": True,
+    },
+    "partnerships": {
+        "label": "Partnership Content",
+        "model": PartnershipContent,
+        "fields": ("hero", "partner_types", "value", "comparison", "integrity", "process", "faq", "final_cta", "seo"),
+        "publishing": True,
+    },
+    "publications": {
+        "label": "Publication Content",
+        "model": PublicationContent,
+        "fields": ("hero", "routes", "value", "principles", "process", "faq", "final_cta", "seo"),
         "publishing": True,
     },
 }

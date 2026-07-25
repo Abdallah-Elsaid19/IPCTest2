@@ -94,6 +94,27 @@ export const pageSeo = {
     canonicalPath: "/about",
     keywords: ["about IPC", "institute history", "project controls profession"],
   },
+  employers: {
+    title: "Employer Project Controls Capability",
+    description:
+      "Build visible project-controls capability through workforce recognition, professional learning, employer engagement and structured progression with IPC.",
+    canonicalPath: "/employers",
+    keywords: ["project controls capability", "employer development", "workforce recognition"],
+  },
+  partnerships: {
+    title: "Corporate and Academic Partnerships",
+    description:
+      "Develop long-term corporate, academic and professional partnerships that strengthen project-controls capability, access, research and professional impact.",
+    canonicalPath: "/partnerships",
+    keywords: ["corporate partnerships", "academic partnerships", "project controls collaboration"],
+  },
+  publications: {
+    title: "Publications, Journal and Research",
+    description:
+      "Explore IPC professional magazine content, technical case studies, academic papers, research notes and evidence-led project-controls insight.",
+    canonicalPath: "/publications",
+    keywords: ["project controls publications", "professional journal", "technical case studies", "research"],
+  },
   contact: {
     title: "Contact",
     description:

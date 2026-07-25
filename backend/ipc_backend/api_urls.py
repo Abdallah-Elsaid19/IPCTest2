@@ -23,6 +23,7 @@ from about.views import AboutPageContentView
 from home.views import HomeContentView
 from services.views import ServiceContentView
 from fund.views import FundContentView
+from institutional.views import EmployerContentView, PartnershipContentView, PublicationContentView
 from accounts.views import CurrentUserView, LoginView, LogoutView, RefreshView
 from accounts.dashboard import (
     AdminDashboardView,
@@ -77,6 +78,9 @@ urlpatterns = [
     path("awards/content", AwardPageContentView.as_view(), name="award-page-content"),
     path("events/content", EventPageContentView.as_view(), name="event-page-content"),
     path("about/content", AboutPageContentView.as_view(), name="about-page-content"),
+    path("employers/content", EmployerContentView.as_view(), name="employer-content"),
+    path("partnerships/content", PartnershipContentView.as_view(), name="partnership-content"),
+    path("publications/content", PublicationContentView.as_view(), name="publication-content"),
     path("events/eventbrite/authorize", EventbriteAuthorizeView.as_view(), name="eventbrite-authorize"),
     path("events/eventbrite/callback", EventbriteCallbackView.as_view(), name="eventbrite-callback"),
     path("events/eventbrite/organizations/", EventbriteOrganizationsView.as_view(), name="eventbrite-organizations"),

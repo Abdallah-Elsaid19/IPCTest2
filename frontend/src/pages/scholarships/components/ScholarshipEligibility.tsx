@@ -15,10 +15,13 @@ const criteria = [
 
 const options: Record<QuestionKey, { label: string; value: string }[]> = {
   who: [
-    { label: "Individual learner", value: "individual" },
-    { label: "Career changer", value: "career" },
-    { label: "Academic organisation", value: "academic" },
-    { label: "Employer or sponsor", value: "sponsor" },
+    { label: "Access or hardship", value: "access" },
+    { label: "Service or community impact", value: "service" },
+    { label: "Charity, NGO or social good", value: "charity" },
+    { label: "Armed Forces, veteran or public-service transition", value: "public-service" },
+    { label: "Second-chance career repositioning", value: "second-chance" },
+    { label: "Self-employed professional or consultant", value: "independent" },
+    { label: "Career returner or emerging talent", value: "emerging" },
   ],
   objective: [
     { label: "Learning or event access", value: "learning" },
@@ -41,14 +44,16 @@ export default function ScholarshipEligibility() {
     const { who, objective, stage } = answers;
     if (!who || !objective || !stage) {
       setResult({ title: "Complete all three questions", copy: "Choose one answer in each section so the page can suggest the most relevant enquiry route." });
-    } else if (who === "academic" || objective === "research") {
-      setResult({ title: "Academic partner route", copy: "Send the organisation name, learner group, course or programme, number of places and the intended employability, research or professional outcome." });
-    } else if (who === "sponsor" || objective === "cohort") {
-      setResult({ title: "Sponsored cohort route", copy: "Send the organisation name, sponsorship objective, target learner group, proposed number of places and intended professional or social impact." });
-    } else if (who === "career" || objective === "career") {
-      setResult({ title: "Career access route", copy: "Send your previous experience, transferable skills, intended project-controls direction and the development opportunity you are seeking." });
+    } else if (who === "public-service") {
+      setResult({ title: "Armed Forces, Veterans and Public Service Transition", copy: "Describe your previous service, transferable delivery experience, transition need, motivation and intended civilian project-controls route." });
+    } else if (who === "charity" || who === "service") {
+      setResult({ title: who === "charity" ? "Charity, NGO and Social Good" : "Character, Service and Community Impact", copy: "Describe the service or organisational context, evidence of contribution, learning need, intended impact and professional direction." });
+    } else if (who === "second-chance" || who === "emerging") {
+      setResult({ title: who === "second-chance" ? "Second Chance Career Repositioning" : "Career Returners and Emerging Talent", copy: "Describe your current position, transferable skills or potential, the barrier being addressed and a realistic next step." });
+    } else if (who === "independent") {
+      setResult({ title: "Self-Employed Professionals and Consultants", copy: "Describe your practice, lack of employer-funded access, professional-development need and intended impact." });
     } else {
-      setResult({ title: "Individual learner route", copy: "Send your current study or role, programme interest, development objective and reason support is needed." });
+      setResult({ title: "Access and Hardship", copy: "Describe the genuine barrier or opportunity gap, your motivation, intended route, commitment and likely benefit." });
     }
   };
 
@@ -79,7 +84,7 @@ export default function ScholarshipEligibility() {
             {(["who", "objective", "stage"] as QuestionKey[]).map((question) => (
               <fieldset key={question}>
                 <legend className="mb-3 text-sm font-semibold text-background-950">
-                  {question === "who" ? "Who is making the enquiry?" : question === "objective" ? "What is the main objective?" : "What stage are you at?"}
+                  {question === "who" ? "Which category best reflects your circumstances?" : question === "objective" ? "What is the main objective?" : "What stage are you at?"}
                 </legend>
                 <div className="grid gap-2">
                   {options[question].map((option) => {

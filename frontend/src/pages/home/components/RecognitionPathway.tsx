@@ -4,7 +4,7 @@ import { isManagedItemActive, useManagedSection } from "@/components/content/Man
 
 const grades = [
   { id: "affiliate", label: "Affiliate", level: "Entry", path: "/membership/affiliate", desc: "For those building foundational knowledge in project controls." },
-  { id: "professional", label: "Professional", level: "Core", path: "/membership/professional", desc: "Demonstrating competent application of project controls disciplines." },
+  { id: "professional", label: "Professional Member", level: "MIPC", path: "/membership/professional", desc: "Recognising active professional involvement and identity in project controls." },
   { id: "af-l3", label: "Associate Fellow L3", level: "Advanced", path: "/membership/associate-fellow-l3", desc: "Leading complex project controls with strategic oversight." },
   { id: "af-l4", label: "Associate Fellow L4", level: "Senior", path: "/membership/associate-fellow-l4", desc: "Defining standards and mentoring the next generation." },
   { id: "fellow", label: "Fellow", level: "Pinnacle", path: "/membership/fellow", desc: "Recognised authority shaping the future of project controls globally." },

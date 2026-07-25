@@ -29,6 +29,9 @@ const RegistrationCalendarRedirect = lazy(() =>
 );
 const Clubs = lazy(() => import("../pages/clubs/page"));
 const About = lazy(() => import("../pages/about/page"));
+const Employers = lazy(() => import("../pages/employers/page"));
+const Partnerships = lazy(() => import("../pages/partnerships/page"));
+const Publications = lazy(() => import("../pages/Publications/page"));
 const Contact = lazy(() => import("../pages/contact/page"));
 const Privacy = lazy(() => import("../pages/privacy/page"));
 const AdminApplicationsPage = lazy(() => import("@/features/admin/applications/page"));
@@ -75,6 +78,9 @@ const routes: RouteObject[] = [
   { path: "/events/:slug", element: <EventDetailPage /> },
   { path: "/clubs", element: <Clubs /> },
   { path: "/about", element: <About /> },
+  { path: "/employers", element: <Employers /> },
+  { path: "/partnerships", element: <Partnerships /> },
+  { path: "/publications", element: <Publications /> },
   { path: "/login", element: <GuestOnlyRoute><Login /></GuestOnlyRoute> },
   { path: "/forgot-password", element: <GuestOnlyRoute><ForgotPasswordPage /></GuestOnlyRoute> },
   { path: "/reset-password", element: <PasswordResetPage /> },

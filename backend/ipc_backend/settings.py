@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "home",
     "services",
     "fund",
+    "institutional",
 ]
 
 MIDDLEWARE = [

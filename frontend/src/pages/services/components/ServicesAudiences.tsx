@@ -4,10 +4,11 @@ import { isManagedItemActive, useManagedSection } from "@/components/content/Man
 
 const audiences = [
   ["Professionals", "Recognition, career credibility, CPD, events, mentoring and progression.", "/membership", "Explore recognition", "ri-user-star-line"],
-  ["Employers", "Capability mapping, recruitment clarity, retention, succession planning and staff recognition.", "/information-session", "Explore workforce services", "ri-building-line"],
-  ["Consultancies", "Market credibility, tender strength, thought leadership and senior profiles.", "/information-session", "Find a route", "ri-briefcase-4-line"],
-  ["Academic & training partners", "Student affiliation, curriculum relevance, scholarships, research, awards and employer links.", "/scholarships", "Explore partnership", "ri-school-line"],
+  ["Employers", "Capability mapping, recruitment clarity, retention, succession planning and staff recognition.", "/employers", "Explore employer capability", "ri-building-line"],
+  ["Consultancies", "Visible expertise, professional contribution, thought leadership and senior profiles.", "/partnerships", "Explore partnerships", "ri-briefcase-4-line"],
+  ["Academic & training partners", "Student affiliation, curriculum relevance, scholarships, research, awards and employer links.", "/partnerships", "Explore academic partnership", "ri-school-line"],
   ["Sponsors & supporters", "Ethical routes to support learners, events, awards, clubs, publications and social impact.", "/sponsorship", "Explore impact routes", "ri-hand-heart-line"],
+  ["Authors & researchers", "Magazine articles, technical cases, papers and research notes subject to editorial review.", "/publications", "Explore publication routes", "ri-article-line"],
 ];
 
 export default function ServicesAudiences() {

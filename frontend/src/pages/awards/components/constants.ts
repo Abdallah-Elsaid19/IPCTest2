@@ -21,8 +21,8 @@ export const defaultAwardsContent: AwardPageContent = {
   },
   featured_intro: {
     eyebrow: "Featured award routes",
-    title: "CMS-ready placeholders for key prizes and recognition lines.",
-    description: "These cards are designed for confirmed categories and nomination routes. Replace placeholder text only when the programme is approved.",
+    title: "Recognition routes for achievement, contribution and emerging talent.",
+    description: "Explore confirmed awards and prize routes across academic excellence, commercial innovation, professional contribution and special recognition. Availability and nomination windows are published for each programme.",
     image_url: featuredImage,
     image_alt: "Awards ceremony stage",
   },
@@ -92,7 +92,7 @@ export const defaultAwardsContent: AwardPageContent = {
     title: "Clear guidance before nominating, judging or sponsoring.",
     description: "Understand categories, evidence, judging, sponsors and announcement safeguards.",
     items: [
-      { question: "Are categories and nomination windows confirmed on this page?", answer: "This page contains a professional structure and CMS-ready placeholders. Confirmed categories, deadlines, judges, finalists and winners should be published only after approval." },
+      { question: "Where are confirmed categories and nomination windows published?", answer: "Each active programme publishes its confirmed category, eligibility, evidence requirements and nomination window. If none are active, the programme will show as currently unavailable." },
       { question: "Who can be nominated for IPC awards?", answer: "Eligibility should be defined for each award route and may include members, non-members, students, teams, universities, employers, partners or specific groups depending on the category." },
       { question: "What evidence should a nomination include?", answer: "Strong nominations usually combine a concise narrative, supporting evidence, measurable outcomes, endorsements and clear explanation of relevance to project controls." },
       { question: "Can sponsors influence the judging process?", answer: "No. Sponsorship should be transparent and supportive, but judging should remain independent, evidence-led and safeguarded from commercial influence." },

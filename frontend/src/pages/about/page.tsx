@@ -304,7 +304,7 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            src="https://readdy.ai/api/search-image?query=Majestic%20eagle%20owl%20with%20pronounced%20ear%20tufts%20standing%20in%20powerful%20poised%20stance%2C%20intense%20golden%20orange%20eyes%20piercing%20forward%2C%20warm%20brown%20cream%20and%20charcoal%20feather%20tones%20with%20elegant%20realistic%20detail%2C%20dramatic%20side%20lighting%20with%20gold%20rim%20light%2C%20dark%20sophisticated%20background%2C%20institutional%20dignity%2C%20professional%20wildlife%20photography%2C%20no%20text%20no%20watermark&width=800&height=1000&seq=about-owl-hero-01&orientation=portrait"
+            src="https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/056a6bdb70814779a81249d39bfbd36c.webp"
             alt="Institute owl — wisdom and foresight"
             className="w-full h-full object-contain object-center owl-eye-glow"
           />

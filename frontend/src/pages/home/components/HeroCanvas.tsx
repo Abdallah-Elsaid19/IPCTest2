@@ -4,14 +4,14 @@ import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const dataAnnotations = [
-  { top: "22%", left: "48%", label: "Schedule Confidence 97%" },
-  { top: "44%", left: "42%", label: "Risk Exposure — Tier 1" },
-  { top: "62%", left: "50%", label: "Cost Baseline ±1.8%" },
-  { top: "78%", left: "46%", label: "EAC Forecast £312m" },
+  { top: "22%", left: "48%", label: "Schedule assurance" },
+  { top: "44%", left: "42%", label: "Risk and uncertainty" },
+  { top: "62%", left: "50%", label: "Cost baseline integrity" },
+  { top: "78%", left: "46%", label: "Forecast judgement" },
 ];
 
 export default function HeroCanvas() {
-  const content = useManagedSection("hero", { eyebrow: "Institute of Project Controls", title: "The professional home for Project Controls", description: "A standards-informed, evidence-based pathway for professionals who plan, control, assure and improve project delivery.", cta_label: "Explore recognition", cta_url: "/membership", image_url: "https://readdy.ai/api/search-image?query=Highly%20detailed%20realistic%20extreme%20close-up%20portrait%20of%20a%20majestic%20owl%20with%20one%20large%20piercing%20amber-gold%20eye%20clearly%20visible%20intricate%20layered%20feather%20textures%20in%20charcoal%20grey%20and%20warm%20brown%20tones%20the%20feathers%20gradually%20dissolve%20into%20abstract%20geometric%20dot%20patterns%20toward%20the%20edges%20deep%20black%20background%20with%20subtle%20radial%20rings%20dramatic%20side%20lighting%20casting%20architectural%20shadows%20the%20owl%20appears%20as%20an%20institutional%20symbol%20of%20wisdom%20intelligence%20and%20foresight%20editorial%20photography%20high%20contrast%20moody%20atmosphere&width=1400&height=900&seq=ipc-owl-hero-2026&orientation=landscape", image_alt: "IPC - Institute of Project Controls symbol of wisdom, foresight and professional judgement", annotations: dataAnnotations.map((item) => item.label) });
+  const content = useManagedSection("hero", { eyebrow: "Institute of Project Controls", title: "The professional home for project controls", description: "Professional recognition, learning and community for those who plan, cost, control, assure and improve complex project delivery across planning, schedule, cost, risk, change, data, commercial practice and leadership.", cta_label: "Explore membership and recognition", cta_url: "/membership", image_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/4f05a0f54f8c4bbbab2916e0126a28b9.webp", image_alt: "IPC - Institute of Project Controls symbol of wisdom, foresight and professional judgement", annotations: dataAnnotations.map((item) => item.label) });
   const annotations = content.annotations.map((item, index) => ({ ...dataAnnotations[index % dataAnnotations.length], label: typeof item === "string" ? item : String(item) }));
   const [scrollY, setScrollY] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -33,7 +33,7 @@ export default function HeroCanvas() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full min-h-[100dvh] bg-background-950 overflow-hidden "
+      className="relative w-full min-h-[100svh] overflow-hidden border-2 border-background-800 bg-background-950  sm:min-h-[100dvh] sm:border-0"
     >
       {/* ── Dot Grid Pattern ── */}
       <div className="absolute inset-0 dot-grid-gold opacity-35" />
@@ -42,7 +42,7 @@ export default function HeroCanvas() {
       <div className="absolute inset-0 halftone-map opacity-40" />
 
       {/* ── Gold Radial Arc System ── */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 hidden pointer-events-none sm:block">
         <svg viewBox="0 0 1440 900" preserveAspectRatio="none" className="w-full h-full">
           <circle cx="920" cy="340" r="280" fill="none" stroke="oklch(0.685 0.132 72 / 0.07)" strokeWidth="0.5" strokeDasharray="2 8" />
           <circle cx="920" cy="340" r="240" fill="none" stroke="oklch(0.685 0.132 72 / 0.1)" strokeWidth="0.5" />
@@ -89,7 +89,7 @@ export default function HeroCanvas() {
 
       {/* ── Owl Image — Dominant Visual Anchor ── */}
       <div
-        className="absolute top-0 right-0 w-[58%] h-full transition-transform duration-1000 ease-out"
+        className="absolute inset-x-0 bottom-0 h-[59%] transition-transform duration-1000 ease-out sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:w-[58%]"
         style={{ transform: `translateX(${scrollY * -15}px)` }}
       >
         <div className="relative w-full h-full">
@@ -100,15 +100,15 @@ export default function HeroCanvas() {
             height={900}
             sizes="(max-width: 768px) 100vw, 58vw"
             priority
-            className="w-full h-full object-cover object-left"
+            className="h-full w-full object-cover object-[center_48%] sm:object-left"
           />
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-background-950/30 to-background-950/85" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background-950/50 via-transparent to-background-950/70" />
+          <div className="absolute inset-0 bg-gradient-to-l from-background-950/20 via-transparent to-background-950/75 sm:from-transparent sm:via-background-950/30 sm:to-background-950/85" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background-950 via-background-950/20 to-background-950/55 sm:from-background-950/50 sm:via-transparent sm:to-background-950/70" />
         </div>
       </div>
 
       {/* ── Feather-to-data transition mesh ── */}
-      <div className="absolute inset-y-0 right-[54%] w-[8%] pointer-events-none feather-texture opacity-40" style={{
+      <div className="absolute inset-y-0 right-[54%] hidden w-[8%] pointer-events-none feather-texture opacity-40 sm:block" style={{
         background: "linear-gradient(90deg, oklch(var(--background-950) / 0) 0%, oklch(var(--primary-500) / 0.06) 40%, oklch(var(--primary-500) / 0.02) 100%)"
       }} />
 
@@ -116,7 +116,7 @@ export default function HeroCanvas() {
       {annotations.map((dp, i) => (
         <div
           key={i}
-          className="absolute group cursor-default z-20"
+          className="absolute hidden group cursor-default z-20 sm:block"
           style={{ top: dp.top, left: dp.left }}
         >
           <div className="relative">
@@ -135,35 +135,35 @@ export default function HeroCanvas() {
       ))}
 
       {/* ── Technical Crosshairs ── */}
-      <div className="absolute top-[28%] left-[40%] technical-crosshair opacity-30 z-10" />
-      <div className="absolute top-[55%] left-[36%] technical-crosshair opacity-20 z-10" />
-      <div className="absolute top-[70%] left-[44%] technical-crosshair opacity-25 z-10" />
+      <div className="absolute top-[28%] left-[40%] hidden technical-crosshair opacity-30 z-10 sm:block" />
+      <div className="absolute top-[55%] left-[36%] hidden technical-crosshair opacity-20 z-10 sm:block" />
+      <div className="absolute top-[70%] left-[44%] hidden technical-crosshair opacity-25 z-10 sm:block" />
 
       {/* ── Headline — Integrated into composition ── */}
-      <div className="relative  z-20 flex items-end min-h-[80dvh] pt-20 pb-24 md:pb-32 px-8 md:px-14 lg:px-80 pr-6 md:pr-12 ">
-        <div className="w-full max-w-[600px]  ">
+      <div className="relative z-20 flex min-h-[100svh] items-start px-8 pb-24 pt-[6.1rem] sm:min-h-[80dvh] sm:items-end sm:px-8 sm:pb-24 sm:pt-20 md:px-14 md:pb-32 lg:px-80 lg:pr-12 lg:pt-32">
+        <div className="w-full max-w-[600px]">
           <div
-            className={`mb-8 md:mb-10 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`mb-5 transition-all duration-1000 sm:mb-8 md:mb-10 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
           >
-            <span className="text-[10px] font-mono text-primary-500/70 tracking-[0.3em] uppercase block mb-5">
+            <span className="mb-5 hidden text-[10px] font-mono uppercase tracking-[0.3em] text-primary-500/70 sm:block">
               {content.eyebrow}
             </span>
-            <h1 className="font-heading text-7xl font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em]">
+            <h1 className="max-w-[330px] font-heading text-[clamp(2.5rem,10.8vw,2.75rem)] font-extrabold leading-[0.93] tracking-[-0.045em] text-background-50 sm:max-w-none sm:text-7xl sm:leading-[0.95] sm:tracking-[-0.03em]">
                 {content.title}
             </h1>
           </div>
 
           <div
-            className={`flex flex-col  sm:flex-row sm:items-end gap-6 md:gap-10 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`flex flex-col gap-4 transition-all duration-1000 sm:gap-6 md:gap-10 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "500ms" }}
           >
-            <div className="w-20 gold-rule mb-2 sm:mb-0 sm:self-end mt-0 lg:mt-32" />
-            <p className="max-w-[400px] text-sm font-medium leading-loose text-background-400 md:text-base">
+            <div className="mb-2 hidden w-20 gold-rule sm:block" />
+            <p className="max-w-[315px] text-[13px] font-normal leading-[1.55] text-background-300 sm:max-w-[400px] sm:text-sm sm:font-medium sm:leading-loose md:text-base">
               {content.description}</p>
             <Link
               to={content.cta_url}
-              className="group hidden sm:inline-flex items-center gap-3 px-5 py-3 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-colors duration-400 whitespace-nowrap shrink-0"
+              className="group inline-flex w-fit shrink-0 items-center gap-3 bg-primary-500 px-5 py-3 text-[12px] font-bold tracking-wide text-background-950 transition-colors duration-400 hover:bg-primary-400 sm:text-sm"
             >
               <span>{content.cta_label}</span>
               <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
@@ -172,19 +172,8 @@ export default function HeroCanvas() {
         </div>
       </div>
 
-      {/* ── Mobile CTA ── */}
-      <div className="sm:hidden absolute bottom-16  right-6 z-20">
-        <Link
-          to={content.cta_url}
-          className="inline-flex items-center gap-3 px-5 py-3 bg-primary-500 text-background-950 text-sm font-bold tracking-wide"
-        >
-          <span>{content.cta_label}</span>
-          <i className="ri-arrow-right-line" />
-        </Link>
-      </div>
-
       {/* ── Bottom Edge ── */}
-      <div className="absolute inset-x-0 bottom-28 z-20">
+      <div className="absolute inset-x-0 bottom-20 z-20 hidden sm:block">
         <div className="h-px bg-gradient-to-r from-transparent via-primary-500/30 to-transparent" />
         <div className="flex items-center justify-between px-8 md:px-14 lg:px-20 py-3">
           <span className="text-[9px] font-mono text-background-500 tracking-[0.2em] uppercase">
@@ -194,6 +183,15 @@ export default function HeroCanvas() {
             Discover
           </span>
         </div>
+      </div>
+      <div className="absolute inset-x-8 bottom-5 z-20 flex items-center gap-4 sm:hidden">
+        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-background-600/60">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_oklch(var(--primary-500))]" />
+        </span>
+        <span className="font-mono text-[8px] uppercase tracking-[0.3em] text-background-300">Scroll</span>
+        <span className="h-5 w-px bg-background-700/70" />
+        <span className="whitespace-nowrap font-mono text-[8px] uppercase tracking-[0.28em] text-primary-500">Focus • Control • Impact</span>
+        <span className="h-px min-w-4 flex-1 bg-background-700/50" />
       </div>
     </section>
   );

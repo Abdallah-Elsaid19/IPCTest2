@@ -4,6 +4,16 @@ import { apiJson } from "@/lib/api";
 import { subscribeToContentUpdates, type ContentPageSlug } from "@/lib/contentSync";
 
 type ManagedContent = Record<string, unknown>;
+const INTERNAL_CONTENT_PATTERN = /\bCMS-ready\b|\bplaceholder(?:s)?\b|\breplace this\b|\[confirmed|managed in CMS/i;
+
+function sanitisePublicContent<T>(value: T): T {
+  if (typeof value === "string") return (INTERNAL_CONTENT_PATTERN.test(value) ? "" : value) as T;
+  if (Array.isArray(value)) return value.map(sanitisePublicContent) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitisePublicContent(item)])) as T;
+  }
+  return value;
+}
 
 const ManagedContentContext = createContext<ManagedContent>({});
 
@@ -35,7 +45,16 @@ export function ManagedContentProvider({ endpoint, slug, children }: { endpoint:
 export function useManagedSection<T>(name: string, fallback: T): T {
   const content = useContext(ManagedContentContext);
   const value = content[name];
-  return value && typeof value === "object" ? value as T : fallback;
+  if (!value || typeof value !== "object") return fallback;
+  if (
+    !Array.isArray(value)
+    && !Array.isArray(fallback)
+    && fallback
+    && typeof fallback === "object"
+  ) {
+    return sanitisePublicContent({ ...(fallback as Record<string, unknown>), ...(value as Record<string, unknown>) }) as T;
+  }
+  return sanitisePublicContent(value as T);
 }
 
 export function isManagedItemActive(item: unknown): boolean {

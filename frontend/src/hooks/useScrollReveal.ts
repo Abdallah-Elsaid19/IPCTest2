@@ -28,7 +28,7 @@ export default function useScrollReveal(threshold = 0.1) {
       observer.observe(element);
     };
 
-    const registerTree = (root: ParentNode) => {
+    const registerTree = (root: Document | Element) => {
       if (root instanceof Element && root.matches(selector)) register(root);
       root.querySelectorAll(selector).forEach(register);
     };
