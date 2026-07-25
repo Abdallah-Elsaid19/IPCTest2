@@ -92,9 +92,9 @@ TIME_ZONE = "Europe/London"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -164,7 +164,7 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="office@instituteofprojec
 IPC_REVIEW_EMAIL = env("IPC_REVIEW_EMAIL", default=DEFAULT_FROM_EMAIL)
 EVENT_SUPPORT_EMAIL = env("EVENT_SUPPORT_EMAIL", default=IPC_REVIEW_EMAIL)
 FRONTEND_URL = env("FRONTEND_URL", default="https://localhost:5173")
-IPC_ACCOUNT_EMAIL_DOMAIN = env("IPC_ACCOUNT_EMAIL_DOMAIN", default="ipc.invalid")
+IPC_ACCOUNT_EMAIL_DOMAIN = env("IPC_ACCOUNT_EMAIL_DOMAIN", default="ipc.com")
 
 GRAPH_TENANT_ID = env("GRAPH_TENANT_ID", default="")
 GRAPH_CLIENT_ID = env("GRAPH_CLIENT_ID", default="")
@@ -176,6 +176,7 @@ EMAIL_COOLDOWN_MINUTES = env.int("EMAIL_COOLDOWN_MINUTES", default=5)
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = "Lax"

@@ -313,7 +313,7 @@ class AdminApplicationApiTests(TestCase):
         user = self.application.approved_user
         self.assertIsNotNone(user)
         self.assertEqual(user.membership_application, self.application)
-        self.assertEqual(user.email, "nora.ali@ipc.invalid")
+        self.assertEqual(user.email, "nora.ali@ipc.com")
         self.assertEqual(user.username, "nora.ali")
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
@@ -328,7 +328,7 @@ class AdminApplicationApiTests(TestCase):
         mail_kwargs = self.send_welcome_email.call_args.kwargs
         self.assertEqual(mail_kwargs["recipient"], "nora@example.com")
         self.assertEqual(mail_kwargs["username"], "nora.ali")
-        self.assertEqual(mail_kwargs["ipc_email"], "nora.ali@ipc.invalid")
+        self.assertEqual(mail_kwargs["ipc_email"], "nora.ali@ipc.com")
         self.assertEqual(
             mail_kwargs["application_reference"],
             self.application.application_reference,
@@ -362,7 +362,7 @@ class AdminApplicationApiTests(TestCase):
     def test_duplicate_ipc_email_gets_unique_suffix(self):
         get_user_model().objects.create_user(
             username="existing-email-owner",
-            email="nora.ali@ipc.invalid",
+            email="nora.ali@ipc.com",
             password="test",
         )
         self.client.force_authenticate(self.admin)
@@ -373,7 +373,7 @@ class AdminApplicationApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200, response.data)
         self.application.refresh_from_db()
-        self.assertEqual(self.application.approved_user.email, "nora.ali2@ipc.invalid")
+        self.assertEqual(self.application.approved_user.email, "nora.ali2@ipc.com")
 
     def test_one_user_cannot_be_linked_to_multiple_applications(self):
         self.client.force_authenticate(self.admin)

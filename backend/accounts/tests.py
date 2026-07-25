@@ -478,7 +478,7 @@ class AdminUserManagementApiTests(APITestCase):
     def test_reset_request_rejects_unknown_ipc_email(self, send_email):
         response = self.client.post(
             "/api/auth/password-reset/request",
-            {"email": "missing@ipc.invalid"},
+            {"email": "missing@ipc.com"},
             format="json",
         )
 
@@ -488,7 +488,7 @@ class AdminUserManagementApiTests(APITestCase):
 
     @patch("accounts.user_management.send_password_reset_email")
     def test_reset_request_requires_personal_email_for_managed_ipc_account(self, send_email):
-        self.member.email = "existing.member@ipc.invalid"
+        self.member.email = "existing.member@ipc.com"
         self.member.save(update_fields=["email"])
 
         response = self.client.post(
@@ -521,7 +521,7 @@ class MembershipWelcomeMailTests(SimpleTestCase):
             application_reference="IPC-REFERENCE01",
             membership_grade="MIPC",
             username="nora.ali",
-            ipc_email="nora@ipc.invalid",
+            ipc_email="nora@ipc.com",
             reset_url="https://ipc.example.com/reset-password?uid=abc&token=secure-token",
         )
 
@@ -537,7 +537,7 @@ class MembershipWelcomeMailTests(SimpleTestCase):
         html = message.get_body(preferencelist=("html",)).get_content()
         for content in (plain, html):
             self.assertIn("IPC-REFERENCE01", content)
-            self.assertIn("nora@ipc.invalid", content)
+            self.assertIn("nora@ipc.com", content)
             self.assertIn("nora.ali", content)
             self.assertIn("reset-password", content)
             self.assertNotIn("PlainTextPassword123", content)
