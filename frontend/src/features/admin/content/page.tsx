@@ -21,6 +21,7 @@ import { adminApi } from "@/features/admin/adminApi";
 import {
   AdminPageHeader,
   AdminPageState,
+  ClearFiltersButton,
   EmptyState,
   StatusBadge,
 } from "@/features/admin/components/AdminPage";
@@ -400,6 +401,7 @@ function ContentSectionPanel({
     (safePage - 1) * CONTENT_ITEMS_PER_PAGE,
     safePage * CONTENT_ITEMS_PER_PAGE,
   );
+  const hasActiveFilters = Boolean(search.trim() || status);
 
   useEffect(() => {
     setPage(1);
@@ -436,7 +438,7 @@ function ContentSectionPanel({
           )}
         </div>
       </div>
-      <div className="grid gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-4 md:grid-cols-[minmax(240px,1fr)_190px]">
+      <div className="grid gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-4 md:grid-cols-[minmax(240px,1fr)_190px_auto]">
         <label className="relative">
           <span className="sr-only">Search {formatLabel(section)}</span>
           <Search
@@ -460,6 +462,16 @@ function ContentSectionPanel({
           <option value="true">Active</option>
           <option value="false">Inactive</option>
         </select>
+        {hasActiveFilters && (
+          <ClearFiltersButton
+            className="h-11"
+            onClick={() => {
+              setSearch("");
+              setStatus("");
+              setPage(1);
+            }}
+          />
+        )}
       </div>
       {visibleItems.length > 0 ? (
         <div className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">

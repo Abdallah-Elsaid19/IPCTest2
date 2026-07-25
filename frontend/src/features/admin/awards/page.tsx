@@ -7,7 +7,7 @@ import AwardCategoryDetailsModal from "@/features/admin/awards/AwardCategoryDeta
 import AwardCategoryFormModal from "@/features/admin/awards/AwardCategoryFormModal";
 import AwardProgrammeDetailsModal from "@/features/admin/awards/AwardProgrammeDetailsModal";
 import AwardProgrammeFormModal from "@/features/admin/awards/AwardProgrammeFormModal";
-import { AdminPageHeader, AdminPageState, EmptyState, StatusBadge } from "@/features/admin/components/AdminPage";
+import { AdminPageHeader, AdminPageState, ClearFiltersButton, EmptyState, StatusBadge } from "@/features/admin/components/AdminPage";
 import type {
   AdminAwardCategory,
   AdminAwardProgramme,
@@ -165,6 +165,7 @@ export default function AdminAwardsPage() {
   }, [programmeCategory, programmeSearch, programmeStatus, programmes]);
   const programmePageCount = Math.max(1, Math.ceil(filteredProgrammes.length / ITEMS_PER_PAGE));
   const visibleProgrammes = filteredProgrammes.slice((programmePage - 1) * ITEMS_PER_PAGE, programmePage * ITEMS_PER_PAGE);
+  const hasProgrammeFilters = Boolean(programmeSearch.trim() || programmeCategory || programmeStatus);
 
   const filteredCategories = useMemo(() => {
     const search = categorySearch.trim().toLowerCase();
@@ -181,6 +182,7 @@ export default function AdminAwardsPage() {
   }, [categories, categorySearch, categoryStatus]);
   const categoryPageCount = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
   const visibleCategories = filteredCategories.slice((categoryPage - 1) * ITEMS_PER_PAGE, categoryPage * ITEMS_PER_PAGE);
+  const hasCategoryFilters = Boolean(categorySearch.trim() || categoryStatus);
 
   useEffect(() => { setProgrammePage(1); }, [programmeSearch, programmeCategory, programmeStatus]);
   useEffect(() => { setCategoryPage(1); }, [categorySearch, categoryStatus]);
@@ -211,10 +213,11 @@ export default function AdminAwardsPage() {
 
           {activeTab === "programmes" && (
             <section className="mt-6 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#F7F0E7] shadow-[0_8px_25px_rgba(66,48,31,0.06)]">
-            <div className="grid gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-4 md:grid-cols-[minmax(240px,1fr)_220px_180px]">
+            <div className="grid gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-4 md:grid-cols-[minmax(240px,1fr)_220px_180px_auto]">
               <label className="relative"><span className="sr-only">Search programmes</span><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8178]"/><input value={programmeSearch} onChange={(event) => setProgrammeSearch(event.target.value)} placeholder="Search programmes..." className="h-11 w-full rounded-xl border border-[#D8CCBD] bg-white pl-10 pr-4 text-sm outline-none focus:border-primary-500"/></label>
               <select value={programmeCategory} onChange={(event) => setProgrammeCategory(event.target.value)} aria-label="Filter by category" className="h-11 rounded-xl border border-[#D8CCBD] bg-white px-3 text-sm outline-none focus:border-primary-500"><option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.title}</option>)}</select>
               <select value={programmeStatus} onChange={(event) => setProgrammeStatus(event.target.value)} aria-label="Filter by programme status" className="h-11 rounded-xl border border-[#D8CCBD] bg-white px-3 text-sm outline-none focus:border-primary-500"><option value="">All statuses</option><option value="true">Active</option><option value="false">Inactive</option></select>
+              {hasProgrammeFilters && <ClearFiltersButton className="h-11" onClick={() => { setProgrammeSearch(""); setProgrammeCategory(""); setProgrammeStatus(""); setProgrammePage(1); }}/>}
             </div>
             <div className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
               {visibleProgrammes.map((programme) => (
@@ -235,9 +238,10 @@ export default function AdminAwardsPage() {
 
           {activeTab === "categories" && (
             <section className="mt-6 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#F7F0E7] shadow-[0_8px_25px_rgba(66,48,31,0.06)]">
-            <div className="grid gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-4 md:grid-cols-[minmax(240px,1fr)_180px]">
+            <div className="grid gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-4 md:grid-cols-[minmax(240px,1fr)_180px_auto]">
               <label className="relative"><span className="sr-only">Search categories</span><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8178]"/><input value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} placeholder="Search categories..." className="h-11 w-full rounded-xl border border-[#D8CCBD] bg-white pl-10 pr-4 text-sm outline-none focus:border-primary-500"/></label>
               <select value={categoryStatus} onChange={(event) => setCategoryStatus(event.target.value)} aria-label="Filter by category status" className="h-11 rounded-xl border border-[#D8CCBD] bg-white px-3 text-sm outline-none focus:border-primary-500"><option value="">All statuses</option><option value="true">Active</option><option value="false">Inactive</option></select>
+              {hasCategoryFilters && <ClearFiltersButton className="h-11" onClick={() => { setCategorySearch(""); setCategoryStatus(""); setCategoryPage(1); }}/>}
             </div>
             <div className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
               {visibleCategories.map((category) => (

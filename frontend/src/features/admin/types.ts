@@ -333,3 +333,10 @@ export interface PaginatedAdminApplications {
   previous: string | null;
   results: DashboardApplication[];
 }
+
+export interface PaginatedAdminEnquiries {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: DashboardEnquiry[];
+}

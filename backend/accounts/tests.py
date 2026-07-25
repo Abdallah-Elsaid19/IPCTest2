@@ -1,6 +1,7 @@
 import base64
 import html as html_lib
 import re
+from datetime import timedelta
 from io import BytesIO
 from email import policy
 from email.parser import BytesParser
@@ -229,10 +230,64 @@ class AdminDashboardApiTests(APITestCase):
         response = self.client.get("/api/admin/enquiries")
 
         self.assertEqual(response.status_code, 200, response.data)
-        award_rows = [item for item in response.data if item["type"] == "award"]
+        award_rows = [item for item in response.data["results"] if item["type"] == "award"]
         self.assertEqual(len(award_rows), 1)
         self.assertEqual(award_rows[0]["id"], str(award_enquiry.pk))
         self.assertEqual(award_rows[0]["email"], award_enquiry.email)
+
+    def test_enquiry_list_is_paginated_ten_per_page(self):
+        for index in range(11):
+            ContactSubmission.objects.create(
+                name=f"Contact {index}",
+                email=f"contact-{index}@example.com",
+                category="General",
+                message="Pagination test",
+            )
+        self.client.force_authenticate(self.staff)
+
+        first_page = self.client.get("/api/admin/enquiries")
+        second_page = self.client.get("/api/admin/enquiries", {"page": 2})
+
+        self.assertEqual(first_page.status_code, 200, first_page.data)
+        self.assertEqual(first_page.data["count"], 13)
+        self.assertEqual(len(first_page.data["results"]), 10)
+        self.assertIsNotNone(first_page.data["next"])
+        self.assertIsNone(first_page.data["previous"])
+        self.assertEqual(second_page.status_code, 200, second_page.data)
+        self.assertEqual(len(second_page.data["results"]), 3)
+        self.assertIsNone(second_page.data["next"])
+        self.assertIsNotNone(second_page.data["previous"])
+
+    def test_enquiry_list_filters_by_source_status_and_date(self):
+        contacted = ContactSubmission.objects.create(
+            name="Contacted person",
+            email="contacted@example.com",
+            category="Membership",
+            message="Already answered",
+            status=ContactSubmission.Status.CONTACTED,
+        )
+        old_contact = ContactSubmission.objects.create(
+            name="Old contact",
+            email="old-contact@example.com",
+            category="General",
+            message="Old enquiry",
+        )
+        ContactSubmission.objects.filter(pk=old_contact.pk).update(
+            created_at=timezone.now() - timedelta(days=2),
+        )
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get("/api/admin/enquiries", {
+            "source": "contact",
+            "status": "contacted",
+            "date": timezone.localdate().isoformat(),
+        })
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], str(contacted.pk))
+        self.assertEqual(response.data["results"][0]["type"], "contact")
+        self.assertEqual(response.data["results"][0]["status"], "contacted")
 
     @patch("accounts.dashboard.send_enquiry_reply_email")
     def test_staff_can_reply_to_contact_enquiry(self, send_reply):
@@ -246,9 +301,12 @@ class AdminDashboardApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["status"], ContactSubmission.Status.CONTACTED)
         enquiry.refresh_from_db()
-        self.assertEqual(enquiry.status, ContactSubmission.Status.IN_PROGRESS)
+        self.assertEqual(enquiry.status, ContactSubmission.Status.CONTACTED)
+        self.assertTrue(enquiry.handled)
         self.assertEqual(enquiry.handled_by, self.staff)
+        self.assertIsNotNone(enquiry.handled_at)
         self.assertEqual(send_reply.call_args.kwargs["recipient"], enquiry.email)
         self.assertEqual(send_reply.call_args.kwargs["administrator_name"], "dashboard.admin")
 

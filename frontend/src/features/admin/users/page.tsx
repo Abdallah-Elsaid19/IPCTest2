@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { adminApi, type AdminUserQuery } from "@/features/admin/adminApi";
 import {
   AdminPageHeader,
+  ClearFiltersButton,
   EmptyState,
 } from "@/features/admin/components/AdminPage";
 import type {
@@ -162,6 +163,7 @@ export default function AdminUsersPage() {
   };
 
   const pageCount = Math.max(1, Math.ceil((result?.count || 0) / 10));
+  const hasActiveFilters = Boolean(search.trim() || filters.active || filters.role);
   const selectClass =
     "h-10 rounded-xl border border-[#D9CDBE] bg-white px-3 text-xs font-semibold text-[#4F4841] outline-none focus:border-primary-500";
 
@@ -243,6 +245,15 @@ export default function AdminUsersPage() {
               <option value="admin">Admin</option>
               <option value="user">User</option>
             </select>
+            {hasActiveFilters && (
+              <ClearFiltersButton
+                onClick={() => {
+                  setSearch("");
+                  setFilters({ active: "", role: "" });
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
         </div>
 

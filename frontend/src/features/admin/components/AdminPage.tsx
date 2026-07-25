@@ -144,3 +144,21 @@ export function EmptyState({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+export function ClearFiltersButton({
+  onClick,
+  className = "",
+}: {
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-10 rounded-xl px-3 text-xs font-bold text-primary-800 transition-colors hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 ${className}`}
+    >
+      Clear filters
+    </button>
+  );
+}

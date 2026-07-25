@@ -6,6 +6,7 @@ class ContactSubmission(models.Model):
     class Status(models.TextChoices):
         NEW = "new", "New"
         IN_PROGRESS = "in_progress", "In progress"
+        CONTACTED = "contacted", "Contacted"
         HANDLED = "handled", "Handled"
         SPAM = "spam", "Spam"
 

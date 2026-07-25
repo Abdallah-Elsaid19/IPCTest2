@@ -9,9 +9,11 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from requests import RequestException
 from rest_framework import serializers, status
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.utils.urls import remove_query_param, replace_query_param
 from rest_framework.views import APIView
 
 from applications.models import Application
@@ -115,8 +117,8 @@ def _status_counts():
     return application_counts, enquiry_counts
 
 
-def _enquiries(limit=None):
-    sql = f"""
+def _enquiry_union():
+    return f"""
         SELECT CAST(id AS TEXT), %s AS source, name, email, category AS subject, status, created_at
         FROM {_table(ContactSubmission)}
         UNION ALL
@@ -128,18 +130,48 @@ def _enquiries(limit=None):
                COALESCE(programme.title, interest.interest_type), interest.status, interest.created_at
         FROM {_table(AwardsInterest)} interest
         LEFT JOIN {_table(AwardProgramme)} programme ON programme.id = interest.programme_id
-        ORDER BY created_at DESC
-    """
-    params = ["contact", "club", "Club enquiry", "General clubs enquiry", "award"]
+    """, ["contact", "club", "Club enquiry", "General clubs enquiry", "award"]
+
+
+def _enquiry_filter_sql(filters):
+    clauses = []
+    params = []
+    if filters.get("source"):
+        clauses.append("source = %s")
+        params.append(filters["source"])
+    if filters.get("status"):
+        clauses.append("status = %s")
+        params.append(filters["status"])
+    if filters.get("date"):
+        clauses.append("DATE(created_at) = %s")
+        params.append(filters["date"])
+    return (" WHERE " + " AND ".join(clauses) if clauses else ""), params
+
+
+def _enquiries(limit=None, offset=0, filters=None):
+    union_sql, params = _enquiry_union()
+    filter_sql, filter_params = _enquiry_filter_sql(filters or {})
+    sql = f"SELECT * FROM ({union_sql}) combined_enquiries{filter_sql} ORDER BY created_at DESC"
+    params.extend(filter_params)
     if limit is not None:
-        sql += " LIMIT %s"
-        params.append(limit)
+        sql += " LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return [{
             "id": row[0], "type": row[1], "name": row[2], "email": row[3],
             "subject": row[4], "status": row[5], "created_at": _iso(row[6]),
         } for row in cursor.fetchall()]
+
+
+def _enquiries_count(filters=None):
+    union_sql, params = _enquiry_union()
+    filter_sql, filter_params = _enquiry_filter_sql(filters or {})
+    sql = f"SELECT COUNT(*) FROM ({union_sql}) combined_enquiries{filter_sql}"
+    params.extend(filter_params)
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+        return cursor.fetchone()[0]
 
 
 def _recent_enquiries():
@@ -210,6 +242,22 @@ class EnquiryReplySerializer(serializers.Serializer):
 
     def validate_message(self, value):
         return clean_text(value)
+
+
+class EnquiryListFilterSerializer(serializers.Serializer):
+    source = serializers.ChoiceField(
+        choices=["contact", "club", "award"],
+        required=False,
+    )
+    status = serializers.ChoiceField(
+        choices=sorted({
+            *ContactSubmission.Status.values,
+            *ClubEnquiry.Status.values,
+            *AwardsInterest.Status.values,
+        }),
+        required=False,
+    )
+    date = serializers.DateField(required=False)
 
 
 def _enquiry_for_reply(source, enquiry_id):
@@ -296,12 +344,46 @@ class AdminEnquiryDetailView(APIView):
 
 
 class AdminEnquiryListView(APIView):
-    """Return all enquiries from contact, clubs and awards in one ordered list."""
+    """Return paginated contact, club and award enquiries in one ordered list."""
 
     permission_classes = [IsAdminUser]
+    page_size = 10
 
     def get(self, request):
-        return Response(_enquiries())
+        filter_serializer = EnquiryListFilterSerializer(data=request.query_params)
+        filter_serializer.is_valid(raise_exception=True)
+        filters = filter_serializer.validated_data
+
+        raw_page = request.query_params.get("page", 1)
+        try:
+            page = int(raw_page)
+            if page < 1:
+                raise ValueError
+        except (TypeError, ValueError) as error:
+            raise NotFound("Invalid page.") from error
+
+        count = _enquiries_count(filters)
+        offset = (page - 1) * self.page_size
+        results = _enquiries(limit=self.page_size, offset=offset, filters=filters)
+        current_url = request.build_absolute_uri()
+        next_url = (
+            replace_query_param(current_url, "page", page + 1)
+            if offset + len(results) < count
+            else None
+        )
+        if page <= 1:
+            previous_url = None
+        elif page == 2:
+            previous_url = remove_query_param(current_url, "page")
+        else:
+            previous_url = replace_query_param(current_url, "page", page - 1)
+
+        return Response({
+            "count": count,
+            "next": next_url,
+            "previous": previous_url,
+            "results": results,
+        })
 
 
 class AdminEnquiryReplyView(APIView):
@@ -341,10 +423,11 @@ class AdminEnquiryReplyView(APIView):
             )
 
         if source == "contact":
-            enquiry.status = ContactSubmission.Status.IN_PROGRESS
+            enquiry.status = ContactSubmission.Status.CONTACTED
+            enquiry.handled = True
             enquiry.handled_by = request.user
             enquiry.handled_at = timezone.now()
-            enquiry.save(update_fields=["status", "handled_by", "handled_at"])
+            enquiry.save(update_fields=["status", "handled", "handled_by", "handled_at"])
         elif source == "club":
             enquiry.status = ClubEnquiry.Status.CONTACTED
             enquiry.save(update_fields=["status", "updated_at"])

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "@/features/admin/adminApi";
 import {
   AdminPageHeader,
+  ClearFiltersButton,
   EmptyState,
   StatusBadge,
 } from "@/features/admin/components/AdminPage";
@@ -60,6 +61,7 @@ export default function AdminMembershipGradesPage() {
     void load();
   }, [load]);
   const normalized = search.trim().toLowerCase();
+  const hasActiveFilters = Boolean(normalized || active);
   const filtered = grades.filter(
     (grade) =>
       (!normalized ||
@@ -171,6 +173,15 @@ export default function AdminMembershipGradesPage() {
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
+            {hasActiveFilters && (
+              <ClearFiltersButton
+                onClick={() => {
+                  setSearch("");
+                  setActive("");
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
           {visible.length ? (
             <div className="grid gap-6 p-5 md:grid-cols-2 xl:grid-cols-3">

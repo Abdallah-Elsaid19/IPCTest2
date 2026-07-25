@@ -18,6 +18,7 @@ import {
 import ApplicationStatusModal from "@/features/admin/applications/ApplicationStatusModal";
 import {
   AdminPageHeader,
+  ClearFiltersButton,
   EmptyState,
   StatusBadge,
 } from "@/features/admin/components/AdminPage";
@@ -134,6 +135,7 @@ export default function AdminApplicationsPage() {
   };
 
   const pageCount = Math.max(1, Math.ceil((result?.count || 0) / 10));
+  const hasActiveFilters = Boolean(search.trim() || filters.status || filters.grade);
   const selectClass =
     "h-10 rounded-xl border border-[#D9CDBE] bg-white px-3 text-xs font-semibold text-[#4F4841] outline-none focus:border-primary-500";
 
@@ -214,6 +216,15 @@ export default function AdminApplicationsPage() {
               <option value="AFIPC_L4">AFIPC L4</option>
               <option value="FIPC">FIPC</option>
             </select>
+            {hasActiveFilters && (
+              <ClearFiltersButton
+                onClick={() => {
+                  setSearch("");
+                  setFilters({ status: "", grade: "" });
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
         </div>
 

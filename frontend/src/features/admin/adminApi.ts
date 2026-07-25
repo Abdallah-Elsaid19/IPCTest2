@@ -21,6 +21,7 @@ import type {
   DashboardRegistration,
   EventbriteAttendeeResponse,
   PaginatedAdminApplications,
+  PaginatedAdminEnquiries,
   PaginatedAdminNotifications,
   PaginatedAdminUsers,
 } from "./types";
@@ -38,6 +39,13 @@ export interface AdminApplicationQuery {
   search?: string;
   status?: "" | ApplicationStatus;
   grade?: "" | "AffIPC" | "MIPC" | "AFIPC_L3" | "AFIPC_L4" | "FIPC";
+}
+
+export interface AdminEnquiryQuery {
+  page?: number;
+  source?: "" | DashboardEnquiry["type"];
+  status?: string;
+  date?: string;
 }
 
 let eventbriteAttendeeCache: DashboardRegistration[] | null = null;
@@ -100,8 +108,18 @@ export const adminApi = {
       {},
       { method: "PATCH" },
     ),
-  enquiries: (signal?: AbortSignal) =>
-    apiJson<DashboardEnquiry[]>("/api/admin/enquiries", undefined, { signal }),
+  enquiries: (query: AdminEnquiryQuery = {}, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    params.set("page", String(query.page || 1));
+    if (query.source) params.set("source", query.source);
+    if (query.status) params.set("status", query.status);
+    if (query.date) params.set("date", query.date);
+    return apiJson<PaginatedAdminEnquiries>(
+      `/api/admin/enquiries?${params.toString()}`,
+      undefined,
+      { signal },
+    );
+  },
   replyToEnquiry: (source: DashboardEnquiry["type"], id: string, message: string) =>
     apiJson<{ detail: string; status: string }>(
       `/api/admin/enquiries/${source}/${id}/reply`,

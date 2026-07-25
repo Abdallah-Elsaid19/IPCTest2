@@ -18,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { adminApi } from "@/features/admin/adminApi";
-import { AdminPageHeader, EmptyState, StatusBadge } from "@/features/admin/components/AdminPage";
+import { AdminPageHeader, ClearFiltersButton, EmptyState, StatusBadge } from "@/features/admin/components/AdminPage";
 import EventFormModal from "@/features/admin/events/EventFormModal";
 import type { AdminEvent, AdminEventPayload, DashboardRegistration } from "@/features/admin/types";
 import { formatDate } from "@/features/admin/utils";
@@ -382,6 +382,15 @@ export default function AdminEventsPage() {
     const matchesEvent = !registrationEvent || item.event_name === registrationEvent;
     return matchesSearch && matchesSource && matchesStatus && matchesEvent;
   });
+  const hasEventFilters = Boolean(
+    eventSearch.trim() || eventSource || eventType || eventVisibility,
+  );
+  const hasRegistrationFilters = Boolean(
+    registrationSearch.trim()
+      || registrationSource
+      || registrationStatus
+      || registrationEvent,
+  );
   const eventPageCount = Math.max(1, Math.ceil(filteredEvents.length / EVENTS_PER_PAGE));
   const registrationPageCount = Math.max(
     1,
@@ -429,6 +438,7 @@ export default function AdminEventsPage() {
               <select value={eventSource} onChange={(changeEvent) => { setEventSource(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event source"><option value="">All sources</option><option value="local">IPC local</option><option value="eventbrite">Eventbrite</option></select>
               <select value={eventType} onChange={(changeEvent) => { setEventType(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event type"><option value="">All event types</option><option value="london_master_class">London Master Class</option><option value="regional_club">Regional Club</option><option value="other">Other</option></select>
               <select value={eventVisibility} onChange={(changeEvent) => { setEventVisibility(changeEvent.target.value); setEventPage(1); }} className={filterControlClass} aria-label="Filter event visibility"><option value="">All visibility</option><option value="visible">Visible on site</option><option value="hidden">Hidden from site</option><option value="draft">Draft / unpublished</option><option value="ended">Ended</option></select>
+              {hasEventFilters && <ClearFiltersButton onClick={() => { setEventSearch(""); setEventSource(""); setEventType(""); setEventVisibility(""); setEventPage(1); }}/>}
             </div>
           </div>
           {visibleEvents.length ? <div className="grid gap-6 p-5 md:grid-cols-2 2xl:grid-cols-3">
@@ -452,6 +462,7 @@ export default function AdminEventsPage() {
             <select value={registrationSource} onChange={(changeEvent) => { setRegistrationSource(changeEvent.target.value); setRegistrationPage(1); }} className={filterControlClass} aria-label="Filter registration source"><option value="">All sources</option><option value="ipc">IPC website</option><option value="eventbrite">Eventbrite</option></select>
             <select value={registrationStatus} onChange={(changeEvent) => { setRegistrationStatus(changeEvent.target.value); setRegistrationPage(1); }} className={filterControlClass} aria-label="Filter registration status"><option value="">All statuses</option>{registrationStatusOptions.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}</select>
             <select value={registrationEvent} onChange={(changeEvent) => { setRegistrationEvent(changeEvent.target.value); setRegistrationPage(1); }} className={`${filterControlClass} max-w-56`} aria-label="Filter registration event"><option value="">All events</option>{registrationEventOptions.map((eventName) => <option key={eventName} value={eventName}>{eventName}</option>)}</select>
+            {hasRegistrationFilters && <ClearFiltersButton onClick={() => { setRegistrationSearch(""); setRegistrationSource(""); setRegistrationStatus(""); setRegistrationEvent(""); setRegistrationPage(1); }}/>}
           </div>
         </div>
         {attendeesError && <p className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-xs font-semibold text-amber-800">Local registrations are shown, but Eventbrite attendees are unavailable: {attendeesError}</p>}
