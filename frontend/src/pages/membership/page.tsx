@@ -8,6 +8,7 @@ import { ManagedContentProvider, useManagedSection } from "@/components/content/
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 import MembershipComparisonTable from "@/pages/membership/components/MembershipComparisonTable";
+import MembershipCompetenceMatrix from "@/pages/membership/components/MembershipCompetenceMatrix";
 import MembershipValuePathway from "@/pages/membership/components/MembershipValuePathway";
 import OrganisationalMembership from "@/pages/membership/components/OrganisationalMembership";
 import ApplicationJourney from "@/pages/membership/components/ApplicationJourney";
@@ -253,6 +254,8 @@ export default function Membership() {
       </section>
 
       <MembershipComparisonTable />
+
+      <MembershipCompetenceMatrix />
 
       <MembershipValuePathway />
 

@@ -108,11 +108,12 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whoIsItFor: {
       title: "Who is it for?",
       paragraphs: [
-        "Whether you have just joined the profession or are exploring a career change into project controls, we understand how important your first professional step is. We are here to support your journey from the very beginning.",
-        "As the entry point to the Institute, Affiliate membership provides the tools and resources you need to grow your understanding and invest in your future career.",
+        "Affiliate Membership is designed for students, graduates, apprentices, career changers and early-career professionals who want to explore project controls and begin building a credible professional pathway.",
+        "It is also suitable for people already working in projects, engineering, construction, infrastructure, energy or business who want to understand how planning, cost, risk, change and performance control work together.",
+        "No advanced project controls experience is required. What matters is your interest in the discipline, your commitment to professional development and your willingness to learn, connect and grow within the Institute’s community.",
       ],
       highlight:
-        "Unlock professional value from expert-led learning, guides, tools and templates, and community networking.",
+        "Build your foundation through expert-led learning, practical guides, tools and templates, professional events, and a supportive project controls network.",
     },
     howToApply: {
       intro: "Enter your details to begin your membership subscription.",
@@ -184,12 +185,11 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       ],
     },
     whySection: {
-      title: "Why Affiliate membership?",
+      title: "Why Affiliate Membership?",
       paragraphs: [
-        "Our Affiliate membership provides easy-to-access resources and tools for your professional development so you can identify strengths and areas for learning.",
-        "You might be looking to excel in your current role or build the skills you need to take the next step. As an Affiliate we provide you with the most relevant and up-to-date information about all aspects of the project controls profession through our IPC Community and our e-learning platform.",
-        "You will receive the IPC Project Journal, our quarterly publication showcasing latest news and inspirational stories. You will have the opportunity to network at member events, be mentored by other experienced professionals, and make an impact by having a voice through our forums.",
-        "You will belong to a growing, global community of project controls professionals who want to learn more and share their knowledge, taking pride in being part of the profession that is making a difference.",
+        "Affiliate Membership provides a credible starting point for students, graduates, career changers and emerging professionals who want to begin their journey in project controls.",
+        "It helps you understand the discipline, access learning and professional events, connect with the Institute community and build confidence in your future career direction.",
+        "As an Affiliate Member, you can demonstrate your commitment to learning, ethical conduct and professional development while preparing for higher membership and recognition grades.",
       ],
       testimonial: {
         quote:
@@ -263,11 +263,12 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whoIsItFor: {
       title: "Who is it for?",
       paragraphs: [
-        "Whether you are an established project controls practitioner or a related professional active in project delivery, we understand how important your career credibility is. We are here to support your recognition.",
-        "As a professional member of the Institute, you gain visible membership identity, structured CPD and a clear pathway to Associate Fellowship and beyond.",
+        "Professional Membership is for practitioners already working in project delivery, project controls or related disciplines who want stronger professional recognition.",
+        "It is suitable for planners, schedulers, PMO analysts, cost controllers, project coordinators, engineers, consultants and commercial professionals.",
+        "Through MIPC, members gain a visible professional identity, structured CPD and a clear pathway to Associate Fellowship and Fellowship.",
       ],
       highlight:
-        "Build professional credibility with visible membership, CPD structure and awards pathway.",
+        "Strengthen your professional credibility through recognised membership, CPD and career progression.",
     },
     howToApply: {
       intro: "Enter your details to begin your membership subscription.",
@@ -335,11 +336,11 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       ],
     },
     whySection: {
-      title: "Why Professional membership?",
+      title: "Why Professional Membership?",
       paragraphs: [
-        "Our Professional membership provides a visible, credible professional identity for practitioners and related professionals active in project controls or project delivery.",
-        "You might be looking to strengthen your professional standing, build a structured CPD record or prepare for Associate Fellowship. As a Professional Member you get the most relevant resources, community support and recognition pathway to advance your career.",
-        "You will receive the IPC Project Journal, access to our online development platform, and the opportunity to contribute to thought leadership and publications. You will have the chance to network at member events, mentor others and be part of a growing professional community.",
+        "Professional Membership recognises practitioners who are already contributing to project delivery, project controls or related professional roles.",
+        "It provides a visible professional identity for members who understand project structures, reliable reporting, baseline information, progress tracking, risk and change, and stakeholder communication.",
+        "Through MIPC, members can strengthen their professional credibility, structure their CPD and build evidence towards Associate Fellowship and higher recognition.",
       ],
       testimonial: {
         quote:
@@ -413,11 +414,12 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whoIsItFor: {
       title: "Who is it for?",
       paragraphs: [
-        "Whether you are an early-career professional, junior practitioner, apprentice or graduate from an adjacent role, we understand the importance of making your foundation competence visible. We are here to recognise your capability.",
-        "As the first competence-based grade, AFIPC L3 provides a real acknowledgement of foundation project controls capability and a clear pathway to higher recognition.",
+        "Associate Fellow Level 3 is for early-career professionals, apprentices, graduates and junior practitioners who want formal recognition of their foundation project controls capability.",
+        "It is suitable for assistant planners, junior schedulers, project control technicians, PMO assistants and early-career cost professionals.",
+        "Through AFIPC L3, members gain technician-level recognition and a clear pathway to AFIPC Level 4.",
       ],
       highlight:
-        "Demonstrate technician-level competence with post-nominal recognition and professional development route.",
+        "Demonstrate foundation project controls competence and progress towards higher professional recognition.",
     },
     howToApply: {
       intro: "Prepare your evidence and begin your recognition application.",
@@ -491,9 +493,9 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whySection: {
       title: "Why Associate Fellow Level 3?",
       paragraphs: [
-        "Our AFIPC L3 recognition provides a visible, credible credential for professionals who can demonstrate foundation project controls capability.",
-        "You might be looking to make your early-career competence visible to employers, build confidence in your professional identity or establish a structured development route. As an Associate Fellow L3 you receive post-nominal recognition, community access and a clear progression pathway.",
-        "You will be part of a growing community of recognised project controls professionals, with access to CPD, events, mentoring and awards that support your ongoing development.",
+        "Associate Fellow Level 3 recognises early-career professionals who have developed a reliable foundation in project controls and are ready to make their capability visible.",
+        "Through AFIPC L3, members demonstrate understanding of planning, cost, progress reporting, baseline control, risk, change and professional conduct.",
+        "The grade strengthens professional credibility, supports structured development and provides a clear pathway towards AFIPC Level 4.",
       ],
       testimonial: {
         quote:
@@ -567,11 +569,12 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whoIsItFor: {
       title: "Who is it for?",
       paragraphs: [
-        "Whether you are a mid-to-senior practitioner leading project controls on live projects, we understand the importance of making your applied competence visible. We are here to recognise your independent capability.",
-        "As applied practitioner recognition, AFIPC L4 sits between foundation practice and senior strategic recognition, providing a respected credential for independent professionals.",
+        "Associate Fellow Level 4 is for experienced practitioners who apply project controls independently on live projects or programmes.",
+        "It is suitable for planners, schedulers, project controllers, PMO analysts, cost engineers, risk professionals, commercial specialists and consultants.",
+        "Through AFIPC L4, members gain applied practitioner recognition and a clear pathway towards FIPC Level 6.",
       ],
       highlight:
-        "Demonstrate applied project controls capability with respected professional recognition and market signal.",
+        "Demonstrate independent project controls capability and progress towards senior professional recognition.",
     },
     howToApply: {
       intro: "Prepare your portfolio and begin your recognition application.",
@@ -645,9 +648,9 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whySection: {
       title: "Why Associate Fellow Level 4?",
       paragraphs: [
-        "Our AFIPC L4 recognition provides respected, visible applied practitioner recognition for professionals who can independently lead project controls on live projects or programmes.",
-        "You might be looking to signal your applied competence to the market, prepare for senior leadership roles or contribute to the profession. As an Associate Fellow L4 you receive respected recognition, contribution opportunities and a clear pathway to Fellowship.",
-        "You will be recognised as an independent practitioner with the competence to influence project outcomes, mentor others and contribute to the development of the project controls profession.",
+        "Associate Fellow Level 4 recognises professionals who can independently apply project controls techniques within live projects or programmes.",
+        "Through AFIPC L4, members demonstrate applied competence in planning, cost, forecasting, performance reporting, risk, change and stakeholder communication.",
+        "The grade strengthens professional credibility, confirms practitioner-level capability and provides a clear pathway towards FIPC Level 6.",
       ],
       testimonial: {
         quote:
@@ -721,11 +724,12 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whoIsItFor: {
       title: "Who is it for?",
       paragraphs: [
-        "Whether you are a senior project controls leader, director or strategic adviser, we understand the importance of making your senior contribution visible. Fellowship is the pinnacle of professional recognition.",
-        "As the senior professional recognition of the Institute, Fellowship should be aspirational, selective and respected — awarded for strategic competence, leadership and contribution, not simply years of experience.",
+        "Fellow Level 6 is for senior project controls professionals who lead, assure or improve controls across complex projects, programmes or organisations.",
+        "It is suitable for project controls managers, planning, cost and risk leads, programme controls managers, senior consultants, claims specialists and heads of profession.",
+        "Through FIPC, members gain senior recognition for strategic judgement, leadership and contribution to the profession.",
       ],
       highlight:
-        "Demonstrate strategic project controls leadership with the highest professional recognition and legacy status.",
+        "Demonstrate strategic project controls leadership and recognised senior professional standing.",
     },
     howToApply: {
       intro: "Prepare your senior portfolio and begin your Fellowship application.",
@@ -799,9 +803,9 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
     whySection: {
       title: "Why Fellowship?",
       paragraphs: [
-        "Our Fellowship provides the highest level of professional recognition for strategic project controls leadership. It is aspirational, selective and respected.",
-        "You might be looking to establish your legacy, influence the profession at the highest level or demonstrate senior competence to employers and clients. As a Fellow you join an exclusive community of recognised senior leaders who shape the future of project controls.",
-        "You will have opportunities to contribute to Institute governance, mentor the next generation, judge awards and publications, and establish thought leadership that influences the profession globally.",
+        "Fellowship recognises senior professionals who demonstrate strategic judgement, leadership and advanced competence across integrated project controls.",
+        "Through FIPC, members show their ability to assure project information, challenge assumptions, influence senior decisions and improve project controls systems and practice.",
+        "The grade provides the Institute’s highest level of professional recognition, strengthening senior credibility while creating opportunities to mentor, contribute to thought leadership and support the future development of the profession.",
       ],
       testimonial: {
         quote:

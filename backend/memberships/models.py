@@ -14,6 +14,7 @@ class MembershipContent(models.Model):
     hero = models.JSONField(default=dict, validators=[validate_content_section])
     grades_intro = models.JSONField(default=dict, validators=[validate_content_section])
     comparison = models.JSONField(default=dict, validators=[validate_content_section])
+    competence_matrix = models.JSONField(default=dict, validators=[validate_content_section])
     member_value = models.JSONField(default=dict, validators=[validate_content_section])
     professional_visibility = models.JSONField(default=dict, validators=[validate_content_section])
     application_journey = models.JSONField(default=dict, validators=[validate_content_section])

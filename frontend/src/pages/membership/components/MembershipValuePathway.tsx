@@ -1,116 +1,143 @@
-import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+import SectionHeader from "@/components/base/SectionHeader";
+import {
+  isManagedItemActive,
+  useManagedSection,
+} from "@/components/content/ManagedContentProvider";
 
-interface MembershipValueItem {
+interface MemberBenefit {
   id: string;
   title: string;
   description: string;
+  is_active?: boolean;
 }
 
-const membershipValues: MembershipValueItem[] = [
+const memberBenefits: MemberBenefit[] = [
   {
     id: "01",
-    title: "Professional identity",
-    description: "Use your approved grade and post-nominal on professional profiles, CVs and biographies.",
+    title: "Recognition and affiliation",
+    description:
+      "Membership provides a clear professional link to a specialist institute focused on project controls, competence and professional development.",
   },
   {
     id: "02",
-    title: "Career credibility",
-    description: "Communicate project-controls involvement and capability where job titles vary across organisations.",
+    title: "Post-nominals",
+    description:
+      "Approved members may use the post-nominal relevant to their recognised grade, strengthening professional profiles and external credibility.",
   },
   {
     id: "03",
-    title: "CPD and development",
-    description: "Build a record through learning, practice, mentoring, contribution and reflection.",
+    title: "Certificate and badge",
+    description:
+      "Members may receive confirmation of recognition, certificate and digital badge where available, supporting LinkedIn and CV presentation.",
   },
   {
     id: "04",
-    title: "Master classes and events",
-    description: "Access specialist technical and leadership activity through IPC programmes and regional communities.",
+    title: "London Master Class Events",
+    description:
+      "Membership includes access to selected London Master Class Events, subject to membership category, registration and capacity.",
   },
   {
     id: "05",
-    title: "Mentoring and community",
-    description: "Connect with practitioners, employers, consultants, academics and developing professionals.",
+    title: "Regional clubs",
+    description:
+      "Members can engage with the London, Nottingham, Manchester and Kent–Maidstone clubs for local networking and professional activities.",
   },
   {
     id: "06",
-    title: "Publication and contribution",
-    description: "Share articles, case studies, research, talks, mentoring and professional lessons subject to review.",
+    title: "Professional magazine",
+    description:
+      "Members may receive opportunities to read, contribute to or be profiled in the Institute’s professional magazine and sector insight publications.",
   },
   {
     id: "07",
-    title: "Awards and recognition",
-    description: "Take part in academic, commercial and professional awards and contribution pathways.",
+    title: "Academic journal papers",
+    description:
+      "Members and academic partners may engage with research, paper calls, academic journal activity and evidence-based project controls knowledge.",
+  },
+  {
+    id: "08",
+    title: "Awards and prizes",
+    description:
+      "Members may be eligible for academic, commercial, professional and special recognition awards, subject to award criteria.",
+  },
+  {
+    id: "09",
+    title: "Networking and profile",
+    description:
+      "Members can build relationships with professionals, employers, consultants, academics, training providers and sponsors across the project controls community.",
+  },
+  {
+    id: "10",
+    title: "Speaking and mentoring",
+    description:
+      "Senior members may be invited to speak, mentor, judge awards, support clubs or contribute to standards, guidance and thought leadership.",
+  },
+  {
+    id: "11",
+    title: "Scholarship awareness",
+    description:
+      "Members can learn about scholarship, bursary and learner support opportunities linked to project controls education and professional development.",
+  },
+  {
+    id: "12",
+    title: "Career differentiation",
+    description:
+      "Membership helps professionals stand out in a competitive market by showing commitment to a specialist discipline and structured progression.",
   },
 ];
 
 export default function MembershipValuePathway() {
   const content = useManagedSection("member_value", {
-    eyebrow: "Member Value",
-    title: "Recognition is the foundation. Professional opportunity is the wider value.",
-    description: "Membership connects visible professional standing with learning, community, events, mentoring and contribution.",
-    cta_label: "Start your journey",
-    cta_url: "#grades",
-    items: membershipValues,
+    eyebrow: "Member Benefits",
+    title:
+      "A professional membership designed to create recognition, opportunity and community.",
+    description:
+      "The Institute’s value is not limited to one certificate. Membership should support a member’s professional identity, learning, visibility, network, career progression and contribution to the discipline.",
+    items: memberBenefits,
   });
   const items = content.items.filter(isManagedItemActive);
+
   return (
     <section
       aria-labelledby="membership-value-title"
-      className="border-b border-background-200/70 bg-background-50 section-padding"
+      className="border-b border-background-200 bg-background-50 section-padding"
     >
       <div className="container-content">
-        <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-5 lg:sticky lg:top-28 lg:self-start">
-            <div className="mb-8 flex items-center gap-4">
-              <span className="h-px w-10 bg-primary-500" aria-hidden="true" />
-              <span className="eyebrow text-primary-600">{content.eyebrow}</span>
-            </div>
-
-            <h2
-              id="membership-value-title"
-              className="max-w-[570px] font-heading text-[clamp(2.5rem,5.2vw,5rem)] font-semibold leading-[0.98] tracking-[-0.045em] text-background-950"
-            >
-              {content.title}
-            </h2>
-
-            <p className="mt-8 max-w-[500px] text-base font-medium leading-[1.8] text-foreground-600 md:text-lg">
-              {content.description}
-            </p>
-
-            <a href={content.cta_url} className="btn-primary mt-8">
-              {content.cta_label}
-              <i className="ri-arrow-right-line" aria-hidden="true" />
-            </a>
-          </div>
-
-          <div className="lg:col-span-7 lg:col-start-6">
-            <ol className="border-t border-background-300">
-              {items.map((item) => (
-                <li
-                  key={item.id}
-                  className="group grid grid-cols-[3rem_minmax(0,1fr)_auto] items-start gap-4 border-b border-background-300 py-6 md:grid-cols-[3.5rem_minmax(0,1fr)_auto] md:gap-5 md:py-7"
-                >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-background-950 font-mono text-[10px] font-bold text-primary-400 transition-colors duration-300 group-hover:bg-primary-500 group-hover:text-background-950">
-                    {item.id}
-                  </span>
-                  <div className="min-w-0 pt-0.5">
-                    <h3 className="font-heading text-lg font-semibold leading-tight text-background-950 md:text-xl">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-foreground-600 md:text-base">
-                      {item.description}
-                    </p>
-                  </div>
-                  <i
-                    className="ri-arrow-right-line mt-2 text-primary-600 transition-transform duration-300 group-hover:translate-x-1"
-                    aria-hidden="true"
-                  />
-                </li>
-              ))}
-            </ol>
-          </div>
+        <div className="reveal mx-auto max-w-4xl">
+          <SectionHeader
+            eyebrow={content.eyebrow}
+            title={content.title}
+            subtitle={content.description}
+            centered
+          />
         </div>
+
+        <dl className="reveal mt-12 grid border-l border-t border-background-300 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:mt-16">
+          {items.map((item, index) => (
+            <div
+              key={item.id || item.title}
+              className="group relative min-h-64 overflow-hidden border-b border-r border-background-300 bg-background-50 p-6 transition-colors duration-300 hover:bg-background-100 md:p-8"
+            >
+              <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-primary-600">
+                {item.id || String(index + 1).padStart(2, "0")}
+              </span>
+              <span
+                className="absolute right-6 top-7 h-px w-10 bg-primary-500/60 transition-all duration-300 group-hover:w-16"
+                aria-hidden="true"
+              />
+              <dt className="mt-12 font-heading text-xl font-semibold leading-tight text-background-950">
+                {item.title}
+              </dt>
+              <dd className="mt-4 max-w-xs text-sm leading-[1.75] text-foreground-600">
+                {item.description}
+              </dd>
+              <span
+                className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary-500 transition-transform duration-300 group-hover:scale-x-100"
+                aria-hidden="true"
+              />
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

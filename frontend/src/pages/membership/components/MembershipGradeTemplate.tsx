@@ -517,10 +517,6 @@ export default function MembershipGradeTemplate({ data }: Props) {
         <div className="absolute inset-0 bg-gradient-to-r from-background-950 via-background-950 to-background-900/80" />
         <div className="relative z-10 container-content">
           <div className="max-w-2xl mx-auto text-center reveal">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-400 mb-4 block">Investment</span>
-            <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl font-semibold text-background-50 mb-6 leading-tight">
-              {data.pricingBanner.text}
-            </h2>
             <p className="text-sm text-background-500 mb-8 max-w-md mx-auto">
               Join a growing community of project controls professionals and unlock your career potential.
             </p>

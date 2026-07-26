@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import FeatureCard from "@/components/base/FeatureCard";
 import SectionHeader from "@/components/base/SectionHeader";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
@@ -13,10 +14,10 @@ function ProtectedButton({ onAction, children, secondary = false }: { onAction: 
 }
 
 export function ClubsHero({ onAction }: { onAction: ProtectedAction }) {
-  const content = useManagedSection("hero", { eyebrow: "IPC Regional Clubs", title: "Where professional knowledge becomes community.", description: "Join local project-controls professionals, employers, consultants, academics and learners for talks, networking, site visits, mentoring and practical exchange.", primary_cta_label: "Find your regional club", secondary_cta_label: "Volunteer or speak" });
+  const content = useManagedSection("hero", { eyebrow: "IPC Regional Clubs", title: "Where professional knowledge becomes community.", description: "Join local project-controls professionals, employers, consultants, academics and learners for talks, networking, site visits, mentoring and practical exchange.", primary_cta_label: "Find your regional club", secondary_cta_label: "Sponsor a Club", secondary_cta_url: "/information-session" });
   return <section className="relative flex min-h-[70vh] items-center overflow-hidden bg-background-950 pt-20 text-background-50">
     <div className="absolute inset-0 dot-grid opacity-10" /><div className="absolute -right-40 top-16 h-[540px] w-[540px] rounded-full border border-primary-500/20" />
-    <div className="container-content relative z-10 py-24"><div className="max-w-4xl reveal"><span className="eyebrow text-primary-400">{content.eyebrow}</span><h1 className="mt-5 max-w-4xl font-heading text-5xl font-bold leading-[1.02] md:text-7xl">{content.title}</h1><p className="mt-7 max-w-2xl text-base leading-loose text-background-300 md:text-lg">{content.description}</p><div className="mt-9 flex flex-wrap gap-3"><ProtectedButton onAction={onAction}>{content.primary_cta_label}</ProtectedButton><ProtectedButton onAction={onAction} secondary>{content.secondary_cta_label}</ProtectedButton></div></div></div>
+    <div className="container-content relative z-10 py-24"><div className="max-w-4xl reveal"><span className="eyebrow text-primary-400">{content.eyebrow}</span><h1 className="mt-5 max-w-4xl font-heading text-5xl font-bold leading-[1.02] md:text-7xl">{content.title}</h1><p className="mt-7 max-w-2xl text-base leading-loose text-background-300 md:text-lg">{content.description}</p><div className="mt-9 flex flex-wrap gap-3"><ProtectedButton onAction={onAction}>{content.primary_cta_label}</ProtectedButton><Link to={content.secondary_cta_url} state={{ enquiry: "Sponsor a Club" }} className="btn-secondary inline-flex min-h-12">{content.secondary_cta_label}</Link></div></div></div>
   </section>;
 }
 

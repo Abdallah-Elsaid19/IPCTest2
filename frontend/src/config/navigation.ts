@@ -17,7 +17,7 @@ export const navigation: NavigationGroup[] = [
   { label: "Events", path: "/events" },
   { label: "Clubs", path: "/clubs" },
   { label: "Awards", path: "/awards" },
-  { label: "Fund", path: "/fund" },
+  // { label: "Fund", path: "/fund" },
   { label: "Publications", path: "/publications" },
   { label: "Services", path: "/services" },
   { label: "About", path: "/about" },
@@ -27,7 +27,7 @@ export const footerNavigation = [
   {
     label: "Institute",
     links: [
-      { label: "Home", path: "/home" },
+      // { label: "Home", path: "/home" },
       { label: "About IPC", path: "/about" },
       // { label: "Employers", path: "/employers" },
       // { label: "Partnerships", path: "/partnerships" },
@@ -49,7 +49,7 @@ export const footerNavigation = [
     links: [
       { label: "Scholarships & Bursaries", path: "/scholarships" },
       { label: "Sponsorship", path: "/sponsorship" },
-      { label: "Funded Opportunities", path: "/fund" },
+      // { label: "Funded Opportunities", path: "/fund" },
       { label: "Publications & Research", path: "/publications" },
       { label: "Privacy & Policies", path: "/privacy" },
     ],
