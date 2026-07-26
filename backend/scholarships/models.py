@@ -4,7 +4,7 @@ from django.conf import settings
 from ipc_backend.validators import validate_content_section
 
 
-CARD_FIELDS = ("icon", "title", "description")
+CARD_FIELDS = ("title", "description")
 
 
 def validate_card_collection(value):
@@ -23,6 +23,12 @@ def validate_card_collection(value):
             if not isinstance(field_value, str) or not field_value.strip():
                 raise ValidationError(f"Card {index} must include a non-empty {field}.")
 
+        icon = card.get("icon")
+        if icon is not None and (not isinstance(icon, str) or not icon.strip()):
+            raise ValidationError(
+                f"Card {index} icon must be a non-empty string when provided."
+            )
+
 
 class ScholarshipContent(models.Model):
     class Status(models.TextChoices):
@@ -38,8 +44,11 @@ class ScholarshipContent(models.Model):
     values = models.JSONField(validators=[validate_card_collection])
     values_intro = models.JSONField(default=dict, validators=[validate_content_section])
     eligibility = models.JSONField(default=dict, validators=[validate_content_section])
+    recipient_commitment = models.JSONField(default=dict, validators=[validate_content_section])
     application_process = models.JSONField(default=dict, validators=[validate_content_section])
     partners = models.JSONField(default=dict, validators=[validate_content_section])
+    academic_partners = models.JSONField(default=dict, validators=[validate_content_section])
+    conditions = models.JSONField(default=dict, validators=[validate_content_section])
     impact = models.JSONField(default=dict, validators=[validate_content_section])
     faq = models.JSONField(default=dict, validators=[validate_content_section])
     final_cta = models.JSONField(default=dict, validators=[validate_content_section])

@@ -97,6 +97,8 @@ class AwardPageContent(models.Model):
     beneficiaries = models.JSONField(default=list, validators=[validate_content_section])
     integrity_intro = models.JSONField(default=dict, validators=[validate_content_section])
     integrity_principles = models.JSONField(validators=[validate_award_cards])
+    recognition_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    recognition_benefits = models.JSONField(default=list, validators=[validate_content_section])
     partnerships_intro = models.JSONField(default=dict, validators=[validate_content_section])
     partnerships = models.JSONField(default=list, validators=[validate_content_section])
     faq = models.JSONField(default=dict, validators=[validate_content_section])

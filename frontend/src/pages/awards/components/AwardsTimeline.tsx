@@ -1,22 +1,88 @@
 import SectionHeader from "@/components/base/SectionHeader";
 import type { AwardSectionIntro, AwardTimelineStep } from "../types";
 
-export default function AwardsTimeline({ content, steps, isLoading, error }: { content: AwardSectionIntro; steps: AwardTimelineStep[]; isLoading: boolean; error: string }) {
+export default function AwardsTimeline({
+  content,
+  steps,
+  isLoading,
+  error,
+}: {
+  content: AwardSectionIntro;
+  steps: AwardTimelineStep[];
+  isLoading: boolean;
+  error: string;
+}) {
   if (content.is_active === false) return null;
 
   return (
-    <section className="relative overflow-hidden bg-background-950 section-padding">
-      <div className="absolute inset-0 opacity-40"><img loading="lazy" decoding="async" src={content.image_url} alt={content.image_alt} className="h-full w-full object-cover" /></div>
-      <div className="absolute inset-0 bg-background-950/70" aria-hidden="true" />
-      <div className="container-content relative z-10">
-        <div className="reveal"><SectionHeader eyebrow={content.eyebrow} title={content.title} subtitle={content.description} light centered className="[&_.eyebrow]:text-background-50" /></div>
-        <div className="mx-auto mt-12 max-w-4xl md:mt-16">
-          {isLoading && <div className="flex items-center justify-center gap-3 py-16 text-background-300" role="status"><span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />Loading nomination timeline…</div>}
-          {error && <div className="border border-red-900 bg-red-950/50 px-6 py-8 text-center text-red-200" role="alert">{error}</div>}
-          {!isLoading && !error && <div className="relative">
-            <div className="absolute bottom-0 left-6 top-0 w-px bg-background-700 md:left-8" />
-            {steps.map((step, index) => <div key={step.phase} className={`reveal reveal-delay-${index + 1} relative pb-10 pl-16 last:pb-0 md:pl-20`}><div className="absolute left-2 top-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-500 bg-background-950 md:left-4"><div className="h-2.5 w-2.5 rounded-full bg-primary-500" /></div><div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3"><h4 className="font-heading text-lg font-semibold text-background-50 md:text-xl">{step.phase}</h4><span className="whitespace-nowrap rounded-full bg-primary-500/10 px-2.5 py-0.5 text-xs font-medium text-primary-400">{step.period}</span></div><p className="text-sm leading-relaxed text-background-400">{step.description}</p></div>)}
-          </div>}
+    <section id="nominate" className="scroll-mt-20 bg-background-50 section-padding">
+      <div className="container-content">
+        <div className="reveal mx-auto max-w-4xl">
+          <SectionHeader
+            eyebrow={content.eyebrow}
+            title={content.title}
+            subtitle={content.description}
+            centered
+          />
+        </div>
+
+        <div className="mt-12 grid gap-8 md:mt-16 lg:grid-cols-[1.2fr_.8fr]">
+          <div>
+            {isLoading && (
+              <div className="flex items-center justify-center gap-3 py-16 text-foreground-600" role="status">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-300 border-t-primary-600" aria-hidden="true" />
+                Loading nomination process…
+              </div>
+            )}
+            {error && (
+              <div className="border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">
+                {error}
+              </div>
+            )}
+            {!isLoading && !error && (
+              <ol className="grid border-l border-t border-background-300 sm:grid-cols-2">
+                {steps.map((step) => (
+                  <li
+                    key={step.phase}
+                    className="min-h-56 border-b border-r border-background-300 bg-background-100 p-6 md:p-7"
+                  >
+                    <span className="font-mono text-xs font-bold tracking-[0.18em] text-primary-700">
+                      {step.period}
+                    </span>
+                    <h3 className="mt-7 font-heading text-xl font-semibold text-background-950">
+                      {step.phase}
+                    </h3>
+                    <p className="mt-4 text-sm leading-[1.75] text-foreground-600">
+                      {step.description}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+
+          {content.checklist && content.checklist.length > 0 && (
+            <aside className="h-fit border border-background-800 bg-background-950 p-7 text-background-50 lg:sticky lg:top-24 md:p-9">
+              <span className="eyebrow text-primary-400">Entry checklist</span>
+              <h3 className="mt-4 font-heading text-2xl font-semibold">
+                {content.checklist_title}
+              </h3>
+              <ul className="mt-7 space-y-3">
+                {content.checklist.map((item) => (
+                  <li key={item} className="flex gap-3 text-sm leading-relaxed text-background-300">
+                    <i className="ri-check-line mt-0.5 shrink-0 text-primary-400" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={content.cta_url || "#awards-interest"}
+                className="btn-primary mt-8 w-full"
+              >
+                {content.cta_label || "Nominate by Email"}
+              </a>
+            </aside>
+          )}
         </div>
       </div>
     </section>

@@ -39,9 +39,9 @@ export const pageSeo = {
     keywords: ["project controls membership", "professional recognition", "AffIPC", "MIPC", "AFIPC", "FIPC"],
   },
   scholarships: {
-    title: "Scholarships & Bursaries",
+    title: "Project Controls Scholarships & Bursaries",
     description:
-      "IPC scholarships and bursaries support access to project-controls learning, professional community, mentoring and career development, subject to eligibility and available funding.",
+      "Apply for project controls scholarships and bursaries through the Institute of Project Controls. Up to 40 places per intake may support eligible learners, professionals, veterans, career changers, charity leaders, self-employed consultants and applicants facing barriers.",
     canonicalPath: "/scholarships",
     keywords: ["project controls scholarships", "bursaries", "career access", "student membership", "professional development"],
   },

@@ -8,7 +8,8 @@ class ScholarshipContentSerializer(serializers.ModelSerializer):
         model = ScholarshipContent
         fields = [
             "hero", "commitment", "principles", "audiences_intro", "audiences", "values_intro", "values",
-            "eligibility", "application_process", "partners", "impact",
+            "eligibility", "recipient_commitment", "application_process",
+            "partners", "academic_partners", "conditions", "impact",
             "faq", "final_cta", "seo", "updated_at",
         ]
         read_only_fields = fields

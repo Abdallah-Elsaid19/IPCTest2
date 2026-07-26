@@ -1,34 +1,47 @@
 import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
-import { informationSessionPath } from "./constants";
-import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+import {
+  isManagedItemActive,
+  useManagedSection,
+} from "@/components/content/ManagedContentProvider";
 
-const partners = [
+const sponsorRoutes = [
   {
-    icon: "ri-building-4-line",
-    title: "Employers & consultancies",
-    benefits: ["Support selected learners", "Develop future talent", "Offer mentoring or speakers", "Create career-access opportunities", "Strengthen social value"],
-    cta: "Discuss employer support",
+    id: "learner",
+    title: "Sponsor one learner",
+    description: "Support an individual's programme or professional development.",
   },
   {
-    icon: "ri-graduation-cap-line",
-    title: "Academic partners",
-    benefits: ["Nominate or support learner groups", "Connect study with professional practice", "Support research and employability", "Develop employer links", "Create progression routes"],
-    cta: "Discuss academic partnership",
+    id: "category",
+    title: "Sponsor a category",
+    description: "Support veterans, career returners, consultants or emerging talent.",
   },
   {
-    icon: "ri-hand-heart-line",
-    title: "Sponsors & foundations",
-    benefits: ["Fund learner or cohort access", "Support events and mentoring", "Enable research or publication", "Receive ethical visibility", "Protect selection independence"],
-    cta: "Discuss sponsorship",
+    id: "intake",
+    title: "Sponsor an intake",
+    description: "Create a wider cohort-based scholarship or bursary initiative.",
+  },
+  {
+    id: "development",
+    title: "Sponsor member development",
+    description: "Support events, mentoring, clubs, awards or professional publications.",
   },
 ];
 
 export default function ScholarshipPartners() {
-  const content = useManagedSection("partners", { eyebrow: "For sponsors and partners", title: "Turn support into visible, ethical professional impact", description: "Employers, consultancies, academic partners and sponsors can help widen access to project-controls learning, community and career opportunity.", items: partners });
+  const content = useManagedSection("partners", {
+    eyebrow: "For Organisations and Donors",
+    title: "Sponsor opportunity, talent and professional mobility.",
+    description:
+      "Employers, consultancies, training providers, universities, recruitment companies, NGOs, charities, foundations and individual donors can help increase the number and value of scholarship places. Sponsorship can support one learner, a group, an award category, a regional community, a professional event or an entire scholarship pathway.",
+    items: sponsorRoutes,
+    cta_label: "Explore Sponsorship",
+    cta_url: "/sponsorship",
+  });
   const items = content.items.filter(isManagedItemActive);
+
   return (
-    <section id="partners" className="scroll-mt-20 bg-background-50 section-padding">
+    <section id="partners" className="scroll-mt-20 bg-background-100 section-padding">
       <div className="container-content">
         <div className="reveal">
           <SectionHeader
@@ -38,17 +51,26 @@ export default function ScholarshipPartners() {
             centered
           />
         </div>
-        <div className="mt-12 grid grid-cols-1 gap-6 md:mt-16 lg:grid-cols-3">
+        <div className="mt-12 grid border-l border-t border-background-300 md:mt-16 sm:grid-cols-2 lg:grid-cols-4">
           {items.map((partner, index) => (
-            <article key={partner.title} className="reveal flex h-full min-h-96 flex-col border border-background-200/70 bg-background-50 p-6 transition-all duration-300 hover:border-primary-200 md:p-7" style={{ transitionDelay: `${index * 90}ms` }}>
-              <div className="flex h-12 w-12 items-center justify-center bg-accent-100"><i className={`${partner.icon} text-xl text-accent-600`} aria-hidden="true" /></div>
-              <h3 className="mt-5 font-heading text-xl font-semibold text-background-950">{partner.title}</h3>
-              <ul className="mt-5 space-y-3 text-sm text-foreground-600">
-                {partner.benefits.map((benefit) => <li key={benefit} className="flex items-start gap-3"><i className="ri-check-line mt-0.5 text-primary-600" aria-hidden="true" /><span>{benefit}</span></li>)}
-              </ul>
-              <Link to={(partner as { cta_url?: string }).cta_url ?? informationSessionPath} className="mt-auto inline-flex items-center gap-2 pt-8 text-sm font-semibold text-primary-700">{partner.cta}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
+            <article key={partner.id} className="min-h-60 border-b border-r border-background-300 bg-background-50 p-6">
+              <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-primary-700">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <h3 className="mt-8 font-heading text-xl font-semibold text-background-950">
+                {partner.title}
+              </h3>
+              <p className="mt-4 text-sm leading-[1.75] text-foreground-600">
+                {partner.description}
+              </p>
             </article>
           ))}
+        </div>
+        <div className="reveal mt-8 flex justify-center">
+          <Link to={content.cta_url} className="btn-primary">
+            {content.cta_label}
+            <i className="ri-arrow-right-line" aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </section>

@@ -43,7 +43,8 @@ CONTENT_TABLES = {
             "hero", "framework_intro", "featured_intro", "timeline_intro",
             "nomination_timeline", "benefits_intro", "impact_benefits",
             "beneficiaries_intro", "beneficiaries", "integrity_intro",
-            "integrity_principles", "partnerships_intro", "partnerships",
+            "integrity_principles", "recognition_intro", "recognition_benefits",
+            "partnerships_intro", "partnerships",
             "faq", "interest_intro", "final_cta", "seo",
         ),
         "publishing": True,
@@ -66,7 +67,7 @@ CONTENT_TABLES = {
     "scholarships": {
         "label": "Scholarship Content",
         "model": ScholarshipContent,
-        "fields": ("hero", "commitment", "principles", "audiences_intro", "audiences", "values_intro", "values", "eligibility", "application_process", "partners", "impact", "faq", "final_cta", "seo"),
+        "fields": ("hero", "commitment", "principles", "audiences_intro", "audiences", "values_intro", "values", "eligibility", "recipient_commitment", "application_process", "partners", "academic_partners", "conditions", "impact", "faq", "final_cta", "seo"),
         "publishing": True,
     },
     "sponsorship": {

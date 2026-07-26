@@ -76,6 +76,17 @@ export const defaultAwardsContent: AwardPageContent = {
     { icon: "ri-shield-check-line", title: "Independent review", description: "Judging should be fair, balanced and based on evidence rather than profile or commercial influence." },
     { icon: "ri-scales-3-line", title: "Conflict management", description: "Potential conflicts should be declared and handled appropriately by organisers and judges." },
   ],
+  recognition_intro: {
+    eyebrow: "Recognition value",
+    title: "What finalists and winners may gain.",
+    description: "Recognition should create professional visibility, learning and reputation while remaining proportionate to the category and programme year.",
+  },
+  recognition_benefits: [
+    { title: "Certificate or award", description: "Formal recognition of finalist, commendation or winner status." },
+    { title: "Digital recognition", description: "Approved badge, winner wording or social recognition where available." },
+    { title: "Website profile", description: "Publication of the achievement, subject to consent and confidentiality." },
+    { title: "Professional progression", description: "Award evidence may support future professional development discussions." },
+  ],
   partnerships_intro: {
     eyebrow: "Sponsorship and partnership",
     title: "Support recognition while protecting independence.",

@@ -3,32 +3,6 @@ from ipc_backend.validators import clean_text
 from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInterest
 
 
-class AwardPageContentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AwardPageContent
-        fields = [
-            "hero",
-            "framework_intro",
-            "featured_intro",
-            "timeline_intro",
-            "nomination_timeline",
-            "benefits_intro",
-            "impact_benefits",
-            "beneficiaries_intro",
-            "beneficiaries",
-            "integrity_intro",
-            "integrity_principles",
-            "partnerships_intro",
-            "partnerships",
-            "faq",
-            "interest_intro",
-            "final_cta",
-            "seo",
-            "updated_at",
-        ]
-        read_only_fields = fields
-
-
 class AwardCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = AwardCategory
@@ -91,6 +65,47 @@ class AwardProgrammeSerializer(serializers.ModelSerializer):
         model = AwardProgramme
         fields = ["id", "title", "slug", "description", "criteria", "category", "category_title", "is_active"]
         read_only_fields = fields
+
+
+class AwardPageContentSerializer(serializers.ModelSerializer):
+    categories = serializers.SerializerMethodField()
+    programmes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AwardPageContent
+        fields = [
+            "hero",
+            "framework_intro",
+            "featured_intro",
+            "timeline_intro",
+            "nomination_timeline",
+            "benefits_intro",
+            "impact_benefits",
+            "beneficiaries_intro",
+            "beneficiaries",
+            "integrity_intro",
+            "integrity_principles",
+            "recognition_intro",
+            "recognition_benefits",
+            "partnerships_intro",
+            "partnerships",
+            "faq",
+            "interest_intro",
+            "final_cta",
+            "seo",
+            "categories",
+            "programmes",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_categories(self, _instance):
+        queryset = AwardCategory.objects.filter(is_active=True)
+        return AwardCategorySerializer(queryset, many=True).data
+
+    def get_programmes(self, _instance):
+        queryset = AwardProgramme.objects.filter(is_active=True).select_related("category")
+        return AwardProgrammeSerializer(queryset, many=True).data
 
 
 class AdminAwardProgrammeSerializer(serializers.ModelSerializer):

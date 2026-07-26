@@ -2,16 +2,18 @@ import { useEffect } from "react";
 import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
-import ScholarshipAudienceGrid from "./components/ScholarshipAudienceGrid";
+import ScholarshipAcademicPartners from "./components/ScholarshipAcademicPartners";
 import ScholarshipApplicationProcess from "./components/ScholarshipApplicationProcess";
+import ScholarshipAudienceGrid from "./components/ScholarshipAudienceGrid";
 import ScholarshipCommitment from "./components/ScholarshipCommitment";
 import ScholarshipEligibility from "./components/ScholarshipEligibility";
 import ScholarshipEnquiryCta from "./components/ScholarshipEnquiryCta";
 import ScholarshipFaq from "./components/ScholarshipFaq";
 import ScholarshipHero from "./components/ScholarshipHero";
-import ScholarshipImpact from "./components/ScholarshipImpact";
 import ScholarshipPartners from "./components/ScholarshipPartners";
 import ScholarshipPrinciplesGrid from "./components/ScholarshipPrinciplesGrid";
+import ScholarshipProgrammePathways from "./components/ScholarshipProgrammePathways";
+import ScholarshipRecipientCommitment from "./components/ScholarshipRecipientCommitment";
 import ScholarshipValueGrid from "./components/ScholarshipValueGrid";
 
 export default function Scholarships() {
@@ -35,18 +37,20 @@ export default function Scholarships() {
   return (
     <ManagedContentProvider endpoint="/api/scholarships" slug="scholarships">
       <div>
-      <ManagedPageSeo fallback={{ ...pageSeo.scholarships, canonical_path: pageSeo.scholarships.canonicalPath }} />
-      <ScholarshipHero />
-      <ScholarshipCommitment />
-      <ScholarshipPrinciplesGrid />
-      <ScholarshipAudienceGrid />
-      <ScholarshipValueGrid />
-      <ScholarshipEligibility />
-      <ScholarshipApplicationProcess />
-      <ScholarshipPartners />
-      <ScholarshipImpact />
-      <ScholarshipFaq />
-      <ScholarshipEnquiryCta />
+        <ManagedPageSeo fallback={{ ...pageSeo.scholarships, canonical_path: pageSeo.scholarships.canonicalPath }} />
+        <ScholarshipHero />
+        <ScholarshipPrinciplesGrid />
+        <ScholarshipCommitment />
+        <ScholarshipAcademicPartners />
+        <ScholarshipProgrammePathways />
+        <ScholarshipValueGrid />
+        <ScholarshipEligibility />
+        <ScholarshipAudienceGrid />
+        <ScholarshipRecipientCommitment />
+        <ScholarshipApplicationProcess />
+        <ScholarshipPartners />
+        <ScholarshipFaq />
+        <ScholarshipEnquiryCta />
       </div>
     </ManagedContentProvider>
   );

@@ -1,21 +1,45 @@
-import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
-import { informationSessionPath } from "./constants";
-import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+import { useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const steps = [
-  ["Choose the category", "Identify the scholarship category that best reflects the barrier, transition, service or opportunity."],
-  ["Describe the opportunity", "Explain the intended programme or professional route and the outcome you want to achieve."],
-  ["Provide context", "Include your role, study or employment status, personal statement, barrier or need, CV or background summary and relevant supporting evidence."],
-  ["IPC reviews the enquiry", "The Institute considers the programme, eligibility, available funding and the appropriate route."],
-  ["Receive next steps", "IPC confirms whether more information is needed or whether a current or future pathway may be suitable."],
+  {
+    title: "Select a scholarship or bursary route",
+    description:
+      "Choose the category that best explains your circumstances, contribution, transition, need or future potential. More than one route may apply.",
+  },
+  {
+    title: "Prepare a professional background",
+    description:
+      "Include a CV, LinkedIn profile or short background summary. If your experience is outside project controls, explain its transferable value.",
+  },
+  {
+    title: "Write a 500-1,000 word personal statement",
+    description:
+      "Explain your circumstances, motivation, chosen category, relevant service or experience, barriers faced and the difference support would make.",
+  },
+  {
+    title: "Add supporting evidence",
+    description:
+      "This may include references, community or service evidence, career plans, relevant public profiles, transition information or proportionate evidence of need.",
+  },
+  {
+    title: "Email the Institute",
+    description:
+      "Send the application to office@instituteofprojectcontrols.org. The Institute may request clarification, further evidence or a short discussion.",
+  },
 ];
 
 export default function ScholarshipApplicationProcess() {
-  const content = useManagedSection("application_process", { eyebrow: "How to enquire", title: "A clear first step without an unnecessary application portal", description: "Scholarship enquiries can begin by email so IPC can understand the proposed route, learner group, intended outcome and current programme availability.", cta_label: "Start scholarship enquiry", cta_url: informationSessionPath, steps });
-  const managedSteps = content.steps.filter(isManagedItemActive).map((step) => Array.isArray(step) ? { title: step[0], description: step[1] } : step);
+  const content = useManagedSection("application_process", {
+    eyebrow: "How to Apply",
+    title: "A clear email application process for the launch phase.",
+    description:
+      "Applicants do not need to create an online account. Prepare the information below and email the Institute directly.",
+    steps,
+  });
+
   return (
-    <section id="apply" className="scroll-mt-20 bg-background-100 section-padding">
+    <section id="apply" className="scroll-mt-20 bg-background-50 section-padding">
       <div className="container-content">
         <div className="reveal">
           <SectionHeader
@@ -25,22 +49,22 @@ export default function ScholarshipApplicationProcess() {
             centered
           />
         </div>
-        <ol className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-5">
-          {managedSteps.map(({ title, description }, index) => (
-            <li key={title} className="reveal h-full min-h-64 border border-background-200/70 bg-background-50 p-6 transition-all duration-300 hover:border-primary-200">
-              <span className="font-heading text-3xl font-bold text-primary-500">{String(index + 1).padStart(2, "0")}</span>
-              <h3 className="mt-7 font-heading text-lg font-semibold text-background-950">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-foreground-600">{description}</p>
+        <ol className="reveal mt-12 grid border-l border-t border-background-300 sm:grid-cols-2 md:mt-16 lg:grid-cols-5">
+          {content.steps.map((step, index) => (
+            <li key={step.title} className="min-h-64 border-b border-r border-background-300 p-5 md:p-6">
+              <span className="font-mono text-xs font-bold text-primary-700">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <h3 className="mt-8 font-heading text-lg font-semibold text-background-950">
+                {step.title}
+              </h3>
+              <p className="mt-4 text-sm leading-[1.75] text-foreground-600">
+                {step.description}
+              </p>
             </li>
           ))}
         </ol>
-        <div className="mt-10 text-center">
-          <Link to={content.cta_url} className="btn-primary inline-flex items-center gap-2"><i className="ri-mail-line" aria-hidden="true" />{content.cta_label}</Link>
-        </div>
-        <div className="mx-auto mt-10 max-w-3xl border-l-2 border-primary-500 bg-background-50 p-6 text-left">
-          <h3 className="font-heading text-lg font-semibold text-background-950">Information to include</h3>
-          <p className="mt-3 text-sm leading-relaxed text-foreground-600">Full name and contact details; current role, study or employment status; scholarship category; intended programme or professional route; short personal statement; barrier or need; intended professional outcome; CV or background summary; and supporting evidence or a reference where relevant. An enquiry is not an award.</p>
-        </div>
+
       </div>
     </section>
   );

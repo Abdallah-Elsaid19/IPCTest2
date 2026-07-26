@@ -41,7 +41,7 @@ class AwardCategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, vie
 
 
 class AwardProgrammeViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    queryset = AwardProgramme.objects.filter(is_active=True)
+    queryset = AwardProgramme.objects.filter(is_active=True).select_related("category")
     serializer_class = AwardProgrammeSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = "slug"

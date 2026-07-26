@@ -14,6 +14,7 @@ import AwardsHero from "./components/AwardsHero";
 import AwardsIntegrity from "./components/AwardsIntegrity";
 import AwardsInterest from "./components/AwardsInterest";
 import AwardsPartnerships from "./components/AwardsPartnerships";
+import AwardsRecognition from "./components/AwardsRecognition";
 import AwardsTimeline from "./components/AwardsTimeline";
 import AwardsUnavailable from "./components/AwardsUnavailable";
 import { defaultAwardsContent } from "./components/constants";
@@ -25,56 +26,44 @@ export default function Awards() {
   const [awardsError, setAwardsError] = useState("");
   const [awardContent, setAwardContent] = useState<AwardPageContent | null>(defaultAwardsContent);
 
-  const loadFeaturedAwards = useCallback(async (signal?: AbortSignal) => {
+  const loadAwardsPage = useCallback(async (signal?: AbortSignal) => {
     setFeaturedAwards(null);
+    setAwardCategories(null);
     setAwardsError("");
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        const programmes = await apiJson<AwardProgramme[]>("/api/award-programmes", undefined, { signal });
-        setFeaturedAwards(programmes);
+        const content = await apiJson<AwardPageContent>(
+          "/api/awards/content",
+          undefined,
+          { signal, cache: "no-store" },
+        );
+        setAwardContent(content);
+        setFeaturedAwards(content.programmes || []);
+        setAwardCategories(content.categories || []);
         return;
       } catch (error) {
         if (signal?.aborted) return;
         if (attempt === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 700));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           continue;
         }
+        setAwardContent(null);
         setFeaturedAwards([]);
+        setAwardCategories([]);
         setAwardsError(error instanceof Error ? error.message : "Award programmes could not be loaded.");
       }
     }
   }, []);
 
-  const loadAwardCategories = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const categories = await apiJson<AwardCategory[]>("/api/award-categories", undefined, { signal });
-      setAwardCategories(categories);
-    } catch {
-      if (!signal?.aborted) setAwardCategories([]);
-    }
-  }, []);
-
-  const loadAwardContent = useCallback(async () => {
-    try {
-      setAwardContent(await apiJson<AwardPageContent>("/api/awards/content", undefined, { cache: "no-store" }));
-    } catch {
-      setAwardContent(null);
-    }
-  }, []);
-
   useEffect(() => {
     const controller = new AbortController();
-    void loadFeaturedAwards(controller.signal);
-    void loadAwardCategories(controller.signal);
-    void loadAwardContent();
+    void loadAwardsPage(controller.signal);
     return () => controller.abort();
-  }, [loadAwardCategories, loadAwardContent, loadFeaturedAwards]);
+  }, [loadAwardsPage]);
 
   useEffect(() => subscribeToContentUpdates("awards", () => {
-    void loadAwardContent();
-    void loadFeaturedAwards();
-    void loadAwardCategories();
-  }), [loadAwardCategories, loadAwardContent, loadFeaturedAwards]);
+    void loadAwardsPage();
+  }), [loadAwardsPage]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -96,6 +85,7 @@ export default function Awards() {
   const benefits = awardContent.impact_benefits.filter((item) => item.is_active !== false);
   const beneficiaries = awardContent.beneficiaries.filter((item) => item.is_active !== false);
   const principles = awardContent.integrity_principles.filter((item) => item.is_active !== false);
+  const recognitionBenefits = awardContent.recognition_benefits.filter((item) => item.is_active !== false);
   const partnerships = awardContent.partnerships.filter((item) => item.is_active !== false);
 
   return (
@@ -107,12 +97,13 @@ export default function Awards() {
         noIndex={awardContent.seo.noindex || awardContent.seo.nofollow}
       />
       <AwardsHero content={awardContent.hero} />
-      <AwardsFramework content={awardContent.framework_intro} categories={awardCategories} />
-      <AwardsFeatured content={awardContent.featured_intro} programmes={featuredAwards} error={awardsError} onRetry={() => void loadFeaturedAwards()} />
-      <AwardsTimeline content={awardContent.timeline_intro} steps={timeline} isLoading={false} error="" />
       <AwardsBenefits content={awardContent.benefits_intro} benefits={benefits} isLoading={false} error="" />
+      <AwardsFramework content={awardContent.framework_intro} categories={awardCategories} />
+      <AwardsFeatured content={awardContent.featured_intro} programmes={featuredAwards} error={awardsError} onRetry={() => void loadAwardsPage()} />
       <AwardsBeneficiaries content={awardContent.beneficiaries_intro} beneficiaries={beneficiaries} />
       <AwardsIntegrity content={awardContent.integrity_intro} principles={principles} isLoading={false} error="" />
+      <AwardsTimeline content={awardContent.timeline_intro} steps={timeline} isLoading={false} error="" />
+      <AwardsRecognition content={awardContent.recognition_intro} benefits={recognitionBenefits} />
       <AwardsPartnerships content={awardContent.partnerships_intro} partnerships={partnerships} />
       <AwardsFaq content={awardContent.faq} />
       <AwardsInterest content={awardContent.interest_intro} />

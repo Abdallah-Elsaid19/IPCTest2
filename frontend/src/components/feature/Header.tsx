@@ -49,7 +49,18 @@ export default function Header() {
 
   return (
     <>
-      <header ref={headerRef} className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${scrolled ? "border-background-800/60 bg-background-950/95 shadow-sm backdrop-blur-xl" : isHome ? "border-transparent bg-transparent xl:border-background-200 xl:bg-white" : "border-background-200 bg-white"}`}>
+      <aside className="absolute inset-x-0 top-0 z-[60] flex h-9 items-center border-b border-background-800 bg-black text-background-50 shadow-sm">
+        <div className="container-content min-w-0 text-center">
+          <Link
+            to="/scholarships"
+            className="inline-block max-w-full truncate text-[11px] leading-none underline decoration-primary-400/70 underline-offset-4 transition-colors hover:text-primary-300 sm:text-xs"
+          >
+            <strong>Scholarships open:</strong>{" "}
+            up to 40 scholarship and bursary places may be available per intake.
+          </Link>
+        </div>
+      </aside>
+      <header ref={headerRef} className={`fixed inset-x-0 z-50 border-b transition-[top,background-color,border-color] duration-300 ${scrolled ? "top-0 border-background-800/60 bg-background-950/95 shadow-sm backdrop-blur-xl" : isHome ? "top-9 border-transparent bg-transparent xl:border-background-200 xl:bg-white" : "top-9 border-background-200 bg-white"}`}>
         <div className={`container-content ${useHomeMobileHeader ? "!px-8 xl:!px-10" : ""}`}>
           <div className={`flex items-center justify-between ${useHomeMobileHeader ? "h-[72px]" : "h-16 md:h-18"}`}>
             <Link to="/home" className="relative inline-flex h-12 w-40 shrink-0 items-center justify-center" aria-label="Institute of Project Controls home">
