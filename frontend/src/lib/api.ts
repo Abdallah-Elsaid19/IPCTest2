@@ -294,6 +294,7 @@ export interface EventItem {
   ends_at?: string | null;
   capacity?: number | null;
   image_url?: string;
+  image_thumbnail_url?: string;
   eventbrite_url?: string;
   eventbrite_id?: string | null;
   is_published: boolean;

@@ -59,10 +59,18 @@ class PartnershipContent(ManagedInstitutionalContent):
 
 class PublicationContent(ManagedInstitutionalContent):
     hero = models.JSONField(default=dict, validators=[validate_content_section])
+    why_publish = models.JSONField(default=dict, validators=[validate_content_section])
     routes = models.JSONField(default=dict, validators=[validate_content_section])
     value = models.JSONField(default=dict, validators=[validate_content_section])
+    themes = models.JSONField(default=dict, validators=[validate_content_section])
+    formats = models.JSONField(default=dict, validators=[validate_content_section])
+    audiences = models.JSONField(default=dict, validators=[validate_content_section])
     principles = models.JSONField(default=dict, validators=[validate_content_section])
+    integrity = models.JSONField(default=dict, validators=[validate_content_section])
     process = models.JSONField(default=dict, validators=[validate_content_section])
+    contributor_value = models.JSONField(default=dict, validators=[validate_content_section])
+    partner_value = models.JSONField(default=dict, validators=[validate_content_section])
+    sponsorship = models.JSONField(default=dict, validators=[validate_content_section])
     faq = models.JSONField(default=dict, validators=[validate_content_section])
     final_cta = models.JSONField(default=dict, validators=[validate_content_section])
     seo = models.JSONField(default=dict, validators=[validate_content_section])

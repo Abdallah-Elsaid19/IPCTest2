@@ -142,6 +142,13 @@ export default function IntelligenceLayer() {
                     onMouseLeave={() => setActiveNode(null)}
                     onFocus={() => setActiveNode(i)}
                     onBlur={() => setActiveNode(null)}
+                    onClick={() => setActiveNode(i)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setActiveNode(i);
+                      }
+                    }}
                   >
                     <title>{`${p.label}: ${p.description}`}</title>
                     <circle cx={p.x} cy={p.y} r="6" fill="transparent" />

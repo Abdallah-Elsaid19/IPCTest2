@@ -6,14 +6,14 @@ import SponsorshipBenefits from "./components/SponsorshipBenefits";
 import SponsorshipFaq from "./components/SponsorshipFaq";
 import SponsorshipFinalCta from "./components/SponsorshipFinalCta";
 import SponsorshipHero from "./components/SponsorshipHero";
-import SponsorshipImpact from "./components/SponsorshipImpact";
 import SponsorshipIntegrity from "./components/SponsorshipIntegrity";
 import SponsorshipPartners from "./components/SponsorshipPartners";
 import SponsorshipPrinciples from "./components/SponsorshipPrinciples";
 import SponsorshipProcess from "./components/SponsorshipProcess";
 import SponsorshipPurpose from "./components/SponsorshipPurpose";
-import SponsorshipRouteBuilder from "./components/SponsorshipRouteBuilder";
+import SponsorshipRecognitionLevels from "./components/SponsorshipRecognitionLevels";
 import SponsorshipRoutes from "./components/SponsorshipRoutes";
+import SponsorshipScholarshipFeature from "./components/SponsorshipScholarshipFeature";
 
 export default function Sponsorship() {
   useEffect(() => {
@@ -40,13 +40,13 @@ export default function Sponsorship() {
       <SponsorshipHero />
       <SponsorshipPrinciples />
       <SponsorshipPurpose />
-      <SponsorshipRoutes />
-      <SponsorshipBenefits />
-      <SponsorshipIntegrity />
-      <SponsorshipRouteBuilder />
-      <SponsorshipProcess />
-      <SponsorshipImpact />
       <SponsorshipPartners />
+      <SponsorshipRoutes />
+      <SponsorshipScholarshipFeature />
+      <SponsorshipBenefits />
+      <SponsorshipRecognitionLevels />
+      <SponsorshipIntegrity />
+      <SponsorshipProcess />
       <SponsorshipFaq />
       <SponsorshipFinalCta />
       </div>

@@ -1,7 +1,5 @@
-import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
-import { informationSessionPath } from "./constants";
 
 interface PartnerContent {
   type: string;
@@ -12,26 +10,29 @@ interface PartnerContent {
 }
 
 const fallbackIntro = {
-  eyebrow: "Who can partner with IPC",
-  title: "Partnership routes for organisations across the project-controls ecosystem.",
-  subtitle: "Sponsorship can be designed for organisations that want to support access, professional learning, recognition, research or regional community.",
+  eyebrow: "Sponsor value proposition",
+  title: "Different organisations engage for different reasons.",
+  description: "IPC aligns sponsorship opportunities with the strategic and social value each partner is seeking to create.",
 };
 
-const partners = [
+const partners: PartnerContent[] = [
   {
-    type: "Employers & consultancies",
-    benefits: ["Support talent development", "Host events or site visits", "Provide speakers and mentors", "Sponsor scholarships or awards", "Strengthen social value"],
-    cta: "Discuss employer sponsorship",
+    type: "Employers and clients",
+    benefits: "Talent development, capability visibility, employee engagement, social value and stronger controls culture.",
+    items: ["Learners", "Memberships", "Master classes", "Awards", "Regional clubs", "Scholarship pathways"],
+    cta: "Strengthen the capability that protects your projects, forecasts and decisions.",
   },
   {
-    type: "Technology & service providers",
-    benefits: ["Support technical learning", "Provide approved demonstrations", "Contribute evidence-led case studies", "Sponsor event access", "Support research and publications"],
-    cta: "Discuss technology partnership",
+    type: "Consultancies",
+    benefits: "Thought leadership, professional positioning, client confidence and specialist community engagement.",
+    items: ["Events", "Technical content", "Awards", "Publications", "Research", "Consultant development"],
+    cta: "Demonstrate specialist value while contributing to a stronger profession.",
   },
   {
-    type: "Academic partners & foundations",
-    benefits: ["Support learners and researchers", "Enable scholarships and prizes", "Connect education with practice", "Support employability", "Develop public-value programmes"],
-    cta: "Discuss academic support",
+    type: "Universities and colleges",
+    benefits: "Student opportunity, research links, employability, prizes and practitioner access.",
+    items: ["Dissertation prizes", "Bursaries", "Guest lectures", "Research", "Academic-industry collaboration"],
+    cta: "Make project controls education more visible, applied and connected to industry.",
   },
 ];
 
@@ -43,31 +44,31 @@ export default function SponsorshipPartners() {
     <section className="bg-background-50 section-padding">
       <div className="container-content">
         <div className="reveal">
-          <SectionHeader
-            eyebrow={intro.eyebrow}
-            title={intro.title}
-            subtitle={intro.subtitle}
-            centered
-          />
+          <SectionHeader eyebrow={intro.eyebrow} title={intro.title} subtitle={intro.description} centered />
         </div>
-        <div className="reveal mt-12 overflow-x-auto md:mt-16" tabIndex={0} aria-label="Sponsorship partner types table">
-          <table className="w-full min-w-[760px] border-collapse">
-            <caption className="sr-only">Organisations that can partner with IPC and their opportunities</caption>
-            <thead>
-              <tr className="border-b-2 border-background-950">
-                <th scope="col" className="px-4 py-4 text-left font-heading text-sm font-semibold uppercase tracking-wide text-background-950">Partner type</th>
-                <th scope="col" className="px-4 py-4 text-left font-heading text-sm font-semibold uppercase tracking-wide text-background-950">Benefits and opportunities</th>
-                <th scope="col" className="px-4 py-4 text-left font-heading text-sm font-semibold uppercase tracking-wide text-background-950">Next step</th>
+        <div className="reveal mt-12 overflow-x-auto border border-background-200/70 md:mt-16" tabIndex={0} aria-label="Sponsor value proposition">
+          <table className="w-full min-w-[1040px] border-collapse bg-background-50">
+            <caption className="sr-only">Sponsor audiences, value, priorities and core message</caption>
+            <thead className="bg-background-950 text-background-50">
+              <tr>
+                {["Sponsor audience", "Value from IPC", "Typical priorities", "Core message"].map((label) => (
+                  <th key={label} scope="col" className="px-5 py-5 text-left font-heading text-xs font-semibold uppercase tracking-wider">
+                    {label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {managedPartners.map((partner, index) => (
-                <tr key={partner.type} className={`border-b border-background-200 ${index % 2 === 0 ? "bg-background-50/50" : ""}`}>
-                  <th scope="row" className="whitespace-nowrap px-4 py-5 text-left font-semibold text-background-950">{partner.type}</th>
-                  <td className="px-4 py-5 text-sm leading-relaxed text-foreground-600">
-                    {(partner.items ?? (Array.isArray(partner.benefits) ? partner.benefits : [partner.benefits])).join(" · ")}
+                <tr key={partner.type} className={`border-b border-background-200/70 ${index % 2 ? "bg-background-100/60" : "bg-background-50"}`}>
+                  <th scope="row" className="w-1/5 px-5 py-6 text-left align-top font-semibold text-background-950">{partner.type}</th>
+                  <td className="w-[28%] px-5 py-6 align-top text-sm leading-relaxed text-foreground-600">
+                    {Array.isArray(partner.benefits) ? partner.benefits.join(", ") : partner.benefits}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-5"><Link to={informationSessionPath} className="inline-flex items-center gap-2 text-sm font-semibold text-primary-700">{partner.cta}<i className="ri-arrow-right-line" aria-hidden="true" /></Link></td>
+                  <td className="w-[27%] px-5 py-6 align-top text-sm leading-relaxed text-foreground-600">
+                    {(partner.items ?? []).join(" · ")}
+                  </td>
+                  <td className="w-1/4 px-5 py-6 align-top text-sm font-medium leading-relaxed text-background-950">{partner.cta}</td>
                 </tr>
               ))}
             </tbody>

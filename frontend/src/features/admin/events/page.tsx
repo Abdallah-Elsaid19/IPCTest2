@@ -64,7 +64,7 @@ function EventCard({
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E2D7C9] bg-[#FFFDF9] p-3 text-[#221E1A] shadow-[0_10px_30px_rgba(66,48,31,0.08)] transition hover:-translate-y-1 hover:shadow-[0_16px_38px_rgba(66,48,31,0.14)]">
       <div className="relative h-56 overflow-hidden rounded-xl bg-[#E9DFD2]">
         {event.image_url ? (
-          <img src={event.image_url} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+          <img src={event.image_thumbnail_url || event.image_url} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
         ) : (
           <div className="grid h-full place-items-center bg-gradient-to-br from-[#EDE3D6] to-[#D2C0AA] text-primary-800"><CalendarDays size={44} strokeWidth={1.3} /></div>
         )}

@@ -25,7 +25,66 @@ interface VisionPillar {
   is_active?: boolean;
 }
 
+interface AboutIntro {
+  eyebrow: string;
+  title: string;
+  title_accent?: string;
+  description: string;
+  is_active?: boolean;
+}
+
+interface AboutLinkCard {
+  title: string;
+  description: string;
+  cta_label: string;
+  cta_url: string;
+  is_active?: boolean;
+}
+
+interface AboutFaqItem {
+  question: string;
+  answer: string;
+  is_active?: boolean;
+}
+
 interface AboutPageContent {
+  hero: AboutIntro & { cta_label: string; cta_url: string };
+  purpose: Omit<AboutIntro, "description"> & { paragraphs: string[] };
+  why_intro: AboutIntro;
+  vision: Omit<AboutIntro, "description"> & { paragraphs: string[] };
+  mission_intro: AboutIntro;
+  values_intro: AboutIntro & { closing?: string };
+  identity_intro: AboutIntro;
+  discipline: AboutIntro & {
+    callout: string;
+    domains: Array<{ title: string; detail: string; is_active?: boolean }>;
+    levels: Array<{ title: string; description: string; is_active?: boolean }>;
+  };
+  standards: AboutIntro & {
+    principles: Array<{ title: string; description: string; is_active?: boolean }>;
+    conduct: Array<{ title: string; description: string; is_active?: boolean }>;
+  };
+  audiences_intro: AboutIntro;
+  audiences: AboutLinkCard[];
+  professional_promise: AboutIntro & {
+    cta_label: string;
+    cta_url: string;
+    items: Array<{ title: string; description: string; is_active?: boolean }>;
+  };
+  faq: AboutIntro & { items: AboutFaqItem[] };
+  final_cta: AboutIntro & {
+    supporting_description: string;
+    primary_cta_label: string;
+    primary_cta_url: string;
+    secondary_cta_label: string;
+    secondary_cta_url: string;
+  };
+  seo: {
+    title: string;
+    description: string;
+    canonical_path: string;
+    noindex?: boolean;
+  };
   statistics: AboutStatistic[];
   why_exists: AboutCardContent[];
   vision_pillars: VisionPillar[];
@@ -35,14 +94,13 @@ interface AboutPageContent {
   updated_at: string;
 }
 
-const emptyAboutContent: AboutPageContent = {
-  statistics: [],
-  why_exists: [],
-  vision_pillars: [],
-  missions: [],
-  core_values: [],
-  identity_symbols: [],
-  updated_at: "",
+const staticAboutHero: AboutPageContent["hero"] = {
+  eyebrow: "About the Institute",
+  title: "A professional institution for the people behind",
+  title_accent: "credible project decisions.",
+  description: "The Institute of Project Controls exists to recognise, develop and connect the professionals who make project performance visible, forecasts credible, change controlled and decisions evidence-based.",
+  cta_label: "Explore Membership",
+  cta_url: "/membership",
 };
 
 function AboutContentError({ message }: { message: string }) {
@@ -55,6 +113,32 @@ function AboutContentError({ message }: { message: string }) {
   );
 }
 
+function AboutContentLoading() {
+  return (
+    <section
+      className="animate-pulse bg-background-100 py-16"
+      aria-busy="true"
+      aria-label="Loading About page sections"
+      role="status"
+    >
+      <div className="container-content">
+        <div className="h-3 w-40 rounded-sm bg-primary-500/30" />
+        <div className="mt-7 h-10 max-w-2xl rounded-sm bg-background-400/60" />
+        <div className="mt-4 h-10 max-w-xl rounded-sm bg-background-400/60" />
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="min-h-40 border border-background-400 bg-background-200 p-6">
+              <div className="h-4 w-2/3 rounded-sm bg-background-500/50" />
+              <div className="mt-6 h-3 w-full rounded-sm bg-background-400/60" />
+              <div className="mt-3 h-3 w-4/5 rounded-sm bg-background-400/60" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────────────────────────
    SCROLL-DRIVEN ABOUT PAGE — OWL AS VISUAL GUIDE
    Scene flow: Hero → Who We Are → Why We Exist
@@ -64,7 +148,7 @@ function AboutContentError({ message }: { message: string }) {
 export default function AboutPage() {
   const [globalScrollY, setGlobalScrollY] = useState(0);
   const [heroProgress, setHeroProgress] = useState(0);
-  const [content, setContent] = useState<AboutPageContent>(emptyAboutContent);
+  const [content, setContent] = useState<AboutPageContent | null>(null);
   const [contentError, setContentError] = useState("");
   const heroRef = useRef<HTMLElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -148,15 +232,39 @@ export default function AboutPage() {
     return () => ringObserver.disconnect();
   }, [content]);
 
-  if (contentError) return <AboutContentError message={contentError} />;
+  if (contentError) {
+    return (
+      <div className="overflow-x-hidden bg-background-950 text-background-50">
+        <SEO {...pageSeo.about} structuredData={buildAboutPageSchema(pageSeo.about.description)} />
+        <SceneHero content={staticAboutHero} heroProgress={heroProgress} globalScrollY={globalScrollY} ref={heroRef} />
+        <AboutContentError message={contentError} />
+      </div>
+    );
+  }
+
+  if (!content) {
+    return (
+      <div className="overflow-x-hidden bg-background-950 text-background-50">
+        <SEO {...pageSeo.about} structuredData={buildAboutPageSchema(pageSeo.about.description)} />
+        <SceneHero content={staticAboutHero} heroProgress={heroProgress} globalScrollY={globalScrollY} ref={heroRef} />
+        <AboutContentLoading />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background-950 text-background-50 overflow-x-hidden">
-      <SEO {...pageSeo.about} structuredData={buildAboutPageSchema(pageSeo.about.description)} />
+      <SEO
+        title={content.seo.title || pageSeo.about.title}
+        description={content.seo.description || pageSeo.about.description}
+        canonicalPath={content.seo.canonical_path || pageSeo.about.canonicalPath}
+        noIndex={content.seo.noindex}
+        structuredData={buildAboutPageSchema(content.seo.description || pageSeo.about.description)}
+      />
       {/* ═══════════════════════════════════════════
           SCENE 1 — HERO — Owl Dominant
           ═══════════════════════════════════════════ */}
-      <SceneHero heroProgress={heroProgress} globalScrollY={globalScrollY} ref={heroRef} />
+      <SceneHero content={staticAboutHero} heroProgress={heroProgress} globalScrollY={globalScrollY} ref={heroRef} />
 
       {/* ═══════════════════════════════════════════
           OWL TRANSITION BRIDGE — Wing Sweep
@@ -166,42 +274,42 @@ export default function AboutPage() {
       {/* ═══════════════════════════════════════════
           SCENE 2 — WHO WE ARE
           ═══════════════════════════════════════════ */}
-      <SceneWhoWeAre statistics={content.statistics.filter((item) => item.is_active !== false)} />
+      <SceneWhoWeAre content={content.purpose} statistics={content.statistics.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 3 — WHY IPC EXISTS (Eye Transition)
           ═══════════════════════════════════════════ */}
-      <SceneWhyExist pillars={content.why_exists.filter((item) => item.is_active !== false)} />
+      <SceneWhyExist content={content.why_intro} pillars={content.why_exists.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 4 — OUR VISION
           ═══════════════════════════════════════════ */}
-      <SceneVision pillars={content.vision_pillars.filter((item) => item.is_active !== false)} />
+      <SceneVision content={content.vision} pillars={content.vision_pillars.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 5 — OUR MISSION
           ═══════════════════════════════════════════ */}
-      <SceneMission missions={content.missions.filter((item) => item.is_active !== false)} />
+      <SceneMission content={content.mission_intro} missions={content.missions.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 6 — CORE VALUES (Radar + Owl Orbit)
           ═══════════════════════════════════════════ */}
-      <SceneCoreValues values={content.core_values.filter((item) => item.is_active !== false)} />
+      <SceneCoreValues content={content.values_intro} values={content.core_values.filter((item) => item.is_active !== false)} />
 
       {/* ═══════════════════════════════════════════
           SCENE 7 — THE IPC IDENTITY
           ═══════════════════════════════════════════ */}
-      <SceneIdentity symbols={content.identity_symbols.filter((item) => item.is_active !== false)} />
-      <SceneIntegratedDiscipline />
-      <SceneStandardsRecognition />
-      <SceneAudiences />
-      <SceneProfessionalPromise />
-      <SceneAboutFaq />
+      <SceneIdentity content={content.identity_intro} symbols={content.identity_symbols.filter((item) => item.is_active !== false)} />
+      <SceneIntegratedDiscipline content={content.discipline} />
+      <SceneStandardsRecognition content={content.standards} />
+      <SceneAudiences content={content.audiences_intro} audiences={content.audiences.filter((item) => item.is_active !== false)} />
+      <SceneProfessionalPromise content={content.professional_promise} />
+      <SceneAboutFaq content={content.faq} />
 
       {/* ═══════════════════════════════════════════
           SCENE 8 — FINALE
           ═══════════════════════════════════════════ */}
-      <SceneFinale />
+      <SceneFinale content={content.final_cta} />
 
       {/* ── Subtle scroll-progress gold line at page bottom-left ── */}
       <div className="fixed bottom-0 left-0 h-[2px] bg-gradient-to-r from-primary-500/40 to-primary-500/10 z-50 transition-all duration-300"
@@ -216,7 +324,8 @@ export default function AboutPage() {
    Full-height. Owl dominant center. Concentric rings, gold dots,
    technical linework, warm white / charcoal contrast.
    ═══════════════════════════════════════════════════════════════ */
-function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
+function SceneHero({ content, heroProgress, globalScrollY, ref: forwardedRef }: {
+  content: AboutPageContent["hero"];
   heroProgress: number;
   globalScrollY: number;
   ref: React.Ref<HTMLElement>;
@@ -239,7 +348,7 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
     >
       {/* ── Deep gold radial glow behind owl ── */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none transition-all duration-500"
+        className="absolute left-[74%] top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-500"
         style={{
           background: "radial-gradient(ellipse at center, oklch(0.685 0.132 72 / 0.09) 0%, transparent 65%)",
           opacity: 1 - heroProgress * 0.6,
@@ -291,15 +400,14 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
 
       {/* ── THE OWL — dominant center figure ── */}
       <div
-        className="absolute z-10 pointer-events-none transition-all duration-700 ease-out"
+        className="pointer-events-none absolute right-[2%] z-10 hidden transition-all duration-700 ease-out lg:block xl:right-[6%]"
         style={{
           top: "calc(50% + var(--owl-y))",
-          left: "50%",
-          transform: "translate(-50%, -50%) scale(var(--owl-scale))",
+          transform: "translateY(-50%) scale(var(--owl-scale))",
           opacity: "var(--owl-opacity)",
         }}
       >
-        <div className="relative w-[420px] h-[520px] md:w-[520px] md:h-[640px]">
+        <div className="relative h-[720px] w-[590px] xl:h-[780px] xl:w-[680px]">
           <img
             loading="eager"
             fetchPriority="high"
@@ -313,12 +421,12 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
 
       {/* ── Hero content overlay ── */}
       <div
-        className="pointer-events-none absolute inset-0 z-[15] bg-[radial-gradient(ellipse_at_center,rgba(8,8,8,0.86)_0%,rgba(8,8,8,0.66)_28%,rgba(8,8,8,0.2)_56%,transparent_76%)]"
+        className="pointer-events-none absolute inset-0 z-[15] bg-gradient-to-r from-background-950 via-background-950/80 to-transparent"
         aria-hidden="true"
       />
 
       <div
-        className="relative z-20 w-full max-w-5xl px-6 text-center transition-all duration-700 ease-out md:px-10"
+        className="container-content relative z-20 w-full text-left transition-all duration-700 ease-out lg:pr-[43%] xl:pr-[40%]"
         style={{
           transform: "translateY(var(--content-y))",
           opacity: "var(--content-opacity)",
@@ -327,32 +435,31 @@ function SceneHero({ heroProgress, globalScrollY, ref: forwardedRef }: {
         {/* Institutional label */}
         <div className="mb-6">
           <span className="text-[10px] md:text-[11px] font-mono font-semibold text-primary-300 tracking-[0.35em] uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,1)]">
-            About the Institute of Project Controls
+            {content.eyebrow}
           </span>
         </div>
 
         {/* Gold rule */}
-        <div className="w-16 gold-rule mx-auto mb-7" />
+        <div className="mb-7 w-16 gold-rule" />
 
         {/* Headline */}
-        <h1 className="mb-6 font-heading text-[clamp(2.2rem,5vw,4.8rem)] font-extrabold leading-[0.95] tracking-[-0.03em] text-background-50 [text-shadow:0_3px_24px_rgba(0,0,0,1),0_1px_3px_rgba(0,0,0,1)]">
-          Making project reality
+        <h1 className="mb-6 max-w-4xl font-heading text-[clamp(2.5rem,3.6vw,4.25rem)] font-extrabold leading-[0.98] tracking-[-0.035em] text-background-50 [overflow-wrap:normal] [text-shadow:0_3px_24px_rgba(0,0,0,1),0_1px_3px_rgba(0,0,0,1)] [word-break:normal]">
+          {content.title}
           <br />
-          <span className="text-primary-300">visible.</span>
+          <span className="text-primary-300">{content.title_accent}</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="mx-auto mb-10 max-w-[520px] text-sm font-medium leading-relaxed text-background-100 drop-shadow-[0_2px_10px_rgba(0,0,0,1)] md:text-[15px]">
-          IPC is a professional home for the people who plan, control, assure and improve project
-          delivery—helping professionals demonstrate the competence behind better decisions.
+        <p className="mb-10 max-w-[560px] text-sm font-medium leading-relaxed text-background-100 drop-shadow-[0_2px_10px_rgba(0,0,0,1)] md:text-[15px]">
+          {content.description}
         </p>
 
         {/* CTA */}
         <Link
-          to="/membership"
+          to={content.cta_url}
           className="inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer"
         >
-          <span>Explore our mission</span>
+          <span>{content.cta_label}</span>
           <i className="ri-arrow-right-line" />
         </Link>
       </div>
@@ -425,7 +532,13 @@ function OwlTransitionBridge({ progress }: { progress: number }) {
    SCENE 2 — WHO WE ARE
    Owl wing extends, revealing the institution's identity
    ═══════════════════════════════════════════════════════════════ */
-function SceneWhoWeAre({ statistics }: { statistics: AboutStatistic[] }) {
+function SceneWhoWeAre({
+  content,
+  statistics,
+}: {
+  content: AboutPageContent["purpose"];
+  statistics: AboutStatistic[];
+}) {
   return (
     <section id="scene-who" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
       {/* Wing-curve background accent */}
@@ -461,28 +574,18 @@ function SceneWhoWeAre({ statistics }: { statistics: AboutStatistic[] }) {
           <div className="flex-1 scene-reveal transition-all duration-1000"
             style={{ opacity: 0, transform: "translateX(40px)", transitionDelay: "0.2s" }}>
             <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-              Our reason for being
+              {content.eyebrow}
             </span>
             <div className="w-16 h-[2px] bg-primary-500 mb-6" />
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-              Project controls turns project
+              {content.title}
               <br />
-              <span className="text-primary-600">information into decisions.</span>
+              <span className="text-primary-600">{content.title_accent}</span>
             </h2>
             <div className="space-y-4 text-foreground-600 leading-relaxed text-base md:text-lg max-w-xl">
-              <p>
-                The discipline connects scope, time, cost, risk, change, commercial matters, data,
-                governance, sustainability and performance into one integrated control environment.
-              </p>
-              <p>
-                “Professional recognition converts experience into a visible signal—but it never
-                replaces competence, evidence or ethical conduct.”
-              </p>
-              <p>
-                IPC exists to organise those elements into a credible pathway. The goal is to help
-                professionals explain their standing and help employers understand capability
-                without exaggeration or unnecessary complexity.
-              </p>
+              {content.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
             </div>
 
             {/* Stats row */}
@@ -504,7 +607,13 @@ function SceneWhoWeAre({ statistics }: { statistics: AboutStatistic[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 3 — WHY IPC EXISTS (Owl Eye → Analytical Circles)
    ═══════════════════════════════════════════════════════════════ */
-function SceneWhyExist({ pillars }: { pillars: AboutCardContent[] }) {
+function SceneWhyExist({
+  content,
+  pillars,
+}: {
+  content: AboutPageContent["why_intro"];
+  pillars: AboutCardContent[];
+}) {
   return (
     <section id="scene-why" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
       {/* Dot matrix background */}
@@ -562,16 +671,16 @@ function SceneWhyExist({ pillars }: { pillars: AboutCardContent[] }) {
           </div>
 
           <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
-            Why project controls matters
+            {content.eyebrow}
           </span>
           <div className="w-16 gold-rule mx-auto mb-7" />
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-8">
-            Project reality
+            {content.title}
             <br />
-            <span className="text-primary-400">visible early</span>
+            <span className="text-primary-400">{content.title_accent}</span>
           </h2>
           <p className="text-base md:text-lg text-background-300 leading-relaxed max-w-2xl mx-auto">
-            Project controls turns project information into decisions.
+            {content.description}
           </p>
 
           {/* Three insight pillars */}
@@ -596,7 +705,13 @@ function SceneWhyExist({ pillars }: { pillars: AboutCardContent[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 4 — OUR VISION (Owl gliding through horizon)
    ═══════════════════════════════════════════════════════════════ */
-function SceneVision({ pillars }: { pillars: VisionPillar[] }) {
+function SceneVision({
+  content,
+  pillars,
+}: {
+  content: AboutPageContent["vision"];
+  pillars: VisionPillar[];
+}) {
   return (
     <section id="scene-vision" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
       {/* Architectural horizon lines */}
@@ -617,24 +732,18 @@ function SceneVision({ pillars }: { pillars: VisionPillar[] }) {
           <div className="flex-1 scene-reveal transition-all duration-1000"
             style={{ opacity: 0, transform: "translateX(-30px)" }}>
             <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-              Our Vision
+              {content.eyebrow}
             </span>
             <div className="w-16 h-[2px] bg-primary-500 mb-6" />
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-              A trusted home, a stronger talent pipeline
+              {content.title}
               <br />
-              <span className="text-primary-600">and a more respected profession.</span>
+              <span className="text-primary-600">{content.title_accent}</span>
             </h2>
             <div className="space-y-3 text-foreground-600 leading-relaxed text-base max-w-lg">
-              <p>
-                IPC&apos;s long-term ambition is to raise project controls from a perceived reporting
-                function to a strategic discipline that improves decision quality and delivery outcomes.
-              </p>
-              <p>
-                Where employers can trust that IPC recognition represents real competence.
-                Where the profession attracts talented people who see a career with status,
-                structure and progression.
-              </p>
+              {content.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
             </div>
 
             {/* Three vision pillars */}
@@ -676,7 +785,13 @@ function SceneVision({ pillars }: { pillars: VisionPillar[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 5 — OUR MISSION (Owl path → mission framework)
    ═══════════════════════════════════════════════════════════════ */
-function SceneMission({ missions }: { missions: AboutCardContent[] }) {
+function SceneMission({
+  content,
+  missions,
+}: {
+  content: AboutPageContent["mission_intro"];
+  missions: AboutCardContent[];
+}) {
   return (
     <section id="scene-mission" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
       {/* Owl silhouette passing through */}
@@ -702,15 +817,14 @@ function SceneMission({ missions }: { missions: AboutCardContent[] }) {
         <div className="text-center mb-16 scene-reveal transition-all duration-1000"
           style={{ opacity: 0, transform: "translateY(30px)" }}>
           <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
-            Our Mission
+            {content.eyebrow}
           </span>
           <div className="w-16 gold-rule mx-auto mb-7" />
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-6">
-            Advance professional recognition.
+            {content.title}
           </h2>
           <p className="text-base text-background-300 max-w-xl mx-auto leading-relaxed">
-            Create a structured route that allows professionals to demonstrate competence,
-            integrity, development and contribution through clear membership and recognition grades.
+            {content.description}
           </p>
         </div>
 
@@ -739,7 +853,13 @@ function SceneMission({ missions }: { missions: AboutCardContent[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 6 — CORE VALUES (Radar + Owl circulating)
    ═══════════════════════════════════════════════════════════════ */
-function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
+function SceneCoreValues({
+  content,
+  values,
+}: {
+  content: AboutPageContent["values_intro"];
+  values: AboutCardContent[];
+}) {
   return (
     <section id="scene-values" className="relative bg-background-50 py-24 md:py-36 overflow-hidden radar-scene">
       {/* Large radar ring system */}
@@ -766,17 +886,16 @@ function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
         <div className="text-center mb-16 scene-reveal transition-all duration-1000"
           style={{ opacity: 0, transform: "translateY(30px)" }}>
           <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-            Core Values
+            {content.eyebrow}
           </span>
           <div className="w-16 h-[2px] bg-primary-500 mx-auto mb-7" />
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-            Values that guide
+            {content.title}
             <br />
-            <span className="text-primary-600">recognition</span>
+            <span className="text-primary-600">{content.title_accent}</span>
           </h2>
           <p className="text-base text-foreground-600 max-w-xl mx-auto leading-relaxed">
-            Recognition is powerful only when it is trusted. These values should be visible in
-            membership decisions, professional conduct, certificates, applications and public communication.
+            {content.description}
           </p>
         </div>
 
@@ -796,7 +915,7 @@ function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
         </div>
 
         {/* Owl circulating presence */}
-        <div className="mt-16 text-center scene-reveal transition-all duration-1000"
+        {/* <div className="mt-16 text-center scene-reveal transition-all duration-1000"
           style={{ opacity: 0, transform: "translateY(20px)", transitionDelay: "0.6s" }}>
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-accent-50 border border-accent-200">
             <div className="w-8 h-8 overflow-hidden rounded-full">
@@ -809,10 +928,10 @@ function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
               />
             </div>
             <span className="text-xs font-mono text-accent-700 tracking-wider">
-              Recognition grounded in evidence, conduct and professional judgement
+              {content.closing}
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );
@@ -821,7 +940,13 @@ function SceneCoreValues({ values }: { values: AboutCardContent[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 7 — THE IPC IDENTITY (All elements converge)
    ═══════════════════════════════════════════════════════════════ */
-function SceneIdentity({ symbols }: { symbols: AboutCardContent[] }) {
+function SceneIdentity({
+  content,
+  symbols,
+}: {
+  content: AboutPageContent["identity_intro"];
+  symbols: AboutCardContent[];
+}) {
   return (
     <section id="scene-identity" className="relative bg-background-950 py-24 md:py-36 overflow-hidden">
       {/* Dot matrix + halftone map */}
@@ -842,23 +967,21 @@ function SceneIdentity({ symbols }: { symbols: AboutCardContent[] }) {
         <div className="text-center mb-16 scene-reveal transition-all duration-1000"
           style={{ opacity: 0, transform: "translateY(30px)" }}>
           <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">
-            The IPC Identity
+            {content.eyebrow}
           </span>
           <div className="w-16 gold-rule mx-auto mb-7" />
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 leading-[1.1] mb-6">
-            What the owl
+            {content.title}
             <br />
-            <span className="text-primary-400">represents</span>
+            <span className="text-primary-400">{content.title_accent}</span>
           </h2>
           <p className="text-base text-background-300 max-w-xl mx-auto leading-relaxed">
-            Every element of the Institute&apos;s visual identity carries meaning.
-            Together they tell the story of an institution guided by wisdom, structure,
-            evidence and professional foresight.
+            {content.description}
           </p>
         </div>
 
         {/* Symbols grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1 md:gap-2 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-2 mb-16">
           {symbols.map((s, i) => (
             <div key={s.title}
               className="scene-reveal transition-all duration-1000 group p-6 md:p-7 text-center bg-background-900/60 border border-background-800 hover:border-primary-500/20 hover:bg-background-900/80"
@@ -892,39 +1015,30 @@ function SceneIdentity({ symbols }: { symbols: AboutCardContent[] }) {
 /* ═══════════════════════════════════════════════════════════════
    SCENE 8 — FINALE (Owl complete + institutional close)
    ═══════════════════════════════════════════════════════════════ */
-function SceneIntegratedDiscipline() {
-  const domains = [
-    ["Leadership", "ethics, influence"],
-    ["Scope", "WBS, CBS, coding"],
-    ["Planning", "schedule, baseline"],
-    ["Cost", "budget, forecast"],
-    ["Risk & Change", "uncertainty, contingency"],
-    ["Commercial", "contracts, claims"],
-    ["Digital", "data, AI, BIM"],
-    ["Sustainability", "carbon, public value"],
-  ];
-  const levels = [
-    ["Foundation", "Understand terminology, follow procedures, collect reliable information and support project-controls tasks under direction."],
-    ["Applied", "Work independently, select techniques, interpret variance, integrate data and advise project teams."],
-    ["Strategic", "Design frameworks, assure data integrity, lead teams, challenge assumptions and influence senior decisions."],
-  ];
+function SceneIntegratedDiscipline({
+  content,
+}: {
+  content: AboutPageContent["discipline"];
+}) {
+  const domains = content.domains.filter((item) => item.is_active !== false);
+  const levels = content.levels.filter((item) => item.is_active !== false);
 
   return (
     <section className="relative overflow-hidden bg-background-100 py-24 md:py-36">
       <div className="container-content grid items-start gap-14 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
         <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(-30px)" }}>
           <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-            Project controls as an integrated discipline
+            {content.eyebrow}
           </span>
           <div className="w-16 h-[2px] bg-primary-500 mb-6" />
           <h2 className="font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">
-            One control environment—not disconnected technical silos.
+            {content.title}
           </h2>
           <p className="mt-7 max-w-lg text-base leading-relaxed text-foreground-600">
-            Weakness in one area can undermine the credibility of the entire project-control system. IPC therefore treats planning, cost, risk, commercial, data and governance as connected disciplines.
+            {content.description}
           </p>
           <p className="mt-7 border border-primary-500/50 bg-primary-50 px-5 py-4 text-xs leading-relaxed text-primary-800">
-            Core principle: make project reality visible early enough for action.
+            {content.callout}
           </p>
         </div>
 
@@ -936,7 +1050,7 @@ function SceneIntegratedDiscipline() {
                 <strong className="font-heading text-xl font-semibold">Project Controls</strong>
                 <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-primary-400">Integrated competence</span>
               </div>
-              {domains.map(([title, detail], index) => {
+              {domains.map(({ title, detail }, index) => {
                 const angle = (index * 360) / domains.length - 90;
                 return (
                   <div
@@ -960,7 +1074,7 @@ function SceneIntegratedDiscipline() {
               <strong className="font-heading text-xl">Project Controls</strong>
               <span className="mt-2 block text-[10px] uppercase tracking-wider text-primary-400">Integrated competence</span>
             </div>
-            {domains.map(([title, detail]) => (
+            {domains.map(({ title, detail }) => (
               <div key={title} className="border border-background-300 bg-background-50 p-4 text-center">
                 <strong className="block text-xs text-background-950">{title}</strong>
                 <span className="mt-1 block text-[10px] text-foreground-500">{detail}</span>
@@ -969,7 +1083,7 @@ function SceneIntegratedDiscipline() {
           </div>
 
           <dl className="mt-7 space-y-2">
-            {levels.map(([title, description]) => (
+            {levels.map(({ title, description }) => (
               <div key={title} className="grid gap-3 border border-background-300 bg-background-50 p-5 sm:grid-cols-[7rem_1fr]">
                 <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary-600">{title}</dt>
                 <dd className="text-xs leading-relaxed text-foreground-600">{description}</dd>
@@ -982,32 +1096,27 @@ function SceneIntegratedDiscipline() {
   );
 }
 
-function SceneStandardsRecognition() {
-  const principles = [
-    ["Evidence over title", "Job titles alone do not establish competence or professional standing."],
-    ["Proportionate depth", "Evidence requirements increase with independence, accountability and influence."],
-    ["Professional discussion", "Applied and senior routes may test judgement, authenticity and ethical reasoning."],
-    ["Explainable decisions", "Recognition should be capable of being explained to applicants, employers and peers."],
-  ];
-  const levels = [
-    ["Level 3 — Foundation practice", "Analyse data, support baselines, prepare reports, use assigned tools, monitor progress and demonstrate professional behaviours."],
-    ["Level 4 — Applied judgement", "Apply controls independently on live projects, integrate schedule, cost, risk and change, and communicate credible recommendations."],
-    ["Level 6 — Strategic leadership", "Assure data integrity, lead frameworks, challenge assumptions, influence decision-makers and provide strategic controls advice."],
-  ];
+function SceneStandardsRecognition({
+  content,
+}: {
+  content: AboutPageContent["standards"];
+}) {
+  const principles = content.principles.filter((item) => item.is_active !== false);
+  const conduct = content.conduct.filter((item) => item.is_active !== false);
 
   return (
     <section className="relative overflow-hidden bg-background-950 py-24 text-background-50 md:py-36">
       <div className="absolute inset-0 dot-grid-gold opacity-[0.04]" />
       <div className="container-content relative z-10 grid items-start gap-14 lg:grid-cols-[.82fr_1.18fr] lg:gap-20">
         <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(-30px)" }}>
-          <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">Standards-informed recognition</span>
+          <span className="text-[11px] font-mono text-primary-400/80 tracking-[0.3em] uppercase mb-4 block">{content.eyebrow}</span>
           <div className="w-16 gold-rule mb-6" />
-          <h2 className="font-heading text-4xl font-bold leading-[1.05] md:text-5xl lg:text-6xl">Recognition grounded in practice, responsibility and professional behaviour.</h2>
+          <h2 className="font-heading text-4xl font-bold leading-[1.05] md:text-5xl lg:text-6xl">{content.title}</h2>
           <p className="mt-7 max-w-xl leading-relaxed text-background-300">
-            IPC uses recognised project-controls practice to inform competence expectations while keeping professional recognition distinct from qualifications or apprenticeship awards.
+            {content.description}
           </p>
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {principles.map(([title, description]) => (
+            {principles.map(({ title, description }) => (
               <article key={title} className="border border-background-800 bg-background-900/60 p-5">
                 <h3 className="text-xs font-bold text-primary-300">{title}</h3>
                 <p className="mt-2 text-xs leading-relaxed text-background-400">{description}</p>
@@ -1017,7 +1126,7 @@ function SceneStandardsRecognition() {
         </div>
 
         <div className="space-y-3 scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateX(30px)", transitionDelay: "0.15s" }}>
-          {levels.map(([title, description], index) => (
+          {conduct.map(({ title, description }, index) => (
             <article key={title} className="border border-background-800 bg-background-900/60 p-6 md:p-7" style={{ marginLeft: `${index * 6}%` }}>
               <h3 className="font-heading text-base font-semibold text-primary-300">{title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-background-400">{description}</p>
@@ -1029,14 +1138,13 @@ function SceneStandardsRecognition() {
   );
 }
 
-function SceneAudiences() {
-  const audiences = [
-    ["Professionals", "Recognition, progression, CPD, events, clubs, publications, awards and a specialist professional identity.", "Explore membership", "/membership"],
-    ["Employers", "Capability mapping, staff development, succession planning, tender credibility and stronger professional culture.", "Explore employer pathways", "/membership"],
-    ["Consultants", "Market differentiation, professional credibility, thought leadership and stronger client confidence.", "Explore consultancy value", "/membership"],
-    ["Academic partners", "Student membership, scholarships, employability, applied research, papers and employer engagement.", "Explore academic partnership", "/scholarships"],
-    ["Sponsors and supporters", "Ethical routes to support learners, events, awards, clubs, publications and wider social impact.", "Explore sponsorship", "/sponsorship"],
-  ];
+function SceneAudiences({
+  content,
+  audiences,
+}: {
+  content: AboutPageContent["audiences_intro"];
+  audiences: AboutLinkCard[];
+}) {
   const cardStyles = [
     "bg-background-950 text-background-50 lg:col-span-5",
     "bg-background-50 text-background-950 lg:col-span-4",
@@ -1049,18 +1157,21 @@ function SceneAudiences() {
     <section className="bg-background-50 py-24 md:py-36">
       <div className="container-content">
         <div className="scene-reveal transition-all duration-1000" style={{ opacity: 0, transform: "translateY(30px)" }}>
-          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">Who IPC serves</span>
+          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">{content.eyebrow}</span>
           <div className="w-16 h-[2px] bg-primary-500 mb-6" />
           <h2 className="max-w-5xl font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">
-            A professional framework with value across the project-controls ecosystem.
+            {content.title}
           </h2>
+          <p className="mt-6 max-w-3xl text-base leading-relaxed text-foreground-600">
+            {content.description}
+          </p>
         </div>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
-          {audiences.map(([title, description, label, to], index) => (
-            <article key={title} className={`flex min-h-64 flex-col border border-background-300 p-7 ${cardStyles[index]}`}>
-              <h3 className="font-heading text-lg font-semibold">{title}</h3>
-              <p className="mt-4 text-sm leading-relaxed opacity-65">{description}</p>
-              <Link to={to} className="mt-auto pt-8 text-sm font-bold">{label} →</Link>
+          {audiences.map((audience, index) => (
+            <article key={audience.title} className={`flex min-h-64 flex-col border border-background-300 p-7 ${cardStyles[index % cardStyles.length]}`}>
+              <h3 className="font-heading text-lg font-semibold">{audience.title}</h3>
+              <p className="mt-4 text-sm leading-relaxed opacity-65">{audience.description}</p>
+              <Link to={audience.cta_url} className="mt-auto pt-8 text-sm font-bold">{audience.cta_label} →</Link>
             </article>
           ))}
         </div>
@@ -1069,30 +1180,28 @@ function SceneAudiences() {
   );
 }
 
-function SceneProfessionalPromise() {
-  const promises = [
-    ["To professionals", "A structured route for recognition, development, community and visible professional contribution."],
-    ["To employers", "A clear and practical language for capability, progression, development and staff recognition."],
-    ["To the profession", "A serious commitment to evidence-led judgement, ethical conduct and better project decisions."],
-    ["To learners", "Access routes through affiliation, scholarships, mentoring, Master Classes and employer connection."],
-    ["To partners", "Transparent opportunities to support knowledge, talent and community without weakening independence."],
-  ];
+function SceneProfessionalPromise({
+  content,
+}: {
+  content: AboutPageContent["professional_promise"];
+}) {
+  const items = content.items.filter((item) => item.is_active !== false);
 
   return (
     <section className="bg-background-100 py-24 md:py-36">
       <div className="container-content grid items-start gap-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-14">
         <div className="flex min-h-[28rem] flex-col bg-accent-700 p-8 text-background-50 md:p-10">
-          <span className="text-[11px] font-mono text-primary-300 tracking-[0.25em] uppercase">Our professional promise</span>
+          <span className="text-[11px] font-mono text-primary-300 tracking-[0.25em] uppercase">{content.eyebrow}</span>
           <div className="mt-4 w-12 gold-rule" />
-          <h2 className="mt-7 font-heading text-4xl font-bold leading-[1.05]">A pathway, a community and a recognised identity.</h2>
-          <p className="mt-7 text-sm leading-relaxed text-background-200">IPC promises the wider sector a commitment to evidence, ethics, learning and project-delivery improvement.</p>
-          <Link to="/contact" className="mt-auto inline-flex min-h-12 items-center justify-center bg-primary-500 px-6 text-sm font-bold text-background-950 hover:bg-primary-400">Contact the Institute</Link>
+          <h2 className="mt-7 font-heading text-4xl font-bold leading-[1.05]">{content.title}</h2>
+          <p className="mt-7 text-sm leading-relaxed text-background-200">{content.description}</p>
+          <Link to={content.cta_url} className="mt-auto inline-flex min-h-12 items-center justify-center bg-primary-500 px-6 text-sm font-bold text-background-950 hover:bg-primary-400">{content.cta_label}</Link>
         </div>
         <dl className="space-y-3">
-          {promises.map(([title, description]) => (
-            <div key={title} className="grid gap-3 border border-background-300 bg-background-50 p-6 sm:grid-cols-[8rem_1fr]">
-              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary-600">{title}</dt>
-              <dd className="text-sm leading-relaxed text-foreground-600">{description}</dd>
+          {items.map((item) => (
+            <div key={item.title} className="grid gap-3 border border-background-300 bg-background-50 p-6 sm:grid-cols-[8rem_1fr]">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary-600">{item.title}</dt>
+              <dd className="text-sm leading-relaxed text-foreground-600">{item.description}</dd>
             </div>
           ))}
         </dl>
@@ -1101,27 +1210,25 @@ function SceneProfessionalPromise() {
   );
 }
 
-function SceneAboutFaq() {
-  const items = [
-    ["What is the Institute of Project Controls?", "IPC is a professional membership and recognition body for people who plan, control, assure and improve project delivery."],
-    ["What makes project controls a distinct discipline?", "Project controls integrates scope, schedule, cost, risk, change, commercial matters, performance, data, governance and forecasting to support credible decisions."],
-    ["Who does IPC serve?", "IPC serves professionals, employers, consultants, academic partners, sponsors, learners and organisations supporting professional development or access."],
-    ["Does IPC award qualifications or chartered status?", "No. IPC provides standards-informed, evidence-based professional membership and recognition. It should not be described as a regulated qualification, apprenticeship award, chartered status or statutory licence."],
-    ["How does IPC approach AI and digital tools?", "IPC treats technology competence as important, while emphasising data quality, confidentiality, explainability, validation and human accountability."],
-  ];
+function SceneAboutFaq({
+  content,
+}: {
+  content: AboutPageContent["faq"];
+}) {
+  const items = content.items.filter((item) => item.is_active !== false);
   const [openItem, setOpenItem] = useState(0);
 
   return (
     <section className="bg-background-50 py-24 md:py-36">
       <div className="container-content grid items-start gap-14 lg:grid-cols-[.75fr_1.25fr] lg:gap-20">
         <div>
-          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">About IPC</span>
+          <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">{content.eyebrow}</span>
           <div className="w-16 h-[2px] bg-primary-500 mb-6" />
-          <h2 className="font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">Clear answers about the Institute and its professional scope.</h2>
-          <p className="mt-7 max-w-lg leading-relaxed text-foreground-600">Understand what IPC does, who it serves and how its recognition should be described.</p>
+          <h2 className="font-heading text-4xl font-bold leading-[1.05] text-background-950 md:text-5xl lg:text-6xl">{content.title}</h2>
+          <p className="mt-7 max-w-lg leading-relaxed text-foreground-600">{content.description}</p>
         </div>
         <div className="space-y-3">
-          {items.map(([question, answer], index) => {
+          {items.map(({ question, answer }, index) => {
             const isOpen = openItem === index;
             return (
               <article key={question} className="border border-background-300 bg-background-50">
@@ -1139,7 +1246,11 @@ function SceneAboutFaq() {
   );
 }
 
-function SceneFinale() {
+function SceneFinale({
+  content,
+}: {
+  content: AboutPageContent["final_cta"];
+}) {
   return (
     <section id="scene-finale" className="relative bg-background-50 py-24 md:py-36 overflow-hidden">
       {/* Final concentric ring backdrop */}
@@ -1188,34 +1299,31 @@ function SceneFinale() {
           <div className="flex-1 scene-reveal transition-all duration-1000"
             style={{ opacity: 0, transform: "translateX(30px)", transitionDelay: "0.2s" }}>
             <span className="text-[11px] font-mono text-primary-600 tracking-[0.3em] uppercase mb-4 block">
-              Join the professional movement
+              {content.eyebrow}
             </span>
             <div className="w-16 h-[2px] bg-primary-500 mb-6" />
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-950 leading-[1.1] mb-6">
-              Make competence visible. Build professional standing.
+              {content.title}
               <br />
-              <span className="text-primary-600">Improve project decisions.</span>
+              <span className="text-primary-600">{content.title_accent}</span>
             </h2>
             <p className="text-base md:text-lg text-foreground-600 leading-relaxed max-w-lg mb-8">
-              Explore individual membership or discuss an employer, consultancy, academic or
-              sponsorship pathway.
+              {content.description}
             </p>
             <p className="text-sm text-foreground-500 leading-relaxed max-w-lg mb-10">
-              IPC recognition is a professional membership and recognition pathway. It is
-              standards-informed and evidence-based, and is not a regulated qualification,
-              apprenticeship award, chartered status or statutory licence unless separately held.
+              {content.supporting_description}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/membership"
+              <Link to={content.primary_cta_url}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer">
                 <i className="ri-award-line" />
-                <span>Explore membership</span>
+                <span>{content.primary_cta_label}</span>
               </Link>
-              <Link to="/contact"
+              <Link to={content.secondary_cta_url}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-background-950 text-sm font-bold tracking-wide border border-background-300 hover:border-primary-500 transition-all duration-300 whitespace-nowrap cursor-pointer">
                 <i className="ri-mail-line" />
-                <span>Contact IPC</span>
+                <span>{content.secondary_cta_label}</span>
               </Link>
             </div>
           </div>

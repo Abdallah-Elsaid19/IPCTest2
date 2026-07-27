@@ -16,18 +16,26 @@ function sanitisePublicContent<T>(value: T): T {
 }
 
 const ManagedContentContext = createContext<ManagedContent>({});
+const ManagedContentStatusContext = createContext({ isLoading: false });
 
 export function ManagedContentProvider({ endpoint, slug, children }: { endpoint: string; slug: ContentPageSlug; children: React.ReactNode }) {
   const [content, setContent] = useState<ManagedContent>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         const response = await apiJson<ManagedContent>(endpoint, undefined, { cache: "no-store" });
-        if (!cancelled) setContent(response);
+        if (!cancelled) {
+          setContent(response);
+          setIsLoading(false);
+        }
       } catch {
-        if (!cancelled) setContent({});
+        if (!cancelled) {
+          setContent({});
+          setIsLoading(false);
+        }
       }
     };
     void load();
@@ -36,14 +44,25 @@ export function ManagedContentProvider({ endpoint, slug, children }: { endpoint:
   }, [endpoint, slug]);
 
   return (
-    <ManagedContentContext.Provider value={content}>
-      {content.is_active === false ? null : children}
-    </ManagedContentContext.Provider>
+    <ManagedContentStatusContext.Provider value={{ isLoading }}>
+      <ManagedContentContext.Provider value={content}>
+        {content.is_active === false ? null : children}
+      </ManagedContentContext.Provider>
+    </ManagedContentStatusContext.Provider>
   );
+}
+
+export function useManagedContentStatus() {
+  return useContext(ManagedContentStatusContext);
 }
 
 export function useManagedSection<T>(name: string, fallback: T): T {
   const content = useContext(ManagedContentContext);
+
+  // Heroes are intentionally owned by the page implementation so their
+  // first impression cannot be changed or disabled from the dashboard.
+  if (name === "hero") return sanitisePublicContent(fallback);
+
   const value = content[name];
   if (!value || typeof value !== "object") return fallback;
   if (
@@ -63,5 +82,7 @@ export function isManagedItemActive(item: unknown): boolean {
 
 export function ManagedSectionGate({ name, children }: { name: string; children: React.ReactNode }) {
   const content = useContext(ManagedContentContext);
+  if (name === "hero") return children;
+
   return isManagedItemActive(content[name]) ? children : null;
 }

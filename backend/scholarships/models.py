@@ -38,6 +38,7 @@ class ScholarshipContent(models.Model):
     key = models.SlugField(max_length=40, unique=True, default="main")
     hero = models.JSONField(default=dict, validators=[validate_content_section])
     commitment = models.JSONField(default=dict, validators=[validate_content_section])
+    fund = models.JSONField(default=dict, validators=[validate_content_section])
     principles = models.JSONField(default=dict, validators=[validate_content_section])
     audiences_intro = models.JSONField(default=dict, validators=[validate_content_section])
     audiences = models.JSONField(validators=[validate_card_collection])

@@ -11,7 +11,26 @@ const dataAnnotations = [
 ];
 
 export default function HeroCanvas() {
-  const content = useManagedSection("hero", { eyebrow: "Institute of Project Controls", title: "The professional home for project controls", description: "Professional recognition, learning and community for those who plan, cost, control, assure and improve complex project delivery across planning, schedule, cost, risk, change, data, commercial practice and leadership.", cta_label: "Explore membership and recognition", cta_url: "/membership", image_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/4f05a0f54f8c4bbbab2916e0126a28b9.webp", image_alt: "IPC - Institute of Project Controls symbol of wisdom, foresight and professional judgement", annotations: dataAnnotations.map((item) => item.label) });
+  const content = useManagedSection("hero", {
+    announcement: "Membership and professional recognition applications are open. Join the specialist professional community for project controls.",
+    eyebrow: "The Specialist Professional Home for Project Controls",
+    title: "Professional recognition for the people behind credible project decisions.",
+    title_lines: ["Professional recognition for", "the people behind credible", "project decisions."],
+    description: "The Institute of Project Controls recognises, develops and connects the professionals who plan, measure, forecast, assure and improve project delivery.",
+    details: [
+      "Build a visible professional identity through membership, Associate Fellowship and Fellowship.",
+      "Project controls connects scope, schedule, cost, risk, change, data and professional judgement so leaders can act with greater confidence.",
+    ],
+    cta_label: "Explore Membership & Recognition",
+    cta_url: "/membership",
+    secondary_cta_label: "View London Master Classes",
+    secondary_cta_url: "/events",
+    tertiary_cta_label: "Contact the Institute",
+    tertiary_cta_url: "/information-session",
+    image_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/4f05a0f54f8c4bbbab2916e0126a28b9.webp",
+    image_alt: "IPC symbol of wisdom, foresight and professional judgement",
+    annotations: dataAnnotations.map((item) => item.label),
+  });
   const annotations = content.annotations.map((item, index) => ({ ...dataAnnotations[index % dataAnnotations.length], label: typeof item === "string" ? item : String(item) }));
   const [scrollY, setScrollY] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -141,16 +160,21 @@ export default function HeroCanvas() {
 
       {/* ── Headline — Integrated into composition ── */}
       <div className="relative z-20 flex min-h-[100svh] items-start px-8 pb-24 pt-[6.1rem] sm:min-h-[80dvh] sm:items-end sm:px-8 sm:pb-24 sm:pt-20 md:px-14 md:pb-32 lg:px-80 lg:pr-12 lg:pt-32">
-        <div className="w-full max-w-[600px]">
+        <div className="w-full max-w-[1050px]">
           <div
             className={`mb-5 transition-all duration-1000 sm:mb-8 md:mb-10 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
           >
+            <span className="mb-3 hidden max-w-xl border-l-2 border-primary-500 pl-3 text-[10px] leading-relaxed text-background-300 sm:block">
+              {content.announcement}
+            </span>
             <span className="mb-5 hidden text-[10px] font-mono uppercase tracking-[0.3em] text-primary-500/70 sm:block">
               {content.eyebrow}
             </span>
-            <h1 className="max-w-[330px] font-heading text-[clamp(2.5rem,10.8vw,2.75rem)] font-extrabold leading-[0.93] tracking-[-0.045em] text-background-50 sm:max-w-none sm:text-7xl sm:leading-[0.95] sm:tracking-[-0.03em]">
-                {content.title}
+            <h1 aria-label={content.title} className="max-w-[330px] font-heading text-[clamp(2.35rem,10vw,2.75rem)] font-extrabold leading-[0.95] tracking-[-0.045em] text-background-50 sm:max-w-[1050px] sm:text-[clamp(3rem,4.2vw,4.5rem)] sm:leading-[0.94] sm:tracking-[-0.035em]">
+              {content.title_lines.map((line) => (
+                <span key={line} className="block sm:whitespace-nowrap">{line}</span>
+              ))}
             </h1>
           </div>
 
@@ -161,13 +185,18 @@ export default function HeroCanvas() {
             <div className="mb-2 hidden w-20 gold-rule sm:block" />
             <p className="max-w-[315px] text-[13px] font-normal leading-[1.55] text-background-300 sm:max-w-[400px] sm:text-sm sm:font-medium sm:leading-loose md:text-base">
               {content.description}</p>
-            <Link
-              to={content.cta_url}
-              className="group inline-flex w-fit shrink-0 items-center gap-3 bg-primary-500 px-5 py-3 text-[12px] font-bold tracking-wide text-background-950 transition-colors duration-400 hover:bg-primary-400 sm:text-sm"
-            >
-              <span>{content.cta_label}</span>
-              <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
-            </Link>
+            <p className="hidden max-w-[540px] text-xs leading-relaxed text-background-400 lg:block">{content.details.join(" ")}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to={content.cta_url}
+                className="group inline-flex w-fit shrink-0 items-center gap-3 bg-primary-500 px-5 py-3 text-[12px] font-bold tracking-wide text-background-950 transition-colors duration-400 hover:bg-primary-400 sm:text-sm"
+              >
+                <span>{content.cta_label}</span>
+                <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+              <Link to={content.secondary_cta_url} className="hidden min-h-[46px] items-center border border-background-500 px-5 text-xs font-semibold text-background-50 transition-colors hover:border-primary-400 sm:inline-flex">{content.secondary_cta_label}</Link>
+              <Link to={content.tertiary_cta_url} className="hidden min-h-[46px] items-center px-2 text-xs font-semibold text-background-300 transition-colors hover:text-primary-300 lg:inline-flex">{content.tertiary_cta_label}</Link>
+            </div>
           </div>
         </div>
       </div>

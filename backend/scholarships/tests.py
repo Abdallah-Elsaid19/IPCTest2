@@ -18,6 +18,10 @@ class ScholarshipContentApiTests(APITestCase):
                     "title": "Value from database",
                     "description": "Value description from database.",
                 }],
+                "fund": {
+                    "eyebrow": "Funding model from database",
+                    "title": "Database funding title",
+                },
                 "is_active": True,
             },
         )
@@ -27,6 +31,7 @@ class ScholarshipContentApiTests(APITestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data["audiences"][0]["title"], "Audience from database")
         self.assertEqual(response.data["values"][0]["title"], "Value from database")
+        self.assertEqual(response.data["fund"]["title"], "Database funding title")
 
     def test_inactive_content_is_not_public(self):
         ScholarshipContent.objects.update_or_create(

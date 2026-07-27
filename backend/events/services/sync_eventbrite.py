@@ -5,7 +5,12 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from events.models import Event, EventbriteConnection
-from .eventbrite import get_configured_client
+from .eventbrite import (
+    EventbriteError,
+    get_configured_client,
+    get_eventbrite_image_url,
+    get_eventbrite_thumbnail_url,
+)
 
 
 def _parse_datetime(value):
@@ -57,7 +62,8 @@ def _clean_event(event):
         "starts_at": _parse_datetime((event.get("start") or {}).get("utc")),
         "ends_at": _parse_datetime((event.get("end") or {}).get("utc")),
         "capacity": capacity if isinstance(capacity, int) and capacity >= 0 else None,
-        "image_url": (event.get("logo") or {}).get("url") or "",
+        "image_url": get_eventbrite_image_url(event),
+        "image_thumbnail_url": get_eventbrite_thumbnail_url(event),
         "eventbrite_url": event.get("url") or "",
         "status": event.get("status") or "",
         "is_online_event": bool(event.get("online_event")),
@@ -78,7 +84,19 @@ def sync_eventbrite_events(client=None, organization_id=None):
             skipped += 1
             continue
         eventbrite_id, defaults = cleaned
-        _, was_created = Event.objects.update_or_create(eventbrite_id=eventbrite_id, defaults=defaults)
+        try:
+            description_html = client.get_event_description_html(eventbrite_id)
+        except EventbriteError:
+            description_html = ""
+        defaults["details_content"] = (
+            {"html": description_html}
+            if description_html
+            else {}
+        )
+        _, was_created = Event.objects.update_or_create(
+            eventbrite_id=eventbrite_id,
+            defaults=defaults,
+        )
         created += int(was_created)
         updated += int(not was_created)
     if connection:

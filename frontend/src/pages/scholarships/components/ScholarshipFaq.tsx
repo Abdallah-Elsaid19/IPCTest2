@@ -6,29 +6,52 @@ import {
 } from "@/components/content/ManagedContentProvider";
 
 const questions = [
-  { question: "Do I need existing project controls knowledge?", answer: "No. Existing technical knowledge is not the main scholarship criterion. Applicants may be completely new to project controls. The Institute is primarily interested in character, need, service, motivation, potential and commitment to complete." },
-  { question: "Are 40 places guaranteed in every intake?", answer: "No. The Institute aims to support up to 40 places per intake, but the actual number depends on funding availability, programme capacity, eligibility, application quality and final approval." },
-  { question: "Does every scholarship cover the full programme?", answer: "Not necessarily. Awards may be full, partial or focused on specific professional development activities. The exact support will be confirmed in writing for each successful applicant." },
-  { question: "Can self-employed professionals and consultants apply?", answer: "Yes. A specific bursary route is available for self-employed professionals, freelancers, sole traders and consultants who do not have access to a large employer training budget." },
-  { question: "Can armed forces veterans and public-service professionals apply?", answer: "Yes. The transition category helps applicants translate transferable leadership, logistics, planning and risk experience into civilian project controls careers." },
-  { question: "Can a person with a previous conviction apply?", answer: "Yes. The Second Chance Career Repositioning category supports positive reintegration and rebuilding. Applications will be handled fairly and sensitively, while suitability, safeguarding and relevant requirements may still be considered." },
-  { question: "Do all applicants need more than 10,000 social media followers?", answer: "No. A follower threshold is relevant only to the Social Media for Good route and is not a general scholarship requirement." },
-  { question: "What if none of the categories describes me?", answer: "Use the open application route. Explain your circumstances, the barrier you face, your professional or social contribution and the difference support would make." },
-  { question: "Does receiving a scholarship automatically make me a Fellow?", answer: "No. A scholarship may support learning and professional development, but Associate Fellowship and Fellowship remain competence-based recognition routes with separate evidence requirements." },
-  { question: "Will I have to share my personal story publicly?", answer: "No. Applicants should not be required to disclose private financial, medical, criminal justice or personal circumstances publicly. A success story may only be shared with appropriate consent and agreed wording." },
-  { question: "Can an employer, university or charity sponsor applicants?", answer: "Yes. Organisations can sponsor individuals, groups, award categories, events, mentoring and related professional development through the Institute's sponsorship route." },
+  {
+    question: "Does IPC guarantee 70% funding to every applicant?",
+    answer:
+      "No. Funding is discretionary and depends on applicant need, available scholarship resources, programme route and the written award decision. The contribution may be 50%, 60%, 70% or another approved amount.",
+  },
+  {
+    question: "Who pays the remaining 30%–50%?",
+    answer:
+      "The remaining contribution may be paid by the learner, an employer, a sponsor or another approved co-funding source. The complete funding route must be confirmed before enrolment.",
+  },
+  {
+    question:
+      "Can the IPC contribution be combined with apprenticeship funding?",
+    answer:
+      "It may be possible where the relevant funding rules allow it, but the same eligible cost cannot be funded twice. IPC and Kent Business College will confirm the permitted arrangement in writing.",
+  },
+  {
+    question: "Should I apply to IPC or Kent Business College first?",
+    answer:
+      "Explore the official Kent Business College programme page first, then submit your IPC scholarship application. Kent Business College confirms programme suitability and admission; IPC confirms the scholarship contribution.",
+  },
+  {
+    question: "Can self-employed professionals and consultants apply?",
+    answer:
+      "Yes. Freelancers, sole traders and consultants may apply where they meet the scholarship criteria and do not have access to sufficient employer-funded professional development.",
+  },
+  {
+    question: "Do I need existing project controls expertise?",
+    answer:
+      "No. Applicants may be new to project controls. IPC considers character, need, service, motivation, transferable experience, potential and the ability to benefit from the opportunity.",
+  },
+  {
+    question: "Does scholarship approval guarantee admission?",
+    answer:
+      "No. Scholarship approval and programme admission are separate decisions. Kent Business College must confirm that the applicant meets the programme’s entry, suitability and participation requirements.",
+  },
 ];
 
 export default function ScholarshipFaq() {
   const content = useManagedSection("faq", {
     eyebrow: "Frequently Asked Questions",
-    title: "Questions about eligibility, funding and applications.",
-    description:
-      "Clear information about who may apply, what support can include and how the scheme operates.",
+    title: "IPC and Kent Business College scholarship questions.",
     items: questions,
   });
   const items = content.items.filter(isManagedItemActive);
-  const [openQuestion, setOpenQuestion] = useState<number | null>(0);
+  const [openQuestion, setOpenQuestion] = useState<number | null>(null);
 
   return (
     <section className="bg-background-50 section-padding">
@@ -37,7 +60,6 @@ export default function ScholarshipFaq() {
           <SectionHeader
             eyebrow={content.eyebrow}
             title={content.title}
-            subtitle={content.description}
           />
         </div>
         <div className="reveal space-y-3 lg:col-span-7">

@@ -2,14 +2,24 @@ import { useEffect } from "react";
 import InstitutionAuthority from "./components/InstitutionAuthority";
 import DisciplineSystem from "./components/DisciplineSystem";
 import RecognitionPathway from "./components/RecognitionPathway";
-import IntelligenceLayer from "./components/IntelligenceLayer";
-import KnowledgeMosaic from "./components/KnowledgeMosaic";
-import CommunityMetrics from "./components/CommunityMetrics";
-import CtaTerminal from "./components/CtaTerminal";
 import HeroCanvas from "./components/HeroCanvas";
-import MemberValue from "./components/MemberValue";
-import OrganisationalValue from "./components/OrganisationalValue";
-import CredibilityStrip from "./components/CredibilityStrip";
+import {
+  HomeAudiences,
+  HomeAwards,
+  HomeClubs,
+  HomeDecisionConfidence,
+  HomeEcosystem,
+  HomeEvents,
+  HomeFaq,
+  HomeFinalCta,
+  HomeGovernance,
+  HomePartners,
+  HomePublications,
+  HomeScholarships,
+  HomeSponsorship,
+  HomeValues,
+  HomeWhyIpc,
+} from "./components/HomeContentSections";
 import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
@@ -39,16 +49,24 @@ export default function Home() {
       <div className="bg-background-950 sm:bg-background-50">
       <ManagedPageSeo fallback={{ ...pageSeo.home, canonical_path: pageSeo.home.canonicalPath }} />
       <HeroCanvas />
-      {/* <CredibilityStrip /> */}
+      <HomeDecisionConfidence />
       <InstitutionAuthority />
-      <DisciplineSystem />
+      <HomeWhyIpc />
       <RecognitionPathway />
-      <IntelligenceLayer />
-      {/* <KnowledgeMosaic /> */}
-      <MemberValue />
-      <OrganisationalValue />
-      {/* <CommunityMetrics /> */}
-      <CtaTerminal />
+      <DisciplineSystem />
+      <HomeValues />
+      <HomeAudiences />
+      <HomeEcosystem />
+      <HomeEvents />
+      <HomeScholarships />
+      <HomeAwards />
+      <HomeClubs />
+      <HomePublications />
+      <HomePartners />
+      <HomeSponsorship />
+      <HomeGovernance />
+      <HomeFaq />
+      <HomeFinalCta />
       </div>
     </ManagedContentProvider>
   );

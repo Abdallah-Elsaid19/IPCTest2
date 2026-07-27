@@ -28,7 +28,12 @@ from .serializers import (
 )
 from .services.registration import create_registration
 from .services.registration_email import registration_urls, send_registration_confirmation
-from .services.eventbrite import EventbriteClient, get_configured_client
+from .services.eventbrite import (
+    EventbriteClient,
+    get_configured_client,
+    get_eventbrite_image_url,
+    get_eventbrite_thumbnail_url,
+)
 from .services.sync_eventbrite import sync_eventbrite_events
 
 
@@ -330,7 +335,8 @@ def _eventbrite_event_payload(event):
         "start_time": (event.get("start") or {}).get("utc"),
         "end_time": (event.get("end") or {}).get("utc"),
         "url": event.get("url") or "",
-        "image_url": (event.get("logo") or {}).get("url") or "",
+        "image_url": get_eventbrite_image_url(event),
+        "image_thumbnail_url": get_eventbrite_thumbnail_url(event),
         "status": event.get("status") or "",
         "venue_id": venue.get("id"),
         "venue_name": venue.get("name"),

@@ -9,10 +9,62 @@ from rest_framework.test import APIClient
 from datetime import timedelta
 
 from .models import Event, EventPageContent, EventRegistration, EventbriteAttendeeSnapshot
-from .services.eventbrite import EventbriteClient
-
-
+from .services.eventbrite import (
+    EventbriteClient,
+    get_eventbrite_image_url,
+    get_eventbrite_thumbnail_url,
+)
 class EventbriteClientTests(TestCase):
+    @patch.object(EventbriteClient, "_request")
+    def test_event_description_uses_full_html_endpoint(self, request):
+        request.return_value = {
+            "description": "<h2>About Event</h2><p>Full programme content.</p>"
+        }
+
+        description = EventbriteClient(
+            token="test-token"
+        ).get_event_description_html("event-123")
+
+        self.assertEqual(
+            description,
+            "<h2>About Event</h2><p>Full programme content.</p>",
+        )
+        request.assert_called_once_with("events/event-123/description/")
+
+    def test_event_image_prefers_original_high_resolution_url(self):
+        event = {
+            "logo": {
+                "url": "https://example.com/preview.jpg",
+                "original": {"url": "https://example.com/original.jpg"},
+            },
+        }
+
+        self.assertEqual(
+            get_eventbrite_image_url(event),
+            "https://example.com/original.jpg",
+        )
+
+    def test_event_image_falls_back_to_standard_url(self):
+        event = {"logo": {"url": "https://example.com/preview.jpg"}}
+
+        self.assertEqual(
+            get_eventbrite_image_url(event),
+            "https://example.com/preview.jpg",
+        )
+
+    def test_event_thumbnail_prefers_compressed_standard_url(self):
+        event = {
+            "logo": {
+                "url": "https://example.com/preview.jpg",
+                "original": {"url": "https://example.com/original.jpg"},
+            },
+        }
+
+        self.assertEqual(
+            get_eventbrite_thumbnail_url(event),
+            "https://example.com/preview.jpg",
+        )
+
     @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
     @patch.object(EventbriteClient, "_request")
     def test_organization_attendees_does_not_send_unsupported_page_size(self, request):

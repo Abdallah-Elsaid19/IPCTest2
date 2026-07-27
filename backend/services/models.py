@@ -11,12 +11,18 @@ class ServiceContent(models.Model):
 
     key = models.SlugField(max_length=40, unique=True, default="main")
     hero = models.JSONField(default=dict, validators=[validate_content_section])
+    impact_strip = models.JSONField(default=dict, validators=[validate_content_section])
+    why_services = models.JSONField(default=dict, validators=[validate_content_section])
     principles = models.JSONField(default=dict, validators=[validate_content_section])
     portfolio = models.JSONField(default=dict, validators=[validate_content_section])
     audiences = models.JSONField(default=dict, validators=[validate_content_section])
     journey = models.JSONField(default=dict, validators=[validate_content_section])
     route_builder = models.JSONField(default=dict, validators=[validate_content_section])
     quality = models.JSONField(default=dict, validators=[validate_content_section])
+    employer_solutions = models.JSONField(default=dict, validators=[validate_content_section])
+    academic_solutions = models.JSONField(default=dict, validators=[validate_content_section])
+    outcomes = models.JSONField(default=dict, validators=[validate_content_section])
+    engagement = models.JSONField(default=dict, validators=[validate_content_section])
     faq = models.JSONField(default=dict, validators=[validate_content_section])
     final_cta = models.JSONField(default=dict, validators=[validate_content_section])
     seo = models.JSONField(default=dict, validators=[validate_content_section])
@@ -40,4 +46,3 @@ class ServiceContent(models.Model):
 
     def __str__(self):
         return self.key
-

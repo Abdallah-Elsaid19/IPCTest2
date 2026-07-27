@@ -7,16 +7,22 @@ export type RegistrationQuestion = {
   is_required: boolean;
 };
 
+export type EventDetailsContent = {
+  html?: string;
+};
+
 export type RegistrationEvent = {
   id: number;
   slug: string;
   title: string;
   description: string;
+  details_content?: EventDetailsContent;
   location: string;
   venue_name: string;
   starts_at: string | null;
   ends_at: string | null;
   image_url: string;
+  image_thumbnail_url?: string;
   eventbrite_id: string | null;
   eventbrite_url: string;
   is_online_event: boolean;

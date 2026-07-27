@@ -3,68 +3,80 @@ import { useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const steps = [
   {
-    title: "Select a scholarship or bursary route",
+    title: "Explore the Kent Business College programme",
     description:
-      "Choose the category that best explains your circumstances, contribution, transition, need or future potential. More than one route may apply.",
+      "Review the APM Level 4 or PCP Level 6 programme page and identify the route most relevant to your career.",
   },
   {
-    title: "Prepare a professional background",
+    title: "Submit an IPC scholarship application",
     description:
-      "Include a CV, LinkedIn profile or short background summary. If your experience is outside project controls, explain its transferable value.",
+      "Email your CV or background summary, selected programme, scholarship category and a 500–1,000 word personal statement.",
   },
   {
-    title: "Write a 500-1,000 word personal statement",
+    title: "IPC completes the values and funding review",
     description:
-      "Explain your circumstances, motivation, chosen category, relevant service or experience, barriers faced and the difference support would make.",
+      "IPC assesses need, character, service, motivation, potential and available scholarship resources.",
   },
   {
-    title: "Add supporting evidence",
+    title: "Kent Business College completes admissions review",
     description:
-      "This may include references, community or service evidence, career plans, relevant public profiles, transition information or proportionate evidence of need.",
+      "KBC confirms programme fit, entry requirements, intake, delivery route and any other available funding.",
   },
   {
-    title: "Email the Institute",
+    title: "The funding package is confirmed",
     description:
-      "Send the application to office@instituteofprojectcontrols.org. The Institute may request clarification, further evidence or a short discussion.",
+      "IPC confirms its 50%–70% contribution and the applicant, employer or sponsor confirms the remaining contribution.",
+  },
+  {
+    title: "Enrolment and professional journey begin",
+    description:
+      "The learner enrols with Kent Business College and begins engaging with the IPC membership, events and recognition pathway where included.",
   },
 ];
 
 export default function ScholarshipApplicationProcess() {
   const content = useManagedSection("application_process", {
-    eyebrow: "How to Apply",
-    title: "A clear email application process for the launch phase.",
+    eyebrow: "From Interest to Enrolment",
+    title: "One coordinated application journey.",
     description:
-      "Applicants do not need to create an online account. Prepare the information below and email the Institute directly.",
+      "Applicants engage with both partners, but each partner has a clearly defined decision.",
     steps,
   });
 
   return (
     <section id="apply" className="scroll-mt-20 bg-background-50 section-padding">
       <div className="container-content">
-        <div className="reveal">
+        <div className="reveal max-w-4xl">
           <SectionHeader
             eyebrow={content.eyebrow}
             title={content.title}
             subtitle={content.description}
-            centered
           />
         </div>
-        <ol className="reveal mt-12 grid border-l border-t border-background-300 sm:grid-cols-2 md:mt-16 lg:grid-cols-5">
+        <ol className="reveal mt-12 space-y-4 md:mt-16">
           {content.steps.map((step, index) => (
-            <li key={step.title} className="min-h-64 border-b border-r border-background-300 p-5 md:p-6">
-              <span className="font-mono text-xs font-bold text-primary-700">
-                {String(index + 1).padStart(2, "0")}
+            <li
+              key={step.title}
+              className="group relative grid gap-5 border border-background-300 bg-background-50 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-500/60 hover:shadow-[0_16px_40px_rgba(25,20,14,0.08)] sm:grid-cols-[3rem_1fr] md:p-7"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-background-950 font-mono text-xs font-bold text-primary-400">
+                {index + 1}
               </span>
-              <h3 className="mt-8 font-heading text-lg font-semibold text-background-950">
-                {step.title}
-              </h3>
-              <p className="mt-4 text-sm leading-[1.75] text-foreground-600">
-                {step.description}
-              </p>
+              <div>
+                <h3 className="font-heading text-xl font-semibold leading-tight text-background-950 md:text-2xl">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm leading-[1.75] text-foreground-600 md:text-base">
+                  {step.description}
+                </p>
+              </div>
+              <span
+                className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary-500 transition-transform duration-300 group-hover:scale-x-100"
+                aria-hidden="true"
+              />
             </li>
           ))}
         </ol>
-
       </div>
     </section>
   );

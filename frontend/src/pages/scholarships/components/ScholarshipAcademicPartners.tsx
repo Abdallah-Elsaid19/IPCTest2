@@ -99,6 +99,17 @@ export default function ScholarshipAcademicPartners() {
                 >
                   {item.description}
                 </p>
+                {!isIpc && (
+                  <a
+                    href="https://kentbusinesscollege.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-7 inline-flex min-h-12 items-center gap-2 bg-primary-500 px-6 font-label text-sm font-semibold uppercase tracking-[0.02em] text-background-950 transition-colors hover:bg-primary-400"
+                  >
+                    Visit Kent Business College
+                    <i className="ri-external-link-line" aria-hidden="true" />
+                  </a>
+                )}
                 <span
                   className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary-500 transition-transform duration-300 group-hover:scale-x-100"
                   aria-hidden="true"

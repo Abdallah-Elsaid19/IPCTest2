@@ -50,7 +50,15 @@ const disciplines = [
 ];
 
 export default function DisciplineSystem() {
-  const content = useManagedSection("discipline_system", { eyebrow: "The integrated discipline", title: "Better information. Earlier insight. Stronger decisions.", description: "Project controls turns project information into credible decisions by connecting governance, scope, planning, cost, risk, change, data, sustainability and leadership.", items: disciplines });
+  const content = useManagedSection("discipline_system", {
+    eyebrow: "Competence framework",
+    title: "Recognition built around the real work of project controls.",
+    description: "The framework considers knowledge, skills, behaviour, evidence, responsibility and professional impact — not job title alone.",
+    progression_title: "Progressive depth",
+    progression: "The expected depth increases from awareness and supervised contribution to independent application, assurance, leadership and strategic influence.",
+    levels: ["Level 3 foundation competence", "Level 4 applied practitioner judgement", "Level 6 leadership and assurance", "Evidence and professional conduct at every level"],
+    items: disciplines,
+  });
   const managedDisciplines = content.items.filter(isManagedItemActive).map((item, index) => ({ ...item, angle: "angle" in item ? Number(item.angle) : index * (360 / content.items.length), desc: (item as { description?: string }).description ?? item.desc }));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -270,6 +278,13 @@ export default function DisciplineSystem() {
             <p className="text-sm md:text-base text-background-400 leading-[1.8] font-medium mb-8 max-w-[420px]">
               {content.description}
             </p>
+            <div className="mb-8 border border-background-800 bg-background-900/50 p-5">
+              <span className="font-heading text-sm font-semibold text-primary-400">{content.progression_title}</span>
+              <p className="mt-2 text-xs leading-relaxed text-background-400">{content.progression}</p>
+              <ul className="mt-4 grid gap-2 text-[11px] leading-relaxed text-background-300">
+                {content.levels.map((level) => <li key={level} className="flex items-start gap-2"><i className="ri-check-line mt-0.5 text-primary-400" aria-hidden="true" />{level}</li>)}
+              </ul>
+            </div>
             <div className="flex items-center gap-6">
               <div className="w-10 h-px bg-primary-500/40" />
               <span className="text-[11px] font-mono text-background-500 tracking-[0.2em] uppercase">Hover to explore</span>

@@ -11,9 +11,19 @@ function CtaLink({
   label: string;
   className: string;
 }) {
-  if (href.startsWith("mailto:") || href.startsWith("#")) {
+  if (
+    href.startsWith("mailto:") ||
+    href.startsWith("#") ||
+    href.startsWith("http://") ||
+    href.startsWith("https://")
+  ) {
     return (
-      <a href={href} className={className}>
+      <a
+        href={href}
+        className={className}
+        target={href.startsWith("http") ? "_blank" : undefined}
+        rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+      >
         {label}
       </a>
     );
@@ -28,14 +38,21 @@ function CtaLink({
 
 export default function ScholarshipEnquiryCta() {
   const content = useManagedSection("final_cta", {
-    eyebrow: "Apply for Opportunity",
-    title: "Take the next step towards a project controls career.",
+    eyebrow: "IPC × Kent Business College",
+    title: "Apply for 50%–70% IPC scholarship funding.",
     description:
-      "You do not need to already be an expert. Explain who you are, the barrier you face, the contribution you have made and the professional future you want to build.",
-    primary_cta_label: "Enquire About Scholarships",
-    primary_cta_url: "/information-session",
-    tertiary_cta_label: "Sponsor a Learner",
-    tertiary_cta_url: "/sponsorship",
+      "Choose the Associate Project Manager Level 4 or Project Controls Professional Level 6 pathway, then submit your funding application to the Institute of Project Controls.",
+    primary_cta_label: "Apply for IPC Scholarship",
+    primary_cta_url:
+      "https://outlook.office.com/mail/deeplink/compose?to=office%40instituteofprojectcontrols.org&subject=IPC%20Scholarship%20Application",
+    secondary_cta_label: "Explore APM Level 4",
+    secondary_cta_url:
+      "https://kentbusinesscollege.com/associate-project-manager-level-4/",
+    tertiary_cta_label: "Explore PCP Level 6",
+    tertiary_cta_url:
+      "https://kentbusinesscollege.com/project-control-professional-level-6/",
+    address_label: "IPC address",
+    email_label: "IPC email",
     email: scholarshipEmail,
     address: "39 Maidstone Innovation Centre, Maidstone, Kent, ME14 5FY",
   });
@@ -51,17 +68,23 @@ export default function ScholarshipEnquiryCta() {
           <p className="mx-auto mt-6 max-w-3xl leading-[1.8] text-background-300">
             {content.description}
           </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <address className="mx-auto mt-9 max-w-3xl border-t border-background-800 pt-7 text-sm not-italic leading-relaxed text-background-300">
+            <p>
+              <strong className="text-background-50">{content.address_label}:</strong>{" "}
+              {content.address}
+            </p>
+            <p className="mt-2">
+              <strong className="text-background-50">{content.email_label}:</strong>{" "}
+              <a href={`mailto:${content.email}`} className="text-primary-300 underline underline-offset-4">
+                {content.email}
+              </a>
+            </p>
+          </address>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
             <CtaLink href={content.primary_cta_url} label={content.primary_cta_label} className="btn-primary" />
+            <CtaLink href={content.secondary_cta_url} label={content.secondary_cta_label} className="btn-secondary" />
             <CtaLink href={content.tertiary_cta_url} label={content.tertiary_cta_label} className="btn-secondary" />
           </div>
-          <address className="mt-10 border-t border-background-800 pt-7 text-sm not-italic leading-relaxed text-background-400">
-            <a href={`mailto:${content.email}`} className="text-primary-300 underline underline-offset-4">
-              {content.email}
-            </a>
-            <span className="mx-3 hidden text-background-700 sm:inline">|</span>
-            <span className="mt-2 block sm:mt-0 sm:inline">{content.address}</span>
-          </address>
         </div>
       </div>
     </section>

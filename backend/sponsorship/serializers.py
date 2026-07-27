@@ -7,7 +7,8 @@ class SponsorshipContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SponsorshipContent
         fields = [
-            "hero", "principles", "purpose", "routes_intro", "routes", "benefits",
+            "hero", "principles", "purpose", "routes_intro", "routes",
+            "scholarship_feature", "benefits", "recognition_levels",
             "partners_intro", "partner_types", "integrity_intro", "integrity_principles", "route_builder",
             "process", "impact", "faq", "final_cta", "seo", "updated_at",
         ]

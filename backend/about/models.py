@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from ipc_backend.validators import validate_content_section
 
 
 def validate_collection(value, required_fields, label):
@@ -32,6 +33,21 @@ def validate_vision_pillars(value):
 
 class AboutPageContent(models.Model):
     key = models.SlugField(max_length=40, unique=True, default="main")
+    hero = models.JSONField(default=dict, validators=[validate_content_section])
+    purpose = models.JSONField(default=dict, validators=[validate_content_section])
+    why_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    vision = models.JSONField(default=dict, validators=[validate_content_section])
+    mission_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    values_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    identity_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    discipline = models.JSONField(default=dict, validators=[validate_content_section])
+    standards = models.JSONField(default=dict, validators=[validate_content_section])
+    audiences_intro = models.JSONField(default=dict, validators=[validate_content_section])
+    audiences = models.JSONField(default=list, validators=[validate_content_section])
+    professional_promise = models.JSONField(default=dict, validators=[validate_content_section])
+    faq = models.JSONField(default=dict, validators=[validate_content_section])
+    final_cta = models.JSONField(default=dict, validators=[validate_content_section])
+    seo = models.JSONField(default=dict, validators=[validate_content_section])
     statistics = models.JSONField(validators=[validate_statistics])
     why_exists = models.JSONField(validators=[validate_titled_cards])
     vision_pillars = models.JSONField(validators=[validate_vision_pillars])

@@ -13,8 +13,8 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = [
-            "id", "eventbrite_id", "title", "description", "start_time", "end_time", "url",
-            "image_url", "status", "venue_name", "capacity", "is_online_event", "is_featured",
+            "id", "eventbrite_id", "title", "description", "details_content", "start_time", "end_time", "url",
+            "image_url", "image_thumbnail_url", "status", "venue_name", "capacity", "is_online_event", "is_featured",
             "created_at", "updated_at",
             # Backwards-compatible fields used by the current frontend.
             "slug", "event_type", "location", "region", "starts_at", "ends_at", "eventbrite_url", "is_published",
@@ -37,16 +37,16 @@ class AdminEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = [
-            "id", "title", "slug", "event_type", "description", "location",
+            "id", "title", "slug", "event_type", "description", "details_content", "location",
             "region", "venue_name", "starts_at", "ends_at", "capacity",
-            "image_url", "eventbrite_id", "eventbrite_url", "status",
+            "image_url", "image_thumbnail_url", "eventbrite_id", "eventbrite_url", "status",
             "is_online_event", "is_featured", "is_published", "created_at",
             "is_hidden_on_site", "updated_at", "lifecycle_status",
             "registration_title", "registration_description", "registration_opens_at",
             "registration_closes_at", "max_tickets_per_registration", "timezone",
         ]
         read_only_fields = [
-            "id", "eventbrite_id", "is_hidden_on_site", "created_at", "updated_at",
+            "id", "eventbrite_id", "image_thumbnail_url", "is_hidden_on_site", "created_at", "updated_at",
         ]
 
     def validate_eventbrite_id(self, value):

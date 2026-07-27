@@ -22,25 +22,37 @@ CONTENT_TABLES = {
     "home": {
         "label": "Home Content",
         "model": HomeContent,
-        "fields": ("hero", "principles", "discipline_system", "recognition_pathway", "intelligence_layer", "member_value", "organisational_value", "application_journey", "seo"),
+        "fields": (
+            "decision_confidence", "principles", "why_ipc",
+            "recognition_pathway", "discipline_system", "values", "audiences",
+            "ecosystem", "events", "scholarships", "awards", "clubs",
+            "publications", "partners", "sponsorship", "governance", "faq",
+            "final_cta", "seo",
+        ),
         "publishing": True,
     },
     "membership": {
         "label": "Membership Content",
         "model": MembershipContent,
-        "fields": ("hero", "grades_intro", "comparison", "competence_matrix", "member_value", "professional_visibility", "application_journey", "organisational_membership", "questions", "grade_finder", "final_cta", "seo"),
+        "fields": ("grades_intro", "comparison", "competence_matrix", "member_value", "professional_visibility", "application_journey", "organisational_membership", "questions", "grade_finder", "final_cta", "seo"),
         "publishing": True,
     },
     "about": {
-        "label": "About",
+        "label": "About Content",
         "model": AboutPageContent,
-        "fields": ("statistics", "why_exists", "vision_pillars", "missions", "core_values", "identity_symbols"),
+        "fields": (
+            "purpose", "statistics", "why_intro", "why_exists",
+            "vision", "vision_pillars", "mission_intro", "missions",
+            "values_intro", "core_values", "identity_intro", "identity_symbols",
+            "discipline", "standards", "audiences_intro", "audiences",
+            "professional_promise", "faq", "final_cta", "seo",
+        ),
     },
     "awards": {
         "label": "Awards Content",
         "model": AwardPageContent,
         "fields": (
-            "hero", "framework_intro", "featured_intro", "timeline_intro",
+            "framework_intro", "featured_intro", "timeline_intro",
             "nomination_timeline", "benefits_intro", "impact_benefits",
             "beneficiaries_intro", "beneficiaries", "integrity_intro",
             "integrity_principles", "recognition_intro", "recognition_benefits",
@@ -53,7 +65,7 @@ CONTENT_TABLES = {
         "label": "Clubs Content",
         "model": ClubPageContent,
         "fields": (
-            "hero", "principles", "purpose", "locations_intro", "regional_clubs",
+            "principles", "purpose", "locations_intro", "regional_clubs",
             "programme_intro", "activities", "audiences_intro", "audience_values",
             "upcoming", "contribution", "partners", "faq", "final_cta", "seo",
         ),
@@ -67,21 +79,27 @@ CONTENT_TABLES = {
     "scholarships": {
         "label": "Scholarship Content",
         "model": ScholarshipContent,
-        "fields": ("hero", "commitment", "principles", "audiences_intro", "audiences", "values_intro", "values", "eligibility", "recipient_commitment", "application_process", "partners", "academic_partners", "conditions", "impact", "faq", "final_cta", "seo"),
+        "fields": ("commitment", "fund", "principles", "audiences_intro", "audiences", "values_intro", "values", "eligibility", "recipient_commitment", "application_process", "partners", "academic_partners", "conditions", "impact", "faq", "final_cta", "seo"),
         "publishing": True,
     },
     "sponsorship": {
         "label": "Sponsorship Content",
         "model": SponsorshipContent,
-        "fields": ("hero", "principles", "purpose", "routes_intro", "routes", "benefits", "integrity_intro", "integrity_principles", "route_builder", "process", "impact", "partners_intro", "partner_types", "faq", "final_cta", "seo"),
+        "fields": (
+            "principles", "purpose", "partners_intro", "partner_types",
+            "routes_intro", "routes", "scholarship_feature", "benefits",
+            "recognition_levels", "integrity_intro", "integrity_principles",
+            "process", "faq", "final_cta", "seo",
+        ),
         "publishing": True,
     },
     "services": {
         "label": "Service Content",
         "model": ServiceContent,
         "fields": (
-            "hero", "principles", "portfolio", "audiences", "journey",
-            "route_builder", "quality", "faq", "final_cta", "seo",
+            "impact_strip", "why_services", "audiences", "portfolio",
+            "quality", "employer_solutions", "academic_solutions", "outcomes",
+            "engagement", "principles", "faq", "final_cta", "seo",
         ),
         "publishing": True,
     },
@@ -89,7 +107,7 @@ CONTENT_TABLES = {
         "label": "Fund Content",
         "model": FundContent,
         "fields": (
-            "hero", "purpose", "programmes", "routes", "applicant_matcher",
+            "purpose", "programmes", "routes", "applicant_matcher",
             "impact", "research", "employer", "individual_support", "partners", "principles",
             "route_builder", "governance", "process", "assurance", "faq",
             "final_cta", "seo",
@@ -99,19 +117,23 @@ CONTENT_TABLES = {
     "employers": {
         "label": "Employer Content",
         "model": EmployerContent,
-        "fields": ("hero", "value_intro", "values", "pathways_intro", "pathways", "capability_model", "evidence", "impact", "faq", "final_cta", "seo"),
+        "fields": ("value_intro", "values", "pathways_intro", "pathways", "capability_model", "evidence", "impact", "faq", "final_cta", "seo"),
         "publishing": True,
     },
     "partnerships": {
         "label": "Partnership Content",
         "model": PartnershipContent,
-        "fields": ("hero", "partner_types", "value", "comparison", "integrity", "process", "faq", "final_cta", "seo"),
+        "fields": ("partner_types", "value", "comparison", "integrity", "process", "faq", "final_cta", "seo"),
         "publishing": True,
     },
     "publications": {
         "label": "Publication Content",
         "model": PublicationContent,
-        "fields": ("hero", "routes", "value", "principles", "process", "faq", "final_cta", "seo"),
+        "fields": (
+            "why_publish", "routes", "themes", "formats", "audiences",
+            "principles", "integrity", "process", "contributor_value",
+            "partner_value", "sponsorship", "faq", "final_cta", "seo",
+        ),
         "publishing": True,
     },
 }

@@ -96,7 +96,7 @@ export default function Awards() {
         canonicalPath={awardContent.seo.canonical_path}
         noIndex={awardContent.seo.noindex || awardContent.seo.nofollow}
       />
-      <AwardsHero content={awardContent.hero} />
+      <AwardsHero content={defaultAwardsContent.hero} />
       <AwardsBenefits content={awardContent.benefits_intro} benefits={benefits} isLoading={false} error="" />
       <AwardsFramework content={awardContent.framework_intro} categories={awardCategories} />
       <AwardsFeatured content={awardContent.featured_intro} programmes={featuredAwards} error={awardsError} onRetry={() => void loadAwardsPage()} />

@@ -17,18 +17,19 @@ export default function AwardsBenefits({
   return (
     <section className="bg-background-50 section-padding">
       <div className="container-content">
-        <div className="reveal mx-auto max-w-5xl">
+        <div className="reveal">
           <SectionHeader
             eyebrow={content.eyebrow}
             title={content.title}
             centered
+            className="mx-auto max-w-5xl"
           />
           {content.description && (
-            <p className="mt-7 max-w-4xl text-left text-base leading-relaxed text-foreground-600 md:text-lg">
+            <p className="mt-7 text-left text-base leading-relaxed text-foreground-600 md:text-lg">
               {content.description}
             </p>
           )}
-          <div className="mt-7 max-w-4xl space-y-5 text-left text-sm leading-[1.85] text-foreground-600 md:text-base">
+          <div className="mt-7 space-y-5 text-left text-sm leading-[1.85] text-foreground-600 md:text-base">
             {content.secondary_description && <p>{content.secondary_description}</p>}
             {content.tertiary_description && <p>{content.tertiary_description}</p>}
           </div>

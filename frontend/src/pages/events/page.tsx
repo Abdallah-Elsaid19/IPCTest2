@@ -10,6 +10,7 @@ import { subscribeToContentUpdates } from "@/lib/contentSync";
 
 type UpcomingEvent = {
   id?: number;
+  slug: string;
   date: string;
   time: string;
   location: string;
@@ -18,6 +19,7 @@ type UpcomingEvent = {
   description: string;
   highlight?: boolean;
   image?: string;
+  thumbnail?: string;
   url?: string;
   external?: boolean;
 };
@@ -88,6 +90,7 @@ export default function Events() {
     if (!eventbriteEvents.length) return [];
     return eventbriteEvents.map((event, index) => ({
       id: event.id,
+      slug: event.slug,
       date: formatDate(event.starts_at),
       time: formatTimeRange(event.starts_at, event.ends_at),
       location: event.location || event.region || "Online / venue to be confirmed",
@@ -96,6 +99,7 @@ export default function Events() {
       description: event.description || "Event details will be confirmed shortly.",
       highlight: index === 0,
       image: event.image_url || undefined,
+      thumbnail: event.image_thumbnail_url || event.image_url || undefined,
       url: event.eventbrite_url || `/events/${event.slug}`,
       external: Boolean(event.eventbrite_id),
     }));
@@ -182,8 +186,8 @@ export default function Events() {
               Events
             </h1>
             <p className="text-base md:text-lg text-background-200 leading-relaxed max-w-2xl mb-10">
-              A professional institute should create spaces where people meet, learn and exchange practice. 
-              Networking is not only social â€” it helps professionals understand different sectors, compare methods, 
+              A professional institute should create spaces where people meet, learn and exchange practice.
+              Networking is not only social it helps professionals understand different sectors, compare methods,
               hear lessons learned, meet employers, build confidence and identify mentors.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -242,13 +246,16 @@ export default function Events() {
               >
                 <div className="flex flex-col lg:flex-row">
                   <div className="lg:w-[45%] shrink-0 relative overflow-hidden">
-                    <img
-            loading="lazy"
-            decoding="async"
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-64 lg:h-full object-cover image-zoom"
-                    />
+                    <picture>
+                      {event.image && <source media="(min-width: 1024px)" srcSet={event.image} />}
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        src={event.thumbnail || event.image}
+                        alt={event.title}
+                        className="w-full h-64 lg:h-full object-cover image-zoom"
+                      />
+                    </picture>
                     <div className="absolute inset-0 bg-gradient-to-t from-background-950/55 via-transparent to-transparent" />
                     <div className="absolute top-0 right-0">
                       <div className="bg-primary-500 text-background-950 text-[11px] font-bold uppercase tracking-widest px-4 py-1.5">
@@ -278,16 +285,25 @@ export default function Events() {
                       <i className="ri-building-line mr-1" />
                       {event.venue}
                     </p>
-                    <div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Link
+                        to={`/events/${event.slug}`}
+                        className="inline-flex items-center justify-center gap-2 border border-background-600 px-5 py-2.5 text-sm font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300"
+                      >
+                        More details
+                        <i className="ri-arrow-right-line" />
+                      </Link>
+                      {event.external && (
                       <a
                         href={event.url || "#register"}
-                        target={event.external ? "_blank" : undefined}
-                        rel={event.external ? "noreferrer" : undefined}
+                        target="_blank"
+                        rel="noreferrer"
                         className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary-500 text-background-950 hover:bg-primary-400 transition-all duration-300 whitespace-nowrap"
                       >
-                        {event.external ? "Register on Eventbrite" : "View event"}
+                        Register on Eventbrite
                         <i className="ri-arrow-right-line" />
                       </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -302,7 +318,7 @@ export default function Events() {
                   className={`reveal reveal-delay-${Math.min(index + 2, 6)} group flex h-full flex-col overflow-hidden  bg-background-950 shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-primary-500/60 hover:shadow-xl`}
                 >
                   <div className="relative h-56 overflow-hidden bg-background-200">
-                    <img loading="lazy" decoding="async" src={event.image} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img loading="lazy" decoding="async" src={event.thumbnail || event.image} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-background-950 via-background-950/10 to-transparent" />
                     <span className="absolute bottom-4 left-4 inline-flex max-w-[calc(100%-2rem)] items-center gap-1.5 bg-background-950/85 px-3 py-1.5 text-xs font-medium text-background-50 backdrop-blur-sm">
                       <i className="ri-map-pin-line shrink-0 text-primary-400" />
@@ -325,15 +341,26 @@ export default function Events() {
                       <i className="ri-building-line mt-0.5 shrink-0 text-accent-600" />
                       <span>{event.venue}</span>
                     </p>
-                    <a
-                      href={event.url || "#register"}
-                      target={event.external ? "_blank" : undefined}
-                      rel={event.external ? "noreferrer" : undefined}
-                      className="inline-flex w-full items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-sm font-semibold text-background-950 transition-colors hover:bg-primary-400"
-                    >
-                      {event.external ? "Register on Eventbrite" : "View event"}
-                      <i className={event.external ? "ri-external-link-line" : "ri-arrow-right-line"} />
-                    </a>
+                    <div className="grid gap-2">
+                      {event.external && (
+                        <a
+                          href={event.url || "#register"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex w-full items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-sm font-semibold text-background-950 transition-colors hover:bg-primary-400"
+                        >
+                          Register on Eventbrite
+                          <i className="ri-external-link-line" />
+                        </a>
+                      )}
+                      <Link
+                        to={`/events/${event.slug}`}
+                        className="inline-flex w-full items-center justify-center gap-2 border border-background-700 px-5 py-3 text-sm font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300"
+                      >
+                        More details
+                        <i className="ri-arrow-right-line" />
+                      </Link>
+                    </div>
                   </div>
                 </article>
               ))}

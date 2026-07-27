@@ -212,6 +212,7 @@ export interface AdminEvent {
   ends_at: string | null;
   capacity: number | null;
   image_url: string;
+  image_thumbnail_url?: string;
   eventbrite_id: string | null;
   eventbrite_url: string;
   status: string;

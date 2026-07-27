@@ -9,8 +9,9 @@ import {
 const scholarshipRoutes = [
   {
     id: "access-hardship",
-    title: "Access & Hardship Bursary",
-    subtitle: "Removing financial and access barriers",
+    title: "Access & Hardship",
+    subtitle:
+      "For applicants who cannot reasonably access professional education without financial support.",
     description:
       "For applicants who cannot reasonably access professional education or development without financial support, including people who are unemployed, underemployed, on a low income, without employer sponsorship or facing significant financial pressure.",
     consideration:
@@ -20,8 +21,9 @@ const scholarshipRoutes = [
   },
   {
     id: "character-service",
-    title: "Character & Service Scholarship",
-    subtitle: "Recognising integrity and service to others",
+    title: "Character & Service",
+    subtitle:
+      "For people who demonstrate integrity and service through volunteering, caring, mentoring or helping others.",
     description:
       "For people who demonstrate responsibility, reliability, honesty and a sustained willingness to support others. Good character means there is credible evidence of positive conduct, responsibility and intention.",
     consideration:
@@ -31,8 +33,9 @@ const scholarshipRoutes = [
   },
   {
     id: "community-impact",
-    title: "Community Impact Scholarship",
-    subtitle: "Supporting people who improve their communities",
+    title: "Community Impact",
+    subtitle:
+      "For applicants contributing to social mobility, local communities, disadvantaged groups or public benefit.",
     description:
       "For applicants whose work, volunteering or leadership creates positive local or social impact. Small, consistent and meaningful contribution can be valuable.",
     consideration:
@@ -42,8 +45,9 @@ const scholarshipRoutes = [
   },
   {
     id: "social-media-good",
-    title: "Social Media for Good Scholarship",
-    subtitle: "Positive influence for a public-benefit cause",
+    title: "Social Media for Good",
+    subtitle:
+      "For applicants with more than 10,000 followers using their influence for education, charity or another positive cause.",
     description:
       "For creators and public communicators who use social media to support education, charity, community support, social mobility, professional development, entrepreneurship or public benefit.",
     consideration:
@@ -53,8 +57,9 @@ const scholarshipRoutes = [
   },
   {
     id: "charity-ngo",
-    title: "Charity & NGO Leadership Scholarship",
-    subtitle: "Better project delivery for public benefit",
+    title: "Charity & NGO Leadership",
+    subtitle:
+      "For charity staff, trustees, volunteers and community leaders whose project capability can strengthen public benefit.",
     description:
       "For employees, trustees, volunteers and leaders working in charities, NGOs, community groups and social organisations.",
     consideration:
@@ -64,8 +69,9 @@ const scholarshipRoutes = [
   },
   {
     id: "public-service",
-    title: "Armed Forces, Veterans & Public Service Transition",
-    subtitle: "Translating service experience into civilian careers",
+    title: "Veterans & Public Service Transition",
+    subtitle:
+      "For armed forces, emergency-service or public-service professionals moving into civilian project careers.",
     description:
       "For armed forces leavers, veterans, reservists, emergency service personnel and public-service professionals moving into civilian project controls, infrastructure, construction, consultancy, logistics, risk or programme delivery careers.",
     consideration:
@@ -75,8 +81,9 @@ const scholarshipRoutes = [
   },
   {
     id: "second-chance",
-    title: "Second Chance Career Repositioning Scholarship",
-    subtitle: "Supporting positive reintegration and rebuilding",
+    title: "Second Chance Career Repositioning",
+    subtitle:
+      "For people rebuilding employment prospects after custody, conviction, homelessness, recovery or serious disruption.",
     description:
       "For people rebuilding their professional lives after custody, conviction, homelessness, addiction recovery, long-term unemployment or another significant disruption. Applications should be handled sensitively and fairly.",
     consideration:
@@ -86,8 +93,9 @@ const scholarshipRoutes = [
   },
   {
     id: "independent",
-    title: "Self-Employed Professionals & Consultants Bursary",
-    subtitle: "Professional development without employer sponsorship",
+    title: "Self-Employed Professionals & Consultants",
+    subtitle:
+      "For freelancers, sole traders and consultants without access to employer-funded professional development.",
     description:
       "For freelancers, sole traders, independent consultants and small consultancy owners who need professional development but do not have access to a large employer training budget.",
     consideration:
@@ -97,8 +105,9 @@ const scholarshipRoutes = [
   },
   {
     id: "career-returner",
-    title: "Career Returner & Repositioning Bursary",
-    subtitle: "Returning after interruption or changing direction",
+    title: "Career Returners",
+    subtitle:
+      "For parents, carers, people returning after illness and professionals repositioning from another sector.",
     description:
       "For people returning to work after childcare, caring responsibilities, illness, bereavement, redundancy, relocation or another significant career break, and professionals changing sector or moving into project controls.",
     consideration:
@@ -108,8 +117,9 @@ const scholarshipRoutes = [
   },
   {
     id: "emerging-talent",
-    title: "Emerging Talent Scholarship",
-    subtitle: "Supporting potential at the start of a career",
+    title: "Emerging Talent",
+    subtitle:
+      "For graduates, apprentices, college leavers and early-career applicants without employer sponsorship or professional networks.",
     description:
       "For school leavers, college leavers, graduates, apprentices, junior employees and early-career professionals who show promise but have limited access to professional networks, training or employer support.",
     consideration:
@@ -121,15 +131,11 @@ const scholarshipRoutes = [
 
 export default function ScholarshipAudienceGrid() {
   const intro = useManagedSection("audiences_intro", {
-    eyebrow: "Scholarship and Bursary Categories",
-    title: "Inclusive routes for different circumstances, contributions and career journeys.",
+    eyebrow: "Who IPC May Support",
+    title:
+      "Scholarship routes designed for different forms of merit, need and potential.",
     description:
-      "Applicants should select the route that best explains why support would make a difference. More than one category may apply, and the categories are intended to widen access rather than place people into narrow labels.",
-    open_title: "Do not exclude yourself because no category feels exact.",
-    open_description:
-      "Applicants whose circumstances do not fit neatly into one category may still apply. Explain the barrier, the opportunity, the personal context and the difference support would make.",
-    open_cta_label: "Enquire About Scholarships",
-    open_cta_url: "/information-session",
+      "Applicants are not selected only because they already possess technical expertise. The Fund considers character, need, service, resilience, leadership, influence and the ability to benefit from the opportunity.",
   });
   const routes = useManagedSection("audiences", scholarshipRoutes).filter(
     isManagedItemActive,
@@ -156,12 +162,11 @@ export default function ScholarshipAudienceGrid() {
   return (
     <section className="bg-background-100 section-padding">
       <div className="container-content">
-        <div className="reveal">
+        <div className="reveal max-w-4xl">
           <SectionHeader
             eyebrow={intro.eyebrow}
             title={intro.title}
             subtitle={intro.description}
-            centered
           />
         </div>
         <div className="mt-12 grid gap-5 md:mt-16 md:gap-6 lg:grid-cols-2">
@@ -193,19 +198,6 @@ export default function ScholarshipAudienceGrid() {
           ))}
         </div>
 
-        <div className="reveal mt-8 border-l-2 border-primary-500 bg-background-50 p-6 md:flex md:items-center md:justify-between md:gap-8 md:p-8">
-          <div>
-            <h3 className="font-heading text-xl font-semibold text-background-950">
-              {intro.open_title}
-            </h3>
-            <p className="mt-3 max-w-4xl text-sm leading-[1.75] text-foreground-600">
-              {intro.open_description}
-            </p>
-          </div>
-          <a href={intro.open_cta_url} className="btn-primary mt-6 shrink-0 md:mt-0">
-            {intro.open_cta_label}
-          </a>
-        </div>
       </div>
 
       {selectedRoute && (

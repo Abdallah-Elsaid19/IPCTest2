@@ -2,7 +2,19 @@ import { Link } from "react-router-dom";
 import { informationSessionPath } from "./constants";
 import { useManagedSection } from "@/components/content/ManagedContentProvider";
 
-const fallbackContent = { eyebrow: "Create professional impact", title: "Support opportunity, knowledge and excellence across project controls.", description: "Share your organisation, objective, preferred route, proposed support and intended professional or social impact.", primary_cta_label: "Start a sponsorship conversation", primary_cta_url: informationSessionPath, secondary_cta_label: "Explore opportunities", secondary_cta_url: "#opportunities" };
+const fallbackContent = {
+  eyebrow: "Build professional impact",
+  title: "Sponsor opportunity, recognition and stronger project controls capability.",
+  description: "Support a learner, fund a scholarship, sponsor a master class, recognise excellence, strengthen a regional club, publish useful knowledge or build a strategic partnership.",
+  primary_cta_label: "Discuss Sponsorship",
+  primary_cta_url: informationSessionPath,
+  secondary_cta_label: "Sponsor a Learner",
+  secondary_cta_url: informationSessionPath,
+  tertiary_cta_label: "Sponsor an Award",
+  tertiary_cta_url: informationSessionPath,
+  address: "39 Maidstone Innovation Centre, Maidstone, Kent, ME14 5FY",
+  email: "office@instituteofprojectcontrols.org",
+};
 
 export default function SponsorshipFinalCta() {
   const content = useManagedSection("final_cta", fallbackContent);
@@ -20,13 +32,13 @@ export default function SponsorshipFinalCta() {
               </span>
               {content.primary_cta_label}
             </Link>
-            <a href={content.secondary_cta_url} className="inline-flex min-h-[50px] items-center justify-center gap-2 border border-background-300 px-8 font-label text-sm font-semibold uppercase tracking-[0.02em] text-background-950 transition-colors hover:border-background-950">{content.secondary_cta_label}<i className="ri-arrow-up-line" aria-hidden="true" /></a>
+            <Link to={content.secondary_cta_url} className="inline-flex min-h-[50px] items-center justify-center gap-2 border border-background-300 px-8 font-label text-sm font-semibold uppercase tracking-[0.02em] text-background-950 transition-colors hover:border-background-950">{content.secondary_cta_label}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
+            <Link to={content.tertiary_cta_url} className="inline-flex min-h-[50px] items-center justify-center gap-2 border border-background-300 px-8 font-label text-sm font-semibold uppercase tracking-[0.02em] text-background-950 transition-colors hover:border-background-950">{content.tertiary_cta_label}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm">
-            <Link to="/partnerships" className="font-semibold text-primary-700 hover:text-primary-800">Compare partnerships</Link>
-            <Link to="/fund" className="font-semibold text-primary-700 hover:text-primary-800">Explore funded opportunities</Link>
+          <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-foreground-600">
+            <span><strong className="text-background-950">Address:</strong> {content.address}</span>
+            <a href={`mailto:${content.email}`} className="font-semibold text-primary-700 hover:text-primary-800">{content.email}</a>
           </div>
-          <p className="mx-auto mt-6 max-w-2xl text-xs leading-relaxed text-foreground-500">Sponsorship supports a defined activity with agreed ethical visibility. It is not automatic partnership, professional endorsement or influence over IPC decisions.</p>
         </div>
       </div>
     </section>

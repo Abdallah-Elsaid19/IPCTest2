@@ -1,157 +1,154 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SectionHeader from "@/components/base/SectionHeader";
 import { informationSessionPath } from "./constants";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
-const routes = [
-  {
-    id: "scholarships",
-    tab: "Scholarships",
-    tabDescription: "Learners and emerging talent",
-    eyebrow: "Scholarships & bursaries",
-    title: "Widen access to project-controls opportunity.",
-    description: "Support eligible learners, career changers or emerging professionals through agreed learning, mentoring, event or community pathways.",
-    audience: "Students, apprentices, graduates, career changers and early-career professionals.",
-    support: "Learner places, event access, mentoring, materials or professional-development activity.",
-    outcome: "Access, confidence, employability, community and a clearer progression route.",
-    designTitle: "Define the learner group and intended impact",
-    designDescription: "The proposal should explain the target group, support model, eligibility, available places and how impact will be reported.",
-    note: "Sponsorship does not guarantee membership, recognition or employment outcomes.",
-    cta: "Discuss scholarship sponsorship",
-  },
-  {
-    id: "events",
-    tab: "Events",
-    tabDescription: "Learning and professional exchange",
-    eyebrow: "Events & master classes",
-    title: "Support high-value professional learning and exchange.",
-    description: "Enable London Master Classes, professional roundtables, regional activity, mentoring circles or employer forums.",
-    audience: "Members, practitioners, employers, consultants, academics and emerging professionals.",
-    support: "Venue, production, speaker support, learner places, accessibility or programme funding.",
-    outcome: "Technical learning, professional connection, CPD and wider access to practice.",
-    designTitle: "Define the event and audience",
-    designDescription: "The proposal should confirm the format, learning outcome, audience, visibility, responsibilities and registration approach.",
-    note: "Sponsor content remains subject to relevance, evidence and editorial review.",
-    cta: "Discuss event sponsorship",
-  },
-  {
-    id: "awards",
-    tab: "Awards",
-    tabDescription: "Excellence and contribution",
-    eyebrow: "Awards & prizes",
-    title: "Recognise evidence, excellence and professional contribution.",
-    description: "Support academic, commercial or professional awards and prizes through transparent arrangements that protect judging independence.",
-    audience: "Students, researchers, professionals, teams, employers and academic partners.",
-    support: "Category funding, prizes, event support, accessibility, publication or finalist profiles.",
-    outcome: "Visible recognition, professional stories, employer value and shared learning.",
-    designTitle: "Protect judging and recognition independence",
-    designDescription: "The package should define visibility while keeping sponsor interests separate from eligibility, scoring and final decisions.",
-    note: "Sponsorship does not provide automatic judging rights or guarantee any award outcome.",
-    cta: "Discuss awards sponsorship",
-  },
-  {
-    id: "clubs",
-    tab: "Regional clubs",
-    tabDescription: "Local professional communities",
-    eyebrow: "Regional clubs",
-    title: "Help professional communities grow locally.",
-    description: "Support regional talks, networking, mentoring, site visits, student engagement and employer activity.",
-    audience: "Professionals, learners, employers, consultants and academic partners in regional communities.",
-    support: "Venue, refreshments, learner access, speakers, travel, site visits or local programme funding.",
-    outcome: "Stronger local networks, CPD, mentoring and employer or academic connection.",
-    designTitle: "Define the region and community need",
-    designDescription: "The proposal should identify the regional club, intended activity, audience, hosting requirements and safeguards.",
-    note: "Regional sponsorship does not provide access to private member or attendee data.",
-    cta: "Discuss regional sponsorship",
-  },
-  {
-    id: "publications",
-    tab: "Publications",
-    tabDescription: "Research and professional knowledge",
-    eyebrow: "Publications & research",
-    title: "Help useful professional knowledge reach the sector.",
-    description: "Support articles, case studies, applied research, journal activity, reports and knowledge-sharing initiatives.",
-    audience: "Practitioners, researchers, academics, employers, consultants and learners.",
-    support: "Editorial production, research access, accessibility, design, distribution or publication funding.",
-    outcome: "Evidence-led knowledge, transferable lessons, research visibility and better professional practice.",
-    designTitle: "Protect editorial credibility",
-    designDescription: "The arrangement should define the supported work while preserving author, reviewer and editorial independence.",
-    note: "Sponsorship does not guarantee publication, endorsement or favourable editorial treatment.",
-    cta: "Discuss publication sponsorship",
-  },
-] as const;
-const fallbackIntro = { eyebrow: "Sponsorship opportunities", title: "Choose the route that matches your organisation’s purpose.", description: "Select an opportunity to see the audience, possible support and the professional outcome the partnership should create." };
+interface RouteOpportunity {
+  code: string;
+  title: string;
+  description: string;
+  label: string;
+  detail: string;
+  is_active?: boolean;
+}
+
+interface SponsorshipRoute {
+  id: string;
+  icon: string;
+  tab: string;
+  tabDescription: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  highlights: string[];
+  opportunities: RouteOpportunity[];
+  cta: string;
+  is_active?: boolean;
+}
+
+const makeRoute = (
+  id: string,
+  icon: string,
+  tab: string,
+  tabDescription: string,
+  title: string,
+  description: string,
+): SponsorshipRoute => ({
+  id,
+  icon,
+  tab,
+  tabDescription,
+  eyebrow: tab,
+  title,
+  description,
+  highlights: [],
+  opportunities: [],
+  cta: `Discuss ${tab.toLowerCase()} sponsorship`,
+});
+
+const routes: SponsorshipRoute[] = [
+  makeRoute("learners", "ri-graduation-cap-line", "Learners & Scholarships", "Education and progression", "Sponsor access to education and professional progression.", "Support eligible learners with education, membership, events, mentoring and career development."),
+  makeRoute("events", "ri-calendar-event-line", "Events & Master Classes", "Professional learning", "Support professional learning and high-value conversation.", "Enable master classes, technical workshops, speaker support and delegate access."),
+  makeRoute("awards", "ri-award-line", "Awards & Prizes", "Professional recognition", "Help make outstanding achievement visible.", "Support academic, commercial, professional and special recognition awards."),
+  makeRoute("clubs", "ri-community-line", "Regional Clubs", "Local communities", "Build strong local professional communities.", "Support regional talks, networking, mentoring and employer engagement."),
+  makeRoute("publications", "ri-book-open-line", "Magazine & Journal", "Professional knowledge", "Support knowledge professionals can use.", "Connect applied practice, academic research and employer insight."),
+  makeRoute("research", "ri-flask-line", "Research & Innovation", "Evidence-led development", "Fund evidence-led development of the discipline.", "Connect employers, consultants, academics and practitioners around practical questions."),
+  makeRoute("community", "ri-hand-heart-line", "Community Activities", "Service and social impact", "Sponsor professional service and wider social impact.", "Support access, employability, mentoring and professional confidence."),
+  makeRoute("strategic", "ri-links-line", "Strategic Partnership", "Multi-activity relationship", "Combine routes around a shared objective.", "Build a longer-term relationship across recognition, talent, research and community."),
+];
+
+const fallbackIntro = {
+  eyebrow: "Sponsorship routes",
+  title: "Support one priority or build a multi-activity partnership.",
+  description: "Sponsorship can focus on a learner, event, award, publication or regional community, or combine several activities into one strategic programme.",
+};
 
 export default function SponsorshipRoutes() {
   const intro = useManagedSection("routes_intro", fallbackIntro);
-  const managedRoutes = useManagedSection("routes", routes).filter(isManagedItemActive);
-  const [activeId, setActiveId] = useState<(typeof routes)[number]["id"]>("scholarships");
+  const managedRoutes = useManagedSection<SponsorshipRoute[]>("routes", routes).filter(isManagedItemActive);
+  const [activeId, setActiveId] = useState("learners");
   const activeRoute = managedRoutes.find((route) => route.id === activeId) ?? managedRoutes[0] ?? routes[0];
 
+  useEffect(() => {
+    if (!managedRoutes.some((route) => route.id === activeId) && managedRoutes[0]) {
+      setActiveId(managedRoutes[0].id);
+    }
+  }, [activeId, managedRoutes]);
+
   return (
-    <section id="opportunities" className="scroll-mt-20 bg-background-100 section-padding">
+    <section id="sponsorship-routes" className="scroll-mt-28 bg-background-100 section-padding">
       <div className="container-content">
         <div className="reveal">
-          <SectionHeader
-            eyebrow={intro.eyebrow}
-            title={intro.title}
-            subtitle={intro.description}
-            centered
-          />
+          <SectionHeader eyebrow={intro.eyebrow} title={intro.title} subtitle={intro.description} centered />
         </div>
 
         <div className="reveal mt-12 border border-background-200/70 bg-background-50 md:mt-16">
-          <div role="tablist" aria-label="Sponsorship opportunities" className="grid grid-cols-1 border-b border-background-200/70 sm:grid-cols-2 lg:grid-cols-5">
-            {managedRoutes.map((route) => {
-              const active = route.id === activeId;
-              return (
-                <button
-                  key={route.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-controls="sponsorship-route-panel"
-                  onClick={() => setActiveId(route.id)}
-                  className={`min-h-24 border-b border-background-200/70 p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 lg:border-b-0 lg:border-r ${active ? "bg-background-950 text-background-50" : "bg-background-50 text-background-950 hover:bg-background-100"}`}
-                >
-                  <strong className={`block text-sm ${active ? "text-primary-300" : "text-primary-700"}`}>{route.tab}</strong>
-                  <span className={`mt-1 block text-xs leading-relaxed ${active ? "text-background-300" : "text-foreground-600"}`}>{route.tabDescription}</span>
-                </button>
-              );
-            })}
+          <div className="overflow-x-auto border-b border-background-200/70">
+            <div role="tablist" aria-label="Sponsorship routes" className="grid min-w-[1040px] grid-cols-8">
+              {managedRoutes.map((route) => {
+                const active = route.id === activeId;
+                return (
+                  <button
+                    key={route.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    aria-controls="sponsorship-route-panel"
+                    onClick={() => setActiveId(route.id)}
+                    className={`min-h-32 border-r border-background-200/70 p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 ${active ? "bg-background-950 text-background-50" : "bg-background-50 text-background-950 hover:bg-background-100"}`}
+                  >
+                    <i className={`${route.icon} mb-3 block text-xl ${active ? "text-primary-300" : "text-primary-700"}`} aria-hidden="true" />
+                    <strong className="block text-xs leading-snug">{route.tab}</strong>
+                    <span className={`mt-1.5 block text-[11px] leading-relaxed ${active ? "text-background-300" : "text-foreground-500"}`}>{route.tabDescription}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div id="sponsorship-route-panel" role="tabpanel" className="grid lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="p-6 md:p-9 lg:p-10">
-              <span className="eyebrow mb-3 block text-primary-600">{activeRoute.eyebrow}</span>
-              <h3 className="font-heading text-2xl font-semibold text-background-950 md:text-3xl">{activeRoute.title}</h3>
-              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-foreground-600 md:text-base">{activeRoute.description}</p>
-              <dl className="mt-7 grid gap-4 md:grid-cols-3">
-                {[
-                  ["Audience", activeRoute.audience],
-                  ["Possible support", activeRoute.support],
-                  ["Professional outcome", activeRoute.outcome],
-                ].map(([label, value]) => (
-                  <div key={label} className="h-full border border-background-200/70 bg-background-100 p-4">
-                    <dt className="text-xs font-bold uppercase tracking-wider text-primary-700">{label}</dt>
-                    <dd className="mt-2 text-sm leading-relaxed text-foreground-600">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            <aside className="flex flex-col justify-between bg-accent-700 p-6 text-background-50 md:p-9 lg:p-10">
+          <div id="sponsorship-route-panel" role="tabpanel">
+            <div className="grid gap-8 bg-background-950 p-6 text-background-50 md:p-9 lg:grid-cols-[1.1fr_0.9fr] lg:p-10">
               <div>
-                <span className="eyebrow mb-3 block text-primary-300">Partnership design</span>
-                <h3 className="font-heading text-xl font-semibold">{activeRoute.designTitle}</h3>
-                <p className="mt-4 text-sm leading-relaxed text-background-200">{activeRoute.designDescription}</p>
-                <p className="mt-6 border border-background-50/15 bg-background-50/5 p-4 text-xs leading-relaxed text-background-300">{activeRoute.note}</p>
+                <span className="eyebrow mb-3 block text-primary-300">{activeRoute.eyebrow}</span>
+                <h3 className="font-heading text-2xl font-semibold md:text-3xl">{activeRoute.title}</h3>
+                <p className="mt-4 max-w-3xl text-sm leading-relaxed text-background-200 md:text-base">{activeRoute.description}</p>
               </div>
-              <Link to={informationSessionPath} className="btn-primary mt-8 inline-flex w-fit items-center gap-2">{activeRoute.cta}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
-            </aside>
+              {activeRoute.highlights.length > 0 && (
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {activeRoute.highlights.map((highlight) => (
+                    <li key={highlight} className="flex items-start gap-2 border border-background-50/10 bg-background-50/5 p-3 text-xs leading-relaxed text-background-200">
+                      <i className="ri-check-line mt-0.5 text-primary-300" aria-hidden="true" />
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {activeRoute.opportunities.length > 0 && (
+              <div className="grid md:grid-cols-2 xl:grid-cols-4">
+                {activeRoute.opportunities.filter(isManagedItemActive).map((opportunity) => (
+                  <article key={opportunity.code} className="group relative min-h-72 border-b border-r border-background-200/70 p-6 transition-colors hover:bg-background-100">
+                    <span className="font-heading text-xs font-bold tracking-[0.18em] text-primary-700">{opportunity.code}</span>
+                    <h4 className="mt-7 font-heading text-lg font-semibold leading-tight text-background-950">{opportunity.title}</h4>
+                    <p className="mt-3 text-sm leading-relaxed text-foreground-600">{opportunity.description}</p>
+                    <div className="mt-6 border-t border-background-200 pt-4 text-xs leading-relaxed text-foreground-600">
+                      <strong className="block text-background-950">{opportunity.label}</strong>
+                      <span className="mt-1 block">{opportunity.detail}</span>
+                    </div>
+                    <span className="absolute inset-x-0 bottom-0 h-[3px] origin-left scale-x-0 bg-primary-500 transition-transform duration-300 group-hover:scale-x-100" />
+                  </article>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col items-start justify-between gap-4 border-t border-background-200/70 p-6 sm:flex-row sm:items-center">
+              <p className="max-w-3xl text-xs leading-relaxed text-foreground-500">Every arrangement defines the supported activity, agreed visibility, responsibilities, privacy safeguards, delivery period and review process.</p>
+              <Link to={informationSessionPath} className="btn-primary shrink-0">{activeRoute.cta}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
+            </div>
           </div>
         </div>
-        <p className="mt-5 text-center text-xs leading-relaxed text-foreground-500">All sponsorship arrangements should define the supported activity, agreed visibility, responsibilities, privacy safeguards, delivery period and review process.</p>
       </div>
     </section>
   );

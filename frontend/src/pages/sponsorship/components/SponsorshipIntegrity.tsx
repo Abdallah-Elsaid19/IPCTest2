@@ -3,14 +3,21 @@ import SectionHeader from "@/components/base/SectionHeader";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
 const safeguards = [
-  { icon: "ri-scales-3-line", title: "No influence over recognition", description: "Sponsors do not decide membership grades, evidence outcomes or professional-review decisions." },
-  { icon: "ri-award-line", title: "No control over judging", description: "Awards and prizes must use declared criteria, conflicts management and appropriate independent assessment." },
-  { icon: "ri-lock-line", title: "No automatic data access", description: "Member, learner, nominee and attendee information remains protected and consent-based." },
-  { icon: "ri-article-line", title: "No guaranteed editorial outcome", description: "Sponsored articles, case studies or speakers remain subject to relevance, evidence and review." },
-  { icon: "ri-file-shield-2-line", title: "Clear commercial disclosure", description: "Sponsorship and promotional relationships should be labelled transparently." },
-  { icon: "ri-check-double-line", title: "Proportionate claims", description: "Impact and visibility statements must remain specific, supportable and free from exaggeration." },
+  { icon: "ri-user-star-line", title: "Independent membership decisions", description: "Sponsorship does not guarantee Affiliate, Member, Associate Fellow or Fellow recognition." },
+  { icon: "ri-graduation-cap-line", title: "Independent scholarship selection", description: "Sponsors may agree a purpose, but eligibility and selection remain subject to fair criteria." },
+  { icon: "ri-award-line", title: "Independent awards judging", description: "Award sponsorship does not give control over judges, finalists or winners." },
+  { icon: "ri-article-line", title: "Editorial independence", description: "Sponsored content must be labelled and remains subject to editorial standards." },
+  { icon: "ri-lock-line", title: "Consent-based talent engagement", description: "Sponsorship does not provide unrestricted access to member or learner data." },
+  { icon: "ri-check-double-line", title: "Accurate public claims", description: "Sponsors should use only approved wording and descriptions of the relationship." },
 ];
-const fallbackIntro = { eyebrow: "Ethics and independence", title: "Visibility must never weaken professional trust.", description: "Sponsorship arrangements should protect recognition, judging, editorial independence, privacy and the credibility of the Institute." };
+const fallbackIntro = {
+  eyebrow: "Independence and integrity",
+  title: "Sponsorship supports the mission. It does not purchase outcomes.",
+  description: "The long-term value of sponsorship depends on protecting professional credibility.",
+  principle_title: "Credibility creates more value than paid influence.",
+  principle_description: "A sponsor benefits most when recognition, scholarships, awards and publications remain trusted. Organisations can be associated with professional contribution without controlling professional judgement.",
+  principle_items: ["Clear written agreement", "Defined benefits and boundaries", "Conflict-of-interest management", "Data protection and confidentiality", "Transparent sponsored content", "Proportionate impact reporting"],
+};
 
 export default function SponsorshipIntegrity() {
   const intro = useManagedSection("integrity_intro", fallbackIntro);
@@ -33,6 +40,21 @@ export default function SponsorshipIntegrity() {
               <FeatureCard {...item} light />
             </div>
           ))}
+        </div>
+        <div className="reveal mt-8 grid gap-7 border border-background-50/15 bg-background-50/5 p-6 md:p-8 lg:grid-cols-[0.85fr_1.15fr]">
+          <div>
+            <span className="eyebrow text-primary-300">The sponsorship principle</span>
+            <h3 className="mt-4 font-heading text-xl font-semibold text-background-50">{intro.principle_title}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-background-300">{intro.principle_description}</p>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {intro.principle_items.map((item) => (
+              <li key={item} className="flex items-start gap-2 border border-background-50/10 p-3 text-xs leading-relaxed text-background-200">
+                <i className="ri-check-line mt-0.5 text-primary-300" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

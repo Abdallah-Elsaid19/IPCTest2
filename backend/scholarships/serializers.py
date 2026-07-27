@@ -7,7 +7,7 @@ class ScholarshipContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScholarshipContent
         fields = [
-            "hero", "commitment", "principles", "audiences_intro", "audiences", "values_intro", "values",
+            "hero", "commitment", "fund", "principles", "audiences_intro", "audiences", "values_intro", "values",
             "eligibility", "recipient_commitment", "application_process",
             "partners", "academic_partners", "conditions", "impact",
             "faq", "final_cta", "seo", "updated_at",

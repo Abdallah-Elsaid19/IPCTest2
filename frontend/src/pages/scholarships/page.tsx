@@ -9,6 +9,7 @@ import ScholarshipCommitment from "./components/ScholarshipCommitment";
 import ScholarshipEligibility from "./components/ScholarshipEligibility";
 import ScholarshipEnquiryCta from "./components/ScholarshipEnquiryCta";
 import ScholarshipFaq from "./components/ScholarshipFaq";
+import ScholarshipFund from "./components/ScholarshipFund";
 import ScholarshipHero from "./components/ScholarshipHero";
 import ScholarshipPartners from "./components/ScholarshipPartners";
 import ScholarshipPrinciplesGrid from "./components/ScholarshipPrinciplesGrid";
@@ -41,6 +42,7 @@ export default function Scholarships() {
         <ScholarshipHero />
         <ScholarshipPrinciplesGrid />
         <ScholarshipCommitment />
+        <ScholarshipFund />
         <ScholarshipAcademicPartners />
         <ScholarshipProgrammePathways />
         <ScholarshipValueGrid />

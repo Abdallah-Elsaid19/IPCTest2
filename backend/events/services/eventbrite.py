@@ -7,6 +7,19 @@ from django.conf import settings
 API_BASE_URL = "https://www.eventbriteapi.com/v3/"
 
 
+def get_eventbrite_image_url(event):
+    """Return the highest-resolution Eventbrite image available for an event."""
+    logo = event.get("logo") or {}
+    original = logo.get("original") or {}
+    return original.get("url") or logo.get("url") or ""
+
+
+def get_eventbrite_thumbnail_url(event):
+    """Return Eventbrite's compressed card-sized rendition when available."""
+    logo = event.get("logo") or {}
+    return logo.get("url") or get_eventbrite_image_url(event)
+
+
 class EventbriteAttendeeCollection(list):
     def __init__(self, items, total_count):
         super().__init__(items)
@@ -99,6 +112,17 @@ class EventbriteClient:
 
     def get_event_details(self, event_id):
         return self._request(f"events/{event_id}/", {"expand": "venue,logo,ticket_availability"})
+
+    def get_event_description_html(self, event_id):
+        """Return Eventbrite's complete rendered description.
+
+        The events list only contains the short summary. Eventbrite exposes the
+        summary plus all published structured-content modules through this
+        separate endpoint.
+        """
+        payload = self._request(f"events/{event_id}/description/")
+        description = payload.get("description") if isinstance(payload, dict) else ""
+        return description if isinstance(description, str) else ""
 
     def get_organization_attendees(self, organization_id=None):
         organization_id = (organization_id or settings.EVENTBRITE_ORGANIZATION_ID).strip()
