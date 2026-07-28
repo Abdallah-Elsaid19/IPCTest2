@@ -30,6 +30,7 @@ export default function AwardsFeatured({
     });
   }, [programmes]);
   const [activeFamily, setActiveFamily] = useState("academic");
+  const [activeAwardIndex, setActiveAwardIndex] = useState(0);
 
   useEffect(() => {
     if (grouped.length > 0 && !grouped.some(([family]) => family === activeFamily)) {
@@ -37,13 +38,20 @@ export default function AwardsFeatured({
     }
   }, [activeFamily, grouped]);
 
-  if (content.is_active === false) return null;
-
   const activeProgrammes = grouped.find(([family]) => family === activeFamily)?.[1] || [];
+  const activeAward = activeProgrammes[activeAwardIndex] ?? activeProgrammes[0];
   const activeFamilyTitle = activeProgrammes[0]?.category_title || "Award family";
   const quarterlyItems = (content.quarterly_items || []).filter(
     (item) => item.is_active !== false,
   );
+
+  useEffect(() => {
+    if (activeAwardIndex >= activeProgrammes.length) {
+      setActiveAwardIndex(0);
+    }
+  }, [activeAwardIndex, activeProgrammes.length]);
+
+  if (content.is_active === false) return null;
 
   return (
     <>
@@ -82,7 +90,10 @@ export default function AwardsFeatured({
                       role="tab"
                       aria-selected={selected}
                       aria-controls="award-family-panel"
-                      onClick={() => setActiveFamily(family)}
+                      onClick={() => {
+                        setActiveFamily(family);
+                        setActiveAwardIndex(0);
+                      }}
                       className={`min-h-24 border-b border-r border-background-300 p-5 text-left transition-colors ${
                         selected
                           ? "bg-background-950 text-background-50"
@@ -115,35 +126,106 @@ export default function AwardsFeatured({
                   </span>
                 </div>
 
-                <div className="grid border-l border-t border-background-300 md:grid-cols-2 xl:grid-cols-3">
-                  {activeProgrammes.map((award, index) => (
-                    <article
-                      key={award.id}
-                      className="group flex min-h-72 flex-col border-b border-r border-background-300 bg-background-50 p-6 transition-colors hover:bg-background-100 md:p-7"
+                {activeAward && (
+                  <div className="grid overflow-hidden border border-background-300 bg-background-50 lg:grid-cols-[.82fr_1.18fr]">
+                    <div
+                      role="tablist"
+                      aria-label={`${activeFamilyTitle} awards`}
+                      className="border-b border-background-300 lg:border-b-0 lg:border-r"
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="font-mono text-xs font-bold tracking-[0.18em] text-primary-700">
-                          {activeFamily.charAt(0).toUpperCase()}
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                        <i className="ri-award-line text-xl text-primary-600" aria-hidden="true" />
-                      </div>
-                      <h4 className="mt-7 font-heading text-xl font-semibold leading-tight text-background-950">
-                        {award.title}
-                      </h4>
-                      <p className="mt-4 text-sm leading-[1.75] text-foreground-600">
-                        {award.description}
-                      </p>
-                      {award.criteria.length > 0 && (
-                        <div className="mt-auto min-h-20 border-t border-background-300 pt-4">
-                          <p className="text-xs font-medium leading-relaxed text-foreground-600">
-                            {award.criteria[0]}
-                          </p>
+                      {activeProgrammes.map((award, index) => {
+                        const selected = index === activeAwardIndex;
+                        return (
+                          <button
+                            key={award.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={selected}
+                            aria-controls="selected-award-panel"
+                            onClick={() => setActiveAwardIndex(index)}
+                            onPointerEnter={(event) => {
+                              if (event.pointerType === "mouse") {
+                                setActiveAwardIndex(index);
+                              }
+                            }}
+                            className={`group flex min-h-24 w-full touch-manipulation items-center gap-4 border-b border-background-300 p-5 text-left transition-colors last:border-b-0 ${
+                              selected
+                                ? "bg-background-950 text-background-50"
+                                : "bg-background-50 text-background-950 hover:bg-background-100"
+                            }`}
+                          >
+                            <span
+                              className={`font-mono text-[10px] font-bold tracking-[0.18em] ${
+                                selected ? "text-primary-400" : "text-primary-700"
+                              }`}
+                            >
+                              {activeFamily.charAt(0).toUpperCase()}
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <i
+                              className={`ri-award-line text-xl ${
+                                selected ? "text-primary-400" : "text-primary-700"
+                              }`}
+                              aria-hidden="true"
+                            />
+                            <strong className="flex-1 font-heading text-base leading-tight">
+                              {award.title}
+                            </strong>
+                            <i className="ri-arrow-right-line text-lg" aria-hidden="true" />
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <article
+                      id="selected-award-panel"
+                      role="tabpanel"
+                      key={activeAward.id}
+                      className="relative flex min-h-[520px] flex-col justify-between overflow-hidden bg-background-950 p-8 text-background-50 md:p-12"
+                    >
+                      <span
+                        className="absolute -right-14 -top-16 font-heading text-[240px] font-bold leading-none text-background-50/[0.025]"
+                        aria-hidden="true"
+                      >
+                        {activeFamily.charAt(0).toUpperCase()}
+                        {String(activeAwardIndex + 1).padStart(2, "0")}
+                      </span>
+
+                      <div className="relative">
+                        <div className="flex items-center justify-between gap-5">
+                          <span className="eyebrow text-primary-400">Selected award</span>
+                          <i className="ri-award-line text-4xl text-primary-400" aria-hidden="true" />
                         </div>
-                      )}
+                        <h4 className="mt-12 max-w-2xl font-heading text-4xl font-semibold leading-tight md:text-5xl">
+                          {activeAward.title}
+                        </h4>
+                        <p className="mt-7 max-w-2xl text-lg leading-[1.8] text-background-300">
+                          {activeAward.description}
+                        </p>
+                      </div>
+
+                      <div className="relative mt-12 border-t border-background-50/15 pt-7">
+                        {activeAward.criteria.length > 0 && (
+                          <p className="max-w-2xl text-sm leading-relaxed text-background-300">
+                            {activeAward.criteria[0]}
+                          </p>
+                        )}
+                        <div className="mt-7 flex flex-wrap items-center justify-between gap-5">
+                          <span className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-background-500">
+                            {activeFamily.charAt(0).toUpperCase()}
+                            {String(activeAwardIndex + 1).padStart(2, "0")}
+                            {" · "}
+                            {activeFamilyTitle}
+                          </span>
+                          <a href="#nominate" className="btn-primary">
+                            Nominate this award
+                            <i className="ri-arrow-right-line" aria-hidden="true" />
+                          </a>
+                        </div>
+                      </div>
                     </article>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

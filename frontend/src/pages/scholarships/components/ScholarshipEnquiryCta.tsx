@@ -44,7 +44,7 @@ export default function ScholarshipEnquiryCta() {
       "Choose the Associate Project Manager Level 4 or Project Controls Professional Level 6 pathway, then submit your funding application to the Institute of Project Controls.",
     primary_cta_label: "Apply for IPC Scholarship",
     primary_cta_url:
-      "https://outlook.office.com/mail/deeplink/compose?to=office%40instituteofprojectcontrols.org&subject=IPC%20Scholarship%20Application",
+      "mailto:office@instituteofprojectcontrols.org?subject=IPC%20Scholarship%20Application",
     secondary_cta_label: "Explore APM Level 4",
     secondary_cta_url:
       "https://kentbusinesscollege.com/associate-project-manager-level-4/",

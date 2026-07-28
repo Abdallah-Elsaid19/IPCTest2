@@ -20,7 +20,7 @@ const programmePathways = [
       "May support progression towards Professional Member or Associate Fellow Level 4 recognition.",
     cta_label: "Apply for IPC Scholarship",
     cta_url:
-      "https://outlook.office.com/mail/deeplink/compose?to=office%40instituteofprojectcontrols.org&subject=IPC%20Scholarship%20Enquiry%20-%20Associate%20Project%20Manager%20Level%204",
+      "mailto:office@instituteofprojectcontrols.org?subject=IPC%20Scholarship%20Enquiry%20-%20Associate%20Project%20Manager%20Level%204",
     programme_cta_label: "View APM at Kent Business College",
     programme_url:
       "https://kentbusinesscollege.com/associate-project-manager-level-4/",
@@ -43,7 +43,7 @@ const programmePathways = [
       "May support progression towards Associate Fellow Level 4 or Fellow Level 6 recognition, subject to evidence.",
     cta_label: "Apply for IPC Scholarship",
     cta_url:
-      "https://outlook.office.com/mail/deeplink/compose?to=office%40instituteofprojectcontrols.org&subject=IPC%20Scholarship%20Enquiry%20-%20Project%20Controls%20Professional%20Level%206",
+      "mailto:office@instituteofprojectcontrols.org?subject=IPC%20Scholarship%20Enquiry%20-%20Project%20Controls%20Professional%20Level%206",
     programme_cta_label: "View PCP at Kent Business College",
     programme_url:
       "https://kentbusinesscollege.com/project-control-professional-level-6/",
@@ -149,8 +149,8 @@ export default function ScholarshipProgrammePathways() {
                 <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:flex-wrap">
                   <a
                     href={pathway.cta_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={pathway.cta_url.startsWith("http") ? "_blank" : undefined}
+                    rel={pathway.cta_url.startsWith("http") ? "noopener noreferrer" : undefined}
                     className="inline-flex min-h-12 items-center justify-center gap-3 bg-primary-500 px-6 py-3 text-center font-label text-xs font-semibold uppercase tracking-[0.03em] text-background-950 transition-colors hover:bg-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background-950"
                   >
                     {pathway.cta_label}
