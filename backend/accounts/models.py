@@ -61,6 +61,7 @@ class AdminNotification(models.Model):
         CONTACT = "contact", "Contact"
         APPLICATION = "application", "Application"
         SUBSCRIBER = "subscriber", "Subscriber"
+        SUPPORT = "support", "Support"
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,

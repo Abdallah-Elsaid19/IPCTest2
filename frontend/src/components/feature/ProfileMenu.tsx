@@ -69,13 +69,13 @@ export default function ProfileMenu({ dark = true }: { dark?: boolean }) {
             </div>
           </div>
           <div className="p-2">
-            {user.is_staff ? 
+            {user.is_staff ?
                 <Link to="/admin" className="flex items-center gap-3 px-3 py-3 text-sm text-background-300 transition-colors hover:bg-background-900 hover:text-background-50" role="menuitem">
-                  <LayoutDashboard size={17} className="text-primary-500" /> Dashboard
+                  <LayoutDashboard size={17} className="text-primary-500" /> Admin Dashboard
                 </Link>
-            :   
-             <Link to="/profile" className="flex items-center gap-3 px-3 py-3 text-sm text-background-300 transition-colors hover:bg-background-900 hover:text-background-50" role="menuitem">
-                  <UserRound size={17} className="text-primary-500" /> Profile
+              :
+                <Link to="/user/dashboard" className="flex items-center gap-3 px-3 py-3 text-sm text-background-300 transition-colors hover:bg-background-900 hover:text-background-50" role="menuitem">
+                  <UserRound size={17} className="text-primary-500" /> User Panel
                 </Link>
             }
             <button type="button" onClick={() => void handleLogout()} className="flex w-full items-center gap-3 px-3 py-3 text-sm text-background-300 transition-colors hover:bg-background-900 hover:text-red-300" role="menuitem">

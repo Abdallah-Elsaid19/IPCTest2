@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, FileJson, Layers3, LoaderCircle, Pencil, Plus, Search, Trash2, Trophy, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, FileJson, Layers3, LoaderCircle, Pencil, Plus, Search, Trash2, Trophy, UserCheck, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -7,6 +7,7 @@ import AwardCategoryDetailsModal from "@/features/admin/awards/AwardCategoryDeta
 import AwardCategoryFormModal from "@/features/admin/awards/AwardCategoryFormModal";
 import AwardProgrammeDetailsModal from "@/features/admin/awards/AwardProgrammeDetailsModal";
 import AwardProgrammeFormModal from "@/features/admin/awards/AwardProgrammeFormModal";
+import AwardNominationsPanel from "@/features/admin/awards/AwardNominationsPanel";
 import { AdminPageHeader, AdminPageState, ClearFiltersButton, EmptyState, StatusBadge } from "@/features/admin/components/AdminPage";
 import type {
   AdminAwardCategory,
@@ -17,7 +18,7 @@ import type {
 import { publishContentUpdate } from "@/lib/contentSync";
 import { notifications } from "@/lib/notifications";
 
-type AwardsTab = "programmes" | "categories";
+type AwardsTab = "programmes" | "categories" | "nominations";
 type DeleteTarget =
   | { kind: "programme"; item: AdminAwardProgramme }
   | { kind: "category"; item: AdminAwardCategory }
@@ -143,7 +144,7 @@ export default function AdminAwardsPage() {
     if (activeTab === "programmes") {
       setEditingProgramme(null);
       setProgrammeFormOpen(true);
-    } else {
+    } else if (activeTab === "categories") {
       setEditingCategory(null);
       setCategoryFormOpen(true);
     }
@@ -202,13 +203,14 @@ export default function AdminAwardsPage() {
               <Link to="/admin/content/awards" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-black text-primary-800 shadow-sm">
                 <FileJson size={16} /> Edit page content
               </Link>
-              <button type="button" onClick={openCreate} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm hover:bg-primary-400"><Plus size={16}/> Create {activeTab === "programmes" ? "programme" : "category"}</button>
+              {activeTab !== "nominations" && <button type="button" onClick={openCreate} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm hover:bg-primary-400"><Plus size={16}/> Create {activeTab === "programmes" ? "programme" : "category"}</button>}
             </div>}
           />
 
           <div className="mt-7 inline-flex rounded-xl border border-[#D8CCBD] bg-[#E9DED0] p-1" role="tablist" aria-label="Awards management">
             <button type="button" role="tab" aria-selected={activeTab === "programmes"} onClick={() => setActiveTab("programmes")} className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-xs font-black transition ${activeTab === "programmes" ? "bg-[#FFFDF9] text-primary-800 shadow-sm" : "text-[#756B61]"}`}><Trophy size={15}/> Programmes <span className="rounded-full bg-[#F4ECE1] px-2 py-0.5">{programmes.length}</span></button>
             <button type="button" role="tab" aria-selected={activeTab === "categories"} onClick={() => setActiveTab("categories")} className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-xs font-black transition ${activeTab === "categories" ? "bg-[#FFFDF9] text-primary-800 shadow-sm" : "text-[#756B61]"}`}><Layers3 size={15}/> Categories <span className="rounded-full bg-[#F4ECE1] px-2 py-0.5">{categories.length}</span></button>
+            <button type="button" role="tab" aria-selected={activeTab === "nominations"} onClick={() => setActiveTab("nominations")} className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-xs font-black transition ${activeTab === "nominations" ? "bg-[#FFFDF9] text-primary-800 shadow-sm" : "text-[#756B61]"}`}><UserCheck size={15}/> Nominations</button>
           </div>
 
           {activeTab === "programmes" && (
@@ -255,6 +257,8 @@ export default function AdminAwardsPage() {
             {filteredCategories.length > 0 && <PaginationControls page={categoryPage} pageCount={categoryPageCount} total={filteredCategories.length} label="categories" onPageChange={setCategoryPage}/>} 
             </section>
           )}
+
+          {activeTab === "nominations" && <AwardNominationsPanel />}
 
           <AwardProgrammeFormModal programme={editingProgramme} categories={categories} open={programmeFormOpen} isSaving={isSaving} onClose={() => { if (!isSaving) setProgrammeFormOpen(false); }} onSave={saveProgramme}/>
           <AwardProgrammeDetailsModal programme={viewingProgramme} onClose={() => setViewingProgramme(null)}/>

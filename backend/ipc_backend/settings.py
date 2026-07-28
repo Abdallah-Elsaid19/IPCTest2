@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "services",
     "fund",
     "institutional",
+    "user_panel",
 ]
 
 MIDDLEWARE = [

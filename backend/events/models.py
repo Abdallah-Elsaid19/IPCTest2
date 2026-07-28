@@ -210,6 +210,16 @@ class EventRegistration(models.Model):
             models.Index(fields=["email"]),
             models.Index(fields=["status"]),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "registered_user"],
+                condition=Q(
+                    registered_user__isnull=False,
+                    status__in=["registered", "confirmed", "attended", "waitlisted"],
+                ),
+                name="unique_active_user_event_booking",
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if self.event_id:

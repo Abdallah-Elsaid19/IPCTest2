@@ -200,6 +200,49 @@
     background-color: oklch(var(--foreground-50) / 0.05);
   }
 
+  .user-panel-shell .btn-primary,
+  .user-panel-shell .btn-secondary {
+    min-height: 2.75rem;
+    border-radius: 0.75rem;
+    padding: 0.7rem 1.15rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .user-panel-shell .btn-secondary {
+    border-color: #d4c6b5;
+    background-color: #fff;
+    color: #221e1a;
+  }
+
+  .user-panel-shell .btn-secondary:hover {
+    border-color: #9a6516;
+    background-color: #f8f0e6;
+  }
+
+  .user-panel-shell main input,
+  .user-panel-shell main select,
+  .user-panel-shell main textarea {
+    color: #221e1a;
+  }
+
+  .user-panel-shell main input::placeholder,
+  .user-panel-shell main textarea::placeholder {
+    color: #91867c;
+    opacity: 1;
+  }
+
+  .user-panel-shell main option {
+    background-color: #fff;
+    color: #221e1a;
+  }
+
+  .user-panel-shell form > .max-w-3xl {
+    width: 100%;
+    max-width: none;
+  }
+
   .btn-ghost {
     display: inline-flex;
     align-items: center;

@@ -24,12 +24,13 @@ function AppLayout() {
   const location = useLocation();
   const isLanding = location.pathname === "/" || location.pathname === "/login" || location.pathname === "/forgot-password" || location.pathname === "/reset-password";
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dashboard");
+  const isUserPanel = location.pathname.startsWith("/user");
 
   if (isLanding) {
     return <AppRoutes />;
   }
 
-  if (isAdmin) {
+  if (isAdmin || isUserPanel) {
     return <AppRoutes />;
   }
 

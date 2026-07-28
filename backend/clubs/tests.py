@@ -4,10 +4,33 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from user_panel.models import Club
+
 from .models import ClubEnquiry, ClubPageContent
 
 
 class ClubPageContentApiTests(APITestCase):
+    def test_public_club_detail_uses_live_club_data(self):
+        club, _ = Club.objects.update_or_create(
+            slug="manchester",
+            defaults={
+                "name": "Manchester Club",
+                "summary": "Regional project controls community.",
+                "description": "A professional community across North West England.",
+                "location": "Manchester",
+                "specialism": "Infrastructure and project intelligence",
+            },
+        )
+
+        response = self.client.get("/api/clubs/manchester")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["public_id"], club.public_id)
+        self.assertEqual(response.data["name"], "Manchester Club")
+        self.assertEqual(response.data["membership_status"], "not_joined")
+        self.assertEqual(response.data["active_member_count"], 0)
+        self.assertEqual(response.data["upcoming_events"], [])
+
     def test_public_endpoint_returns_active_database_content(self):
         ClubPageContent.objects.update_or_create(
             key="main",

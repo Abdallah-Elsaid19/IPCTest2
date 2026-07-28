@@ -38,6 +38,7 @@ export function StatusBadge({ status }: { status: string }) {
   const warning = [
     "submitted",
     "new",
+    "pending",
     "under_review",
     "in_progress",
     "waitlisted",

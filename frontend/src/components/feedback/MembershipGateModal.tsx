@@ -4,9 +4,18 @@ import { Link } from "react-router-dom";
 interface MembershipGateModalProps {
   isOpen: boolean;
   onClose: () => void;
+  title?: string;
+  description?: string;
+  showSignIn?: boolean;
 }
 
-export default function MembershipGateModal({ isOpen, onClose }: MembershipGateModalProps) {
+export default function MembershipGateModal({
+  isOpen,
+  onClose,
+  title = "This club opportunity is for IPC members.",
+  description = "Join IPC to register for regional activity, volunteer, speak, mentor or connect with club partners.",
+  showSignIn = false,
+}: MembershipGateModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -33,11 +42,11 @@ export default function MembershipGateModal({ isOpen, onClose }: MembershipGateM
           <button ref={closeButtonRef} type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-background-300 text-background-950 hover:border-primary-500" aria-label="Close membership message"><i className="ri-close-line" aria-hidden="true" /></button>
         </div>
         <span className="eyebrow mt-7 block text-primary-700">IPC Membership Required</span>
-        <h2 id="membership-gate-title" className="mt-3 font-heading text-2xl font-semibold text-background-950">This club opportunity is for IPC members.</h2>
-        <p id="membership-gate-description" className="mt-4 text-sm leading-relaxed text-foreground-600">Join IPC to register for regional activity, volunteer, speak, mentor or connect with club partners.</p>
+        <h2 id="membership-gate-title" className="mt-3 font-heading text-2xl font-semibold text-background-950">{title}</h2>
+        <p id="membership-gate-description" className="mt-4 text-sm leading-relaxed text-foreground-600">{description}</p>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-          <Link to="/membership" onClick={onClose} className="btn-primary min-h-12 flex-1">Explore memberships</Link>
-          <button type="button" onClick={onClose} className="min-h-12 flex-1 border border-background-300 px-5 text-sm font-semibold text-background-950 hover:border-primary-500">Maybe later</button>
+          <Link to="/membership" onClick={onClose} className="btn-primary min-h-12 flex-1">Explore membership</Link>
+          {showSignIn ? <Link to="/login" onClick={onClose} className="min-h-12 flex-1 border border-background-300 px-5 py-3 text-center text-sm font-semibold text-background-950 hover:border-primary-500">Sign in</Link> : <button type="button" onClick={onClose} className="min-h-12 flex-1 border border-background-300 px-5 text-sm font-semibold text-background-950 hover:border-primary-500">Maybe later</button>}
         </div>
       </section>
     </div>

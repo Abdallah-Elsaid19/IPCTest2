@@ -74,6 +74,12 @@ def create_registration(*, event_slug, data, user=None, idempotency_key):
     available = registration_availability(event)
     if available is not None and quantity > available:
         raise ValidationError({"quantity": f"Only {available} place(s) remain."})
+    if getattr(user, "is_authenticated", False) and EventRegistration.objects.filter(
+        event=event,
+        registered_user=user,
+        status__in=ACTIVE_STATUSES + (EventRegistration.Status.WAITLISTED,),
+    ).exists():
+        raise ValidationError({"detail": "You already have an active booking for this event."})
 
     contact = data["contact"]
     attendees_data = data["attendees"]
@@ -109,10 +115,12 @@ def create_registration(*, event_slug, data, user=None, idempotency_key):
     try:
         registration.save()
     except IntegrityError:
-        existing = EventRegistration.objects.select_related("event").get(
+        existing = EventRegistration.objects.select_related("event").filter(
             idempotency_key=idempotency_key
-        )
-        return existing, False
+        ).first()
+        if existing:
+            return existing, False
+        raise ValidationError({"detail": "You already have an active booking for this event."})
 
     attendees = [
         EventAttendee.objects.create(registration=registration, **attendee)

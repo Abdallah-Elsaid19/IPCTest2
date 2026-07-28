@@ -28,6 +28,7 @@ const RegistrationCalendarRedirect = lazy(() =>
   })),
 );
 const Clubs = lazy(() => import("../pages/clubs/page"));
+const PublicClubPage = lazy(() => import("../pages/clubs/detail/page"));
 const About = lazy(() => import("../pages/about/page"));
 const Employers = lazy(() => import("../pages/employers/page"));
 const Partnerships = lazy(() => import("../pages/partnerships/page"));
@@ -39,6 +40,9 @@ const AdminApplicationDetailsPage = lazy(() => import("@/features/admin/applicat
 const AdminEnquiriesPage = lazy(() => import("@/features/admin/enquiries/page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events/page"));
 const AdminAwardsPage = lazy(() => import("@/features/admin/awards/page"));
+const AdminSupportPage = lazy(() => import("@/features/admin/support/page"));
+const AdminClubsPage = lazy(() => import("@/features/admin/clubs/page"));
+const AdminClubRequestsPage = lazy(() => import("@/features/admin/clubs/requests"));
 const AdminMembershipGradesPage = lazy(() => import("@/features/admin/membership-grades/page"));
 const AdminContentPage = lazy(() => import("@/features/admin/content/page"));
 const AdminEventDetailsPage = lazy(() => import("@/features/admin/events/details/page"));
@@ -51,6 +55,18 @@ const Login = lazy(() => import("@/features/auth/login/Login"));
 const PasswordResetPage = lazy(() => import("@/features/auth/password-reset/page"));
 const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password/page"));
 const UserProfilePage = lazy(() => import("@/features/profile/page"));
+const UserPanelLayout = lazy(() => import("@/features/user-panel/layouts/UserPanelLayout"));
+const UserDashboardPage = lazy(() => import("@/features/user-panel/pages/DashboardPage"));
+const UserPanelProfilePage = lazy(() => import("@/features/user-panel/pages/ProfilePage"));
+const DirectoryPage = lazy(() => import("@/features/user-panel/pages/DirectoryPage"));
+const RecordsPage = lazy(() => import("@/features/user-panel/pages/RecordsPage"));
+const SettingsPage = lazy(() => import("@/features/user-panel/pages/RecordsPage").then((module) => ({ default: module.SettingsPage })));
+const MembershipPanelPage = lazy(() => import("@/features/user-panel/pages/MembershipPage"));
+const UserEventsPage = lazy(() => import("@/features/user-panel/pages/EventsPage"));
+const ClubCommunityPage = lazy(() => import("@/features/user-panel/pages/ClubCommunityPage"));
+const AwardNominationPage = lazy(() => import("@/features/user-panel/pages/AwardNominationPage"));
+const UserSupportPage = lazy(() => import("@/features/user-panel/pages/SupportPage"));
+const UserNotificationsPage = lazy(() => import("@/features/user-panel/pages/NotificationsPage"));
 
 const routes: RouteObject[] = [
   { path: "/", element: <LandingPage /> },
@@ -77,6 +93,7 @@ const routes: RouteObject[] = [
   { path: "/events/:slug/register", element: <RegistrationPage /> },
   { path: "/events/:slug", element: <EventDetailPage /> },
   { path: "/clubs", element: <Clubs /> },
+  { path: "/clubs/:slug", element: <PublicClubPage /> },
   { path: "/about", element: <About /> },
   { path: "/employers", element: <Employers /> },
   { path: "/partnerships", element: <Partnerships /> },
@@ -85,6 +102,41 @@ const routes: RouteObject[] = [
   { path: "/forgot-password", element: <GuestOnlyRoute><ForgotPasswordPage /></GuestOnlyRoute> },
   { path: "/reset-password", element: <PasswordResetPage /> },
   { path: "/profile", element: <ProtectedRoute><UserProfilePage /></ProtectedRoute> },
+  {
+    path: "/user",
+    element: <ProtectedRoute><UserPanelLayout /></ProtectedRoute>,
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: "dashboard", element: <UserDashboardPage /> },
+      { path: "profile", element: <UserPanelProfilePage /> },
+      { path: "membership", element: <MembershipPanelPage /> },
+      { path: "membership/apply", element: <MembershipPanelPage /> },
+      { path: "membership/applications", element: <RecordsPage kind="membership" /> },
+      { path: "scholarships", element: <DirectoryPage kind="scholarships" /> },
+      { path: "scholarships/:id", element: <DirectoryPage kind="scholarships" /> },
+      { path: "scholarships/:id/apply", element: <DirectoryPage kind="scholarships" /> },
+      { path: "awards", element: <RecordsPage kind="awards" /> },
+      { path: "awards/explore", element: <DirectoryPage kind="awards" /> },
+      { path: "awards/:id", element: <DirectoryPage kind="awards" /> },
+      { path: "awards/:id/apply", element: <AwardNominationPage /> },
+      { path: "awards/nominations/:nominationId", element: <AwardNominationPage edit /> },
+      { path: "clubs", element: <DirectoryPage kind="clubs" /> },
+      { path: "clubs/:slug", element: <ClubCommunityPage /> },
+      { path: "clubs/:slug/discussions", element: <ClubCommunityPage /> },
+      { path: "clubs/:slug/chat", element: <ClubCommunityPage /> },
+      { path: "events", element: <UserEventsPage /> },
+      { path: "events/:id", element: <UserEventsPage /> },
+      { path: "bookings", element: <RecordsPage kind="bookings" /> },
+      { path: "documents", element: <RecordsPage kind="documents" /> },
+      { path: "certificates", element: <RecordsPage kind="documents" /> },
+      { path: "notifications", element: <UserNotificationsPage /> },
+      { path: "programmes", element: <DirectoryPage kind="programmes" /> },
+      { path: "enquiries", element: <DirectoryPage kind="programmes" /> },
+      { path: "support", element: <UserSupportPage /> },
+      { path: "settings", element: <SettingsPage /> },
+      { path: "security", element: <SettingsPage /> },
+    ],
+  },
   { path: "/contact", element: <Contact /> },
   { path: "/privacy", element: <Privacy /> },
   {
@@ -97,6 +149,9 @@ const routes: RouteObject[] = [
       { path: "enquiries", element: <AdminEnquiriesPage /> },
       { path: "events", element: <AdminEventsPage /> },
       { path: "awards", element: <AdminAwardsPage /> },
+      { path: "support", element: <AdminSupportPage /> },
+      { path: "clubs", element: <AdminClubsPage /> },
+      { path: "club-requests", element: <AdminClubRequestsPage /> },
       { path: "membership-grades", element: <AdminMembershipGradesPage /> },
       { path: "content", element: <AdminContentPage /> },
       { path: "content/:slug", element: <AdminContentPage /> },

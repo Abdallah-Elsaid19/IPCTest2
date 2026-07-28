@@ -67,7 +67,7 @@ export default function MobileMenu({ isOpen, onClose, currentPath, returnFocusRe
           })}
         </nav>
         <div className="border-t border-background-200 px-6 py-5">
-          {isLoading ? <div className="h-11 animate-pulse bg-primary-500/20" /> : user ? <div className="space-y-3"><Link to={user.is_staff ? "/admin" : "/profile"} onClick={onClose} className="btn-primary block text-center text-sm">{user.is_staff ? "Dashboard" : "Profile"}</Link><button onClick={() => { void logout(); onClose(); }} className="btn-ghost w-full text-sm">Sign out</button></div> : <Link to="/login" onClick={onClose} className="btn-primary block text-center text-sm">Sign In</Link>}
+          {isLoading ? <div className="h-11 animate-pulse bg-primary-500/20" /> : user ? <div className="space-y-3"><Link to={user.is_staff ? "/admin" : "/user/dashboard"} onClick={onClose} className="btn-primary block text-center text-sm">{user.is_staff ? "Admin Dashboard" : "User Panel"}</Link><button onClick={() => { void logout(); onClose(); }} className="btn-ghost w-full text-sm">Sign out</button></div> : <Link to="/login" onClick={onClose} className="btn-primary block text-center text-sm">Sign In</Link>}
           <Link to="/contact" onClick={onClose} className="btn-ghost mt-3 block text-center text-sm">Contact the Institute</Link>
         </div>
       </div>

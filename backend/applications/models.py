@@ -37,10 +37,13 @@ class FormDefinition(models.Model):
 
 class Application(models.Model):
     class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
         SUBMITTED = "submitted", "Submitted"
         UNDER_REVIEW = "under_review", "Under Review"
+        MORE_INFO_REQUIRED = "more_info_required", "Additional Information Required"
         APPROVED = "approved", "Approved"
         REFUSED = "refused", "Refused"
+        WITHDRAWN = "withdrawn", "Withdrawn"
 
     class ContactPreference(models.TextChoices):
         EMAIL = "email", "Email"
@@ -55,6 +58,14 @@ class Application(models.Model):
         on_delete=models.PROTECT,
         related_name="applications",
     )
+    applicant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="membership_applications",
+    )
+    current_step = models.PositiveSmallIntegerField(default=1)
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.SUBMITTED)
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120)

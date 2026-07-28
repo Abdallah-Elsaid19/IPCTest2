@@ -16,7 +16,7 @@ from memberships.views import AdminMembershipGradeViewSet, MembershipContentView
 from media_library.views import MediaAssetViewSet
 from ipc_backend.views import csrf_cookie
 from ipc_backend.content_management import AdminContentDetailView, AdminContentListView
-from clubs.views import ClubEnquiryCreateView, ClubPageContentView
+from clubs.views import ClubEnquiryCreateView, ClubPageContentView, PublicClubDetailView
 from scholarships.views import ScholarshipContentView
 from sponsorship.views import SponsorshipContentView
 from about.views import AboutPageContentView
@@ -33,6 +33,7 @@ from accounts.dashboard import (
 )
 from accounts.user_management import AdminUserViewSet, PasswordResetConfirmView, PasswordResetRequestView
 from accounts.notification_api import AdminNotificationViewSet
+from user_panel.views import AdminClubMembershipViewSet, AdminClubViewSet, AdminNominationViewSet, AdminSupportViewSet
 
 router = DefaultRouter(trailing_slash=False)
 router.register("membership-grades", MembershipGradeViewSet, basename="membership-grade")
@@ -52,9 +53,14 @@ router.register("admin/notifications", AdminNotificationViewSet, basename="admin
 router.register("admin/events", AdminEventViewSet, basename="admin-event")
 router.register("admin/award-programmes", AdminAwardProgrammeViewSet, basename="admin-award-programme")
 router.register("admin/award-categories", AdminAwardCategoryViewSet, basename="admin-award-category")
+router.register("admin/award-nominations", AdminNominationViewSet, basename="admin-award-nomination")
+router.register("admin/support", AdminSupportViewSet, basename="admin-support")
+router.register("admin/club-memberships", AdminClubMembershipViewSet, basename="admin-club-membership")
+router.register("admin/clubs", AdminClubViewSet, basename="admin-club")
 router.register("admin/event-registrations", AdminEventRegistrationViewSet, basename="admin-event-registration")
 
 urlpatterns = [
+    path("user/", include("user_panel.urls")),
     path("csrf", csrf_cookie, name="csrf-cookie"),
     path("auth/login", LoginView.as_view(), name="auth-login"),
     path("auth/refresh", RefreshView.as_view(), name="auth-refresh"),
@@ -71,6 +77,7 @@ urlpatterns = [
     path("admin/enquiries/<str:source>/<str:enquiry_id>/reply", AdminEnquiryReplyView.as_view(), name="admin-enquiry-reply"),
     path("clubs/enquiries/", ClubEnquiryCreateView.as_view(), name="club-enquiry-create"),
     path("clubs/content", ClubPageContentView.as_view(), name="club-page-content"),
+    path("clubs/<slug:slug>", PublicClubDetailView.as_view(), name="public-club-detail"),
     path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
     path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
     path("home/content", HomeContentView.as_view(), name="home-content"),

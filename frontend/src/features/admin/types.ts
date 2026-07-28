@@ -17,6 +17,41 @@ export interface DashboardCounts {
   media_assets: number;
 }
 
+export interface AdminClubMembership {
+  id: number;
+  applicant_name: string;
+  applicant_email: string;
+  club_name: string;
+  club_slug: string;
+  status: "pending" | "active" | "rejected" | "suspended" | "left";
+  role: "member" | "moderator";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminClubMember {
+  name: string;
+  initials: string;
+  club_role: "member" | "moderator";
+  job_title: string;
+  employer: string;
+  city: string;
+}
+
+export interface AdminClub {
+  public_id: string;
+  name: string;
+  slug: string;
+  summary: string;
+  description: string;
+  location: string;
+  specialism: string;
+  active_member_count: number;
+  discussion_count: number;
+  message_count: number;
+  members: AdminClubMember[];
+}
+
 export interface DashboardApplication {
   id: number;
   reference: string;
@@ -259,7 +294,7 @@ export interface DashboardData {
   recent_users: DashboardUser[];
 }
 
-export type AdminNotificationType = "contact" | "application" | "subscriber";
+export type AdminNotificationType = "contact" | "application" | "subscriber" | "support";
 
 export interface AdminNotification {
   id: number;
@@ -340,4 +375,36 @@ export interface PaginatedAdminEnquiries {
   next: string | null;
   previous: string | null;
   results: DashboardEnquiry[];
+}
+
+export type AwardNominationStatus =
+  | "under_review"
+  | "more_info_required"
+  | "approved"
+  | "rejected"
+  | "withdrawn";
+
+export interface AdminAwardNomination {
+  public_id: string;
+  programme_title: string;
+  programme_slug: string;
+  applicant_name: string;
+  applicant_email: string;
+  nominee_type: "self" | "other";
+  nominee_name: string;
+  nominee_email: string;
+  statement: string;
+  responses: Record<string, unknown>;
+  status: string;
+  status_label: string;
+  submitted_at: string | null;
+  created_at: string;
+  updated_at: string;
+  documents: Array<{
+    id: number;
+    name: string;
+    content_type: string;
+    size: number;
+    download_url: string;
+  }>;
 }

@@ -6,6 +6,10 @@ import type {
   AwardProgrammePayload,
 } from "@/features/awards/types";
 import type {
+  AdminAwardNomination,
+  AdminClubMembership,
+  AdminClub,
+  AwardNominationStatus,
   AdminApplicationDetail,
   AdminEvent,
   AdminEventPayload,
@@ -26,6 +30,7 @@ import type {
   PaginatedAdminUsers,
 } from "./types";
 import type { AdminContentTable, ContentSectionValue } from "./content/types";
+import type { SupportMessage, SupportTicket } from "@/features/user-panel/types";
 
 export interface AdminUserQuery {
   page?: number;
@@ -145,6 +150,36 @@ export const adminApi = {
     apiJson<AdminAwardCategory>(`/api/admin/award-categories/${id}`, payload, { method: "PATCH" }),
   deleteAwardCategory: (id: number) =>
     apiJson<Record<string, never>>(`/api/admin/award-categories/${id}`, undefined, { method: "DELETE" }),
+  awardNominations: () =>
+    apiJson<AdminAwardNomination[]>("/api/admin/award-nominations"),
+  updateAwardNominationStatus: (id: string, status: AwardNominationStatus) =>
+    apiJson<AdminAwardNomination>(
+      `/api/admin/award-nominations/${id}/status`,
+      { status },
+      { method: "PATCH" },
+    ),
+  supportTickets: (signal?: AbortSignal) =>
+    apiJson<SupportTicket[]>("/api/admin/support", undefined, { signal }),
+  replyToSupport: (id: string, body: string) =>
+    apiJson<SupportMessage>(`/api/admin/support/${id}/reply`, { body }),
+  markSupportRead: (id: string) =>
+    apiJson<{ updated: number }>(`/api/admin/support/${id}/read`, {}),
+  updateSupportState: (id: string, status: "open" | "closed") =>
+    apiJson<SupportTicket>(
+      `/api/admin/support/${id}/state`,
+      { status },
+      { method: "PATCH" },
+    ),
+  clubMemberships: (signal?: AbortSignal) =>
+    apiJson<AdminClubMembership[]>("/api/admin/club-memberships", undefined, { signal }),
+  clubs: (signal?: AbortSignal) =>
+    apiJson<AdminClub[]>("/api/admin/clubs", undefined, { signal }),
+  updateClubMembership: (id: number, status: "active" | "rejected" | "suspended") =>
+    apiJson<AdminClubMembership>(
+      `/api/admin/club-memberships/${id}`,
+      { status },
+      { method: "PATCH" },
+    ),
   eventbriteAttendees: loadEventbriteAttendees,
   refreshEventbriteAttendees,
   eventRegistrations: () =>

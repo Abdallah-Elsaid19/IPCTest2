@@ -2,6 +2,7 @@ import {
   Bell,
   CheckCheck,
   FileText,
+  Headphones,
   LoaderCircle,
   Mail,
   MessageSquareText,
@@ -41,6 +42,11 @@ const typeStyles: Record<
     icon: Mail,
     iconClass: "bg-emerald-100 text-emerald-700",
     label: "Subscriber",
+  },
+  support: {
+    icon: Headphones,
+    iconClass: "bg-violet-100 text-violet-700",
+    label: "Support",
   },
 };
 

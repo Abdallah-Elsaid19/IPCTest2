@@ -1,4 +1,4 @@
-import { SimpleInterestForm } from "@/components/forms/SimpleInterestForm";
+import AwardNominationEntryForm from "./AwardNominationEntryForm";
 import { Link } from "react-router-dom";
 import type { AwardSectionIntro } from "../types";
 
@@ -16,7 +16,7 @@ export default function AwardsInterest({ content }: { content: AwardSectionIntro
             {content.description}
           </p>
         </div>
-        <div className="border border-background-200/70 bg-background-50 p-6 reveal md:p-8"><SimpleInterestForm type="awards" /></div>
+        <div className="border border-background-200/70 bg-background-50 p-6 reveal md:p-8"><AwardNominationEntryForm /></div>
         <div className="mt-8 flex flex-col items-center justify-center gap-4 reveal sm:flex-row">
           <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-foreground-500">or</span>
           <Link to={content.secondary_cta_url || "/information-session"} className="btn-secondary inline-flex items-center gap-2 border-background-950 text-background-950">
