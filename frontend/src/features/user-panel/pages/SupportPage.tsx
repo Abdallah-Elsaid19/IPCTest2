@@ -1,7 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { toast } from "react-toastify";
 
+import { notifications } from "@/lib/notifications";
 import { panelApi, rows } from "../api";
 import { Card, ErrorState, inputClass, Loading, PageHeading } from "../components/PanelUI";
 import SupportConversation from "../components/SupportConversation";
@@ -54,7 +54,7 @@ export default function SupportPage() {
       await panelApi.create<SupportMessage>(`support/${ticket.public_id}/reply`, { body });
       await load();
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Message could not be sent.");
+      notifications.error(reason instanceof Error ? reason.message : "Message could not be sent.");
       throw reason;
     } finally {
       setSending(false);
@@ -74,9 +74,9 @@ export default function SupportPage() {
       await load();
       setSelectedId(ticket.public_id);
       setNewRequest(false);
-      toast.success("Your support conversation is ready.");
+      notifications.success("Your support conversation is ready.");
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Support request could not be created.");
+      notifications.error(reason instanceof Error ? reason.message : "Support request could not be created.");
     } finally {
       setSending(false);
     }

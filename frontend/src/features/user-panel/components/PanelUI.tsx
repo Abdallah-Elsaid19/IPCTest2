@@ -16,7 +16,7 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function Status({ value }: { value: string }) {
   const positive = ["approved", "active", "confirmed", "attended", "resolved"].includes(value);
-  const caution = ["draft", "pending", "waitlisted", "more_info_required"].includes(value);
+  const caution = ["draft", "pending", "waitlisted", "more_info_required", "needs_information"].includes(value);
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${positive ? "bg-emerald-50 text-emerald-700" : caution ? "bg-amber-50 text-amber-800" : "bg-background-100 text-foreground-700"}`}>{value.replaceAll("_", " ")}</span>;
 }
 

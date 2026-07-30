@@ -10,6 +10,7 @@ interface AccountProfileProps {
   badgeLabel: string;
   action?: ReactNode;
   profileImageUrl?: string | null;
+  membershipReference?: string | null;
   avatarAction?: ReactNode;
   children?: ReactNode;
 }
@@ -21,6 +22,7 @@ export default function AccountProfile({
   badgeLabel,
   action,
   profileImageUrl = user.profile_image_url,
+  membershipReference,
   avatarAction,
   children,
 }: AccountProfileProps) {
@@ -74,6 +76,9 @@ export default function AccountProfile({
             <ProfileField label="Full name" value={user.name} strong />
             <ProfileField label="Username" value={user.username} strong />
             <ProfileField label="Email address" value={user.email || "No email address"} />
+            {membershipReference && (
+              <ProfileField label="Membership reference" value={membershipReference} strong />
+            )}
             <ProfileField
               label="Access level"
               value={user.role === "admin" ? "Admin" : "User"}

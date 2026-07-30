@@ -128,3 +128,14 @@ class CurrentUserView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response({"user": UserSerializer(user).data})
+
+
+class CurrentSessionView(APIView):
+    """Return a quiet anonymous session response for initial app bootstrap."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"user": None})
+        return Response({"user": UserSerializer(request.user).data})

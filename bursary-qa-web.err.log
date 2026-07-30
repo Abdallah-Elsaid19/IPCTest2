@@ -1,0 +1,170 @@
+[2m10:55:31 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/home/content?_content_updated=1785398134404[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/home/content?_content_updated=1785398134406[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:36 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/membership/content?_content_updated=1785398136756[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:36 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/membership-grades[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:36 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/membership/content?_content_updated=1785398136757[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:37 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/scholarships?_content_updated=1785398137663[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:37 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/scholarships?_content_updated=1785398137666[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:38 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/sponsorship?_content_updated=1785398138322[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:38 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/sponsorship?_content_updated=1785398138324[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:38 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/events/content[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:38 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/events[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:41 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/clubs/content?_content_updated=1785398141580[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:41 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/clubs/content?_content_updated=1785398141581[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:42 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/awards/content[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:42 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/award-programmes[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:43 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/awards/content[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:43 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/publications/content?_content_updated=1785398143677[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:43 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/publications/content?_content_updated=1785398143678[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:44 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/services/content?_content_updated=1785398144409[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:44 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/services/content?_content_updated=1785398144410[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:44 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/about/content[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:45 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/publications/content?_content_updated=1785398145543[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:45 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/publications/content?_content_updated=1785398145543[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:46 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/about/content[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:48 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/home/content?_content_updated=1785398148664[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:55:48 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/home/content?_content_updated=1785398148665[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m10:58:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/home/content?_content_updated=1785398335824[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m12:39:11 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/features/user-panel/pages/ProfilePage.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m2:13:07 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mExpected `,` or `)` but found `{`
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/features/user-panel/pages/DirectoryPage.tsx:166:7 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m162 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249mk[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249md[0m[38;5;249m [0m[38;5;249m![0m[38;5;249m=[0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m"[0m[38;5;249ms[0m[38;5;249mc[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mr[0m[38;5;249ms[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249mp[0m[38;5;249ms[0m[38;5;249m"[0m[38;5;249m [0m[38;5;249m&[0m[38;5;249m&[0m[38;5;249m [0m([38;5;249m<[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mb[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249m [0m[38;5;249mc[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249ms[0m[38;5;249ms[0m[38;5;249mN[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;249m=[0m[38;5;249m"[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249me[0m[38;5;249m [0m[38;5;249mm[0m[38;5;249mb[0m[38;5;249m-[0m[38;5;249m6[0m[38;5;249m [0m[38;5;249mb[0m[38;5;249ml[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249m [0m[38;5;249mm[0m[38;5;249ma[0m[38;5;249mx[0m[38;5;249m-[0m[38;5;249mw[0m[38;5;249m-[0m[38;5;249mx[0m[38;5;249ml[0m[38;5;249m"[0m[38;5;249m>[0m
+ [38;5;240m    │[0m                                   ┬  
+ [38;5;240m    │[0m                                   ╰── Opened here
+ [38;5;240m    │[0m 
+ [38;5;246m166 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m{[38;5;249mi[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249mm[0m[38;5;249ms[0m[38;5;249m.[0m[38;5;249ml[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249mg[0m[38;5;249mt[0m[38;5;249mh[0m[38;5;249m [0m[38;5;249m?[0m[38;5;249m [0m[38;5;249m([0m
+ [38;5;240m    │[0m       ┬  
+ [38;5;240m    │[0m       ╰── `,` or `)` expected
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mD:/IPCTest2/frontend/src/features/user-panel/pages/DirectoryPage.tsx[39m
+      at transformWithOxc (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:4017:19)
+      at TransformPluginContext.transform (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:4088:26)
+      at EnvironmentPluginContainer.transform (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:30151:51)
+      at async loadAndTransform (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:20098:26)
+      at async viteTransformMiddleware (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:24559:20)
+[2m2:13:07 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/features/user-panel/pages/DirectoryPage.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m2:13:07 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mExpected `,` or `)` but found `{`
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/features/user-panel/pages/DirectoryPage.tsx:166:7 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m162 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249mk[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249md[0m[38;5;249m [0m[38;5;249m![0m[38;5;249m=[0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m"[0m[38;5;249ms[0m[38;5;249mc[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mr[0m[38;5;249ms[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249mp[0m[38;5;249ms[0m[38;5;249m"[0m[38;5;249m [0m[38;5;249m&[0m[38;5;249m&[0m[38;5;249m [0m([38;5;249m<[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mb[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249m [0m[38;5;249mc[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249ms[0m[38;5;249ms[0m[38;5;249mN[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;249m=[0m[38;5;249m"[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249me[0m[38;5;249m [0m[38;5;249mm[0m[38;5;249mb[0m[38;5;249m-[0m[38;5;249m6[0m[38;5;249m [0m[38;5;249mb[0m[38;5;249ml[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249m [0m[38;5;249mm[0m[38;5;249ma[0m[38;5;249mx[0m[38;5;249m-[0m[38;5;249mw[0m[38;5;249m-[0m[38;5;249mx[0m[38;5;249ml[0m[38;5;249m"[0m[38;5;249m>[0m
+ [38;5;240m    │[0m                                   ┬  
+ [38;5;240m    │[0m                                   ╰── Opened here
+ [38;5;240m    │[0m 
+ [38;5;246m166 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m{[38;5;249mi[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249mm[0m[38;5;249ms[0m[38;5;249m.[0m[38;5;249ml[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249mg[0m[38;5;249mt[0m[38;5;249mh[0m[38;5;249m [0m[38;5;249m?[0m[38;5;249m [0m[38;5;249m([0m
+ [38;5;240m    │[0m       ┬  
+ [38;5;240m    │[0m       ╰── `,` or `)` expected
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mD:/IPCTest2/frontend/src/features/user-panel/pages/DirectoryPage.tsx[39m
+      at transformWithOxc (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:4017:19)
+      at TransformPluginContext.transform (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:4088:26)
+      at EnvironmentPluginContainer.transform (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:30151:51)
+      at async loadAndTransform (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:20098:26)
+      at async viteTransformMiddleware (file:///D:/IPCTest2/frontend/node_modules/vite/dist/node/chunks/node.js:24559:20)
+[2m2:13:07 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/features/user-panel/pages/DirectoryPage.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m2:50:17 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/user/scholarships/my-applications[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m2:50:47 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/user/scholarships/my-applications[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m2:51:39 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/user/scholarships/my-applications[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m2:57:27 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/features/admin/users/details/page.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)

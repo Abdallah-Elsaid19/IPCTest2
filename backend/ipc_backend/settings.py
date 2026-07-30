@@ -49,6 +49,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "ipc_backend.content_cache.ContentNoStoreMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "ipc_backend.idempotency.IdempotencyMiddleware",
@@ -140,6 +141,14 @@ REST_FRAMEWORK = {
         "admin_enquiry_reply": env("DRF_ADMIN_ENQUIRY_REPLY_THROTTLE", default="30/hour"),
         "password_reset_confirm": env("DRF_PASSWORD_RESET_CONFIRM_THROTTLE", default="10/hour"),
         "event_registration": env("DRF_EVENT_REGISTRATION_THROTTLE", default="10/hour"),
+        "bursary_application": env(
+            "DRF_BURSARY_APPLICATION_THROTTLE",
+            default="100/min" if DEBUG else "20/hour",
+        ),
+        "bursary_membership_validation": env(
+            "DRF_BURSARY_MEMBERSHIP_VALIDATION_THROTTLE",
+            default="240/min" if DEBUG else "60/min",
+        ),
     },
 }
 

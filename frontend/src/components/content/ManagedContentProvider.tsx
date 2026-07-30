@@ -26,14 +26,21 @@ export function ManagedContentProvider({ endpoint, slug, children }: { endpoint:
     let cancelled = false;
     const load = async () => {
       try {
-        const response = await apiJson<ManagedContent>(endpoint, undefined, { cache: "no-store" });
+        const separator = endpoint.includes("?") ? "&" : "?";
+        const response = await apiJson<ManagedContent>(
+          `${endpoint}${separator}_content_updated=${Date.now()}`,
+          undefined,
+          { cache: "no-store", dedupe: false, requestSource: `managed-content:${slug}` },
+        );
         if (!cancelled) {
           setContent(response);
           setIsLoading(false);
         }
       } catch {
         if (!cancelled) {
-          setContent({});
+          // CMS endpoints return 404 when a table is inactive or unpublished.
+          // Treat that state as hidden instead of rendering hardcoded fallback content.
+          setContent({ is_active: false });
           setIsLoading(false);
         }
       }
@@ -59,12 +66,9 @@ export function useManagedContentStatus() {
 export function useManagedSection<T>(name: string, fallback: T): T {
   const content = useContext(ManagedContentContext);
 
-  // Heroes are intentionally owned by the page implementation so their
-  // first impression cannot be changed or disabled from the dashboard.
-  if (name === "hero") return sanitisePublicContent(fallback);
-
   const value = content[name];
-  if (!value || typeof value !== "object") return fallback;
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== "object") return sanitisePublicContent(value as T);
   if (
     !Array.isArray(value)
     && !Array.isArray(fallback)
@@ -82,7 +86,5 @@ export function isManagedItemActive(item: unknown): boolean {
 
 export function ManagedSectionGate({ name, children }: { name: string; children: React.ReactNode }) {
   const content = useContext(ManagedContentContext);
-  if (name === "hero") return children;
-
   return isManagedItemActive(content[name]) ? children : null;
 }

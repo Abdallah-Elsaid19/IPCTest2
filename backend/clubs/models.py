@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from ipc_backend.validators import validate_content_section
+from .dashboard_defaults import default_club_pages
 
 
 def validate_content_collection(value, required_fields, label):
@@ -70,6 +71,42 @@ class ClubPageContent(models.Model):
         db_table = "clubs_content"
         verbose_name = "Club page content"
         verbose_name_plural = "Club page content"
+
+    def __str__(self):
+        return self.key
+
+
+class ClubPagesContent(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
+    key = models.SlugField(max_length=40, unique=True, default="main")
+    pages = models.JSONField(
+        default=default_club_pages,
+        validators=[validate_content_section],
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PUBLISHED,
+    )
+    is_active = models.BooleanField(default=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="updated_club_pages_content",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "club_pages_content"
+        verbose_name = "Club pages content"
+        verbose_name_plural = "Club pages content"
 
     def __str__(self):
         return self.key

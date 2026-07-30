@@ -294,7 +294,7 @@ export interface DashboardData {
   recent_users: DashboardUser[];
 }
 
-export type AdminNotificationType = "contact" | "application" | "subscriber" | "support";
+export type AdminNotificationType = "contact" | "application" | "bursary_application" | "subscriber" | "support";
 
 export interface AdminNotification {
   id: number;
@@ -344,6 +344,33 @@ export interface AdminUser {
   application_submitted_at: string | null;
   application_approved_at: string | null;
   account_created_at: string;
+}
+
+export interface AdminUserProfileField {
+  key: string;
+  label: string;
+  value: string | number | null;
+  is_multiline: boolean;
+}
+
+export interface AdminUserBursaryApplication {
+  id: number;
+  application_reference: string;
+  membership_reference: string;
+  status: string;
+  status_label: string;
+  preferred_pathway: string;
+  amount_requested_gbp: string;
+  requested_percentage: string;
+  submitted_at: string;
+  updated_at: string;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  profile_image_url: string | null;
+  profile_fields: AdminUserProfileField[];
+  profile_updated_at: string | null;
+  bursary_applications: AdminUserBursaryApplication[];
 }
 
 export interface AdminUserPayload {

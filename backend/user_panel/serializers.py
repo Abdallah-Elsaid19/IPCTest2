@@ -5,8 +5,9 @@ from rest_framework import serializers
 from applications.models import Application, FormDefinition
 from awards.models import AwardProgramme
 from events.models import EventRegistration
-from ipc_backend.validators import clean_text
+from ipc_backend.validators import clean_text, validate_image
 from memberships.models import MembershipGrade
+from accounts.models import AdminProfile
 
 from .models import (
     AwardNomination, AwardNominationDocument, Club, ClubMembership, ClubMessage, DiscussionCategory, DiscussionPost,
@@ -42,21 +43,44 @@ class ProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     email = serializers.EmailField(source="user.email", read_only=True)
+    membership_reference = serializers.SerializerMethodField()
+    profile_image = serializers.ImageField(write_only=True, required=False, validators=[validate_image])
+    profile_image_url = serializers.SerializerMethodField()
     interests = serializers.SlugRelatedField(many=True, slug_field="slug", queryset=ProfessionalInterest.objects.filter(is_active=True), required=False)
     completion = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ["first_name", "last_name", "email", *PROFILE_FIELDS, "certifications", "linkedin_url", "website_url", "interests", "completion", "updated_at"]
-        read_only_fields = ["completion", "updated_at"]
+        fields = ["first_name", "last_name", "email", "membership_reference", "profile_image", "profile_image_url", *PROFILE_FIELDS, "certifications", "linkedin_url", "website_url", "interests", "completion", "updated_at"]
+        read_only_fields = ["membership_reference", "profile_image_url", "completion", "updated_at"]
 
     def get_completion(self, obj):
         return completion(obj)
+
+    def get_profile_image_url(self, obj):
+        account_profile = getattr(obj.user, "admin_profile", None)
+        return account_profile.profile_image.url if account_profile and account_profile.profile_image else None
+
+    def get_membership_reference(self, obj):
+        application = Application.objects.filter(
+            approved_user=obj.user,
+        ).only("application_reference").first()
+        if application is None:
+            application = Application.objects.filter(
+                applicant=obj.user,
+                status=Application.Status.APPROVED,
+            ).only("application_reference").order_by("-approved_at", "-updated_at").first()
+        if application is None:
+            application = Application.objects.filter(
+                applicant=obj.user,
+            ).only("application_reference").order_by("-updated_at").first()
+        return application.application_reference if application else None
 
     @transaction.atomic
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user", {})
         interests = validated_data.pop("interests", None)
+        image = validated_data.pop("profile_image", None)
         for key, value in validated_data.items():
             setattr(instance, key, clean_text(value) if isinstance(value, str) else value)
         instance.save()
@@ -66,6 +90,18 @@ class ProfileSerializer(serializers.ModelSerializer):
             instance.user.save(update_fields=["first_name", "last_name"])
         if interests is not None:
             instance.interests.set(interests)
+        if image is not None:
+            account_profile, _ = AdminProfile.objects.get_or_create(
+                user=instance.user,
+                defaults={
+                    "role": AdminProfile.Role.ADMIN if instance.user.is_staff else AdminProfile.Role.USER,
+                },
+            )
+            old_image = account_profile.profile_image
+            account_profile.profile_image = image
+            account_profile.save(update_fields=["profile_image", "updated_at"])
+            if old_image and old_image.name != account_profile.profile_image.name:
+                old_image.delete(save=False)
         return instance
 
 

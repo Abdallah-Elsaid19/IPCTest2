@@ -1,21 +1,6 @@
 import { useEffect } from "react";
 import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
-import ManagedPageSeo from "@/components/content/ManagedPageSeo";
-import { pageSeo } from "@/config/pageSeo";
-import ScholarshipAcademicPartners from "./components/ScholarshipAcademicPartners";
-import ScholarshipApplicationProcess from "./components/ScholarshipApplicationProcess";
-import ScholarshipAudienceGrid from "./components/ScholarshipAudienceGrid";
-import ScholarshipCommitment from "./components/ScholarshipCommitment";
-import ScholarshipEligibility from "./components/ScholarshipEligibility";
-import ScholarshipEnquiryCta from "./components/ScholarshipEnquiryCta";
-import ScholarshipFaq from "./components/ScholarshipFaq";
-import ScholarshipFund from "./components/ScholarshipFund";
-import ScholarshipHero from "./components/ScholarshipHero";
-import ScholarshipPartners from "./components/ScholarshipPartners";
-import ScholarshipPrinciplesGrid from "./components/ScholarshipPrinciplesGrid";
-import ScholarshipProgrammePathways from "./components/ScholarshipProgrammePathways";
-import ScholarshipRecipientCommitment from "./components/ScholarshipRecipientCommitment";
-import ScholarshipValueGrid from "./components/ScholarshipValueGrid";
+import ScholarshipsGateway from "./ScholarshipsGateway";
 
 export default function Scholarships() {
   useEffect(() => {
@@ -28,7 +13,7 @@ export default function Scholarships() {
           }
         });
       },
-      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
+      { threshold: 0.08, rootMargin: "0px 0px -32px 0px" },
     );
 
     document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
@@ -37,23 +22,7 @@ export default function Scholarships() {
 
   return (
     <ManagedContentProvider endpoint="/api/scholarships" slug="scholarships">
-      <div>
-        <ManagedPageSeo fallback={{ ...pageSeo.scholarships, canonical_path: pageSeo.scholarships.canonicalPath }} />
-        <ScholarshipHero />
-        <ScholarshipPrinciplesGrid />
-        <ScholarshipCommitment />
-        <ScholarshipFund />
-        <ScholarshipAcademicPartners />
-        <ScholarshipProgrammePathways />
-        <ScholarshipValueGrid />
-        <ScholarshipEligibility />
-        <ScholarshipAudienceGrid />
-        <ScholarshipRecipientCommitment />
-        <ScholarshipApplicationProcess />
-        <ScholarshipPartners />
-        <ScholarshipFaq />
-        <ScholarshipEnquiryCta />
-      </div>
+      <ScholarshipsGateway />
     </ManagedContentProvider>
   );
 }

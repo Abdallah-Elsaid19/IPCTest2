@@ -6,6 +6,7 @@ import {
   FileText,
   FileJson,
   GraduationCap,
+  HandCoins,
   Headphones,
   Inbox,
   LayoutDashboard,
@@ -29,6 +30,7 @@ import SEO from "@/components/seo/SEO";
 const navigation = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard },
   { to: "/admin/applications", label: "Applications", icon: FileText },
+  { to: "/admin/bursary-applications", label: "Bursary applications", icon: HandCoins },
   { to: "/admin/enquiries", label: "Enquiries", icon: Inbox },
   { to: "/admin/events", label: "Events", icon: CalendarDays },
   { to: "/admin/awards", label: "Awards", icon: Trophy },

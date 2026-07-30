@@ -41,6 +41,14 @@ const newContentId = () =>
     ? crypto.randomUUID()
     : `content-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+function publishWebsiteContentUpdate(slug: string) {
+  const contentSlug = slug as ContentPageSlug;
+  publishContentUpdate(contentSlug);
+  if (contentSlug === "scholarship-pathways") {
+    publishContentUpdate("scholarships");
+  }
+}
+
 export default function AdminContentPage() {
   const { slug: requestedSlug } = useParams<{ slug?: string }>();
   const [tables, setTables] = useState<AdminContentTable[] | null>(null);
@@ -118,7 +126,7 @@ export default function AdminContentPage() {
         sections: { [editing.section]: nextValue },
       });
       replaceTable(updated);
-      publishContentUpdate(updated.slug as ContentPageSlug);
+      publishWebsiteContentUpdate(updated.slug);
       setEditing(null);
       notifications.success(`${itemTitle(draft, 0)} saved successfully.`);
     } catch (error) {
@@ -145,7 +153,7 @@ export default function AdminContentPage() {
         },
       });
       replaceTable(updated);
-      publishContentUpdate(updated.slug as ContentPageSlug);
+      publishWebsiteContentUpdate(updated.slug);
       setDeleteTarget(null);
       notifications.success("Content item deleted successfully.");
     } catch (error) {
@@ -167,7 +175,7 @@ export default function AdminContentPage() {
         is_active: !activeTable.is_active,
       });
       replaceTable(updated);
-      publishContentUpdate(updated.slug as ContentPageSlug);
+      publishWebsiteContentUpdate(updated.slug);
       notifications.success(
         `${updated.label} content is now ${updated.is_active ? "active" : "inactive"}.`,
       );
@@ -190,7 +198,7 @@ export default function AdminContentPage() {
         status: activeTable.status === "published" ? "draft" : "published",
       });
       replaceTable(updated);
-      publishContentUpdate(updated.slug as ContentPageSlug);
+      publishWebsiteContentUpdate(updated.slug);
       notifications.success(`${updated.label} saved as ${updated.status}.`);
     } catch (error) {
       notifications.error(error instanceof Error ? error.message : "Publishing status could not be changed.");
@@ -229,7 +237,7 @@ export default function AdminContentPage() {
         sections: { [section]: nextValue },
       });
       replaceTable(updated);
-      publishContentUpdate(updated.slug as ContentPageSlug);
+      publishWebsiteContentUpdate(updated.slug);
       notifications.success(
         `${itemTitle(item, index ?? 0)} is now ${isActive ? "active" : "inactive"}.`,
       );
@@ -1153,13 +1161,22 @@ function firstString(item: ContentItem, fields: string[]) {
   return "";
 }
 function itemTitle(item: ContentItem, index: number) {
+  const nestedHero =
+    item.hero && typeof item.hero === "object" && !Array.isArray(item.hero)
+      ? firstString(item.hero as ContentItem, ["title", "eyebrow"])
+      : "";
   return (
-    firstString(item, ["title", "name", "label", "type", "eyebrow"]) ||
+    firstString(item, ["title", "name", "label", "type", "eyebrow", "id"]) ||
+    nestedHero ||
     `Item ${index + 1}`
   );
 }
 function itemDescription(item: ContentItem) {
-  return firstString(item, ["description", "benefits", "help_text"]);
+  const nestedHero =
+    item.hero && typeof item.hero === "object" && !Array.isArray(item.hero)
+      ? firstString(item.hero as ContentItem, ["description", "supporting_text"])
+      : "";
+  return firstString(item, ["description", "summary", "benefits", "help_text"]) || nestedHero;
 }
 function itemTag(item: ContentItem) {
   return firstString(item, ["category", "label", "type", "period", "eyebrow"]);

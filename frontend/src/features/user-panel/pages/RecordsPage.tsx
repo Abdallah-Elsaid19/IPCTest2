@@ -1,7 +1,7 @@
 import { useCallback, useState, type FormEvent } from "react";
-import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { CalendarDays, Clock3, CreditCard, Eye, MailCheck, MapPin, Ticket, XCircle } from "lucide-react";
+import { notifications } from "@/lib/notifications";
 import { panelApi, rows } from "../api";
 import { useLoad } from "../hooks";
 import type { Notification, Page, Preference } from "../types";
@@ -32,8 +32,8 @@ export default function RecordsPage({ kind }: { kind: Kind }) {
       if (kind === "membership") await panelApi.action(`membership/applications/${id}/submit`);
       if (kind === "bookings") await panelApi.action(`bookings/${id}/cancel`);
       if (kind === "notifications") await panelApi.action(`notifications/${id}/read`);
-      toast.success("Updated successfully"); reload();
-    } catch (reason) { toast.error(reason instanceof Error ? reason.message : "Update failed"); }
+      notifications.success("Updated successfully"); reload();
+    } catch (reason) { notifications.error(reason instanceof Error ? reason.message : "Update failed"); }
     finally { setBusy(""); }
   }
   if (loading) return <Loading />;
@@ -164,8 +164,8 @@ function SupportForm({ done }: { done: () => void }) {
   const [saving, setSaving] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = new FormData(event.currentTarget); setSaving(true);
-    try { await panelApi.create("support", { category: form.get("category"), subject: form.get("subject"), initial_message: form.get("message") }); toast.success("Support request created"); done(); }
-    catch (reason) { toast.error(reason instanceof Error ? reason.message : "Could not create request"); }
+    try { await panelApi.create("support", { category: form.get("category"), subject: form.get("subject"), initial_message: form.get("message") }); notifications.success("Support request created"); done(); }
+    catch (reason) { notifications.error(reason instanceof Error ? reason.message : "Could not create request"); }
     finally { setSaving(false); }
   }
   return <Card className="mb-6"><form onSubmit={(event) => void submit(event)} className="grid gap-4 sm:grid-cols-2"><label><span className="text-sm font-medium">Category</span><select name="category" className={inputClass}><option value="account">Account</option><option value="membership">Membership</option><option value="events">Events</option><option value="other">Other</option></select></label><label><span className="text-sm font-medium">Subject</span><input required name="subject" className={inputClass} /></label><label className="sm:col-span-2"><span className="text-sm font-medium">How can we help?</span><textarea required minLength={10} name="message" rows={4} className={inputClass} /></label><button disabled={saving} className="btn-primary sm:col-span-2 sm:justify-self-start">{saving ? "Sending…" : "Send request"}</button></form></Card>;
@@ -179,8 +179,8 @@ export function SettingsPage() {
   if (error || !data) return <ErrorState message={error} retry={reload} />;
   async function update(patch: Partial<Preference>) {
     setSaving(true);
-    try { const next = await panelApi.updatePreferences(patch); setData(next); toast.success("Preferences saved"); }
-    catch (reason) { toast.error(reason instanceof Error ? reason.message : "Could not save preferences"); }
+    try { const next = await panelApi.updatePreferences(patch); setData(next); notifications.success("Preferences saved"); }
+    catch (reason) { notifications.error(reason instanceof Error ? reason.message : "Could not save preferences"); }
     finally { setSaving(false); }
   }
   return <><PageHeading title="Settings and privacy" description="Control profile visibility and the communications you receive from IPC." /><Card className="max-w-3xl"><label className="block"><span className="text-sm font-medium">Profile visibility</span><select disabled={saving} className={`${inputClass} max-w-sm`} value={data.profile_visibility} onChange={(event) => void update({ profile_visibility: event.target.value as Preference["profile_visibility"] })}><option value="private">Private</option><option value="members">IPC members</option><option value="public">Public</option></select></label><div className="mt-6 divide-y divide-background-200">{(["email_notifications", "club_communications", "event_reminders", "marketing_consent"] as const).map((key) => <label key={key} className="flex cursor-pointer items-center justify-between gap-4 py-4"><span className="text-sm font-medium capitalize">{key.replaceAll("_", " ")}</span><input type="checkbox" className="h-5 w-5 accent-primary-600" checked={data[key]} onChange={(event) => void update({ [key]: event.target.checked })} /></label>)}</div></Card></>;

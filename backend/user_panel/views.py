@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,6 +20,7 @@ from awards.models import AwardProgramme
 from clubs.models import ClubPageContent
 from events.models import EventRegistration
 from ipc_backend.validators import clean_text, validate_upload
+from scholarships.models import BursaryApplication
 
 from .models import (
     AwardNomination, AwardNominationDocument, Club, ClubMembership, ClubMessage, DiscussionCategory,
@@ -212,6 +214,113 @@ class ScholarshipViewSet(SearchViewSet):
 
     def get_queryset(self):
         return Scholarship.objects.filter(is_active=True)
+
+    @staticmethod
+    def owned_bursary_applications(request):
+        membership_references = Application.objects.filter(
+            Q(applicant=request.user)
+            | Q(approved_user=request.user)
+            | Q(email__iexact=request.user.email),
+        ).values_list("application_reference", flat=True)
+        return BursaryApplication.objects.filter(
+            Q(membership_reference__in=membership_references)
+            | Q(email__iexact=request.user.email),
+        ).distinct()
+
+    @action(detail=False, methods=["get"], url_path="my-applications")
+    def my_applications(self, request):
+        bursary_applications = self.owned_bursary_applications(request)
+        items = [
+            {
+                "id": f"bursary-{application.pk}",
+                "source": "bursary",
+                "application_reference": application.application_reference,
+                "title": "IPC Bursary",
+                "pathway": application.get_preferred_pathway_display(),
+                "status": application.status,
+                "status_label": application.get_status_display(),
+                "submitted_at": application.submitted_at,
+                "updated_at": application.updated_at,
+            }
+            for application in bursary_applications
+        ]
+
+        legacy_applications = ScholarshipApplication.objects.filter(
+            applicant=request.user,
+        ).select_related("scholarship")
+        items.extend({
+            "id": f"scholarship-{application.public_id}",
+            "source": "legacy",
+            "application_reference": "",
+            "title": application.scholarship.title,
+            "pathway": "",
+            "status": application.status,
+            "status_label": application.get_status_display(),
+            "submitted_at": application.submitted_at,
+            "updated_at": application.updated_at,
+        } for application in legacy_applications)
+
+        items.sort(
+            key=lambda item: item["submitted_at"] or item["updated_at"],
+            reverse=True,
+        )
+        return Response(items)
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"my-applications/(?P<application_reference>[^/.]+)",
+    )
+    def my_application_detail(self, request, application_reference=None):
+        application = get_object_or_404(
+            self.owned_bursary_applications(request),
+            application_reference__iexact=application_reference,
+        )
+        return Response({
+            "id": f"bursary-{application.pk}",
+            "application_reference": application.application_reference,
+            "membership_reference": application.membership_reference,
+            "status": application.status,
+            "status_label": application.get_status_display(),
+            "submitted_at": application.submitted_at,
+            "updated_at": application.updated_at,
+            "applicant": {
+                "name": f"{application.first_name} {application.last_name}".strip(),
+                "preferred_name": application.preferred_name,
+                "email": application.email,
+                "mobile_phone": application.mobile_phone_e164,
+                "country": application.country,
+                "town_or_city": application.town_or_city,
+            },
+            "organisation": {
+                "applicable": not application.organisation_not_applicable,
+                "name": application.organisation_name,
+                "job_title": application.job_title,
+                "industry": application.industry_or_sector,
+            },
+            "bursary_request": {
+                "quoted_pathway_cost_gbp": application.quoted_pathway_cost_gbp,
+                "amount_requested_gbp": application.bursary_amount_requested_gbp,
+                "requested_percentage": application.requested_bursary_percentage,
+                "other_contribution_gbp": application.other_contribution_available_gbp,
+                "proceed_with_lower_bursary": application.get_proceed_with_lower_bursary_display(),
+            },
+            "pathway": {
+                "name": application.get_preferred_pathway_display(),
+                "preferred_start": application.preferred_start_month_or_intake,
+                "highest_relevant_qualification": application.highest_relevant_qualification,
+                "professional_memberships": application.professional_memberships_or_certifications,
+            },
+            "statements": {
+                "financial_circumstances": application.financial_circumstances,
+                "scholarship_outcome": application.scholarship_outcome,
+                "measurable_result": application.measurable_result,
+                "learning_application_and_contribution": application.learning_application_and_contribution,
+                "relevant_experience": application.relevant_experience,
+                "pathway_fit_reason": application.pathway_fit_reason,
+                "additional_review_information": application.additional_review_information,
+            },
+        })
 
 
 class ScholarshipApplicationViewSet(viewsets.ModelViewSet):

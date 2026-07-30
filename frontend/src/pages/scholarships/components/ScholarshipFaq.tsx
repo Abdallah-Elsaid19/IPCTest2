@@ -18,7 +18,7 @@ const questions = [
   },
   {
     question:
-      "Can the IPC contribution be combined with apprenticeship funding?",
+      "Can the IPC contribution be combined with public funding?",
     answer:
       "It may be possible where the relevant funding rules allow it, but the same eligible cost cannot be funded twice. IPC and Kent Business College will confirm the permitted arrangement in writing.",
   },

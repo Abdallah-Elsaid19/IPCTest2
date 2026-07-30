@@ -60,6 +60,7 @@ class AdminNotification(models.Model):
     class NotificationType(models.TextChoices):
         CONTACT = "contact", "Contact"
         APPLICATION = "application", "Application"
+        BURSARY_APPLICATION = "bursary_application", "Bursary application"
         SUBSCRIBER = "subscriber", "Subscriber"
         SUPPORT = "support", "Support"
 

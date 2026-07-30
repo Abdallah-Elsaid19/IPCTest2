@@ -21,7 +21,10 @@ from rest_framework.viewsets import ModelViewSet
 
 from requests import RequestException
 
+from applications.models import Application
 from ipc_backend.validators import normalise_uk_telephone
+from scholarships.models import BursaryApplication
+from user_panel.models import UserProfile
 from .graph_mail import GraphMailError, send_password_reset_email
 from .models import AdminProfile
 
@@ -148,6 +151,97 @@ class AdminUserSerializer(serializers.ModelSerializer):
         return application.account_created_at if application else user.date_joined
 
 
+class AdminUserDetailSerializer(AdminUserSerializer):
+    profile_image_url = serializers.SerializerMethodField()
+    profile_fields = serializers.SerializerMethodField()
+    profile_updated_at = serializers.SerializerMethodField()
+    bursary_applications = serializers.SerializerMethodField()
+
+    class Meta(AdminUserSerializer.Meta):
+        fields = (
+            *AdminUserSerializer.Meta.fields,
+            "profile_image_url",
+            "profile_fields",
+            "profile_updated_at",
+            "bursary_applications",
+        )
+
+    def get_profile_image_url(self, user):
+        account_profile = getattr(user, "admin_profile", None)
+        return account_profile.profile_image.url if account_profile and account_profile.profile_image else None
+
+    @staticmethod
+    def _panel_profile(user):
+        try:
+            return user.panel_profile
+        except User.panel_profile.RelatedObjectDoesNotExist:
+            return None
+
+    def get_profile_fields(self, user):
+        profile = self._panel_profile(user)
+        fields = []
+        label_overrides = {
+            "linkedin_url": "LinkedIn URL",
+            "website_url": "Website URL",
+        }
+        excluded = {"id", "user", "created_at", "updated_at"}
+        for field in UserProfile._meta.fields:
+            if field.name in excluded:
+                continue
+            value = field.value_from_object(profile) if profile else None
+            fields.append({
+                "key": field.name,
+                "label": label_overrides.get(field.name, str(field.verbose_name).title()),
+                "value": value,
+                "is_multiline": field.get_internal_type() == "TextField",
+            })
+        interests = profile.interests.all() if profile else []
+        fields.append({
+            "key": "interests",
+            "label": "Professional interests",
+            "value": ", ".join(interest.name for interest in interests),
+            "is_multiline": True,
+        })
+        return fields
+
+    def get_profile_updated_at(self, user):
+        profile = self._panel_profile(user)
+        return profile.updated_at if profile else None
+
+    def get_bursary_applications(self, user):
+        linked_applications = Application.objects.filter(
+            Q(applicant=user)
+            | Q(approved_user=user)
+            | Q(email__iexact=user.email),
+        )
+        membership_references = linked_applications.values_list(
+            "application_reference",
+            flat=True,
+        )
+        email_query = Q(email__iexact=user.email)
+        linked_membership = self._application(user)
+        if linked_membership and linked_membership.email:
+            email_query |= Q(email__iexact=linked_membership.email)
+        applications = BursaryApplication.objects.filter(
+            Q(membership_reference__in=membership_references) | email_query,
+        ).distinct()
+        return [
+            {
+                "id": application.pk,
+                "application_reference": application.application_reference,
+                "membership_reference": application.membership_reference,
+                "status": application.status,
+                "status_label": application.get_status_display(),
+                "preferred_pathway": application.get_preferred_pathway_display(),
+                "amount_requested_gbp": application.bursary_amount_requested_gbp,
+                "requested_percentage": application.requested_bursary_percentage,
+                "submitted_at": application.submitted_at,
+                "updated_at": application.updated_at,
+            }
+            for application in applications
+        ]
+
+
 class AdminUserWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(
         choices=AdminProfile.Role.choices,
@@ -238,7 +332,9 @@ class AdminUserViewSet(ModelViewSet):
     ).order_by("-date_joined")
 
     def get_serializer_class(self):
-        return AdminUserSerializer if self.action in ("list", "retrieve") else AdminUserWriteSerializer
+        if self.action == "retrieve":
+            return AdminUserDetailSerializer
+        return AdminUserSerializer if self.action == "list" else AdminUserWriteSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

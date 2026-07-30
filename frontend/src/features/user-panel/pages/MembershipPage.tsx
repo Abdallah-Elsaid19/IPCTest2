@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
 
 import { apiJson, type MembershipGrade } from "@/lib/api";
+import { notifications } from "@/lib/notifications";
 import { panelApi, rows } from "../api";
 import { Card, Empty, ErrorState, inputClass, Loading, PageHeading, Status } from "../components/PanelUI";
 import { useLoad } from "../hooks";
@@ -103,10 +103,10 @@ export default function MembershipPage() {
         privacy_consent: false,
         current_step: 1,
       });
-      toast.success("Membership draft saved");
+      notifications.success("Membership draft saved");
       reload();
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Could not save draft");
+      notifications.error(reason instanceof Error ? reason.message : "Could not save draft");
     } finally {
       setApplying(false);
     }

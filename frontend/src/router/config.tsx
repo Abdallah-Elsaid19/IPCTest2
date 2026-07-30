@@ -13,6 +13,8 @@ const AssociateFellowL4GradePage = lazy(() => import("../pages/membership/grades
 const FellowGradePage = lazy(() => import("../pages/membership/grades/fellow/page"));
 const MembershipApplicationPage = lazy(() => import("../pages/membership/apply/page"));
 const Scholarships = lazy(() => import("../pages/scholarships/page"));
+const ScholarshipPathwayDetailPage = lazy(() => import("../pages/scholarships/pathways/page"));
+const BursaryApplicationPage = lazy(() => import("@/features/bursary/BursaryApplicationPage"));
 const Sponsorship = lazy(() => import("../pages/sponsorship/page"));
 const Services = lazy(() => import("../pages/services/page"));
 const Contribute = lazy(() => import("../pages/contribute/page"));
@@ -37,6 +39,8 @@ const Contact = lazy(() => import("../pages/contact/page"));
 const Privacy = lazy(() => import("../pages/privacy/page"));
 const AdminApplicationsPage = lazy(() => import("@/features/admin/applications/page"));
 const AdminApplicationDetailsPage = lazy(() => import("@/features/admin/applications/details/page"));
+const AdminBursaryApplicationsPage = lazy(() => import("@/features/admin/bursary-applications/page"));
+const AdminBursaryApplicationDetailsPage = lazy(() => import("@/features/admin/bursary-applications/details/page"));
 const AdminEnquiriesPage = lazy(() => import("@/features/admin/enquiries/page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events/page"));
 const AdminAwardsPage = lazy(() => import("@/features/admin/awards/page"));
@@ -79,6 +83,8 @@ const routes: RouteObject[] = [
   { path: "/membership/fellow", element: <FellowGradePage /> },
   { path: "/membership/:grade/apply", element: <MembershipApplicationPage /> },
   { path: "/scholarships", element: <Scholarships /> },
+  { path: "/scholarships/pathways/:pathwayId", element: <ScholarshipPathwayDetailPage /> },
+  { path: "/bursary-scholarship-application", element: <BursaryApplicationPage /> },
   { path: "/sponsorship", element: <Sponsorship /> },
   { path: "/services", element: <Services /> },
   { path: "/fund", element: <Contribute /> },
@@ -146,6 +152,8 @@ const routes: RouteObject[] = [
       { index: true, element: <AdminOverviewPage /> },
       { path: "applications", element: <AdminApplicationsPage /> },
       { path: "applications/:id", element: <AdminApplicationDetailsPage /> },
+      { path: "bursary-applications", element: <AdminBursaryApplicationsPage /> },
+      { path: "bursary-applications/:id", element: <AdminBursaryApplicationDetailsPage /> },
       { path: "enquiries", element: <AdminEnquiriesPage /> },
       { path: "events", element: <AdminEventsPage /> },
       { path: "awards", element: <AdminAwardsPage /> },

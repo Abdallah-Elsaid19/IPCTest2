@@ -1,9 +1,11 @@
 import tempfile
+from io import BytesIO
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.test import override_settings
+from PIL import Image
 from rest_framework.test import APITestCase
 
 from applications.models import Application, FormDefinition
@@ -11,6 +13,8 @@ from accounts.models import AdminNotification
 from awards.models import AwardCategory, AwardProgramme
 from events.models import Event, EventRegistration
 from memberships.models import MembershipGrade
+from scholarships.models import BursaryApplication
+from scholarships.tests import valid_bursary_payload
 from .models import (
     Club, ClubMembership, DiscussionCategory, Scholarship,
     AwardNomination, ScholarshipApplication, SupportTicket, UserDocument, UserNotification,
@@ -39,6 +43,68 @@ class UserPanelApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["first_name"], "Amina")
         self.assertGreater(response.data["completion"]["percentage"], 0)
+
+    def test_profile_displays_only_the_signed_in_membership_reference(self):
+        grade = MembershipGrade.objects.get(code="AffIPC")
+        form_definition, _ = FormDefinition.objects.get_or_create(
+            code=grade.code,
+            version=1,
+            defaults={"name": "Affiliate form"},
+        )
+        Application.objects.create(
+            application_reference="IPC-OTHER-MEMBER",
+            form_definition=form_definition,
+            form_version=form_definition.version,
+            membership_grade=grade,
+            approved_user=self.other,
+            status=Application.Status.APPROVED,
+            first_name="Other",
+            last_name="Member",
+            email=self.other.email,
+            phone="07400123457",
+        )
+        Application.objects.create(
+            application_reference="IPC-MEMBER-PROFILE",
+            form_definition=form_definition,
+            form_version=form_definition.version,
+            membership_grade=grade,
+            applicant=self.user,
+            status=Application.Status.SUBMITTED,
+            first_name="Amina",
+            last_name="Khan",
+            email=self.user.email,
+            phone="07400123456",
+        )
+
+        self.login()
+        response = self.client.get("/api/user/profile")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["membership_reference"], "IPC-MEMBER-PROFILE")
+
+    def test_member_can_update_professional_profile_and_image_together(self):
+        self.login()
+        image_bytes = BytesIO()
+        Image.new("RGB", (32, 32), color=(215, 149, 37)).save(image_bytes, format="PNG")
+        image = SimpleUploadedFile("avatar.png", image_bytes.getvalue(), content_type="image/png")
+
+        response = self.client.patch(
+            "/api/user/profile",
+            {
+                "first_name": "Amina",
+                "last_name": "Khan",
+                "job_title": "Procurement Lead",
+                "interests": ["project-controls"],
+                "profile_image": image,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["first_name"], "Amina")
+        self.assertIn("/media/profiles/", response.data["profile_image_url"])
+        profile_image = self.user.admin_profile.profile_image
+        self.addCleanup(profile_image.delete, save=False)
 
     def test_membership_application_saves_draft_and_submits(self):
         grade = MembershipGrade.objects.get(code="AffIPC")
@@ -123,6 +189,61 @@ class UserPanelApiTests(APITestCase):
         self.assertNotEqual(str(other_application.public_id), public_id)
         self.assertEqual(self.client.post(f"/api/user/scholarships/applications/{public_id}/submit", {}, format="json").status_code, 200)
         self.assertEqual(self.client.patch(f"/api/user/scholarships/applications/{public_id}", {"statement": "Changed"}, format="json").status_code, 400)
+
+    def test_member_sees_submitted_bursary_linked_to_membership_reference(self):
+        grade = MembershipGrade.objects.get(code="AffIPC")
+        form_definition, _ = FormDefinition.objects.get_or_create(
+            code=grade.code,
+            version=1,
+            defaults={"name": "Affiliate form"},
+        )
+        membership_application = Application.objects.create(
+            application_reference="IPC-MEMBER-TEST",
+            form_definition=form_definition,
+            form_version=form_definition.version,
+            membership_grade=grade,
+            approved_user=self.user,
+            first_name="Amina",
+            last_name="Khan",
+            email="amina@example.com",
+            phone="07400123456",
+            country="United Kingdom",
+            organisation="",
+            code_of_conduct_consent=True,
+            privacy_consent=True,
+        )
+        payload = valid_bursary_payload()
+        payload["personalDetails"]["membershipReference"] = membership_application.application_reference
+        submitted = self.client.post("/api/bursary-applications", payload, format="json")
+        self.assertEqual(submitted.status_code, 201, submitted.data)
+
+        self.login()
+        response = self.client.get("/api/user/scholarships/my-applications")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["application_reference"], submitted.data["applicationReference"])
+        self.assertEqual(response.data[0]["title"], "IPC Bursary")
+        self.assertEqual(response.data[0]["status"], BursaryApplication.Status.SUBMITTED)
+        self.assertEqual(response.data[0]["pathway"], "Operational Pathway")
+
+        detail = self.client.get(
+            f"/api/user/scholarships/my-applications/{submitted.data['applicationReference']}",
+        )
+        self.assertEqual(detail.status_code, 200, detail.data)
+        self.assertEqual(detail.data["application_reference"], submitted.data["applicationReference"])
+        self.assertEqual(detail.data["membership_reference"], membership_application.application_reference)
+        self.assertEqual(
+            detail.data["applicant"]["email"].lower(),
+            payload["personalDetails"]["email"].lower(),
+        )
+        self.assertEqual(detail.data["pathway"]["name"], "Operational Pathway")
+
+        self.login(self.other)
+        hidden = self.client.get(
+            f"/api/user/scholarships/my-applications/{submitted.data['applicationReference']}",
+        )
+        self.assertEqual(hidden.status_code, 404)
 
     def test_club_community_requires_active_membership(self):
         club, _ = Club.objects.update_or_create(

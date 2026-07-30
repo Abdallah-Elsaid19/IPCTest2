@@ -105,7 +105,7 @@ function HomeFeatureSection({
                 </ul>
               )}
               {item.cta && item.url && <Link to={item.url} className={`mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold ${dark ? "text-primary-300" : "text-primary-700"}`}>{item.cta}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>}
-              <span className="absolute inset-x-0 bottom-0 h-[3px] origin-left scale-x-0 bg-primary-500 transition-transform duration-300 group-hover:scale-x-100" />
+              <span className="absolute inset-x-0 bottom-0 h-[1px] origin-left scale-x-0 bg-primary-500 transition-transform duration-300 group-hover:scale-x-100" />
             </article>
           ))}
         </div>

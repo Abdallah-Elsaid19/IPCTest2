@@ -48,6 +48,7 @@ export const footerNavigation = [
     label: "Impact & Resources",
     links: [
       { label: "Scholarships & Bursaries", path: "/scholarships" },
+      { label: "Apply for a Bursary", path: "/bursary-scholarship-application" },
       { label: "Sponsorship", path: "/sponsorship" },
       // { label: "Funded Opportunities", path: "/fund" },
       { label: "Publications & Research", path: "/publications" },

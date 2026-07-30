@@ -264,3 +264,111 @@ Institute of Project Controls
         text_body=text_body,
         html_body=html_body,
     )
+
+
+def send_bursary_approval_email(
+    *,
+    recipient,
+    name,
+    application_reference,
+    pathway,
+):
+    safe_name = html.escape(name or "IPC member")
+    safe_reference = html.escape(application_reference)
+    safe_pathway = html.escape(pathway)
+    subject = "Your IPC bursary application has been approved"
+    text_body = f"""Dear {name or 'IPC member'},
+
+We are pleased to confirm that your IPC bursary application has been approved.
+
+Application reference: {application_reference}
+Pathway: {pathway}
+
+The IPC team will contact you with the next steps.
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.65;max-width:620px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:25px">Your bursary application has been approved</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Dear {safe_name},</p>
+          <p>We are pleased to confirm that your IPC bursary application has been approved.</p>
+          <div style="background:#f4ece1;padding:16px 18px;margin:20px 0;border-left:4px solid #d79525">
+            <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
+            <p style="margin:0"><strong>Pathway:</strong> {safe_pathway}</p>
+          </div>
+          <p>The IPC team will contact you with the next steps.</p>
+          <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    try:
+        _send_mime_message(
+            recipient=recipient,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+        )
+    except (ImproperlyConfigured, requests.RequestException) as exc:
+        raise GraphMailError("Microsoft Graph could not send the bursary approval email.") from exc
+
+
+def send_bursary_rejection_email(
+    *,
+    recipient,
+    name,
+    application_reference,
+    pathway,
+    reason,
+):
+    safe_name = html.escape(name or "IPC member")
+    safe_reference = html.escape(application_reference)
+    safe_pathway = html.escape(pathway)
+    safe_reason = html.escape(reason).replace("\n", "<br>")
+    subject = "Update on your IPC bursary application"
+    text_body = f"""Dear {name or 'IPC member'},
+
+Thank you for applying for an IPC bursary. After reviewing your application, we are unable to approve it at this time.
+
+Application reference: {application_reference}
+Pathway: {pathway}
+
+Reason:
+{reason}
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.65;max-width:620px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:25px">Update on your bursary application</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Dear {safe_name},</p>
+          <p>Thank you for applying for an IPC bursary. After reviewing your application, we are unable to approve it at this time.</p>
+          <div style="background:#f4ece1;padding:16px 18px;margin:20px 0;border-left:4px solid #d79525">
+            <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
+            <p style="margin:0"><strong>Pathway:</strong> {safe_pathway}</p>
+          </div>
+          <p><strong>Reason:</strong></p>
+          <p>{safe_reason}</p>
+          <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    try:
+        _send_mime_message(
+            recipient=recipient,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+        )
+    except (ImproperlyConfigured, requests.RequestException) as exc:
+        raise GraphMailError("Microsoft Graph could not send the bursary rejection email.") from exc

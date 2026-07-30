@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 
 from user_panel.models import Club
 
-from .models import ClubEnquiry, ClubPageContent
+from .models import ClubEnquiry, ClubPageContent, ClubPagesContent
 
 
 class ClubPageContentApiTests(APITestCase):
@@ -30,6 +30,86 @@ class ClubPageContentApiTests(APITestCase):
         self.assertEqual(response.data["membership_status"], "not_joined")
         self.assertEqual(response.data["active_member_count"], 0)
         self.assertEqual(response.data["upcoming_events"], [])
+        self.assertEqual(response.data["page_content"]["id"], "manchester")
+        self.assertEqual(
+            response.data["page_content"]["programme"]["items"][0]["title"],
+            "Attend regional events",
+        )
+        self.assertEqual(
+            response["Cache-Control"],
+            "no-store, no-cache, must-revalidate, max-age=0",
+        )
+
+    def test_dashboard_exposes_four_club_pages_in_one_tab(self):
+        user = get_user_model().objects.create_user(
+            username="club-content-admin",
+            password="test-password",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user)
+
+        response = self.client.get("/api/admin/content")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        club_pages = next(item for item in response.data if item["slug"] == "club-pages")
+        self.assertEqual(set(club_pages["sections"]), {"pages"})
+        self.assertEqual(len(club_pages["sections"]["pages"]), 4)
+        self.assertEqual(
+            {page["id"] for page in club_pages["sections"]["pages"]},
+            {"london", "nottingham", "manchester", "kent-maidstone"},
+        )
+
+    def test_inactive_club_page_item_is_not_public(self):
+        content = ClubPagesContent.objects.get(key="main")
+        content.pages = [
+            {**page, "is_active": page["id"] != "london"}
+            for page in content.pages
+        ]
+        content.save(update_fields=["pages"])
+
+        self.assertEqual(self.client.get("/api/clubs/london").status_code, 404)
+
+    def test_inactive_club_pages_table_is_not_public(self):
+        content = ClubPagesContent.objects.get(key="main")
+        content.is_active = False
+        content.save(update_fields=["is_active"])
+
+        self.assertEqual(self.client.get("/api/clubs/manchester").status_code, 404)
+
+    def test_dashboard_saves_nested_section_is_active(self):
+        user = get_user_model().objects.create_user(
+            username="club-section-admin",
+            password="test-password",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user)
+        content = ClubPagesContent.objects.get(key="main")
+        pages = [
+            {
+                **page,
+                "hero": {
+                    **page["hero"],
+                    "is_active": False,
+                },
+            }
+            if page["id"] == "london"
+            else page
+            for page in content.pages
+        ]
+
+        response = self.client.patch(
+            "/api/admin/content/club-pages",
+            {"sections": {"pages": pages}},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        public_response = self.client.get("/api/clubs/london")
+        self.assertEqual(public_response.status_code, 200, public_response.data)
+        self.assertIs(
+            public_response.data["page_content"]["hero"]["is_active"],
+            False,
+        )
 
     def test_public_endpoint_returns_active_database_content(self):
         ClubPageContent.objects.update_or_create(

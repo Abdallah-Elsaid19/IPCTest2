@@ -3,6 +3,7 @@ import {
   CheckCheck,
   FileText,
   Headphones,
+  HandCoins,
   LoaderCircle,
   Mail,
   MessageSquareText,
@@ -37,6 +38,11 @@ const typeStyles: Record<
     icon: FileText,
     iconClass: "bg-primary-100 text-primary-800",
     label: "Application",
+  },
+  bursary_application: {
+    icon: HandCoins,
+    iconClass: "bg-primary-100 text-primary-800",
+    label: "Bursary application",
   },
   subscriber: {
     icon: Mail,

@@ -5,6 +5,8 @@ export interface Profile {
   first_name: string;
   last_name: string;
   email: string;
+  membership_reference: string | null;
+  profile_image_url: string | null;
   preferred_name: string;
   phone: string;
   country: string;
@@ -73,6 +75,64 @@ export interface DirectoryItem {
   eligibility?: string;
   deadline?: string | null;
   membership_status?: string;
+}
+
+export interface ScholarshipApplicationSummary {
+  id: string;
+  source: "bursary" | "legacy";
+  application_reference: string;
+  title: string;
+  pathway: string;
+  status: string;
+  status_label: string;
+  submitted_at: string | null;
+  updated_at: string;
+}
+
+export interface ScholarshipApplicationDetail {
+  id: string;
+  application_reference: string;
+  membership_reference: string;
+  status: string;
+  status_label: string;
+  submitted_at: string;
+  updated_at: string;
+  applicant: {
+    name: string;
+    preferred_name: string;
+    email: string;
+    mobile_phone: string;
+    country: string;
+    town_or_city: string;
+  };
+  organisation: {
+    applicable: boolean;
+    name: string;
+    job_title: string;
+    industry: string;
+  };
+  bursary_request: {
+    quoted_pathway_cost_gbp: string | null;
+    amount_requested_gbp: string;
+    requested_percentage: string;
+    other_contribution_gbp: string | null;
+    proceed_with_lower_bursary: string;
+  };
+  pathway: {
+    name: string;
+    preferred_start: string;
+    highest_relevant_qualification: string;
+    professional_memberships: string;
+  };
+  statements: {
+    financial_circumstances: string;
+    scholarship_outcome: string;
+    measurable_result: string;
+    learning_application_and_contribution: string;
+    relevant_experience: string;
+    pathway_fit_reason: string;
+    additional_review_information: string;
+  };
 }
 
 export interface Preference {

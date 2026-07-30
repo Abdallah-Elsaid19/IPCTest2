@@ -6,9 +6,9 @@ from rest_framework.views import APIView
 
 from about.models import AboutPageContent
 from awards.models import AwardPageContent
-from clubs.models import ClubPageContent
+from clubs.models import ClubPageContent, ClubPagesContent
 from events.models import EventPageContent
-from scholarships.models import ScholarshipContent
+from scholarships.models import ScholarshipGatewayContent, ScholarshipPathwaysContent
 from sponsorship.models import SponsorshipContent
 from memberships.models import MembershipContent
 from home.models import HomeContent
@@ -71,6 +71,12 @@ CONTENT_TABLES = {
         ),
         "publishing": True,
     },
+    "club-pages": {
+        "label": "Club Pages",
+        "model": ClubPagesContent,
+        "fields": ("pages",),
+        "publishing": True,
+    },
     "events": {
         "label": "Events",
         "model": EventPageContent,
@@ -78,8 +84,32 @@ CONTENT_TABLES = {
     },
     "scholarships": {
         "label": "Scholarship Content",
-        "model": ScholarshipContent,
-        "fields": ("commitment", "fund", "principles", "audiences_intro", "audiences", "values_intro", "values", "eligibility", "recipient_commitment", "application_process", "partners", "academic_partners", "conditions", "impact", "faq", "final_cta", "seo"),
+        "model": ScholarshipGatewayContent,
+        "fields": (
+            "hero",
+            "partnership",
+            "process",
+            "funding",
+            "government_funding",
+            "funding_figures",
+            "pathways_intro",
+            "learning",
+            "ai_spotlight",
+            "comparison",
+            "all_inclusive",
+            "audiences",
+            "eligibility",
+            "commitment",
+            "faq",
+            "final_cta",
+            "seo",
+        ),
+        "publishing": True,
+    },
+    "scholarship-pathways": {
+        "label": "Scholarship Pathways",
+        "model": ScholarshipPathwaysContent,
+        "fields": ("pages",),
         "publishing": True,
     },
     "sponsorship": {

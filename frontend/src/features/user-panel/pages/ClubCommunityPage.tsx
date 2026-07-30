@@ -13,10 +13,10 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
 
 import { useAuth } from "@/features/auth/AuthContext";
 import { apiJson } from "@/lib/api";
+import { notifications } from "@/lib/notifications";
 import { panelApi, rows } from "../api";
 import { useLoad } from "../hooks";
 import { Card, Empty, ErrorState, inputClass, Loading, PageHeading, Status } from "../components/PanelUI";
@@ -141,10 +141,10 @@ export default function ClubCommunityPage() {
         });
       }
       formElement.reset();
-      toast.success(tab === "chat" ? "Message sent" : "Discussion published");
+      notifications.success(tab === "chat" ? "Message sent" : "Discussion published");
       reload();
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Could not publish");
+      notifications.error(reason instanceof Error ? reason.message : "Could not publish");
     } finally {
       setSaving(false);
     }

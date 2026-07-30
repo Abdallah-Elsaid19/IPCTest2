@@ -1,0 +1,102 @@
+Unauthorized: /api/auth/me
+[30/Jul/2026 11:38:59] "GET /api/auth/me HTTP/1.1" 401 58
+Unauthorized: /api/auth/refresh
+[30/Jul/2026 11:38:59] "POST /api/auth/refresh HTTP/1.1" 401 29
+Bad Request: /api/auth/login
+[30/Jul/2026 11:41:44] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:41:51] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:42:05] "POST /api/auth/login HTTP/1.1" 400 73
+Unauthorized: /api/auth/me
+[30/Jul/2026 11:42:08] "GET /api/auth/me HTTP/1.1" 401 58
+Unauthorized: /api/auth/refresh
+[30/Jul/2026 11:42:08] "POST /api/auth/refresh HTTP/1.1" 401 37
+Bad Request: /api/auth/login
+[30/Jul/2026 11:42:17] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:42:22] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:51:59] "POST /api/auth/login HTTP/1.1" 400 73
+[30/Jul/2026 11:52:06] "GET /api/membership-grades HTTP/1.1" 200 3052
+[30/Jul/2026 11:52:06] "GET /api/membership/content?_content_updated=1785401526061 HTTP/1.1" 200 12719
+[30/Jul/2026 11:52:06] "GET /api/membership/content?_content_updated=1785401526073 HTTP/1.1" 200 12719
+[30/Jul/2026 11:52:07] "GET /api/scholarships?_content_updated=1785401527315 HTTP/1.1" 200 48233
+[30/Jul/2026 11:52:07] "GET /api/scholarships?_content_updated=1785401527312 HTTP/1.1" 200 48233
+Bad Request: /api/auth/login
+[30/Jul/2026 11:56:07] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:56:51] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:57:01] "POST /api/auth/login HTTP/1.1" 400 73
+Bad Request: /api/auth/login
+[30/Jul/2026 11:57:03] "POST /api/auth/login HTTP/1.1" 400 73
+[30/Jul/2026 11:57:05] "GET /api/membership/content?_content_updated=1785401825899 HTTP/1.1" 200 12719
+[30/Jul/2026 11:57:05] "GET /api/membership-grades HTTP/1.1" 200 3052
+[30/Jul/2026 11:57:05] "GET /api/membership/content?_content_updated=1785401825903 HTTP/1.1" 200 12719
+[30/Jul/2026 11:57:26] "GET /api/scholarships?_content_updated=1785401846212 HTTP/1.1" 200 48233
+[30/Jul/2026 11:57:26] "GET /api/scholarships?_content_updated=1785401846214 HTTP/1.1" 200 48233
+[30/Jul/2026 11:57:26] "GET /api/membership-grades HTTP/1.1" 200 3052
+[30/Jul/2026 11:57:26] "GET /api/membership/content?_content_updated=1785401846475 HTTP/1.1" 200 12719
+[30/Jul/2026 11:57:26] "GET /api/membership/content?_content_updated=1785401846478 HTTP/1.1" 200 12719
+[30/Jul/2026 11:58:04] "GET /api/membership/content?_content_updated=1785401884120 HTTP/1.1" 200 12719
+[30/Jul/2026 12:00:38] "GET /api/membership/content?_content_updated=1785402038108 HTTP/1.1" 200 12719
+[30/Jul/2026 12:01:15] "GET /api/membership/content?_content_updated=1785402075500 HTTP/1.1" 200 12719
+[30/Jul/2026 12:02:46] "GET /api/membership/content?_content_updated=1785402166743 HTTP/1.1" 200 12719
+Unauthorized: /api/auth/me
+[30/Jul/2026 12:02:49] "GET /api/auth/me HTTP/1.1" 401 58
+Unauthorized: /api/auth/refresh
+[30/Jul/2026 12:02:50] "POST /api/auth/refresh HTTP/1.1" 401 37
+[30/Jul/2026 12:02:50] "GET /api/membership/content?_content_updated=1785402170537 HTTP/1.1" 200 12719
+[30/Jul/2026 12:02:50] "GET /api/membership-grades HTTP/1.1" 200 3052
+[30/Jul/2026 12:02:50] "GET /api/membership/content?_content_updated=1785402170547 HTTP/1.1" 200 12719
+Unauthorized: /api/auth/me
+[30/Jul/2026 12:02:53] "GET /api/auth/me HTTP/1.1" 401 58
+Unauthorized: /api/auth/refresh
+[30/Jul/2026 12:02:53] "POST /api/auth/refresh HTTP/1.1" 401 37
+[30/Jul/2026 12:02:53] "GET /api/membership/content?_content_updated=1785402173669 HTTP/1.1" 200 12719
+[30/Jul/2026 12:02:53] "GET /api/membership/content?_content_updated=1785402173677 HTTP/1.1" 200 12719
+[30/Jul/2026 12:02:53] "GET /api/membership-grades HTTP/1.1" 200 3052
+Bad Request: /api/auth/login
+[30/Jul/2026 12:03:02] "POST /api/auth/login HTTP/1.1" 400 73
+Not Found: /api/auth/session
+[30/Jul/2026 12:12:28] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:12:32] "GET /api/auth/session HTTP/1.1" 404 61371
+Bad Request: /api/auth/login
+[30/Jul/2026 12:12:42] "POST /api/auth/login HTTP/1.1" 400 73
+Not Found: /api/auth/session
+[30/Jul/2026 12:20:52] "GET /api/auth/session HTTP/1.1" 404 61371
+[30/Jul/2026 12:20:55] "GET /api/home/content?_content_updated=1785403255118 HTTP/1.1" 200 29185
+[30/Jul/2026 12:20:55] "GET /api/home/content?_content_updated=1785403255116 HTTP/1.1" 200 29185
+[30/Jul/2026 12:20:57] "GET /api/home/content?_content_updated=1785403257303 HTTP/1.1" 200 29185
+Not Found: /api/auth/session
+[30/Jul/2026 12:21:00] "GET /api/auth/session HTTP/1.1" 404 61371
+Bad Request: /api/auth/login
+[30/Jul/2026 12:21:14] "POST /api/auth/login HTTP/1.1" 400 73
+Not Found: /api/auth/session
+[30/Jul/2026 12:23:51] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:24] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:24] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:24] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:25] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:26] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:26] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:26] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:27] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:47] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:47] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:47] "GET /api/auth/session HTTP/1.1" 404 61371
+Not Found: /api/auth/session
+[30/Jul/2026 12:24:47] "GET /api/auth/session HTTP/1.1" 404 61371

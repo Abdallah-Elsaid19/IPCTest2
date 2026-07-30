@@ -16,6 +16,7 @@ import MembershipGateModal from "@/components/feedback/MembershipGateModal";
 import { useAuth } from "@/features/auth/AuthContext";
 import ClubJoinModal, { type ClubJoinDetails } from "@/features/clubs/components/ClubJoinModal";
 import { apiJson } from "@/lib/api";
+import { subscribeToContentUpdates } from "@/lib/contentSync";
 
 type ClubEvent = {
   id: number;
@@ -26,6 +27,21 @@ type ClubEvent = {
   region: string;
   starts_at: string | null;
   is_online_event: boolean;
+};
+
+type ClubPageContent = {
+  hero?: { eyebrow?: string; primary_cta_label?: string; secondary_cta_label?: string; notice?: string; is_active?: boolean };
+  profile?: { eyebrow?: string; region_label?: string; focus_label?: string; community_label?: string; community?: string; is_active?: boolean };
+  metrics?: { members_label?: string; discussions_label?: string; events_label?: string; is_active?: boolean };
+  about?: { eyebrow?: string; title?: string; focus_label?: string; is_active?: boolean };
+  programme?: {
+    eyebrow?: string;
+    title?: string;
+    items?: Array<{ id?: string; icon?: string; title: string; description: string; is_active?: boolean }>;
+    is_active?: boolean;
+  };
+  calendar?: { eyebrow?: string; title?: string; all_events_label?: string; empty_title?: string; empty_description?: string; is_active?: boolean };
+  final_cta?: { eyebrow?: string; title?: string; member_button_label?: string; join_button_label?: string; pending_button_label?: string; is_active?: boolean };
 };
 
 type PublicClub = {
@@ -40,6 +56,7 @@ type PublicClub = {
   active_member_count: number;
   discussion_count: number;
   upcoming_events: ClubEvent[];
+  page_content?: ClubPageContent;
 };
 
 const opportunities = [
@@ -65,6 +82,13 @@ const opportunities = [
   },
 ];
 
+const programmeIcons: Record<string, typeof CalendarDays> = {
+  calendar: CalendarDays,
+  book: BookOpen,
+  message: MessageSquareText,
+  network: Network,
+};
+
 export default function PublicClubPage() {
   const { slug = "" } = useParams();
   const { user, isLoading } = useAuth();
@@ -75,22 +99,30 @@ export default function PublicClubPage() {
   const [gateOpen, setGateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     setError("");
     try {
-      setClub(await apiJson<PublicClub>(`/api/clubs/${slug}`, undefined, {
+      setClub(await apiJson<PublicClub>(`/api/clubs/${slug}?_content_updated=${Date.now()}`, undefined, {
+        cache: "no-store",
+        dedupe: false,
         requestSource: "public-club",
       }));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Club could not be loaded.");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [slug]);
 
   useEffect(() => {
-    void load();
+    void load(true);
+    const unsubscribePages = subscribeToContentUpdates("club-pages", () => void load(false));
+    const unsubscribeOverview = subscribeToContentUpdates("clubs", () => void load(false));
+    return () => {
+      unsubscribePages();
+      unsubscribeOverview();
+    };
   }, [load]);
 
   function openJoinModal() {
@@ -112,7 +144,7 @@ export default function PublicClubPage() {
       });
       toast.success("Your request to join the club has been submitted.");
       setJoinOpen(false);
-      await load();
+      await load(false);
     } catch (reason) {
       toast.error(reason instanceof Error ? reason.message : "Could not submit the club request.");
     } finally {
@@ -134,9 +166,24 @@ export default function PublicClubPage() {
 
   const active = club.membership_status === "active";
   const pending = club.membership_status === "pending";
+  const hero = club.page_content?.hero;
+  const profile = club.page_content?.profile;
+  const metrics = club.page_content?.metrics;
+  const about = club.page_content?.about;
+  const programme = club.page_content?.programme;
+  const calendar = club.page_content?.calendar;
+  const finalCta = club.page_content?.final_cta;
+  const programmeItems = programme?.items
+    ?.filter((item) => item.is_active !== false)
+    .map((item) => ({
+      icon: programmeIcons[item.icon || ""] || CalendarDays,
+      title: item.title,
+      text: item.description,
+    })) || opportunities;
 
   return (
     <main className="bg-background-50 text-background-950">
+      {hero?.is_active !== false && (
       <section className="relative overflow-hidden bg-[#111515] px-5 pb-20 pt-32 text-white md:px-10 md:pb-28 md:pt-40">
         <div className="absolute -right-32 top-10 h-[32rem] w-[32rem] rounded-full border border-primary-500/20" />
         <div className="absolute -bottom-56 right-0 h-[30rem] w-[30rem] rounded-full bg-primary-500/10 blur-3xl" />
@@ -144,7 +191,7 @@ export default function PublicClubPage() {
           <Link to="/clubs" className="text-xs font-bold uppercase tracking-[.18em] text-primary-300 hover:text-primary-200">Regional clubs / {club.location}</Link>
           <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_20rem] lg:items-end">
             <div>
-              <span className="eyebrow text-primary-300">IPC regional community</span>
+              <span className="eyebrow text-primary-300">{hero?.eyebrow || "IPC regional community"}</span>
               <h1 className="mt-5 max-w-4xl font-heading text-5xl font-bold leading-[1.02] md:text-7xl">{club.name}</h1>
               <p className="mt-7 max-w-3xl text-lg leading-8 text-white/75">{club.summary}</p>
               <div className="mt-9 flex flex-wrap gap-3">
@@ -152,55 +199,63 @@ export default function PublicClubPage() {
                   <Link to={`/user/clubs/${club.slug}`} className="btn-primary">Open member hub<ArrowRight size={17} /></Link>
                 ) : (
                   <button type="button" onClick={openJoinModal} disabled={joining || pending} className="btn-primary disabled:cursor-not-allowed disabled:opacity-60">
-                    {joining ? "Submitting…" : pending ? "Request pending" : "Join this club"}<ArrowRight size={17} />
+                    {joining ? "Submitting…" : pending ? (finalCta?.pending_button_label || "Request pending") : (hero?.primary_cta_label || "Join this club")}<ArrowRight size={17} />
                   </button>
                 )}
-                <a href="#programme" className="inline-flex min-h-12 items-center justify-center border border-white/30 px-6 text-sm font-bold text-white hover:bg-white/10">Explore the programme</a>
+                <a href="#programme" className="inline-flex min-h-12 items-center justify-center border border-white/30 px-6 text-sm font-bold text-white hover:bg-white/10">{hero?.secondary_cta_label || "Explore the programme"}</a>
               </div>
-              <p className="mt-5 text-xs text-white/50">Club participation is available to active IPC members. Join requests are reviewed before community access is enabled.</p>
+              <p className="mt-5 text-xs text-white/50">{hero?.notice || "Club participation is available to active IPC members. Join requests are reviewed before community access is enabled."}</p>
             </div>
+            {profile?.is_active !== false && (
             <aside className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-primary-300">Club profile</p>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-primary-300">{profile?.eyebrow || "Club profile"}</p>
               <dl className="mt-5 space-y-5">
-                <HeroFact icon={MapPin} label="Region" value={club.location} />
-                <HeroFact icon={Sparkles} label="Professional focus" value={club.specialism || "Project controls capability"} />
-                <HeroFact icon={ShieldCheck} label="Community" value="IPC member-led and professionally governed" />
+                <HeroFact icon={MapPin} label={profile?.region_label || "Region"} value={club.location} />
+                <HeroFact icon={Sparkles} label={profile?.focus_label || "Professional focus"} value={club.specialism || "Project controls capability"} />
+                <HeroFact icon={ShieldCheck} label={profile?.community_label || "Community"} value={profile?.community || "IPC member-led and professionally governed"} />
               </dl>
             </aside>
+            )}
           </div>
         </div>
       </section>
+      )}
 
+      {metrics?.is_active !== false && (
       <section className="border-b border-background-200 bg-background-100">
         <div className="container-content grid sm:grid-cols-3">
-          <Metric value={`${club.active_member_count}`} label="Active club members" />
-          <Metric value={`${club.discussion_count}`} label="Member discussions" />
-          <Metric value={`${club.upcoming_events.length}`} label="Upcoming regional events" />
+          <Metric value={`${club.active_member_count}`} label={metrics?.members_label || "Active club members"} />
+          <Metric value={`${club.discussion_count}`} label={metrics?.discussions_label || "Member discussions"} />
+          <Metric value={`${club.upcoming_events.length}`} label={metrics?.events_label || "Upcoming regional events"} />
         </div>
       </section>
+      )}
 
+      {about?.is_active !== false && (
       <section className="section-padding">
         <div className="container-content grid gap-14 lg:grid-cols-12">
           <div className="lg:col-span-5">
-            <span className="eyebrow text-primary-700">About this club</span>
-            <h2 className="mt-5 font-heading text-4xl font-semibold leading-tight md:text-5xl">Professional knowledge with a regional connection.</h2>
+            <span className="eyebrow text-primary-700">{about?.eyebrow || "About this club"}</span>
+            <h2 className="mt-5 font-heading text-4xl font-semibold leading-tight md:text-5xl">{about?.title || "Professional knowledge with a regional connection."}</h2>
           </div>
           <div className="lg:col-span-7">
             <p className="text-lg leading-9 text-foreground-700">{club.description}</p>
             <div className="mt-9 border-l-2 border-primary-500 bg-background-100 p-6">
-              <p className="text-xs font-bold uppercase tracking-[.16em] text-primary-800">Professional focus</p>
+              <p className="text-xs font-bold uppercase tracking-[.16em] text-primary-800">{about?.focus_label || "Professional focus"}</p>
               <p className="mt-3 leading-7 text-foreground-700">{club.specialism || `Project controls practice, professional development and regional capability across ${club.location}.`}</p>
             </div>
           </div>
         </div>
       </section>
+      )}
 
+      {programme?.is_active !== false && (
       <section id="programme" className="bg-background-950 py-20 text-white md:py-28">
         <div className="container-content">
-          <span className="eyebrow text-primary-300">Member programme</span>
-          <h2 className="mt-5 max-w-3xl font-heading text-4xl font-semibold md:text-5xl">Learn, connect, contribute and progress.</h2>
+          <span className="eyebrow text-primary-300">{programme?.eyebrow || "Member programme"}</span>
+          <h2 className="mt-5 max-w-3xl font-heading text-4xl font-semibold md:text-5xl">{programme?.title || "Learn, connect, contribute and progress."}</h2>
           <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {opportunities.map(({ icon: Icon, title, text }, index) => (
+            {programmeItems.map(({ icon: Icon, title, text }, index) => (
               <article key={title} className="min-h-64 border border-white/15 bg-white/[.04] p-6">
                 <span className="grid h-11 w-11 place-items-center rounded-full bg-primary-500 text-[#111515]"><Icon size={20} /></span>
                 <p className="mt-8 font-mono text-[9px] font-bold tracking-[.18em] text-primary-300">0{index + 1}</p>
@@ -211,12 +266,14 @@ export default function PublicClubPage() {
           </div>
         </div>
       </section>
+      )}
 
+      {calendar?.is_active !== false && (
       <section className="section-padding bg-background-100">
         <div className="container-content">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-            <div><span className="eyebrow text-primary-700">Club calendar</span><h2 className="mt-4 font-heading text-4xl font-semibold">Upcoming regional activity</h2></div>
-            <Link to="/events" className="text-sm font-bold text-primary-800">View all IPC events →</Link>
+            <div><span className="eyebrow text-primary-700">{calendar?.eyebrow || "Club calendar"}</span><h2 className="mt-4 font-heading text-4xl font-semibold">{calendar?.title || "Upcoming regional activity"}</h2></div>
+            <Link to="/events" className="text-sm font-bold text-primary-800">{calendar?.all_events_label || "View all IPC events"} →</Link>
           </div>
           {club.upcoming_events.length ? (
             <div className="mt-10 grid gap-5 lg:grid-cols-3">
@@ -233,19 +290,22 @@ export default function PublicClubPage() {
           ) : (
             <div className="mt-10 border border-dashed border-background-400 bg-background-50 p-10 text-center">
               <CalendarDays className="mx-auto text-primary-700" />
-              <h3 className="mt-4 font-heading text-xl font-semibold">New activity is being prepared</h3>
-              <p className="mt-2 text-sm text-foreground-600">Confirmed {club.name} events will appear here when published.</p>
+              <h3 className="mt-4 font-heading text-xl font-semibold">{calendar?.empty_title || "New activity is being prepared"}</h3>
+              <p className="mt-2 text-sm text-foreground-600">{calendar?.empty_description || `Confirmed ${club.name} events will appear here when published.`}</p>
             </div>
           )}
         </div>
       </section>
+      )}
 
+      {finalCta?.is_active !== false && (
       <section className="bg-primary-500 px-5 py-16">
         <div className="container-content flex flex-col justify-between gap-8 md:flex-row md:items-center">
-          <div><p className="text-xs font-black uppercase tracking-[.18em]">Your regional professional community</p><h2 className="mt-3 font-heading text-4xl font-semibold">Take part in {club.name}.</h2></div>
-          {active ? <Link to={`/user/clubs/${club.slug}`} className="inline-flex min-h-12 items-center justify-center gap-2 bg-background-950 px-7 text-sm font-bold text-white">Open member hub<ArrowRight size={17} /></Link> : <button type="button" onClick={openJoinModal} disabled={joining || pending} className="inline-flex min-h-12 items-center justify-center gap-2 bg-background-950 px-7 text-sm font-bold text-white disabled:opacity-60">{pending ? "Request pending" : "Request to join"}<ArrowRight size={17} /></button>}
+          <div><p className="text-xs font-black uppercase tracking-[.18em]">{finalCta?.eyebrow || "Your regional professional community"}</p><h2 className="mt-3 font-heading text-4xl font-semibold">{finalCta?.title || `Take part in ${club.name}.`}</h2></div>
+          {active ? <Link to={`/user/clubs/${club.slug}`} className="inline-flex min-h-12 items-center justify-center gap-2 bg-background-950 px-7 text-sm font-bold text-white">{finalCta?.member_button_label || "Open member hub"}<ArrowRight size={17} /></Link> : <button type="button" onClick={openJoinModal} disabled={joining || pending} className="inline-flex min-h-12 items-center justify-center gap-2 bg-background-950 px-7 text-sm font-bold text-white disabled:opacity-60">{pending ? (finalCta?.pending_button_label || "Request pending") : (finalCta?.join_button_label || "Request to join")}<ArrowRight size={17} /></button>}
         </div>
       </section>
+      )}
 
       <MembershipGateModal
         isOpen={gateOpen}

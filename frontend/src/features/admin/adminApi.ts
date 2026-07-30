@@ -18,6 +18,7 @@ import type {
   AdminNotification,
   AdminEnquiryDetail,
   AdminUser,
+  AdminUserDetail,
   AdminUserPayload,
   ApplicationStatus,
   DashboardData,
@@ -238,7 +239,7 @@ export const adminApi = {
       requestSource: "AdminUsersPage",
     });
   },
-  user: (id: number) => apiJson<AdminUser>(`/api/admin/users/${id}`),
+  user: (id: number) => apiJson<AdminUserDetail>(`/api/admin/users/${id}`),
   createUser: (payload: AdminUserPayload) => apiJson<AdminUser>("/api/admin/users", payload),
   updateUser: (id: number, payload: AdminUserPayload) => apiJson<AdminUser>(`/api/admin/users/${id}`, payload, { method: "PATCH" }),
   deleteUser: (id: number) => apiJson<Record<string, never>>(`/api/admin/users/${id}`, undefined, { method: "DELETE" }),

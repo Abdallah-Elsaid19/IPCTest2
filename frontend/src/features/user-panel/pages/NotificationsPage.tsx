@@ -1,8 +1,8 @@
 import { Award, Bell, CheckCheck, FileText, Headphones, MessageSquareText } from "lucide-react";
 import { useCallback, useState, type ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
+import { notifications } from "@/lib/notifications";
 import { panelApi } from "../api";
 import { Empty, ErrorState, Loading, PageHeading } from "../components/PanelUI";
 import { useLoad } from "../hooks";
@@ -41,7 +41,7 @@ export default function NotificationsPage() {
             entry.public_id === item.public_id ? updated : entry),
         } : current);
       } catch (reason) {
-        toast.error(reason instanceof Error ? reason.message : "Notification could not be updated.");
+        notifications.error(reason instanceof Error ? reason.message : "Notification could not be updated.");
         return;
       }
     }
@@ -64,7 +64,7 @@ export default function NotificationsPage() {
         })),
       } : current);
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Notifications could not be updated.");
+      notifications.error(reason instanceof Error ? reason.message : "Notifications could not be updated.");
     } finally {
       setBusy(false);
     }

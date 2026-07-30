@@ -4,17 +4,40 @@ function formatApiError(data: unknown): string {
   if (typeof payload.error === "string") return payload.error;
   if (typeof payload.detail === "string") return payload.detail;
 
-  const messages = Object.entries(payload).flatMap(([field, value]) => {
-    const label = field.replaceAll("_", " ");
-    const formatMessage = (message: unknown) => field === "non_field_errors"
-      ? String(message)
-      : `${label}: ${String(message)}`;
-    if (Array.isArray(value)) return value.map(formatMessage);
-    if (typeof value === "string") return [formatMessage(value)];
-    return [];
-  });
+  const collectMessages = (value: unknown, path: string[]): string[] => {
+    if (Array.isArray(value)) {
+      return value.flatMap((item) => collectMessages(item, path));
+    }
+    if (value && typeof value === "object") {
+      return Object.entries(value as Record<string, unknown>).flatMap(
+        ([field, nested]) => collectMessages(
+          nested,
+          field === "non_field_errors" ? path : [...path, field],
+        ),
+      );
+    }
+    if (typeof value !== "string") return [];
+    const fieldLabel = path
+      .map((part) => part.replaceAll("_", " ").replace(/([a-z])([A-Z])/g, "$1 $2"))
+      .join(" — ");
+    return [fieldLabel ? `${fieldLabel}: ${value}` : value];
+  };
 
-  return messages[0] || "Request failed";
+  return collectMessages(payload, [])[0] || "Request failed";
+}
+
+function formatRateLimitError(path: string, response: Response): string {
+  const retryAfter = Number(response.headers.get("Retry-After"));
+  const waitMessage = Number.isFinite(retryAfter) && retryAfter > 0
+    ? retryAfter < 60
+      ? `${Math.ceil(retryAfter)} seconds`
+      : `${Math.ceil(retryAfter / 60)} minutes`
+    : "a short while";
+
+  if (path === "/api/bursary-applications") {
+    return `Too many submission attempts. Your saved application is safe. Please wait ${waitMessage} and try again.`;
+  }
+  return `Too many requests. Please wait ${waitMessage} and try again.`;
 }
 
 function readCookie(name: string): string {
@@ -227,6 +250,9 @@ export async function apiJson<T>(path: string, body?: unknown, options: ApiReque
       }
 
       const data = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        throw new Error(formatRateLimitError(path, response));
+      }
       if (!response.ok) throw new Error(formatApiError(data));
       diagnostic("completed", { ...details, status: response.status });
       return data as T;

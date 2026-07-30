@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
 
 import MembershipGateModal from "@/components/feedback/MembershipGateModal";
 import { useAuth } from "@/features/auth/AuthContext";
 import { apiJson } from "@/lib/api";
+import { notifications } from "@/lib/notifications";
 import { panelApi } from "../api";
 import { Card, ErrorState, inputClass, Loading, PageHeading } from "../components/PanelUI";
 import { useLoad } from "../hooks";
@@ -70,7 +70,7 @@ export default function AwardNominationPage({ edit = false }: { edit?: boolean }
       return;
     }
     if (mode === "submit" && (!form.nominee_name.trim() || !organisation.trim() || !nomineeRole.trim() || contribution.trim().length < 20 || impact.trim().length < 20 || form.statement.trim().length < 50 || !declaration || (!data.nomination?.documents.length && evidence.length === 0))) {
-      toast.error("Complete every required field, accept the declaration, and upload evidence.");
+      notifications.error("Complete every required field, accept the declaration, and upload evidence.");
       return;
     }
     setSaving(mode);
@@ -86,13 +86,13 @@ export default function AwardNominationPage({ edit = false }: { edit?: boolean }
       }
       if (mode === "submit") {
         await panelApi.action(`awards/nominations/${nomination.public_id}/submit`);
-        toast.success("Nomination submitted for review");
+        notifications.success("Nomination submitted for review");
       } else {
-        toast.success("Nomination saved as draft");
+        notifications.success("Nomination saved as draft");
       }
       navigate("/user/awards");
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Nomination could not be saved.");
+      notifications.error(reason instanceof Error ? reason.message : "Nomination could not be saved.");
     } finally {
       setSaving("");
     }

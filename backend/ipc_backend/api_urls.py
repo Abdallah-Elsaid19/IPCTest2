@@ -17,14 +17,19 @@ from media_library.views import MediaAssetViewSet
 from ipc_backend.views import csrf_cookie
 from ipc_backend.content_management import AdminContentDetailView, AdminContentListView
 from clubs.views import ClubEnquiryCreateView, ClubPageContentView, PublicClubDetailView
-from scholarships.views import ScholarshipContentView
+from scholarships.views import (
+    AdminBursaryApplicationViewSet,
+    BursaryApplicationCreateViewSet,
+    BursaryMembershipReferenceValidationView,
+    ScholarshipContentView,
+)
 from sponsorship.views import SponsorshipContentView
 from about.views import AboutPageContentView
 from home.views import HomeContentView
 from services.views import ServiceContentView
 from fund.views import FundContentView
 from institutional.views import EmployerContentView, PartnershipContentView, PublicationContentView
-from accounts.views import CurrentUserView, LoginView, LogoutView, RefreshView
+from accounts.views import CurrentSessionView, CurrentUserView, LoginView, LogoutView, RefreshView
 from accounts.dashboard import (
     AdminDashboardView,
     AdminEnquiryDetailView,
@@ -58,6 +63,8 @@ router.register("admin/support", AdminSupportViewSet, basename="admin-support")
 router.register("admin/club-memberships", AdminClubMembershipViewSet, basename="admin-club-membership")
 router.register("admin/clubs", AdminClubViewSet, basename="admin-club")
 router.register("admin/event-registrations", AdminEventRegistrationViewSet, basename="admin-event-registration")
+router.register("bursary-applications", BursaryApplicationCreateViewSet, basename="bursary-application")
+router.register("admin/bursary-applications", AdminBursaryApplicationViewSet, basename="admin-bursary-application")
 
 urlpatterns = [
     path("user/", include("user_panel.urls")),
@@ -66,6 +73,7 @@ urlpatterns = [
     path("auth/refresh", RefreshView.as_view(), name="auth-refresh"),
     path("auth/logout", LogoutView.as_view(), name="auth-logout"),
     path("auth/me", CurrentUserView.as_view(), name="auth-me"),
+    path("auth/session", CurrentSessionView.as_view(), name="auth-session"),
     path("auth/password-reset/request", PasswordResetRequestView.as_view(), name="password-reset-request"),
     path("auth/password-reset/confirm", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path("admin/dashboard", AdminDashboardView.as_view(), name="admin-dashboard"),
@@ -79,6 +87,11 @@ urlpatterns = [
     path("clubs/content", ClubPageContentView.as_view(), name="club-page-content"),
     path("clubs/<slug:slug>", PublicClubDetailView.as_view(), name="public-club-detail"),
     path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
+    path(
+        "bursary-applications/validate-membership-reference",
+        BursaryMembershipReferenceValidationView.as_view(),
+        name="bursary-membership-reference-validation",
+    ),
     path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
     path("home/content", HomeContentView.as_view(), name="home-content"),
     path("services/content", ServiceContentView.as_view(), name="service-content"),

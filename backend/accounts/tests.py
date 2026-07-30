@@ -24,6 +24,8 @@ from applications.models import Application, FormDefinition
 from memberships.models import MembershipGrade
 from newsletter.models import NewsletterSignup
 from accounts.models import AdminNotification
+from scholarships.tests import valid_bursary_payload
+from user_panel.models import ProfessionalInterest
 from accounts.graph_mail import (
     GraphMailError,
     send_enquiry_reply_email,
@@ -34,6 +36,7 @@ from accounts.graph_mail import (
 @override_settings(AUTH_COOKIE_SECURE=False)
 class AuthenticationApiTests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.user = get_user_model().objects.create_user(
             username="ipc.member",
             email="member@example.com",
@@ -66,6 +69,20 @@ class AuthenticationApiTests(APITestCase):
         })
         self.assertEqual(response.status_code, 400)
         self.assertNotIn("ipc_access", response.cookies)
+
+    def test_session_bootstrap_is_quiet_for_anonymous_user(self):
+        response = self.client.get("/api/auth/session")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["user"])
+
+    def test_session_bootstrap_returns_authenticated_user(self):
+        self.post("/api/auth/login", {
+            "email": "member@example.com",
+            "password": "Strong-Test-Pass-938!",
+        })
+        response = self.client.get("/api/auth/session")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user"]["email"], "member@example.com")
 
     def test_csrf_is_required_for_login(self):
         response = APIClient(enforce_csrf_checks=True).post(
@@ -597,6 +614,48 @@ class AdminUserManagementApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.data["membership_reference"])
         self.assertIsNone(response.data["membership_application_id"])
+
+    def test_user_detail_returns_complete_profile_and_linked_bursary_applications(self):
+        application = self.link_member_application()
+        profile = self.member.panel_profile
+        profile.preferred_name = "Ex"
+        profile.country = "United Kingdom"
+        profile.biography = "Experienced project controls professional."
+        profile.professional_headline = "Project Controls Lead"
+        profile.save()
+        interest, _ = ProfessionalInterest.objects.get_or_create(
+            slug="planning",
+            defaults={"name": "Planning"},
+        )
+        profile.interests.add(interest)
+
+        payload = valid_bursary_payload()
+        payload["personalDetails"]["membershipReference"] = application.application_reference
+        payload["personalDetails"]["email"] = application.email
+        submitted = self.client.post("/api/bursary-applications", payload, format="json")
+        self.assertEqual(submitted.status_code, 201, submitted.data)
+
+        self.client.force_authenticate(self.staff)
+        response = self.client.get(f"/api/admin/users/{self.member.pk}")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        profile_fields = {
+            field["key"]: field["value"]
+            for field in response.data["profile_fields"]
+        }
+        self.assertEqual(profile_fields["preferred_name"], "Ex")
+        self.assertEqual(
+            profile_fields["biography"],
+            "Experienced project controls professional.",
+        )
+        self.assertEqual(profile_fields["professional_headline"], "Project Controls Lead")
+        self.assertIn("certifications", profile_fields)
+        self.assertEqual(profile_fields["interests"], "Planning")
+        self.assertEqual(len(response.data["bursary_applications"]), 1)
+        self.assertEqual(
+            response.data["bursary_applications"][0]["application_reference"],
+            submitted.data["applicationReference"],
+        )
 
     def test_reference_cannot_be_updated_through_user_api(self):
         application = self.link_member_application()

@@ -15,7 +15,7 @@ from events.models import Event
 from events.serializers import EventSerializer
 from user_panel.models import Club, ClubMembership
 
-from .models import ClubPageContent
+from .models import ClubPageContent, ClubPagesContent
 from .serializers import ClubEnquiryCreateSerializer, ClubPageContentSerializer
 
 
@@ -35,28 +35,52 @@ class PublicClubDetailView(APIView):
 
     def get(self, request, slug):
         club = Club.objects.filter(slug=slug, is_active=True).first()
-        managed_club = None
-        if club is None:
-            content = ClubPageContent.objects.filter(
-                key="main",
-                is_active=True,
-                status=ClubPageContent.Status.PUBLISHED,
-            ).first()
-            managed_club = next(
-                (
-                    item for item in (content.regional_clubs if content else [])
-                    if str(item.get("id") or "").strip() == slug
-                ),
-                None,
-            )
-            if managed_club is None:
-                raise NotFound("Club not found.")
+        content = ClubPageContent.objects.filter(
+            key="main",
+            is_active=True,
+            status=ClubPageContent.Status.PUBLISHED,
+        ).first()
+        regional_club = next(
+            (
+                item for item in (content.regional_clubs if content else [])
+                if str(item.get("id") or "").strip() == slug
+            ),
+            None,
+        )
+        pages_content = ClubPagesContent.objects.filter(key="main").first()
+        if pages_content is not None and (
+            not pages_content.is_active
+            or pages_content.status != ClubPagesContent.Status.PUBLISHED
+        ):
+            raise NotFound("Club page is not available.")
+        matching_page = next(
+            (
+                item for item in (pages_content.pages if pages_content else [])
+                if isinstance(item, dict)
+                and str(item.get("slug") or item.get("id") or "").strip() == slug
+            ),
+            None,
+        )
+        if matching_page is not None and matching_page.get("is_active", True) is False:
+            raise NotFound("Club page is not available.")
+        managed_page = matching_page
+        if club is None and managed_page is None and regional_club is None:
+            raise NotFound("Club not found.")
 
         membership = None
         if club is not None and request.user.is_authenticated:
             membership = club.memberships.filter(user=request.user).first()
 
-        location = club.location if club else str(managed_club.get("name") or "").strip()
+        managed_page = managed_page or {}
+        hero = managed_page.get("hero") if isinstance(managed_page.get("hero"), dict) else {}
+        about = managed_page.get("about") if isinstance(managed_page.get("about"), dict) else {}
+        regional_club = regional_club or {}
+        location = str(
+            managed_page.get("location")
+            or (club.location if club else "")
+            or regional_club.get("name")
+            or ""
+        ).strip()
         regional_events = Event.objects.filter(
             event_type=Event.EventType.REGIONAL_CLUB,
             is_published=True,
@@ -68,24 +92,39 @@ class PublicClubDetailView(APIView):
 
         return Response({
             "public_id": club.public_id if club else slug,
-            "name": club.name if club else f"{location} Club",
+            "name": str(
+                managed_page.get("name")
+                or hero.get("title")
+                or (club.name if club else "")
+                or f"{location} Club"
+            ).strip(),
             "slug": club.slug if club else slug,
-            "summary": club.summary if club else str(
-                managed_club.get("description")
-                or managed_club.get("label")
+            "summary": str(
+                hero.get("summary")
+                or managed_page.get("summary")
+                or (club.summary if club else "")
+                or regional_club.get("description")
+                or regional_club.get("label")
                 or ""
-            ),
-            "description": club.description if club else str(
-                managed_club.get("detail")
-                or managed_club.get("description")
+            ).strip(),
+            "description": str(
+                about.get("description")
+                or managed_page.get("description")
+                or (club.description if club else "")
+                or regional_club.get("detail")
+                or regional_club.get("description")
                 or ""
-            ),
+            ).strip(),
             "location": location,
-            "specialism": club.specialism if club else str(
-                managed_club.get("focus")
-                or managed_club.get("label")
+            "specialism": str(
+                about.get("specialism")
+                or managed_page.get("specialism")
+                or (club.specialism if club else "")
+                or regional_club.get("focus")
+                or regional_club.get("label")
                 or ""
-            ),
+            ).strip(),
+            "page_content": managed_page,
             "membership_status": membership.status if membership else "not_joined",
             "active_member_count": (
                 club.memberships.filter(status=ClubMembership.State.ACTIVE).count()

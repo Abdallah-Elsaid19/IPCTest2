@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
+import { ManagedContentProvider, ManagedSectionGate } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import MembershipGateModal from "@/components/feedback/MembershipGateModal";
 import { pageSeo } from "@/config/pageSeo";
@@ -42,17 +42,17 @@ export default function Clubs() {
   return (
     <ManagedContentProvider endpoint="/api/clubs/content" slug="clubs">
       <ManagedPageSeo fallback={{ ...pageSeo.clubs, canonical_path: pageSeo.clubs.canonicalPath }} />
-      <ClubsHero onAction={protectedAction} />
-      <ClubsPrinciples />
-      <ClubsPurpose />
-      <ClubsLocations onAction={protectedAction} />
-      <ClubsProgramme onAction={protectedAction} />
-      <ClubsAudiences onAction={protectedAction} />
-      <ClubsUpcoming onAction={protectedAction} />
-      <ClubsContribution onAction={protectedAction} />
-      <ClubsPartners onAction={protectedAction} />
-      <ClubsFaq />
-      <ClubsFinalCta onAction={protectedAction} />
+      <ManagedSectionGate name="hero"><ClubsHero onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="principles"><ClubsPrinciples /></ManagedSectionGate>
+      <ManagedSectionGate name="purpose"><ClubsPurpose /></ManagedSectionGate>
+      <ManagedSectionGate name="locations_intro"><ClubsLocations onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="programme_intro"><ClubsProgramme onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="audiences_intro"><ClubsAudiences onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="upcoming"><ClubsUpcoming onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="contribution"><ClubsContribution onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="partners"><ClubsPartners onAction={protectedAction} /></ManagedSectionGate>
+      <ManagedSectionGate name="faq"><ClubsFaq /></ManagedSectionGate>
+      <ManagedSectionGate name="final_cta"><ClubsFinalCta onAction={protectedAction} /></ManagedSectionGate>
       <MembershipGateModal isOpen={membershipGateOpen} onClose={() => setMembershipGateOpen(false)} />
     </ManagedContentProvider>
   );

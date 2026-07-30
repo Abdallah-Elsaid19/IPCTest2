@@ -4,10 +4,12 @@ import type { Dashboard, DirectoryItem, Notification, Page, Preference, Profile,
 export const panelApi = {
   dashboard: (signal?: AbortSignal) => apiJson<Dashboard>("/api/user/dashboard", undefined, { signal, requestSource: "user-panel" }),
   profile: (signal?: AbortSignal) => apiJson<Profile>("/api/user/profile", undefined, { signal, requestSource: "user-panel" }),
-  updateProfile: (body: Partial<Profile>) => apiJson<Profile>("/api/user/profile", body, { method: "PATCH", requestSource: "user-panel" }),
+  updateProfile: (body: Partial<Profile> | FormData) => apiJson<Profile>("/api/user/profile", body, { method: "PATCH", requestSource: "user-panel" }),
   interests: () => apiJson<{ slug: string; name: string }[]>("/api/user/interests", undefined, { requestSource: "user-panel" }),
   list: <T = DirectoryItem>(path: string, signal?: AbortSignal) =>
     apiJson<Page<T> | T[]>(`/api/user/${path}`, undefined, { signal, requestSource: "user-panel" }),
+  get: <T>(path: string, signal?: AbortSignal) =>
+    apiJson<T>(`/api/user/${path}`, undefined, { signal, requestSource: "user-panel" }),
   create: <T>(path: string, body: unknown) => apiJson<T>(`/api/user/${path}`, body, { requestSource: "user-panel" }),
   update: <T>(path: string, body: unknown) => apiJson<T>(`/api/user/${path}`, body, { method: "PATCH", requestSource: "user-panel" }),
   action: <T>(path: string, body: unknown = {}) => apiJson<T>(`/api/user/${path}`, body, { requestSource: "user-panel" }),

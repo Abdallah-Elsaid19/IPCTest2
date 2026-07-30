@@ -39,11 +39,11 @@ export const pageSeo = {
     keywords: ["project controls membership", "professional recognition", "AffIPC", "MIPC", "AFIPC", "FIPC"],
   },
   scholarships: {
-    title: "Project Controls Scholarships & Bursaries",
+    title: "Project Controls Scholarships & Funded Professional Pathways",
     description:
-      "Apply for project controls scholarships and bursaries through the Institute of Project Controls. Up to 40 places per intake may support eligible learners, professionals, veterans, career changers, charity leaders, self-employed consultants and applicants facing barriers.",
+      "Explore Institute of Project Controls scholarships, funded professional pathways and IPC Bursary Routes delivered through Kent Business College.",
     canonicalPath: "/scholarships",
-    keywords: ["project controls scholarships", "bursaries", "career access", "student membership", "professional development"],
+    keywords: ["project controls scholarships UK", "funded project controls training", "project management scholarships", "AI in project controls certificate", "PMO professional development"],
   },
   sponsorship: {
     title: "Sponsorship & Partnerships",

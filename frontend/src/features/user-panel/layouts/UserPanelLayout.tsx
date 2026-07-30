@@ -3,7 +3,6 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Award,
   Bell,
-  BookOpen,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -32,7 +31,6 @@ const nav = [
   ["Event bookings", "bookings", CalendarDays],
   ["Documents", "documents", FileText],
   ["Notifications", "notifications", Bell],
-  ["Programmes", "programmes", BookOpen],
   ["Support", "support", Headphones],
   ["Settings", "settings", Settings],
 ] as const;
@@ -113,8 +111,10 @@ export default function UserPanelLayout() {
 
       <div className="border-t border-white/10 p-3">
         <div className={`flex items-center rounded-xl bg-white/5 p-2.5 ${compact ? "justify-center" : "gap-3"}`}>
-          <NavLink to="profile" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-500 text-xs font-black text-[#0B0B0B]">
-            {initials}
+          <NavLink to="profile" className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-primary-500 text-xs font-black text-[#0B0B0B]">
+            {user?.profile_image_url
+              ? <img src={user.profile_image_url} alt="" className="h-full w-full object-cover" />
+              : initials}
           </NavLink>
           {!compact && (
             <>
@@ -163,7 +163,11 @@ export default function UserPanelLayout() {
                 <p className="text-xs font-bold">{user?.name || user?.email}</p>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-primary-800">{user?.membership_grade || "IPC member"}</p>
               </div>
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#0B0B0B] text-xs font-bold text-white">{initials}</span>
+              <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#0B0B0B] text-xs font-bold text-white">
+                {user?.profile_image_url
+                  ? <img src={user.profile_image_url} alt="" className="h-full w-full object-cover" />
+                  : initials}
+              </span>
             </NavLink>
           </div>
         </header>

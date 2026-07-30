@@ -25,7 +25,7 @@ export function StatusBadge({ status }: { status: string }) {
       </span>
     );
   }
-  if (status === "refused") {
+  if (status === "refused" || status === "rejected") {
     return (
       <span className="inline-flex whitespace-nowrap rounded-full border border-red-700/20 bg-red-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-red-800">
         {labelStatus(status)}
@@ -40,6 +40,7 @@ export function StatusBadge({ status }: { status: string }) {
     "new",
     "pending",
     "under_review",
+    "needs_information",
     "in_progress",
     "waitlisted",
   ].includes(status);
