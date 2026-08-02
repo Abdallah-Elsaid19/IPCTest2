@@ -22,7 +22,7 @@ from rest_framework.viewsets import ModelViewSet
 from requests import RequestException
 
 from applications.models import Application
-from ipc_backend.validators import normalise_uk_telephone
+from ipc_backend.validators import normalise_international_telephone
 from scholarships.models import BursaryApplication
 from user_panel.models import UserProfile
 from .graph_mail import GraphMailError, send_password_reset_email
@@ -232,7 +232,7 @@ class AdminUserDetailSerializer(AdminUserSerializer):
                 "membership_reference": application.membership_reference,
                 "status": application.status,
                 "status_label": application.get_status_display(),
-                "preferred_pathway": application.get_preferred_pathway_display(),
+                "preferred_pathway": application.get_bursary_selection_display(),
                 "amount_requested_gbp": application.bursary_amount_requested_gbp,
                 "requested_percentage": application.requested_bursary_percentage,
                 "submitted_at": application.submitted_at,
@@ -266,7 +266,7 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
     def validate_telephone(self, value):
         try:
-            return normalise_uk_telephone(value)
+            return normalise_international_telephone(value)
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.messages) from error
 

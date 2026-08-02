@@ -1,33 +1,66 @@
 import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { z } from "zod";
 
+import {
+  requiredIdentityDocumentSchema,
+  requiredImageSchema,
+} from "@/lib/validations/uploadSchema";
+
 const requiredText = (label: string, max = 12_000) =>
   z.string().trim().min(1, `${label} is required.`).max(max);
 const optionalText = (max = 8_000) => z.string().max(max);
 const optionalUrl = z.union([z.literal(""), z.url("Enter a valid URL.")]);
-const optionalEmail = z.union([z.literal(""), z.email("Enter a valid email address.")]);
 const isoDate = (message: string) =>
   z.string().refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00`)), message);
 const accepted = (message: string) => z.literal(true, { error: message });
+const signatureImage = z.string()
+  .min(1, "Draw your signature before submitting.")
+  .max(300_000, "The drawn signature is too large. Clear it and sign again.")
+  .refine((value) => /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(value), "Draw your signature before submitting.");
+
+export function localIsoDate(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function latestEligibleBirthDate(date = new Date()) {
+  const eligible = new Date(date.getFullYear() - 20, date.getMonth(), date.getDate());
+  return localIsoDate(eligible);
+}
 
 export const pathwayValues = [
-  "operational",
-  "strategic",
-  "chartered",
-  "certified_pmo_professional",
-  "apm",
+  "ai",
+  "pmi_sp",
+  "evm",
+  "risk",
+  "ppc",
+  "msp",
+  "managing_portfolios",
+  "stakeholder_management",
+  "pmp",
+  "pmo",
 ] as const;
 
-export const publicityRestrictionValues = [
-  "none_declared",
-  "safeguarding",
-  "accessibility",
-  "religious",
-  "security",
-  "confidentiality",
-  "employer_related",
+export const healthProblemCategoryValues = [
+  "physical_disability",
+  "sensory_impairment",
+  "mental_health",
+  "long_term_health_condition",
+  "learning_difficulty",
+  "neurodivergence",
   "other",
 ] as const;
+
+const existingOrIdentityDocument = z.union([
+  z.literal("existing"),
+  requiredIdentityDocumentSchema,
+]);
+const existingOrApplicantPhoto = z.union([
+  z.literal("existing"),
+  requiredImageSchema,
+]);
 
 export function normaliseMobileNumber(countryIso2: string, nationalNumber: string) {
   if (!countryIso2 || !nationalNumber) return null;
@@ -42,11 +75,8 @@ export function normaliseMobileNumber(countryIso2: string, nationalNumber: strin
 
 export const bursaryApplicationSchema = z.object({
   personalDetails: z.object({
-    title: optionalText(40),
-    membershipReference: requiredText("Membership reference", 40),
     firstName: requiredText("First name", 120),
     lastName: requiredText("Last name", 120),
-    preferredName: optionalText(120),
     dateOfBirth: isoDate("Enter a valid date of birth."),
     email: z.email("Enter a valid email address.").trim().toLowerCase(),
     phoneCountryIso2: requiredText("Country calling code", 2),
@@ -89,44 +119,27 @@ export const bursaryApplicationSchema = z.object({
     departmentOrBusinessUnit: optionalText(180),
     employmentStartDate: z.union([z.literal(""), isoDate("Enter a valid employment start date.")]),
     employmentType: optionalText(80),
-    lineManagerName: optionalText(180),
-    lineManagerEmail: optionalEmail,
-    employerAwareness: z.union([z.literal(""), z.enum(["yes", "no", "discuss_later"])]),
     pathwayRoleSupport: optionalText(),
   }),
-  bursaryRequest: z.object({
-    quotedPathwayCostGbp: z.number().min(0, "Enter zero or a positive amount.").optional(),
-    bursaryAmountRequestedGbp: z.number({ error: "Enter the bursary amount requested." }).min(0, "Enter zero or a positive amount."),
-    requestedBursaryPercentage: z.number({ error: "Enter the requested percentage." }).min(0, "Percentage cannot be below 0.").max(100, "Percentage cannot be above 100."),
-    otherContributionAvailableGbp: z.number().min(0, "Enter zero or a positive amount.").optional(),
-    proceedWithLowerBursary: z.enum(["yes", "no", "discuss"], {
-      error: "Select whether you could proceed with a lower bursary.",
-    }),
-    financialCircumstances: requiredText("Financial circumstances"),
-    scholarshipOutcome: requiredText("Scholarship outcome"),
-    measurableResult: requiredText("Measurable result"),
-    learningApplicationAndContribution: requiredText("Learning application and contribution"),
+  emergencyInformation: z.object({
+    emergencyContactFullName: requiredText("Emergency contact full name", 180),
+    emergencyContactEmail: z.email("Enter a valid emergency contact email address."),
+    emergencyContactPhone: z.string().trim().regex(/^\+?[\d\s().-]{7,40}$/, "Enter a valid emergency contact phone number."),
+    identityDocument: existingOrIdentityDocument,
+    applicantPhoto: existingOrApplicantPhoto,
+    hasDisabilityOrHealthCondition: z.boolean({ error: "Select Yes or No." }),
+    healthProblemCategories: z.array(z.enum(healthProblemCategoryValues)),
+    primaryHealthProblem: optionalText(2000),
   }),
   pathwaySelection: z.object({
-    preferredPathway: z.enum(pathwayValues, { error: "Select one preferred pathway." }),
-    preferredStartMonthOrIntake: requiredText("Preferred start month or intake", 120),
-    highestRelevantQualification: optionalText(255),
+    preferredModules: z.array(z.enum(pathwayValues))
+      .min(1, "Select at least one preferred module."),
     professionalMembershipsOrCertifications: optionalText(),
     relevantExperience: requiredText("Relevant experience"),
-    pathwayFitReason: requiredText("Pathway fit"),
+    pathwayFitReason: requiredText("Reason for requesting an IPC bursary"),
   }),
   termsAndConsents: z.object({
-    linkedInAwardPostConsent: accepted("You must accept this mandatory term."),
-    secondProgressPostConsent: accepted("You must accept this mandatory term."),
-    tagIpcConsent: accepted("You must accept this mandatory term."),
-    reshareAndQuoteConsent: accepted("You must accept this mandatory term."),
-    professionalHeadshotConsent: accepted("You must accept this mandatory term."),
-    participationConsent: accepted("You must accept this mandatory term."),
-    approvedMediaUseConsent: accepted("You must accept this mandatory term."),
-    reportRestrictionsConsent: accepted("You must accept this mandatory term."),
-    publicityRestrictions: z.array(z.enum(publicityRestrictionValues)).min(1, "Select None declared or a restriction."),
-    publicityRestrictionDetails: optionalText(),
-    professionalHeadshotReference: optionalText(500),
+    mandatoryTermsAccepted: accepted("Accept all mandatory terms before continuing."),
     generalMarketingConsent: z.boolean(),
   }),
   reviewAndDeclaration: z.object({
@@ -140,22 +153,17 @@ export const bursaryApplicationSchema = z.object({
     pathwayTermsDeclaration: accepted("You must confirm this declaration."),
     processingConsentDeclaration: accepted("You must confirm this declaration."),
     applicantIdentityDeclaration: accepted("You must confirm this declaration."),
-    fullLegalName: requiredText("Full legal name", 255),
     dateSigned: isoDate("Enter a valid signing date."),
-    electronicSignature: requiredText("Typed or electronic signature", 255),
-    signaturePlace: requiredText("Place or city of signature", 180),
-    preferredSecureSubmissionReference: optionalText(180),
-    additionalReviewInformation: optionalText(),
+    electronicSignature: signatureImage,
   }),
 }).superRefine((values, context) => {
-  const { personalDetails, organisationDetails, termsAndConsents, reviewAndDeclaration } = values;
+  const { personalDetails, organisationDetails, emergencyInformation } = values;
   if (personalDetails.dateOfBirth) {
-    const dateOfBirth = new Date(`${personalDetails.dateOfBirth}T00:00:00`);
-    if (dateOfBirth >= new Date()) {
+    if (personalDetails.dateOfBirth > latestEligibleBirthDate()) {
       context.addIssue({
         code: "custom",
         path: ["personalDetails", "dateOfBirth"],
-        message: "Enter a valid date of birth in the past.",
+        message: "You must be at least 20 years old to apply.",
       });
     }
   }
@@ -211,39 +219,23 @@ export const bursaryApplicationSchema = z.object({
     });
   }
 
-  const restrictions = termsAndConsents.publicityRestrictions;
-  if (restrictions.includes("none_declared") && restrictions.length > 1) {
-    context.addIssue({
-      code: "custom",
-      path: ["termsAndConsents", "publicityRestrictions"],
-      message: "None declared cannot be selected with another restriction.",
-    });
-  }
-  if (restrictions.some((value) => value !== "none_declared") && !termsAndConsents.publicityRestrictionDetails.trim()) {
-    context.addIssue({
-      code: "custom",
-      path: ["termsAndConsents", "publicityRestrictionDetails"],
-      message: "Describe the restriction, required approval or safe alternative.",
-    });
-  }
-
-  if (reviewAndDeclaration.dateSigned) {
-    const signed = new Date(`${reviewAndDeclaration.dateSigned}T00:00:00`);
-    if (signed > new Date()) {
+  if (emergencyInformation.hasDisabilityOrHealthCondition) {
+    if (!emergencyInformation.primaryHealthProblem.trim()) {
       context.addIssue({
         code: "custom",
-        path: ["reviewAndDeclaration", "dateSigned"],
-        message: "The date signed cannot be in the future.",
+        path: ["emergencyInformation", "primaryHealthProblem"],
+        message: "Tell us about the support or adjustments you may need.",
       });
     }
   }
+
 });
 
 export type BursaryApplicationFormValues = z.infer<typeof bursaryApplicationSchema>;
 
 export const defaultBursaryApplicationValues: BursaryApplicationFormValues = {
   personalDetails: {
-    title: "", membershipReference: "", firstName: "", lastName: "", preferredName: "", dateOfBirth: "", email: "",
+    firstName: "", lastName: "", dateOfBirth: "", email: "",
     phoneCountryIso2: "", phoneDialCode: "", phoneNationalNumber: "", mobilePhoneE164: "",
     homeAddressLine1: "", homeAddressLine2: "", townOrCity: "", countyOrRegion: "",
     postcode: "", country: "", linkedInProfileUrl: "",
@@ -256,30 +248,24 @@ export const defaultBursaryApplicationValues: BursaryApplicationFormValues = {
     industryOrSector: "", organisationAddressLine1: "", organisationAddressLine2: "",
     organisationTownOrCity: "", organisationCountyOrRegion: "", organisationPostcode: "",
     organisationCountry: "", organisationSize: "", jobTitle: "", departmentOrBusinessUnit: "",
-    employmentStartDate: "", employmentType: "", lineManagerName: "", lineManagerEmail: "",
-    employerAwareness: "", pathwayRoleSupport: "",
+    employmentStartDate: "", employmentType: "", pathwayRoleSupport: "",
   },
-  bursaryRequest: {
-    quotedPathwayCostGbp: undefined,
-    bursaryAmountRequestedGbp: undefined as unknown as number,
-    requestedBursaryPercentage: undefined as unknown as number,
-    otherContributionAvailableGbp: undefined,
-    proceedWithLowerBursary: undefined as unknown as "discuss",
-    financialCircumstances: "", scholarshipOutcome: "",
-    measurableResult: "", learningApplicationAndContribution: "",
+  emergencyInformation: {
+    emergencyContactFullName: "",
+    emergencyContactEmail: "", emergencyContactPhone: "",
+    identityDocument: undefined as unknown as File,
+    applicantPhoto: undefined as unknown as File,
+    hasDisabilityOrHealthCondition: undefined as unknown as boolean,
+    healthProblemCategories: [], primaryHealthProblem: "",
   },
   pathwaySelection: {
-    preferredPathway: undefined as unknown as "operational", preferredStartMonthOrIntake: "",
-    highestRelevantQualification: "", professionalMembershipsOrCertifications: "",
+    preferredModules: [],
+    professionalMembershipsOrCertifications: "",
     relevantExperience: "", pathwayFitReason: "",
   },
   termsAndConsents: {
-    linkedInAwardPostConsent: false as true, secondProgressPostConsent: false as true,
-    tagIpcConsent: false as true, reshareAndQuoteConsent: false as true,
-    professionalHeadshotConsent: false as true, participationConsent: false as true,
-    approvedMediaUseConsent: false as true, reportRestrictionsConsent: false as true,
-    publicityRestrictions: [], publicityRestrictionDetails: "",
-    professionalHeadshotReference: "", generalMarketingConsent: false,
+    mandatoryTermsAccepted: false as true,
+    generalMarketingConsent: false,
   },
   reviewAndDeclaration: {
     section1Complete: false as true, section2CompleteOrNotApplicable: false as true,
@@ -287,14 +273,13 @@ export const defaultBursaryApplicationValues: BursaryApplicationFormValues = {
     section5Complete: false as true, informationAccurateDeclaration: false as true,
     noAwardGuaranteeDeclaration: false as true, pathwayTermsDeclaration: false as true,
     processingConsentDeclaration: false as true, applicantIdentityDeclaration: false as true,
-    fullLegalName: "", dateSigned: "", electronicSignature: "", signaturePlace: "",
-    preferredSecureSubmissionReference: "", additionalReviewInformation: "",
+    dateSigned: localIsoDate(), electronicSignature: "",
   },
 };
 
 export const stepFieldNames: Array<Array<keyof BursaryApplicationFormValues | `${string}.${string}`>> = [
   [
-    "personalDetails.membershipReference", "personalDetails.firstName", "personalDetails.lastName", "personalDetails.dateOfBirth",
+    "personalDetails.firstName", "personalDetails.lastName", "personalDetails.dateOfBirth",
     "personalDetails.email", "personalDetails.phoneCountryIso2", "personalDetails.phoneDialCode",
     "personalDetails.phoneNationalNumber", "personalDetails.mobilePhoneE164",
     "personalDetails.homeAddressLine1", "personalDetails.townOrCity", "personalDetails.postcode",
@@ -304,9 +289,8 @@ export const stepFieldNames: Array<Array<keyof BursaryApplicationFormValues | `$
   [
     "organisationDetails.organisationNotApplicable", "organisationDetails.organisationName",
     "organisationDetails.organisationWebsite", "organisationDetails.jobTitle",
-    "organisationDetails.lineManagerEmail",
   ],
-  ["bursaryRequest"],
+  ["emergencyInformation"],
   ["pathwaySelection"],
   ["termsAndConsents"],
   ["reviewAndDeclaration"],

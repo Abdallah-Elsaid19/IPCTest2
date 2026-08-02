@@ -1,4 +1,5 @@
 import SectionHeader from "@/components/base/SectionHeader";
+import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { useManagedSection } from "@/components/content/ManagedContentProvider";
 
 interface MembershipPathwayRow {
@@ -71,12 +72,12 @@ const pathwayRows: MembershipPathwayRow[] = [
 ];
 
 const headers = [
-  "Grade",
-  "Professional stage",
-  "Competence emphasis",
-  "Evidence expected",
-  "Best value",
-  "Progression",
+  ["Grade", "ri-award-line"],
+  ["Professional stage", "ri-user-line"],
+  ["Competence emphasis", "ri-focus-3-line"],
+  ["Evidence expected", "ri-file-list-3-line"],
+  ["Best value", "ri-star-line"],
+  ["Progression", "ri-line-chart-line"],
 ];
 
 export default function MembershipComparisonTable() {
@@ -90,9 +91,19 @@ export default function MembershipComparisonTable() {
   return (
     <section
       aria-labelledby="membership-comparison-title"
-      className="border-y border-background-200/70 bg-background-100 section-padding"
+      className="relative overflow-hidden border-y border-background-200/70 bg-background-100 section-padding"
     >
-      <div className="container-content">
+      <ResponsiveImage
+        src="/images/membership/hero.svg"
+        alt=""
+        width={1600}
+        height={900}
+        sizes="100vw"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.07]"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-background-100/65 via-background-100/85 to-background-100" aria-hidden="true" />
+
+      <div className="container-content relative z-10">
         <div className="reveal">
           <SectionHeader
             eyebrow={content.eyebrow}
@@ -103,7 +114,7 @@ export default function MembershipComparisonTable() {
         </div>
 
         <div
-          className="reveal mt-12 overflow-hidden border border-background-300 bg-background-50 md:mt-16"
+          className="reveal mt-12 overflow-hidden border border-background-300 bg-background-50/95 md:mt-16"
         >
           <div className="overflow-x-auto">
             <table
@@ -115,22 +126,25 @@ export default function MembershipComparisonTable() {
                 competence emphasis, expected evidence, value and progression.
               </caption>
               <colgroup>
-                <col className="w-[12%]" />
                 <col className="w-[17%]" />
-                <col className="w-[23%]" />
-                <col className="w-[19%]" />
                 <col className="w-[15%]" />
-                <col className="w-[17%]" />
+                <col className="w-[21%]" />
+                <col className="w-[18%]" />
+                <col className="w-[14%]" />
+                <col className="w-[15%]" />
               </colgroup>
               <thead className="bg-background-950">
                 <tr>
-                  {headers.map((header) => (
+                  {headers.map(([header, icon]) => (
                     <th
                       key={header}
                       scope="col"
                       className="border-r border-background-700/70 px-5 py-6 font-heading text-xs font-bold uppercase tracking-[0.08em] text-primary-400 last:border-r-0 lg:px-6 lg:text-sm"
                     >
-                      {header}
+                      <span className="flex items-center gap-3">
+                        <i className={`${icon} text-xl font-normal`} aria-hidden="true" />
+                        {header}
+                      </span>
                     </th>
                   ))}
                 </tr>

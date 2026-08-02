@@ -12,6 +12,7 @@ import {
   type ApplicationField,
   type GradeApplicationConfig,
 } from "./membershipApplicationConfig";
+import MembershipPhoneFields from "./MembershipPhoneFields";
 import SEO from "@/components/seo/SEO";
 
 type FormValue = string | boolean | string[];
@@ -23,11 +24,11 @@ const personalFields: ApplicationField[] = [
   { name: "email", label: "Email address", type: "email", required: true },
   {
     name: "phone",
-    label: "UK telephone number",
+    label: "Telephone number",
     type: "tel",
     required: true,
-    placeholder: "07700 900123 or +44 7700 900123",
-    help: "Enter a valid UK telephone number.",
+    placeholder: "+20 106 705 5973",
+    help: "Include the country calling code, for example +20 or +44.",
   },
   { name: "organisation", label: "Organisation / employer", type: "text" },
   { name: "country", label: "Country of residence", type: "text", required: true },
@@ -35,6 +36,7 @@ const personalFields: ApplicationField[] = [
 ];
 
 const steps = ["Personal Information", "Membership-Specific Information", "Documents", "Review & Submit"];
+const membershipUsernamePattern = /^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$/;
 
 function emptyValues(config: GradeApplicationConfig): GradeApplicationData {
   const values: Record<string, unknown> = {
@@ -196,6 +198,8 @@ export default function MembershipApplicationPage() {
     register,
     watch,
     setValue,
+    setError,
+    clearErrors,
     trigger,
     reset,
     formState: { errors, isSubmitting },
@@ -207,6 +211,7 @@ export default function MembershipApplicationPage() {
   });
   const values = watch();
   const allFields = useMemo(() => [...personalFields, ...activeConfig.fields], [activeConfig]);
+  const [usernameAvailability, setUsernameAvailability] = useState<"idle" | "checking" | "available" | "taken">("idle");
 
   useEffect(() => {
     try {
@@ -224,6 +229,44 @@ export default function MembershipApplicationPage() {
     });
     return () => subscription.unsubscribe();
   }, [allFields, storageKey, watch]);
+
+  useEffect(() => {
+    const username = String(values.username || "").trim().toLowerCase();
+    if (!membershipUsernamePattern.test(username)) {
+      setUsernameAvailability("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setUsernameAvailability("checking");
+      try {
+        const response = await fetch(
+          `/api/applications/username-availability?username=${encodeURIComponent(username)}`,
+          { headers: { Accept: "application/json" }, credentials: "include", signal: controller.signal },
+        );
+        if (!response.ok) throw new Error("Username availability check failed.");
+        const result = await response.json() as { available?: boolean; message?: string };
+        if (result.available) {
+          setUsernameAvailability("available");
+          clearErrors("username");
+        } else {
+          setUsernameAvailability("taken");
+          setError("username", {
+            type: "availability",
+            message: result.message || "Choose another username; this one is already reserved.",
+          });
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) setUsernameAvailability("idle");
+      }
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [clearErrors, setError, values.username]);
 
   const applySeo = (
     <SEO
@@ -289,7 +332,44 @@ export default function MembershipApplicationPage() {
       const response = await fetch(endpoint, { method: "POST", body: payload, headers: { Accept: "application/json" }, credentials: "include" });
       if (!response.ok) {
         let message = `Submission failed (${response.status}). Please try again.`;
-        try { message = responseErrorMessage(await response.json(), message); } catch { /* Non-JSON response. */ }
+        try {
+          const body = await response.json() as Record<string, unknown>;
+          message = responseErrorMessage(body, message);
+          if (response.status === 400) {
+            const personalNames = new Set(personalFields.map((field) => field.name));
+            const specificNames = new Set(config.fields.map((field) => field.name));
+            const documentNames = new Set<string>(config.documents.map((document) => document.apiField));
+            let errorStep: number | null = null;
+            let mappedError = false;
+
+            const addFieldError = (name: string, value: unknown, step: number) => {
+              const fieldMessage = Array.isArray(value) ? String(value[0] || "Invalid value.") : String(value || "Invalid value.");
+              setError(name, { type: "server", message: fieldMessage });
+              errorStep = errorStep === null ? step : Math.min(errorStep, step);
+              mappedError = true;
+            };
+
+            Object.entries(body).forEach(([name, value]) => {
+              if (personalNames.has(name)) addFieldError(name, value, 0);
+              else if (specificNames.has(name)) addFieldError(name, value, 1);
+              else if (documentNames.has(name)) {
+                const document = config.documents.find((item) => item.apiField === name);
+                if (document) addFieldError(document.name, value, 2);
+              } else if (name === "grade_specific_data" && value && typeof value === "object") {
+                Object.entries(value as Record<string, unknown>).forEach(([nestedName, nestedValue]) => {
+                  if (specificNames.has(nestedName)) addFieldError(nestedName, nestedValue, 1);
+                });
+              }
+            });
+
+            if (mappedError && errorStep !== null) {
+              setCurrentStep(errorStep);
+              setSubmitError("Please check the highlighted fields and try again.");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              return;
+            }
+          }
+        } catch { /* Non-JSON response. */ }
         throw new Error(message);
       }
       localStorage.removeItem(storageKey);
@@ -318,7 +398,31 @@ export default function MembershipApplicationPage() {
             <div>
               <h2 className="text-xl font-semibold text-background-950">Personal Information</h2>
               <p className="mt-2 text-sm text-foreground-600">Tell us how to identify and contact you. Fields marked * are required.</p>
-              <div className="mt-7 grid gap-5 md:grid-cols-2">{personalFields.map((field) => <Field key={field.name} field={field} value={valueFor(field.name)} error={errorFor(field.name)} onChange={(value) => updateValue(field.name, value)} />)}</div>
+              <div className="mt-7 grid gap-5 md:grid-cols-2">
+                {personalFields.map((field) => field.name === "phone" ? (
+                  <MembershipPhoneFields
+                    key={field.name}
+                    value={String(valueFor(field.name) || "")}
+                    error={errorFor(field.name)}
+                    onChange={(value) => updateValue(field.name, value)}
+                  />
+                ) : (
+                  <Field
+                    key={field.name}
+                    field={field.name === "username" ? {
+                      ...field,
+                      help: usernameAvailability === "checking"
+                        ? "Checking username availability..."
+                        : usernameAvailability === "available"
+                          ? "Username is available."
+                          : field.help,
+                    } : field}
+                    value={valueFor(field.name)}
+                    error={errorFor(field.name)}
+                    onChange={(value) => updateValue(field.name, value)}
+                  />
+                ))}
+              </div>
             </div>
           )}
 

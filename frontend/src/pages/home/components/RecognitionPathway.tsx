@@ -49,7 +49,7 @@ export default function RecognitionPathway() {
           <span className="h-px flex-1 bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-0 lg:grid-cols-12">
+        <div className="grid grid-cols-1 items-start gap-y-12 lg:grid-cols-12 lg:gap-x-12 lg:gap-y-0 xl:gap-x-16">
           <div className="mb-12 lg:sticky lg:top-28 lg:col-span-5 lg:mb-0">
             <h2 className="mb-6 font-heading text-[clamp(1.8rem,3.5vw,3rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-foreground-950">
               {content.title}
@@ -76,9 +76,8 @@ export default function RecognitionPathway() {
                     key={grade.id}
                     to={grade.path}
                     className={`group relative flex items-center gap-4 border-b border-foreground-200/40 py-6 transition-all duration-500 md:gap-6 md:py-7 ${
-                      isHovered ? "bg-background-100/60 pl-8" : "pl-0"
+                      isHovered ? "bg-background-100/60" : ""
                     } ${isAdjacent ? "opacity-35" : "opacity-100"}`}
-                    style={{ paddingLeft: `${Math.min(index * 20, 80) + (isHovered ? 8 : 0)}px` }}
                     onMouseEnter={() => setHovered(grade.id)}
                     onMouseLeave={() => setHovered(null)}
                   >

@@ -24,11 +24,12 @@ from applications.models import Application, FormDefinition
 from memberships.models import MembershipGrade
 from newsletter.models import NewsletterSignup
 from accounts.models import AdminNotification
-from scholarships.tests import valid_bursary_payload
+from scholarships.tests import valid_bursary_multipart_payload, valid_bursary_payload
 from user_panel.models import ProfessionalInterest
 from accounts.graph_mail import (
     GraphMailError,
     send_enquiry_reply_email,
+    send_bursary_needs_information_email,
     send_membership_welcome_email,
 )
 
@@ -541,7 +542,7 @@ class AdminNotificationApiTests(APITestCase):
 
 
 @override_settings(
-    FRONTEND_URL="https://ipc.example.com",
+    FRONTEND_URL="https://instituteofprojectcontrols.com",
     GRAPH_TENANT_ID="tenant",
     GRAPH_CLIENT_ID="client",
     GRAPH_CLIENT_SECRET="secret",
@@ -630,9 +631,13 @@ class AdminUserManagementApiTests(APITestCase):
         profile.interests.add(interest)
 
         payload = valid_bursary_payload()
-        payload["personalDetails"]["membershipReference"] = application.application_reference
         payload["personalDetails"]["email"] = application.email
-        submitted = self.client.post("/api/bursary-applications", payload, format="json")
+        self.client.force_authenticate(self.member)
+        submitted = self.client.post(
+            "/api/bursary-applications",
+            valid_bursary_multipart_payload(payload),
+            format="multipart",
+        )
         self.assertEqual(submitted.status_code, 201, submitted.data)
 
         self.client.force_authenticate(self.staff)
@@ -714,20 +719,21 @@ class AdminUserManagementApiTests(APITestCase):
         self.assertEqual(created.admin_profile.role, "user")
         self.assertEqual(created.admin_profile.telephone, "+447700900123")
 
-    def test_create_user_rejects_non_uk_telephone(self):
+    def test_create_user_accepts_international_telephone(self):
         self.client.force_authenticate(self.staff)
         response = self.client.post("/api/admin/users", {
             "username": "invalid.telephone",
             "email": "invalid-telephone@example.com",
             "first_name": "Invalid",
             "last_name": "Telephone",
-            "telephone": "+20 100 000 0000",
+            "telephone": "+20 106 705 5973",
             "is_active": True,
             "role": "user",
         }, format="json")
 
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("telephone", response.data)
+        self.assertEqual(response.status_code, 201, response.data)
+        created = get_user_model().objects.get(pk=response.data["id"])
+        self.assertEqual(created.admin_profile.telephone, "+201067055973")
 
     def test_admin_cannot_delete_self(self):
         self.client.force_authenticate(self.staff)
@@ -741,6 +747,12 @@ class AdminUserManagementApiTests(APITestCase):
         response = self.client.post(f"/api/admin/users/{self.member.pk}/send-password-reset", {}, format="json")
         self.assertEqual(response.status_code, 200)
         reset_url = send_email.call_args.kwargs["reset_url"]
+        self.assertTrue(
+            reset_url.startswith(
+                "https://instituteofprojectcontrols.com/reset-password?"
+            )
+        )
+        self.assertNotIn("localhost", reset_url)
         query = parse_qs(urlparse(reset_url).query)
         payload = {"uid": query["uid"][0], "token": query["token"][0], "password": "New-Secure-Password-482!"}
 
@@ -813,6 +825,27 @@ class AdminUserManagementApiTests(APITestCase):
     PASSWORD_RESET_EXPIRE_MINUTES=30,
 )
 class MembershipWelcomeMailTests(SimpleTestCase):
+    @patch("accounts.graph_mail.requests.post")
+    @patch("accounts.graph_mail._access_token", return_value="token")
+    def test_bursary_information_email_links_to_the_requested_application(self, access_token, post):
+        post.return_value.status_code = 202
+        send_bursary_needs_information_email(
+            recipient="member@example.com",
+            name="Nora Ali",
+            application_reference="IPC-BSA-2026-ABC123",
+            pathway="Operational Pathway",
+            message="Please update your evidence.",
+        )
+
+        message = BytesParser(policy=policy.default).parsebytes(
+            base64.b64decode(post.call_args.kwargs["data"])
+        )
+        plain = message.get_body(preferencelist=("plain",)).get_content()
+        html = message.get_body(preferencelist=("html",)).get_content()
+        expected = "/bursary-scholarship-application?applicationReference=IPC-BSA-2026-ABC123"
+        self.assertIn(expected, plain)
+        self.assertIn(expected, html)
+
     @patch("accounts.graph_mail.requests.post")
     @patch("accounts.graph_mail._access_token", return_value="token")
     def test_welcome_email_contains_plain_and_html_secure_account_details(

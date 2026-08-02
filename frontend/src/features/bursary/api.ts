@@ -1,18 +1,10 @@
 import { apiJson } from "@/lib/api";
+import { getSelectedFile } from "@/lib/validations/uploadSchema";
 import type { BursaryApplicationFormValues } from "./schema";
-
-type BursarySubmissionPayload = Omit<BursaryApplicationFormValues, "organisationDetails"> & {
-  organisationDetails: Omit<
-    BursaryApplicationFormValues["organisationDetails"],
-    "employmentStartDate"
-  > & {
-    employmentStartDate: string | null;
-  };
-};
 
 export function prepareBursarySubmissionPayload(
   values: BursaryApplicationFormValues,
-): BursarySubmissionPayload {
+): FormData {
   const organisationDetails = values.personalDetails.currentlyEmployed
     ? {
         ...values.organisationDetails,
@@ -35,16 +27,26 @@ export function prepareBursarySubmissionPayload(
         departmentOrBusinessUnit: "",
         employmentStartDate: null,
         employmentType: "",
-        lineManagerName: "",
-        lineManagerEmail: "",
-        employerAwareness: "" as const,
         pathwayRoleSupport: "",
       };
 
-  return {
+  const { identityDocument, applicantPhoto, ...emergencyInformation } = values.emergencyInformation;
+  const payload = {
     ...values,
     organisationDetails,
+    emergencyInformation,
   };
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payload));
+  if (identityDocument !== "existing") {
+    const file = getSelectedFile(identityDocument);
+    if (file) formData.append("identityDocument", file);
+  }
+  if (applicantPhoto !== "existing") {
+    const file = getSelectedFile(applicantPhoto);
+    if (file) formData.append("applicantPhoto", file);
+  }
+  return formData;
 }
 
 export type BursaryStatus =
@@ -61,10 +63,14 @@ export interface BursarySubmissionResponse {
   submittedAt: string;
 }
 
-export interface MembershipReferenceValidationResponse {
-  authenticated: boolean;
-  valid: boolean | null;
-  message: string;
+export interface CurrentBursaryApplicationResponse {
+  hasApplication: boolean;
+  editable: boolean;
+  applicationReference: string;
+  status: BursaryStatus | null;
+  statusLabel: string;
+  updatedAt: string | null;
+  values: BursaryApplicationFormValues | null;
 }
 
 export interface BursaryApplicationListItem {
@@ -78,9 +84,8 @@ export interface BursaryApplicationListItem {
   currently_employed: boolean;
   organisation_name: string;
   preferred_pathway: string;
+  preferred_modules: string[];
   preferred_pathway_label: string;
-  bursary_amount_requested_gbp: string;
-  requested_bursary_percentage: string;
   status: BursaryStatus;
   status_label: string;
   submitted_at: string;
@@ -137,10 +142,8 @@ export type BursaryApplicationDetail = Record<string, unknown> & {
   organisation_name: string;
   currently_employed: boolean;
   preferred_pathway: string;
+  preferred_modules: string[];
   preferred_pathway_label: string;
-  bursary_amount_requested_gbp: string;
-  requested_bursary_percentage: string;
-  publicity_restrictions: string[];
   status_history: BursaryStatusHistory[];
 };
 
@@ -156,26 +159,37 @@ export interface BursaryAdminQuery {
   ordering?: string;
 }
 
-export const pathwayLabels: Record<string, string> = {
-  operational: "Operational Pathway",
-  strategic: "Strategic Pathway",
-  chartered: "Chartered Pathway",
-  certified_pmo_professional: "Certified PMO Professional",
-  apm: "APM Pathway",
+export const moduleLabels: Record<string, string> = {
+  ai: "AI",
+  pmi_sp: "PMI-SP",
+  evm: "EVM",
+  risk: "Risk",
+  ppc: "PPC",
+  msp: "MSP",
+  managing_portfolios: "Managing Portfolios",
+  stakeholder_management: "Stakeholder",
+  pmp: "PMP",
+  pmo: "PMO",
 };
 
 export const bursaryApi = {
-  validateMembershipReference: (reference: string, signal?: AbortSignal) =>
-    apiJson<MembershipReferenceValidationResponse>(
-      `/api/bursary-applications/validate-membership-reference?reference=${encodeURIComponent(reference.trim())}`,
+  current: (applicationReference = "", signal?: AbortSignal) =>
+    apiJson<CurrentBursaryApplicationResponse>(
+      `/api/bursary-applications/current${applicationReference ? `?applicationReference=${encodeURIComponent(applicationReference)}` : ""}`,
       undefined,
-      { signal, requestSource: "BursaryMembershipReferenceValidation" },
+      { signal, requestSource: "CurrentBursaryApplication" },
     ),
   submit: (payload: BursaryApplicationFormValues) =>
     apiJson<BursarySubmissionResponse>(
       "/api/bursary-applications",
       prepareBursarySubmissionPayload(payload),
       { requestSource: "BursaryApplicationForm" },
+    ),
+  resubmit: (payload: BursaryApplicationFormValues, applicationReference = "") =>
+    apiJson<BursarySubmissionResponse>(
+      `/api/bursary-applications/current${applicationReference ? `?applicationReference=${encodeURIComponent(applicationReference)}` : ""}`,
+      prepareBursarySubmissionPayload(payload),
+      { method: "PATCH", requestSource: "BursaryApplicationResubmission" },
     ),
   list: (query: BursaryAdminQuery, signal?: AbortSignal) => {
     const params = new URLSearchParams();

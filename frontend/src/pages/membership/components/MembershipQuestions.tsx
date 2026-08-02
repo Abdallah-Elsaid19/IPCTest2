@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
+
+const membershipCtaImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/6a827fecd1aa450dabef7052b7453c42.webp";
 
 interface MembershipQuestion {
   id: string;
@@ -92,8 +95,8 @@ export default function MembershipQuestions({ onOpenGradeFinder }: MembershipQue
                 const panelId = `membership-question-${item.id}`;
 
                 return (
-                  <article key={item.id} className="border border-background-300 bg-background-50">
-                    <h3>
+                  <article key={item.id} className="border border-background-300 bg-background-50/95">
+                    <h3 className={isOpen ? "-m-px border border-primary-600 bg-background-50" : ""}>
                       <button
                         type="button"
                         onClick={() => toggleQuestion(item.id)}
@@ -109,7 +112,7 @@ export default function MembershipQuestions({ onOpenGradeFinder }: MembershipQue
                       </button>
                     </h3>
                     {isOpen && (
-                      <div id={panelId} className="px-5 pb-5 sm:px-6 sm:pb-6">
+                      <div id={panelId} className="px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
                         <p className="text-sm leading-[1.75] text-foreground-600">
                           {item.answer}
                         </p>
@@ -122,31 +125,49 @@ export default function MembershipQuestions({ onOpenGradeFinder }: MembershipQue
           </div>
         </div>
 
-        <div className="mt-20 bg-secondary-900 px-6 py-10 text-background-50 sm:px-10 sm:py-12 lg:mt-28 lg:px-14 lg:py-14">
-          <div className="flex items-center gap-4">
-            <span className="h-px w-10 bg-primary-500" aria-hidden="true" />
-            <span className="eyebrow text-primary-400">{content.cta_eyebrow}</span>
+        <div className="relative mt-20 overflow-hidden bg-secondary-900 text-background-50 lg:mt-28 lg:min-h-[520px]">
+          <div className="relative aspect-[16/9] overflow-hidden lg:absolute lg:inset-y-0 lg:right-0 lg:w-[60%] lg:aspect-auto">
+            <ResponsiveImage
+              src={membershipCtaImage}
+              alt=""
+              width={2048}
+              height={1152}
+              sizes="(max-width: 1023px) 100vw, 60vw"
+              className="h-full w-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-background-950/45" aria-hidden="true" />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-secondary-900 via-secondary-900/20 to-transparent lg:bg-gradient-to-r lg:from-secondary-900 lg:via-secondary-900/65 lg:to-transparent"
+              aria-hidden="true"
+            />
           </div>
-          <h2 className="mt-6 max-w-4xl font-heading text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-[1.04] tracking-[-0.045em]">
-            {content.cta_title}
-          </h2>
-          <div className="mt-7 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-            <p className="max-w-2xl text-sm leading-[1.75] text-background-300 sm:text-base">
+
+          <div className="relative z-10 px-6 pb-10 pt-4 sm:px-10 sm:pb-12 lg:flex lg:min-h-[520px] lg:w-[58%] lg:flex-col lg:justify-center lg:px-14 lg:py-14">
+            <div className="flex items-center gap-4">
+              <span className="h-px w-10 bg-primary-500" aria-hidden="true" />
+              <span className="eyebrow text-primary-400">{content.cta_eyebrow}</span>
+            </div>
+            <h2 className="mt-6 max-w-2xl font-heading text-[clamp(2.25rem,4.5vw,4rem)] font-semibold leading-[1.04] tracking-[-0.045em]">
+              {content.cta_title}
+            </h2>
+            <p className="mt-7 max-w-lg text-sm leading-[1.75] text-background-300 sm:text-base">
               {content.cta_description}
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={(event) => onOpenGradeFinder(event.currentTarget)}
-                className="btn-primary inline-flex min-h-12 items-center justify-center px-6"
+                className="btn-primary inline-flex min-h-12 items-center justify-center gap-5 px-6"
               >
                 {content.primary_cta_label}
+                <i className="ri-arrow-right-line" aria-hidden="true" />
               </button>
               <Link
                 to={content.secondary_cta_url}
-                className="inline-flex min-h-12 items-center justify-center border border-background-500 px-6 text-sm font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 motion-reduce:transition-none"
+                className="inline-flex min-h-12 items-center justify-center gap-5 border border-primary-500/70 px-6 text-sm font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 motion-reduce:transition-none"
               >
                 {content.secondary_cta_label}
+                <i className="ri-arrow-right-line text-primary-400" aria-hidden="true" />
               </Link>
             </div>
           </div>

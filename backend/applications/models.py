@@ -6,7 +6,7 @@ from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
 
-from ipc_backend.validators import evidence_upload_to, validate_uk_telephone, validate_upload
+from ipc_backend.validators import evidence_upload_to, validate_international_telephone, validate_upload
 
 
 def generate_application_reference():
@@ -71,7 +71,7 @@ class Application(models.Model):
     last_name = models.CharField(max_length=120)
     username = models.CharField(max_length=30, blank=True)
     email = models.EmailField()
-    phone = models.CharField(max_length=80, validators=[validate_uk_telephone])
+    phone = models.CharField(max_length=80, validators=[validate_international_telephone])
     country = models.CharField(max_length=120, blank=True)
     organisation = models.CharField(max_length=180, blank=True)
     contact_preference = models.CharField(

@@ -14,7 +14,7 @@ from awards.models import AwardCategory, AwardProgramme
 from events.models import Event, EventRegistration
 from memberships.models import MembershipGrade
 from scholarships.models import BursaryApplication
-from scholarships.tests import valid_bursary_payload
+from scholarships.tests import valid_bursary_multipart_payload, valid_bursary_payload
 from .models import (
     Club, ClubMembership, DiscussionCategory, Scholarship,
     AwardNomination, ScholarshipApplication, SupportTicket, UserDocument, UserNotification,
@@ -203,6 +203,7 @@ class UserPanelApiTests(APITestCase):
             form_version=form_definition.version,
             membership_grade=grade,
             approved_user=self.user,
+            status=Application.Status.APPROVED,
             first_name="Amina",
             last_name="Khan",
             email="amina@example.com",
@@ -213,8 +214,12 @@ class UserPanelApiTests(APITestCase):
             privacy_consent=True,
         )
         payload = valid_bursary_payload()
-        payload["personalDetails"]["membershipReference"] = membership_application.application_reference
-        submitted = self.client.post("/api/bursary-applications", payload, format="json")
+        self.login()
+        submitted = self.client.post(
+            "/api/bursary-applications",
+            valid_bursary_multipart_payload(payload),
+            format="multipart",
+        )
         self.assertEqual(submitted.status_code, 201, submitted.data)
 
         self.login()

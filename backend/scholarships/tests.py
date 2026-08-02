@@ -1,7 +1,11 @@
+import base64
+import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from accounts.models import AdminNotification
@@ -51,8 +55,8 @@ class ScholarshipContentApiTests(APITestCase):
             key="main",
             defaults={
                 "pages": [{
-                    "id": "operational",
-                    "name": "Operational Pathway",
+                    "id": "chartered",
+                    "name": "Chartered Pathway",
                     "duration": "24 months",
                     "accent": "#d69a32",
                     "creditNumbers": [2, 1, 3],
@@ -68,8 +72,8 @@ class ScholarshipContentApiTests(APITestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertIs(response.data["pathways_active"], True)
         self.assertEqual(response.data["gateway"]["learning"]["rhythm_items"][0]["badge"], "2h")
-        self.assertEqual(response.data["pathways"][0]["id"], "operational")
-        self.assertEqual(response.data["pathway_details"][0]["id"], "operational")
+        self.assertEqual(response.data["pathways"][0]["id"], "chartered")
+        self.assertEqual(response.data["pathway_details"][0]["id"], "chartered")
         self.assertEqual(response.data["pathway_details"][0]["creditNumbers"], [2, 1, 3])
 
     def test_inactive_content_is_not_public(self):
@@ -108,7 +112,7 @@ class ScholarshipContentApiTests(APITestCase):
             defaults={
                 "pages": [
                     {"id": "operational", "name": "Operational", "is_active": False},
-                    {"id": "strategic", "name": "Strategic", "is_active": True},
+                    {"id": "chartered", "name": "Chartered", "is_active": True},
                 ],
                 "is_active": True,
                 "status": "published",
@@ -120,7 +124,7 @@ class ScholarshipContentApiTests(APITestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(
             [page["id"] for page in response.data["pages"]],
-            ["strategic"],
+            ["chartered"],
         )
 
 
@@ -231,7 +235,7 @@ class ScholarshipDashboardContentTests(APITestCase):
                     for module_index, module in enumerate(item["modules"])
                 ],
             }
-            if item["id"] == "operational"
+            if item["id"] == "chartered"
             else item
             for item in content.pages
         ]
@@ -242,22 +246,22 @@ class ScholarshipDashboardContentTests(APITestCase):
         )
         self.assertEqual(response.status_code, 200, response.data)
         content.refresh_from_db()
-        operational = next(item for item in content.pages if item["id"] == "operational")
-        self.assertEqual(operational["duration"], "25 months")
+        chartered = next(item for item in content.pages if item["id"] == "chartered")
+        self.assertEqual(chartered["duration"], "25 months")
         public_response = self.client.get("/api/scholarships")
         self.assertEqual(public_response.status_code, 200, public_response.data)
-        public_operational = next(
+        public_chartered = next(
             item
             for item in public_response.data["pages"]
-            if item["id"] == "operational"
+            if item["id"] == "chartered"
         )
-        self.assertEqual(public_operational["duration"], "25 months")
+        self.assertEqual(public_chartered["duration"], "25 months")
         self.assertEqual(
-            public_operational["funding"]["governmentBand"],
+            public_chartered["funding"]["governmentBand"],
             "£6,500",
         )
-        self.assertIs(public_operational["funding"]["is_active"], False)
-        self.assertIs(public_operational["modules"][0]["is_active"], False)
+        self.assertIs(public_chartered["funding"]["is_active"], False)
+        self.assertIs(public_chartered["modules"][0]["is_active"], False)
 
     def test_dashboard_active_controls_public_scholarship_page(self):
         response = self.client.patch(
@@ -286,11 +290,8 @@ class ScholarshipDashboardContentTests(APITestCase):
 def valid_bursary_payload():
     return {
         "personalDetails": {
-            "title": "Ms",
-            "membershipReference": "IPC-MEMBER-TEST",
             "firstName": "Amina",
             "lastName": "Khan",
-            "preferredName": "",
             "dateOfBirth": "1990-05-12",
             "email": "AMINA@example.com",
             "phoneCountryIso2": "GB",
@@ -326,40 +327,26 @@ def valid_bursary_payload():
             "employmentType": "Full time",
             "lineManagerName": "",
             "lineManagerEmail": "",
-            "employerAwareness": "yes",
             "pathwayRoleSupport": "It will improve reporting and planning.",
         },
-        "bursaryRequest": {
-            "quotedPathwayCostGbp": "6000.00",
-            "bursaryAmountRequestedGbp": "3000.00",
-            "requestedBursaryPercentage": "50.00",
-            "otherContributionAvailableGbp": "500.00",
-            "proceedWithLowerBursary": "discuss",
-            "financialCircumstances": "My circumstances limit the amount I can fund personally.",
-            "scholarshipOutcome": "The scholarship will support progression into a senior role.",
-            "measurableResult": "I will implement a monthly controls maturity dashboard.",
-            "learningApplicationAndContribution": "I will apply the learning and share a community case study.",
+        "emergencyInformation": {
+            "emergencyContactFullName": "Luqman Saleem",
+            "emergencyContactEmail": "luqman@example.com",
+            "emergencyContactPhone": "+447400555555",
+            "hasDisabilityOrHealthCondition": False,
+            "healthProblemCategories": [],
+            "primaryHealthProblem": "",
         },
         "pathwaySelection": {
-            "preferredPathway": "operational",
+            "preferredModules": ["ai", "pmp"],
             "preferredStartMonthOrIntake": "September 2026",
             "highestRelevantQualification": "BSc",
             "professionalMembershipsOrCertifications": "APM member",
             "relevantExperience": "Five years in project planning and cost control.",
-            "pathwayFitReason": "The operational pathway matches my current responsibilities.",
+            "pathwayFitReason": "IPC support would make this professional module accessible to me.",
         },
         "termsAndConsents": {
-            "linkedInAwardPostConsent": True,
-            "secondProgressPostConsent": True,
-            "tagIpcConsent": True,
-            "reshareAndQuoteConsent": True,
-            "professionalHeadshotConsent": True,
-            "participationConsent": True,
-            "approvedMediaUseConsent": True,
-            "reportRestrictionsConsent": True,
-            "publicityRestrictions": ["none_declared"],
-            "publicityRestrictionDetails": "",
-            "professionalHeadshotReference": "",
+            "mandatoryTermsAccepted": True,
             "generalMarketingConsent": False,
         },
         "reviewAndDeclaration": {
@@ -375,11 +362,26 @@ def valid_bursary_payload():
             "applicantIdentityDeclaration": True,
             "fullLegalName": "Amina Khan",
             "dateSigned": "2026-07-30",
-            "electronicSignature": "Amina Khan",
+            "electronicSignature": "data:image/png;base64,iVBORw0KGgo=",
             "signaturePlace": "London",
             "preferredSecureSubmissionReference": "",
             "additionalReviewInformation": "",
         },
+    }
+
+
+def valid_bursary_multipart_payload(payload=None):
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    )
+    return {
+        "payload": json.dumps(payload or valid_bursary_payload()),
+        "identityDocument": SimpleUploadedFile(
+            "passport.pdf", b"%PDF-1.4\n% test identity\n", content_type="application/pdf"
+        ),
+        "applicantPhoto": SimpleUploadedFile(
+            "applicant.png", png, content_type="image/png"
+        ),
     }
 
 
@@ -413,6 +415,7 @@ class BursaryApplicationApiTests(APITestCase):
             form_version=form_definition.version,
             membership_grade=membership_grade,
             approved_user=self.member,
+            status=Application.Status.APPROVED,
             first_name="Amina",
             last_name="Khan",
             email="amina@example.com",
@@ -428,17 +431,22 @@ class BursaryApplicationApiTests(APITestCase):
             password="not-used",
             is_staff=True,
         )
+        self.client.force_authenticate(self.member)
+
+    def submit_bursary(self, payload=None):
+        return self.client.post(
+            "/api/bursary-applications",
+            valid_bursary_multipart_payload(payload),
+            format="multipart",
+        )
 
     def test_public_create_returns_server_reference_and_notification(self):
         with self.captureOnCommitCallbacks(execute=True):
-            response = self.client.post(
-                "/api/bursary-applications",
-                valid_bursary_payload(),
-                format="json",
-            )
+            response = self.submit_bursary()
         self.assertEqual(response.status_code, 201, response.data)
         self.assertRegex(response.data["applicationReference"], r"^IPC-BSA-\d{4}-[A-F0-9]{12}$")
         application = BursaryApplication.objects.get()
+        self.assertEqual(application.preferred_modules, ["ai", "pmp"])
         self.assertEqual(application.mobile_phone_e164, "+447400123456")
         self.assertEqual(application.phone_national_number, "7400123456")
         self.assertEqual(application.email, "amina@example.com")
@@ -447,24 +455,53 @@ class BursaryApplicationApiTests(APITestCase):
             source_id=application.pk,
         ).exists())
 
+    def test_anonymous_applicant_can_submit_without_an_account(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.submit_bursary()
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get()
+        self.assertIsNone(application.submitted_by)
+        self.assertEqual(application.membership_reference, "")
+        self.assertEqual(application.email, "amina@example.com")
+
     def test_public_endpoint_does_not_allow_listing(self):
         self.assertEqual(self.client.get("/api/bursary-applications").status_code, 405)
 
     def test_invalid_phone_is_rejected_for_selected_country(self):
         payload = valid_bursary_payload()
         payload["personalDetails"]["phoneNationalNumber"] = "12345"
-        response = self.client.post("/api/bursary-applications", payload, format="json")
+        response = self.submit_bursary(payload)
         self.assertEqual(response.status_code, 400)
         self.assertIn("phoneNationalNumber", response.data["personalDetails"])
 
-    def test_membership_reference_must_exist_and_match_email(self):
+    def test_retired_pathways_cannot_be_submitted(self):
+        for retired_pathway in (
+            "operational",
+            "strategic",
+            "chartered",
+            "certified_pmo_professional",
+            "apm",
+        ):
+            payload = valid_bursary_payload()
+            payload["pathwaySelection"]["preferredModules"] = [retired_pathway]
+            response = self.submit_bursary(payload)
+            self.assertEqual(response.status_code, 400, response.data)
+            self.assertIn("preferredModules", response.data["pathwaySelection"])
+
+    def test_membership_reference_is_derived_from_signed_in_account(self):
         payload = valid_bursary_payload()
         payload["personalDetails"]["membershipReference"] = "IPC-NOT-FOUND"
-        response = self.client.post("/api/bursary-applications", payload, format="json")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("membershipReference", response.data["personalDetails"])
+        response = self.submit_bursary(payload)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(
+            BursaryApplication.objects.get().membership_reference,
+            self.membership_application.application_reference,
+        )
 
     def test_membership_reference_live_validation_is_scoped_to_signed_in_account(self):
+        self.client.force_authenticate(user=None)
         anonymous = self.client.get(
             "/api/bursary-applications/validate-membership-reference",
             {"reference": self.membership_application.application_reference},
@@ -490,22 +527,37 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(not_owned.status_code, 200)
         self.assertFalse(not_owned.data["valid"])
 
-    def test_authenticated_submission_rejects_another_accounts_membership_reference(self):
+    def test_authenticated_submission_does_not_require_membership(self):
         self.client.force_authenticate(user=self.staff)
-        response = self.client.post(
-            "/api/bursary-applications",
-            valid_bursary_payload(),
-            format="json",
+        response = self.submit_bursary()
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get(pk=response.data["id"])
+        self.assertEqual(application.membership_reference, "")
+        self.assertEqual(application.submitted_by, self.staff)
+        current = self.client.get("/api/bursary-applications/current")
+        self.assertEqual(current.status_code, 200, current.data)
+        self.assertTrue(current.data["hasApplication"])
+        self.assertEqual(current.data["applicationReference"], application.application_reference)
+
+    def test_applicant_must_be_at_least_twenty_years_old(self):
+        payload = valid_bursary_payload()
+        today = timezone.localdate()
+        payload["personalDetails"]["dateOfBirth"] = (
+            f"{today.year - 19:04d}-{today.month:02d}-{today.day:02d}"
         )
 
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("membershipReference", response.data["personalDetails"])
+        response = self.submit_bursary(payload)
+
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("dateOfBirth", response.data["personalDetails"])
+        self.assertIn("20 years old", str(response.data["personalDetails"]["dateOfBirth"][0]))
 
     def test_employed_applicant_requires_organisation_and_job_title(self):
         payload = valid_bursary_payload()
         payload["organisationDetails"]["organisationName"] = " "
         payload["organisationDetails"]["jobTitle"] = ""
-        response = self.client.post("/api/bursary-applications", payload, format="json")
+        response = self.submit_bursary(payload)
         self.assertEqual(response.status_code, 400)
         self.assertIn("organisationName", response.data["organisationDetails"])
         self.assertIn("jobTitle", response.data["organisationDetails"])
@@ -520,7 +572,7 @@ class BursaryApplicationApiTests(APITestCase):
             "organisationWebsite": "",
             "lineManagerEmail": "",
         })
-        response = self.client.post("/api/bursary-applications", payload, format="json")
+        response = self.submit_bursary(payload)
         self.assertEqual(response.status_code, 201, response.data)
 
     def test_unemployed_applicant_ignores_stale_invalid_organisation_data(self):
@@ -533,7 +585,7 @@ class BursaryApplicationApiTests(APITestCase):
             "employmentStartDate": "07/02/2026",
         })
 
-        response = self.client.post("/api/bursary-applications", payload, format="json")
+        response = self.submit_bursary(payload)
 
         self.assertEqual(response.status_code, 201, response.data)
         application = BursaryApplication.objects.get(pk=response.data["id"])
@@ -541,30 +593,65 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(application.organisation_name, "")
         self.assertIsNone(application.employment_start_date)
 
-    def test_percentage_and_restriction_rules_are_enforced(self):
+    def test_support_details_accept_a_single_text_response(self):
         payload = valid_bursary_payload()
-        payload["bursaryRequest"]["requestedBursaryPercentage"] = "101"
-        payload["termsAndConsents"]["publicityRestrictions"] = ["none_declared", "security"]
-        response = self.client.post("/api/bursary-applications", payload, format="json")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("requestedBursaryPercentage", response.data["bursaryRequest"])
+        payload["emergencyInformation"].update({
+            "hasDisabilityOrHealthCondition": True,
+            "healthProblemCategories": [],
+            "primaryHealthProblem": (
+                "I may need accessible learning materials and additional time during assessments."
+            ),
+        })
 
-    def test_restriction_details_and_all_mandatory_consents_are_required(self):
+        response = self.submit_bursary(payload)
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get(pk=response.data["id"])
+        self.assertEqual(
+            application.primary_health_problem,
+            payload["emergencyInformation"]["primaryHealthProblem"],
+        )
+        self.assertEqual(application.health_problem_categories, [])
+
+    def test_submission_accepts_payload_without_removed_form_fields(self):
         payload = valid_bursary_payload()
-        payload["termsAndConsents"]["publicityRestrictions"] = ["confidentiality"]
-        payload["termsAndConsents"]["publicityRestrictionDetails"] = ""
-        payload["termsAndConsents"]["participationConsent"] = False
-        response = self.client.post("/api/bursary-applications", payload, format="json")
+        for field in ("lineManagerName", "lineManagerEmail"):
+            payload["organisationDetails"].pop(field)
+        for field in ("preferredStartMonthOrIntake", "highestRelevantQualification"):
+            payload["pathwaySelection"].pop(field)
+        for field in (
+            "fullLegalName",
+            "signaturePlace",
+            "preferredSecureSubmissionReference",
+            "additionalReviewInformation",
+        ):
+            payload["reviewAndDeclaration"].pop(field)
+
+        response = self.submit_bursary(payload)
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get(pk=response.data["id"])
+        self.assertEqual(application.preferred_start_month_or_intake, "")
+        self.assertEqual(application.full_legal_name, "")
+        self.assertEqual(application.date_signed.isoformat(), "2026-07-30")
+        self.assertTrue(application.electronic_signature.startswith("data:image/png;base64,"))
+
+    def test_combined_mandatory_consent_is_required(self):
+        payload = valid_bursary_payload()
+        payload["termsAndConsents"]["mandatoryTermsAccepted"] = False
+        response = self.submit_bursary(payload)
         self.assertEqual(response.status_code, 400)
-        self.assertIn("publicityRestrictionDetails", response.data["termsAndConsents"])
-        self.assertIn("participationConsent", response.data["termsAndConsents"])
+        self.assertIn("mandatoryTermsAccepted", response.data["termsAndConsents"])
+
+    def test_drawn_signature_is_required(self):
+        payload = valid_bursary_payload()
+        payload["reviewAndDeclaration"]["electronicSignature"] = ""
+        response = self.submit_bursary(payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("electronicSignature", response.data["reviewAndDeclaration"])
 
     def test_dashboard_requires_staff_and_staff_can_review(self):
-        created = self.client.post(
-            "/api/bursary-applications",
-            valid_bursary_payload(),
-            format="json",
-        )
+        created = self.submit_bursary()
         application_id = created.data["id"]
         self.assertIn(
             self.client.get("/api/admin/bursary-applications").status_code,
@@ -595,11 +682,7 @@ class BursaryApplicationApiTests(APITestCase):
 
     @patch("scholarships.views.send_graph_bursary_approval_email")
     def test_approval_updates_member_panel_and_sends_one_approval_email(self, send_approval_email):
-        created = self.client.post(
-            "/api/bursary-applications",
-            valid_bursary_payload(),
-            format="json",
-        )
+        created = self.submit_bursary()
         self.assertEqual(created.status_code, 201, created.data)
 
         self.client.force_authenticate(self.staff)
@@ -618,7 +701,7 @@ class BursaryApplicationApiTests(APITestCase):
             recipient=application.email,
             name=application.preferred_name or application.first_name,
             application_reference=application.application_reference,
-            pathway=application.get_preferred_pathway_display(),
+            pathway=application.get_bursary_selection_display(),
         )
 
         self.client.force_authenticate(self.member)
@@ -644,11 +727,7 @@ class BursaryApplicationApiTests(APITestCase):
 
     @patch("scholarships.views.send_graph_bursary_rejection_email")
     def test_status_transitions_rejection_email_and_member_notifications(self, send_rejection_email):
-        created = self.client.post(
-            "/api/bursary-applications",
-            valid_bursary_payload(),
-            format="json",
-        )
+        created = self.submit_bursary()
         self.assertEqual(created.status_code, 201, created.data)
         status_url = f"/api/admin/bursary-applications/{created.data['id']}/status"
         self.client.force_authenticate(self.staff)
@@ -697,7 +776,7 @@ class BursaryApplicationApiTests(APITestCase):
             recipient=application.email,
             name=application.preferred_name or application.first_name,
             application_reference=application.application_reference,
-            pathway=application.get_preferred_pathway_display(),
+            pathway=application.get_bursary_selection_display(),
             reason=rejection_reason,
         )
         rejection_notification = UserNotification.objects.get(
@@ -716,10 +795,122 @@ class BursaryApplicationApiTests(APITestCase):
         application.refresh_from_db()
         self.assertEqual(application.status, BursaryApplication.Status.REJECTED)
 
-    def test_generated_references_are_unique(self):
-        first = self.client.post("/api/bursary-applications", valid_bursary_payload(), format="json")
-        second_payload = valid_bursary_payload()
-        second = self.client.post("/api/bursary-applications", second_payload, format="json")
+    def test_second_application_for_the_same_membership_is_locked(self):
+        first = self.submit_bursary()
+        second = self.submit_bursary()
         self.assertEqual(first.status_code, 201, first.data)
-        self.assertEqual(second.status_code, 201, second.data)
-        self.assertNotEqual(first.data["applicationReference"], second.data["applicationReference"])
+        self.assertEqual(second.status_code, 409, second.data)
+        self.assertEqual(second.data["applicationReference"], first.data["applicationReference"])
+        self.assertEqual(BursaryApplication.objects.count(), 1)
+
+    def test_rejected_application_remains_locked_for_new_submissions(self):
+        first = self.submit_bursary()
+        self.assertEqual(first.status_code, 201, first.data)
+
+        application = BursaryApplication.objects.get(pk=first.data["id"])
+        application.status = BursaryApplication.Status.REJECTED
+        application.save(update_fields=["status", "updated_at"])
+
+        second = self.submit_bursary()
+        self.assertEqual(second.status_code, 409, second.data)
+        self.assertEqual(BursaryApplication.objects.count(), 1)
+
+    def test_current_application_is_locked_until_more_information_is_requested(self):
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+
+        current = self.client.get("/api/bursary-applications/current")
+
+        self.assertEqual(current.status_code, 200, current.data)
+        self.assertTrue(current.data["hasApplication"])
+        self.assertFalse(current.data["editable"])
+        self.assertIsNone(current.data["values"])
+        self.assertEqual(
+            current.data["applicationReference"],
+            created.data["applicationReference"],
+        )
+
+    @patch("scholarships.views.send_graph_bursary_needs_information_email")
+    def test_needs_information_reopens_same_application_once_and_resubmits_under_review(self, send_information_email):
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+        application_id = created.data["id"]
+        application_reference = created.data["applicationReference"]
+
+        self.client.force_authenticate(self.staff)
+        request_message = "Please update the emergency contact telephone number."
+        with self.captureOnCommitCallbacks(execute=True):
+            requested = self.client.patch(
+                f"/api/admin/bursary-applications/{application_id}/status",
+                {
+                    "status": BursaryApplication.Status.NEEDS_INFORMATION,
+                    "internal_reason": request_message,
+                },
+                format="json",
+            )
+        self.assertEqual(requested.status_code, 200, requested.data)
+        notification = UserNotification.objects.get(
+            recipient=self.member,
+            title="More information needed for your bursary application",
+        )
+        self.assertIn(request_message, notification.message)
+        recipients = {
+            call.kwargs["recipient"]
+            for call in send_information_email.call_args_list
+        }
+        self.assertEqual(recipients, {"amina@example.com", self.member.email})
+        self.assertTrue(all(
+            call.kwargs["message"] == request_message
+            for call in send_information_email.call_args_list
+        ))
+
+        self.client.force_authenticate(self.member)
+        current = self.client.get("/api/bursary-applications/current")
+        self.assertEqual(current.status_code, 200, current.data)
+        self.assertTrue(current.data["editable"])
+        self.assertEqual(
+            current.data["values"]["emergencyInformation"]["emergencyContactPhone"],
+            valid_bursary_payload()["emergencyInformation"]["emergencyContactPhone"],
+        )
+        self.assertEqual(current.data["values"]["emergencyInformation"]["identityDocument"], "existing")
+        self.assertEqual(current.data["values"]["emergencyInformation"]["applicantPhoto"], "existing")
+
+        selected = self.client.get(
+            "/api/bursary-applications/current",
+            {"applicationReference": application_reference},
+        )
+        self.assertEqual(selected.status_code, 200, selected.data)
+        self.assertEqual(selected.data["applicationReference"], application_reference)
+
+        updated_payload = valid_bursary_payload()
+        updated_payload["emergencyInformation"]["emergencyContactPhone"] = "+447400999999"
+        resubmitted = self.client.patch(
+            "/api/bursary-applications/current",
+            updated_payload,
+            format="json",
+        )
+        self.assertEqual(resubmitted.status_code, 200, resubmitted.data)
+        self.assertEqual(resubmitted.data["status"], BursaryApplication.Status.UNDER_REVIEW)
+        self.assertEqual(resubmitted.data["applicationReference"], application_reference)
+        self.assertEqual(BursaryApplication.objects.count(), 1)
+
+        application = BursaryApplication.objects.get(pk=application_id)
+        self.assertEqual(
+            application.emergency_contact_phone,
+            updated_payload["emergencyInformation"]["emergencyContactPhone"],
+        )
+        self.assertTrue(application.status_history.filter(
+            previous_status=BursaryApplication.Status.NEEDS_INFORMATION,
+            new_status=BursaryApplication.Status.UNDER_REVIEW,
+            changed_by=self.member,
+        ).exists())
+
+        locked_again = self.client.get("/api/bursary-applications/current")
+        self.assertFalse(locked_again.data["editable"])
+        self.assertIsNone(locked_again.data["values"])
+        second_resubmission = self.client.patch(
+            "/api/bursary-applications/current",
+            updated_payload,
+            format="json",
+        )
+        self.assertEqual(second_resubmission.status_code, 409, second_resubmission.data)

@@ -1,3 +1,13 @@
+import {
+  CalendarCheck,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  Coins,
+  Cpu,
+  Leaf,
+  TriangleAlert,
+  Users,
+} from "lucide-react";
 import SectionHeader from "@/components/base/SectionHeader";
 import {
   isManagedItemActive,
@@ -106,6 +116,17 @@ const defaultCompetenceMatrix: CompetenceMatrixContent = {
   ],
 };
 
+const competenceIcons = [
+  ClipboardCheck,
+  CalendarCheck,
+  Coins,
+  TriangleAlert,
+  ChartNoAxesCombined,
+  Cpu,
+  Leaf,
+  Users,
+];
+
 export default function MembershipCompetenceMatrix() {
   const content = useManagedSection<CompetenceMatrixContent>(
     "competence_matrix",
@@ -172,7 +193,9 @@ export default function MembershipCompetenceMatrix() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, index) => {
+                const CompetenceIcon = competenceIcons[index] ?? ClipboardCheck;
+                return (
                 <tr
                   key={row.area}
                   className="border-t border-background-300 align-top"
@@ -181,7 +204,10 @@ export default function MembershipCompetenceMatrix() {
                     scope="row"
                     className="break-words border-r border-background-300 bg-background-100 px-4 py-4 font-heading text-xs font-semibold leading-relaxed text-background-950 lg:px-5 lg:py-5 lg:text-sm"
                   >
-                    {row.area}
+                    <span className="flex items-start gap-3">
+                      <CompetenceIcon className="mt-0.5 shrink-0 text-primary-700" size={26} strokeWidth={1.6} aria-hidden="true" />
+                      <span>{row.area}</span>
+                    </span>
                   </th>
                   {columns.map((column) => (
                     <td
@@ -192,7 +218,8 @@ export default function MembershipCompetenceMatrix() {
                     </td>
                   ))}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
             </table>
           </div>

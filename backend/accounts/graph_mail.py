@@ -282,7 +282,7 @@ def send_bursary_approval_email(
 We are pleased to confirm that your IPC bursary application has been approved.
 
 Application reference: {application_reference}
-Pathway: {pathway}
+Module: {pathway}
 
 The IPC team will contact you with the next steps.
 
@@ -300,7 +300,7 @@ Institute of Project Controls
           <p>We are pleased to confirm that your IPC bursary application has been approved.</p>
           <div style="background:#f4ece1;padding:16px 18px;margin:20px 0;border-left:4px solid #d79525">
             <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
-            <p style="margin:0"><strong>Pathway:</strong> {safe_pathway}</p>
+            <p style="margin:0"><strong>Module:</strong> {safe_pathway}</p>
           </div>
           <p>The IPC team will contact you with the next steps.</p>
           <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
@@ -336,7 +336,7 @@ def send_bursary_rejection_email(
 Thank you for applying for an IPC bursary. After reviewing your application, we are unable to approve it at this time.
 
 Application reference: {application_reference}
-Pathway: {pathway}
+Module: {pathway}
 
 Reason:
 {reason}
@@ -355,7 +355,7 @@ Institute of Project Controls
           <p>Thank you for applying for an IPC bursary. After reviewing your application, we are unable to approve it at this time.</p>
           <div style="background:#f4ece1;padding:16px 18px;margin:20px 0;border-left:4px solid #d79525">
             <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
-            <p style="margin:0"><strong>Pathway:</strong> {safe_pathway}</p>
+            <p style="margin:0"><strong>Module:</strong> {safe_pathway}</p>
           </div>
           <p><strong>Reason:</strong></p>
           <p>{safe_reason}</p>
@@ -372,3 +372,68 @@ Institute of Project Controls
         )
     except (ImproperlyConfigured, requests.RequestException) as exc:
         raise GraphMailError("Microsoft Graph could not send the bursary rejection email.") from exc
+
+
+def send_bursary_needs_information_email(
+    *,
+    recipient,
+    name,
+    application_reference,
+    pathway,
+    message,
+):
+    safe_name = html.escape(name or "IPC member")
+    safe_reference = html.escape(application_reference)
+    safe_pathway = html.escape(pathway)
+    safe_message = html.escape(message).replace("\n", "<br>")
+    application_url = (
+        f"{settings.FRONTEND_URL.rstrip('/')}/bursary-scholarship-application"
+        f"?applicationReference={quote(application_reference, safe='')}"
+    )
+    safe_application_url = html.escape(application_url, quote=True)
+    subject = "More information is needed for your IPC bursary application"
+    text_body = f"""Dear {name or 'IPC member'},
+
+IPC needs some additional information before continuing the review of your bursary application.
+
+Application reference: {application_reference}
+Module: {pathway}
+
+Message from IPC:
+{message}
+
+Sign in to update and resubmit your application:
+{application_url}
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.65;max-width:620px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:25px">More information is needed</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Dear {safe_name},</p>
+          <p>IPC needs some additional information before continuing the review of your bursary application.</p>
+          <div style="background:#f4ece1;padding:16px 18px;margin:20px 0;border-left:4px solid #d79525">
+            <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
+            <p style="margin:0"><strong>Module:</strong> {safe_pathway}</p>
+          </div>
+          <p><strong>Message from IPC:</strong></p>
+          <p>{safe_message}</p>
+          <p style="margin:24px 0"><a href="{safe_application_url}" style="display:inline-block;background:#d79525;color:#171411;text-decoration:none;font-weight:bold;padding:12px 18px">Update application</a></p>
+          <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    try:
+        _send_mime_message(
+            recipient=recipient,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+        )
+    except (ImproperlyConfigured, requests.RequestException) as exc:
+        raise GraphMailError("Microsoft Graph could not send the bursary information-request email.") from exc

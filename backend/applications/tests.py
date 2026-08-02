@@ -66,6 +66,17 @@ class ApplicationApiTests(TestCase):
         self.assertTrue(application.evidence_files.filter(original_name="cv.pdf", content_type="application/pdf").exists())
         self.assertTrue(ApplicationStatusHistory.objects.filter(application=application, to_status="submitted").exists())
 
+    def test_username_availability_detects_reserved_names(self):
+        available = self.client.get("/api/applications/username-availability", {"username": "fresh.username"})
+        self.assertEqual(available.status_code, 200)
+        self.assertTrue(available.data["available"])
+
+        get_user_model().objects.create_user(username="reserved.username", email="reserved@example.com")
+        reserved = self.client.get("/api/applications/username-availability", {"username": "Reserved.Username"})
+        self.assertEqual(reserved.status_code, 200)
+        self.assertFalse(reserved.data["available"])
+        self.assertIn("already reserved", reserved.data["message"])
+
     def test_versioned_dynamic_data_is_validated(self):
         payload = {
             "grade": "AffIPC",
@@ -123,8 +134,23 @@ class ApplicationApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("cv", response.data)
 
-    def test_non_uk_telephone_number_is_rejected(self):
-        for telephone in ("+20 100 000 0000", "01067055973"):
+    def test_international_telephone_number_is_accepted_and_normalised(self):
+        response = self.client.post(
+            "/api/applications",
+            {
+                **self.legacy_payload,
+                "phone": "+20 106 705 5973",
+                "cv": self.document("cv.pdf"),
+                "cpd_file": self.document("cpd.pdf"),
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["phone"], "+201067055973")
+
+    def test_impossible_international_telephone_number_is_rejected(self):
+        for telephone in ("+999 12345", "12345"):
             with self.subTest(telephone=telephone):
                 response = self.client.post(
                     "/api/applications",

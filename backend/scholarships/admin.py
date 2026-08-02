@@ -20,12 +20,11 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
         "application_reference",
         "first_name",
         "last_name",
-        "preferred_pathway",
-        "bursary_amount_requested_gbp",
+        "selected_modules",
         "status",
         "submitted_at",
     )
-    list_filter = ("status", "preferred_pathway", "currently_employed", "country")
+    list_filter = ("status", "currently_employed", "country")
     search_fields = (
         "application_reference",
         "membership_reference",
@@ -40,6 +39,10 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
         for field in BursaryApplication._meta.fields
         if field.name not in {"status", "assigned_reviewer", "reviewer_internal_notes"}
     )
+
+    @admin.display(description="Modules")
+    def selected_modules(self, application):
+        return application.get_bursary_selection_display()
 
 
 @admin.register(BursaryApplicationStatusHistory)

@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-from ipc_backend.validators import normalise_uk_telephone, validate_image
+from ipc_backend.validators import normalise_international_telephone, validate_image
 from .models import AdminProfile
 
 
@@ -78,7 +78,7 @@ class UserProfileUpdateSerializer(serializers.Serializer):
 
     def validate_telephone(self, value):
         try:
-            return normalise_uk_telephone(value)
+            return normalise_international_telephone(value)
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.messages) from error
 

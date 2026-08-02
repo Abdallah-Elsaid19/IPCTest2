@@ -46,10 +46,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 md:mt-16 pt-8 border-t border-background-800">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <p className="text-xs text-background-500 leading-relaxed max-w-xl">
-              IPC recognition is a professional membership and recognition pathway. It should be described as standards-informed and evidence-based. It should not be presented as a regulated qualification, apprenticeship award, chartered status or statutory licence unless the applicant separately holds such recognition or authority.
-            </p>
+          <div className="flex justify-end">
             <p className="text-xs text-background-600 shrink-0">
               &copy; {new Date().getFullYear()} Institute of Project Controls. All rights reserved.
             </p>

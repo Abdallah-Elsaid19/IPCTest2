@@ -20,6 +20,7 @@ from clubs.views import ClubEnquiryCreateView, ClubPageContentView, PublicClubDe
 from scholarships.views import (
     AdminBursaryApplicationViewSet,
     BursaryApplicationCreateViewSet,
+    BursaryApplicationCurrentView,
     BursaryMembershipReferenceValidationView,
     ScholarshipContentView,
 )
@@ -91,6 +92,11 @@ urlpatterns = [
         "bursary-applications/validate-membership-reference",
         BursaryMembershipReferenceValidationView.as_view(),
         name="bursary-membership-reference-validation",
+    ),
+    path(
+        "bursary-applications/current",
+        BursaryApplicationCurrentView.as_view(),
+        name="bursary-application-current",
     ),
     path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
     path("home/content", HomeContentView.as_view(), name="home-content"),

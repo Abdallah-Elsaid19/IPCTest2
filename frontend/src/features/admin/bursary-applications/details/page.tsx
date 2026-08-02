@@ -74,7 +74,7 @@ function DetailGrid({
   fields: Array<{
     key: string;
     label: string;
-    format?: "date" | "datetime" | "currency" | "percent" | "boolean" | "url" | "multiline" | "restrictions";
+    format?: "date" | "datetime" | "currency" | "percent" | "boolean" | "url" | "multiline" | "restrictions" | "signature" | "file" | "image";
     wide?: boolean;
   }>;
 }) {
@@ -97,6 +97,18 @@ function DetailGrid({
         </span>
       ) : "None recorded";
     }
+    if (format === "signature") {
+      const signature = typeof value === "string" && value.startsWith("data:image/png;base64,") ? value : "";
+      return signature
+        ? <img src={signature} alt="Applicant's drawn signature" className="max-h-36 max-w-full border border-[#DED2C3] bg-white p-2" />
+        : value ? String(value) : "Not provided";
+    }
+    if (format === "file") return value
+      ? <a href={String(value)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary-800 underline">Open secure document <ExternalLink size={13} /></a>
+      : "Not provided";
+    if (format === "image") return value
+      ? <a href={String(value)} target="_blank" rel="noreferrer"><img src={String(value)} alt="Applicant" className="max-h-52 max-w-full border border-[#DED2C3] bg-white object-contain p-2" /></a>
+      : "Not provided";
     if (format === "multiline") return value ? <span className="whitespace-pre-wrap">{String(value)}</span> : "Not provided";
     if (value === null || value === undefined || value === "") return "Not provided";
     return String(value);
@@ -229,11 +241,9 @@ export default function AdminBursaryApplicationDetailsPage() {
         </div>
       </div>
 
-      <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-7 grid gap-3 sm:grid-cols-2">
         {[
-          ["Preferred pathway", application.preferred_pathway_label],
-          ["Bursary requested", formatCurrency(application.bursary_amount_requested_gbp)],
-          ["Requested percentage", `${Number(application.requested_bursary_percentage).toLocaleString()}%`],
+          ["Selected modules", application.preferred_pathway_label],
           ["Assigned reviewer", application.assigned_reviewer_name || "Unassigned"],
         ].map(([itemLabel, value]) => (
           <article key={itemLabel} className="rounded-2xl border border-[#DED2C3] bg-[#FFFDF9] p-5 shadow-sm">
@@ -271,52 +281,39 @@ export default function AdminBursaryApplicationDetailsPage() {
             { key: "organisation_postcode", label: "Postcode" }, { key: "organisation_country", label: "Country" },
             { key: "job_title", label: "Job title" }, { key: "department_or_business_unit", label: "Department / unit" },
             { key: "employment_start_date", label: "Employment start date", format: "date" }, { key: "employment_type", label: "Employment type" },
-            { key: "line_manager_name", label: "Line manager name" }, { key: "line_manager_email", label: "Line manager email" },
             { key: "employer_awareness", label: "Employer awareness" },
-            { key: "pathway_role_support", label: "How pathway supports role", format: "multiline", wide: true },
+            { key: "pathway_role_support", label: "How module supports role", format: "multiline", wide: true },
           ]} />
         </DetailSection>
-        <DetailSection title="3. IPC Bursary Request and Scholarship Outcomes">
+        <DetailSection title="3. Emergency Contact and Identification">
           <DetailGrid application={application} fields={[
-            { key: "quoted_pathway_cost_gbp", label: "Quoted pathway cost", format: "currency" },
-            { key: "bursary_amount_requested_gbp", label: "Bursary requested", format: "currency" },
-            { key: "requested_bursary_percentage", label: "Requested percentage", format: "percent" },
-            { key: "other_contribution_available_gbp", label: "Other contribution", format: "currency" },
-            { key: "proceed_with_lower_bursary", label: "Proceed with lower bursary" },
-            { key: "financial_circumstances", label: "Financial circumstances", format: "multiline", wide: true },
-            { key: "scholarship_outcome", label: "Scholarship outcome", format: "multiline", wide: true },
-            { key: "measurable_result", label: "Measurable result", format: "multiline", wide: true },
-            { key: "learning_application_and_contribution", label: "Learning application and contribution", format: "multiline", wide: true },
+            { key: "emergency_contact_full_name", label: "Emergency contact full name" },
+            { key: "emergency_contact_relationship", label: "Relationship" },
+            { key: "emergency_contact_email", label: "Emergency contact email" },
+            { key: "emergency_contact_phone", label: "Emergency contact phone" },
+            { key: "has_disability_or_health_condition", label: "Disability, health problem or learning difficulty", format: "boolean" },
+            { key: "health_problem_categories", label: "Relevant categories", format: "restrictions" },
+            { key: "primary_health_problem", label: "Primary health problem / support need" },
+            { key: "identity_document", label: "Passport / proof of identification", format: "file", wide: true },
+            { key: "applicant_photo", label: "Applicant photo", format: "image", wide: true },
           ]} />
         </DetailSection>
-        <DetailSection title="4. Pathway Selection">
+        <DetailSection title="4. Module Selection">
           <DetailGrid application={application} fields={[
-            { key: "preferred_pathway_label", label: "Preferred pathway" },
-            { key: "preferred_start_month_or_intake", label: "Preferred start / intake" },
-            { key: "highest_relevant_qualification", label: "Highest relevant qualification" },
+            { key: "preferred_pathway_label", label: "Selected modules" },
             { key: "professional_memberships_or_certifications", label: "Memberships / certifications", format: "multiline", wide: true },
             { key: "relevant_experience", label: "Relevant experience", format: "multiline", wide: true },
-            { key: "pathway_fit_reason", label: "Pathway fit reason", format: "multiline", wide: true },
+            { key: "pathway_fit_reason", label: "Reason for requesting an IPC bursary", format: "multiline", wide: true },
           ]} />
         </DetailSection>
         <DetailSection title="5. Mandatory Terms and Consents">
           <DetailGrid application={application} fields={[
-            { key: "linkedin_award_post_consent", label: "LinkedIn award post", format: "boolean" },
-            { key: "second_progress_post_consent", label: "Second progress post", format: "boolean" },
-            { key: "tag_ipc_consent", label: "Tag IPC", format: "boolean" },
-            { key: "reshare_and_quote_consent", label: "Reshare and quote", format: "boolean" },
-            { key: "professional_headshot_consent", label: "Professional headshot", format: "boolean" },
-            { key: "participation_consent", label: "Participation", format: "boolean" },
-            { key: "approved_media_use_consent", label: "Approved media use", format: "boolean" },
-            { key: "report_restrictions_consent", label: "Report restrictions", format: "boolean" },
-            { key: "publicity_restrictions", label: "Publicity restrictions", format: "restrictions", wide: true },
-            { key: "publicity_restriction_details", label: "Restriction details", format: "multiline", wide: true },
-            { key: "professional_headshot_reference", label: "Headshot file / secure reference", format: "multiline", wide: true },
+            { key: "mandatory_terms_accepted", label: "All mandatory bursary terms", format: "boolean" },
             { key: "general_marketing_consent", label: "Optional general marketing", format: "boolean" },
             { key: "terms_accepted_at", label: "Terms accepted", format: "datetime" },
           ]} />
         </DetailSection>
-        <DetailSection title="6. Review, Declaration and Signature">
+        <DetailSection title="6. Review and Declaration">
           <DetailGrid application={application} fields={[
             { key: "section_1_complete", label: "Section 1 confirmed", format: "boolean" },
             { key: "section_2_complete_or_not_applicable", label: "Section 2 confirmed", format: "boolean" },
@@ -325,13 +322,11 @@ export default function AdminBursaryApplicationDetailsPage() {
             { key: "section_5_complete", label: "Section 5 confirmed", format: "boolean" },
             { key: "information_accurate_declaration", label: "Information accurate", format: "boolean" },
             { key: "no_award_guarantee_declaration", label: "No award guarantee", format: "boolean" },
-            { key: "pathway_terms_declaration", label: "Pathway terms", format: "boolean" },
+            { key: "pathway_terms_declaration", label: "Module terms", format: "boolean" },
             { key: "processing_consent_declaration", label: "Processing consent", format: "boolean" },
             { key: "applicant_identity_declaration", label: "Applicant identity", format: "boolean" },
-            { key: "full_legal_name", label: "Full legal name" }, { key: "date_signed", label: "Date signed", format: "date" },
-            { key: "electronic_signature", label: "Electronic signature" }, { key: "signature_place", label: "Place of signature" },
-            { key: "preferred_secure_submission_reference", label: "Preferred secure submission reference", wide: true },
-            { key: "additional_review_information", label: "Additional review information", format: "multiline", wide: true },
+            { key: "date_signed", label: "Date signed", format: "date" },
+            { key: "electronic_signature", label: "Drawn signature", format: "signature", wide: true },
             { key: "declarations_accepted_at", label: "Declarations accepted", format: "datetime" },
           ]} />
         </DetailSection>
@@ -372,25 +367,33 @@ export default function AdminBursaryApplicationDetailsPage() {
               </select>
             </label>
             <label className="mt-4 block text-sm font-semibold">
-              {nextStatus === "rejected" ? "Rejection reason sent to the applicant *" : "Internal reason or note"}
+              {nextStatus === "rejected"
+                ? "Rejection reason sent to the applicant *"
+                : nextStatus === "needs_information"
+                  ? "Information requested from the applicant *"
+                  : "Internal reason or note"}
               <textarea
                 value={statusReason}
                 onChange={(event) => setStatusReason(event.target.value)}
                 rows={4}
                 maxLength={4000}
-                required={nextStatus === "rejected"}
-                placeholder={nextStatus === "rejected" ? "Explain why the application was rejected." : ""}
+                required={nextStatus === "rejected" || nextStatus === "needs_information"}
+                placeholder={nextStatus === "rejected"
+                  ? "Explain why the application was rejected."
+                  : nextStatus === "needs_information"
+                    ? "Explain clearly what information the applicant should update."
+                    : ""}
                 className="mt-2 w-full rounded-xl border border-[#D4C6B5] bg-white p-3 outline-none focus:border-primary-500"
               />
             </label>
             <p className="mt-4 rounded-xl bg-[#F6E8D2] p-3 text-xs leading-5 text-[#704707]">
-              {nextStatus === "rejected"
-                ? "This reason will be included in the rejection email and the member-panel notification."
+              {nextStatus === "rejected" || nextStatus === "needs_information"
+                ? "This message will be included in the email and the member-panel notification sent to the applicant."
                 : "This changes review status only. The applicant's submitted answers remain unchanged."}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setShowStatusModal(false)} disabled={isSavingStatus} className="h-10 rounded-xl border border-[#D4C6B5] px-4 text-xs font-bold">Cancel</button>
-              <button type="button" onClick={() => void updateStatus()} disabled={isSavingStatus || nextStatus === application.status || (nextStatus === "rejected" && !statusReason.trim())} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary-500 px-4 text-xs font-bold disabled:opacity-50">{isSavingStatus && <LoaderCircle size={15} className="animate-spin" />} Confirm status change</button>
+              <button type="button" onClick={() => void updateStatus()} disabled={isSavingStatus || nextStatus === application.status || ((nextStatus === "rejected" || nextStatus === "needs_information") && !statusReason.trim())} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary-500 px-4 text-xs font-bold disabled:opacity-50">{isSavingStatus && <LoaderCircle size={15} className="animate-spin" />} Confirm status change</button>
             </div>
           </section>
         </div>

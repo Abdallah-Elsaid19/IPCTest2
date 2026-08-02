@@ -1,3 +1,6 @@
+import base64
+import binascii
+from decimal import Decimal
 from urllib.parse import urlparse
 
 import phonenumbers
@@ -8,6 +11,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from applications.models import Application
+from ipc_backend.validators import validate_identity_document, validate_image
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
@@ -78,11 +82,8 @@ def _required_text(value):
 
 
 class BursaryPersonalDetailsSerializer(serializers.Serializer):
-    title = serializers.CharField(required=False, allow_blank=True, max_length=40)
-    membershipReference = serializers.CharField(max_length=40, validators=[_required_text])
     firstName = serializers.CharField(max_length=120, validators=[_required_text])
     lastName = serializers.CharField(max_length=120, validators=[_required_text])
-    preferredName = serializers.CharField(required=False, allow_blank=True, max_length=120)
     dateOfBirth = serializers.DateField()
     email = serializers.EmailField(max_length=254)
     phoneCountryIso2 = serializers.CharField(min_length=2, max_length=2)
@@ -101,8 +102,10 @@ class BursaryPersonalDetailsSerializer(serializers.Serializer):
     preferredContactMethod = serializers.ChoiceField(choices=BursaryApplication.ContactMethod.choices)
 
     def validate_dateOfBirth(self, value):
-        if value >= timezone.localdate():
-            raise serializers.ValidationError("Enter a valid date of birth in the past.")
+        today = timezone.localdate()
+        latest_eligible = (today.year - 20, today.month, today.day)
+        if (value.year, value.month, value.day) > latest_eligible:
+            raise serializers.ValidationError("You must be at least 20 years old to apply.")
         return value
 
     def validate_email(self, value):
@@ -121,17 +124,6 @@ class BursaryPersonalDetailsSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
-        membership = Application.objects.filter(
-            application_reference__iexact=attrs["membershipReference"].strip(),
-            email__iexact=attrs["email"],
-        ).only("application_reference").first()
-        if membership is None:
-            raise serializers.ValidationError({
-                "membershipReference": (
-                    "Enter a valid membership reference that matches your email address."
-                ),
-            })
-        attrs["membershipReference"] = membership.application_reference
         iso2 = attrs["phoneCountryIso2"]
         try:
             parsed = phonenumbers.parse(attrs["phoneNationalNumber"], iso2)
@@ -177,62 +169,58 @@ class BursaryOrganisationDetailsSerializer(serializers.Serializer):
     departmentOrBusinessUnit = serializers.CharField(required=False, allow_blank=True, max_length=180)
     employmentStartDate = serializers.DateField(required=False, allow_null=True)
     employmentType = serializers.CharField(required=False, allow_blank=True, max_length=80)
-    lineManagerName = serializers.CharField(required=False, allow_blank=True, max_length=180)
-    lineManagerEmail = serializers.EmailField(required=False, allow_blank=True)
-    employerAwareness = serializers.ChoiceField(
-        choices=BursaryApplication.EmployerAwareness.choices,
-        required=False,
-        allow_blank=True,
-    )
     pathwayRoleSupport = serializers.CharField(required=False, allow_blank=True, max_length=8000)
 
 
-class BursaryRequestSerializer(serializers.Serializer):
-    quotedPathwayCostGbp = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=0, required=False, allow_null=True,
+class BursaryEmergencyInformationSerializer(serializers.Serializer):
+    emergencyContactFullName = serializers.CharField(max_length=180, validators=[_required_text])
+    emergencyContactEmail = serializers.EmailField(max_length=254)
+    emergencyContactPhone = serializers.RegexField(r"^\+?[\d\s().-]{7,40}$", max_length=40)
+    hasDisabilityOrHealthCondition = serializers.BooleanField()
+    healthProblemCategories = serializers.ListField(
+        child=serializers.ChoiceField(choices=[
+            "physical_disability", "sensory_impairment", "mental_health",
+            "long_term_health_condition", "learning_difficulty",
+            "neurodivergence", "other",
+        ]),
+        required=False,
+        allow_empty=True,
+        max_length=7,
     )
-    bursaryAmountRequestedGbp = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
-    requestedBursaryPercentage = serializers.DecimalField(
-        max_digits=5, decimal_places=2, min_value=0, max_value=100,
-    )
-    otherContributionAvailableGbp = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=0, required=False, allow_null=True,
-    )
-    proceedWithLowerBursary = serializers.ChoiceField(choices=BursaryApplication.LowerBursaryResponse.choices)
-    financialCircumstances = serializers.CharField(max_length=12000, validators=[_required_text])
-    scholarshipOutcome = serializers.CharField(max_length=12000, validators=[_required_text])
-    measurableResult = serializers.CharField(max_length=12000, validators=[_required_text])
-    learningApplicationAndContribution = serializers.CharField(max_length=12000, validators=[_required_text])
+    primaryHealthProblem = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+
+    def validate(self, attrs):
+        if attrs["hasDisabilityOrHealthCondition"]:
+            if not attrs.get("primaryHealthProblem", "").strip():
+                raise serializers.ValidationError({
+                    "primaryHealthProblem": "Tell us about the support or adjustments you may need.",
+                })
+            attrs["healthProblemCategories"] = []
+        else:
+            attrs["healthProblemCategories"] = []
+            attrs["primaryHealthProblem"] = ""
+        return attrs
 
 
 class BursaryPathwaySelectionSerializer(serializers.Serializer):
-    preferredPathway = serializers.ChoiceField(choices=BursaryApplication.PreferredPathway.choices)
-    preferredStartMonthOrIntake = serializers.CharField(max_length=120, validators=[_required_text])
-    highestRelevantQualification = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    preferredModules = serializers.ListField(
+        child=serializers.ChoiceField(
+            choices=BursaryApplication.PreferredModule.choices,
+        ),
+        allow_empty=False,
+    )
     professionalMembershipsOrCertifications = serializers.CharField(required=False, allow_blank=True, max_length=8000)
     relevantExperience = serializers.CharField(max_length=12000, validators=[_required_text])
     pathwayFitReason = serializers.CharField(max_length=12000, validators=[_required_text])
 
+    def validate_preferredModules(self, modules):
+        if len(modules) != len(set(modules)):
+            raise serializers.ValidationError("Select each module only once.")
+        return modules
+
 
 class BursaryTermsSerializer(serializers.Serializer):
-    linkedInAwardPostConsent = serializers.BooleanField()
-    secondProgressPostConsent = serializers.BooleanField()
-    tagIpcConsent = serializers.BooleanField()
-    reshareAndQuoteConsent = serializers.BooleanField()
-    professionalHeadshotConsent = serializers.BooleanField()
-    participationConsent = serializers.BooleanField()
-    approvedMediaUseConsent = serializers.BooleanField()
-    reportRestrictionsConsent = serializers.BooleanField()
-    publicityRestrictions = serializers.ListField(
-        child=serializers.ChoiceField(choices=[
-            "none_declared", "safeguarding", "accessibility", "religious",
-            "security", "confidentiality", "employer_related", "other",
-        ]),
-        allow_empty=False,
-        max_length=8,
-    )
-    publicityRestrictionDetails = serializers.CharField(required=False, allow_blank=True, max_length=8000)
-    professionalHeadshotReference = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    mandatoryTermsAccepted = serializers.BooleanField()
     generalMarketingConsent = serializers.BooleanField(default=False, required=False)
 
 
@@ -247,26 +235,26 @@ class BursaryReviewSerializer(serializers.Serializer):
     pathwayTermsDeclaration = serializers.BooleanField()
     processingConsentDeclaration = serializers.BooleanField()
     applicantIdentityDeclaration = serializers.BooleanField()
-    fullLegalName = serializers.CharField(max_length=255, validators=[_required_text])
     dateSigned = serializers.DateField()
-    electronicSignature = serializers.CharField(max_length=255, validators=[_required_text])
-    signaturePlace = serializers.CharField(max_length=180, validators=[_required_text])
-    preferredSecureSubmissionReference = serializers.CharField(required=False, allow_blank=True, max_length=180)
-    additionalReviewInformation = serializers.CharField(required=False, allow_blank=True, max_length=12000)
+    electronicSignature = serializers.CharField(max_length=300000)
 
-    def validate_dateSigned(self, value):
-        if value > timezone.localdate():
-            raise serializers.ValidationError("The date signed cannot be in the future.")
+    def validate_electronicSignature(self, value):
+        prefix = "data:image/png;base64,"
+        if not value.startswith(prefix):
+            raise serializers.ValidationError("Draw your signature before submitting.")
+        try:
+            decoded = base64.b64decode(value[len(prefix):], validate=True)
+        except (binascii.Error, ValueError):
+            raise serializers.ValidationError("Draw your signature before submitting.")
+        if not decoded or len(decoded) > 225000:
+            raise serializers.ValidationError("The drawn signature is invalid or too large.")
         return value
 
 
 PUBLIC_SECTION_FIELD_MAP = {
     "personalDetails": {
-        "title": "title",
-        "membershipReference": "membership_reference",
         "firstName": "first_name",
         "lastName": "last_name",
-        "preferredName": "preferred_name",
         "dateOfBirth": "date_of_birth",
         "email": "email",
         "phoneCountryIso2": "phone_country_iso2",
@@ -300,42 +288,24 @@ PUBLIC_SECTION_FIELD_MAP = {
         "departmentOrBusinessUnit": "department_or_business_unit",
         "employmentStartDate": "employment_start_date",
         "employmentType": "employment_type",
-        "lineManagerName": "line_manager_name",
-        "lineManagerEmail": "line_manager_email",
-        "employerAwareness": "employer_awareness",
         "pathwayRoleSupport": "pathway_role_support",
     },
-    "bursaryRequest": {
-        "quotedPathwayCostGbp": "quoted_pathway_cost_gbp",
-        "bursaryAmountRequestedGbp": "bursary_amount_requested_gbp",
-        "requestedBursaryPercentage": "requested_bursary_percentage",
-        "otherContributionAvailableGbp": "other_contribution_available_gbp",
-        "proceedWithLowerBursary": "proceed_with_lower_bursary",
-        "financialCircumstances": "financial_circumstances",
-        "scholarshipOutcome": "scholarship_outcome",
-        "measurableResult": "measurable_result",
-        "learningApplicationAndContribution": "learning_application_and_contribution",
+    "emergencyInformation": {
+        "emergencyContactFullName": "emergency_contact_full_name",
+        "emergencyContactEmail": "emergency_contact_email",
+        "emergencyContactPhone": "emergency_contact_phone",
+        "hasDisabilityOrHealthCondition": "has_disability_or_health_condition",
+        "healthProblemCategories": "health_problem_categories",
+        "primaryHealthProblem": "primary_health_problem",
     },
     "pathwaySelection": {
-        "preferredPathway": "preferred_pathway",
-        "preferredStartMonthOrIntake": "preferred_start_month_or_intake",
-        "highestRelevantQualification": "highest_relevant_qualification",
+        "preferredModules": "preferred_modules",
         "professionalMembershipsOrCertifications": "professional_memberships_or_certifications",
         "relevantExperience": "relevant_experience",
         "pathwayFitReason": "pathway_fit_reason",
     },
     "termsAndConsents": {
-        "linkedInAwardPostConsent": "linkedin_award_post_consent",
-        "secondProgressPostConsent": "second_progress_post_consent",
-        "tagIpcConsent": "tag_ipc_consent",
-        "reshareAndQuoteConsent": "reshare_and_quote_consent",
-        "professionalHeadshotConsent": "professional_headshot_consent",
-        "participationConsent": "participation_consent",
-        "approvedMediaUseConsent": "approved_media_use_consent",
-        "reportRestrictionsConsent": "report_restrictions_consent",
-        "publicityRestrictions": "publicity_restrictions",
-        "publicityRestrictionDetails": "publicity_restriction_details",
-        "professionalHeadshotReference": "professional_headshot_reference",
+        "mandatoryTermsAccepted": "mandatory_terms_accepted",
         "generalMarketingConsent": "general_marketing_consent",
     },
     "reviewAndDeclaration": {
@@ -349,29 +319,49 @@ PUBLIC_SECTION_FIELD_MAP = {
         "pathwayTermsDeclaration": "pathway_terms_declaration",
         "processingConsentDeclaration": "processing_consent_declaration",
         "applicantIdentityDeclaration": "applicant_identity_declaration",
-        "fullLegalName": "full_legal_name",
         "dateSigned": "date_signed",
         "electronicSignature": "electronic_signature",
-        "signaturePlace": "signature_place",
-        "preferredSecureSubmissionReference": "preferred_secure_submission_reference",
-        "additionalReviewInformation": "additional_review_information",
     },
 }
+
+
+def bursary_application_to_public_values(application):
+    values = {}
+    for section_name, field_map in PUBLIC_SECTION_FIELD_MAP.items():
+        section = {}
+        for public_name, model_name in field_map.items():
+            value = getattr(application, model_name)
+            if isinstance(value, Decimal):
+                value = float(value)
+            elif hasattr(value, "isoformat"):
+                value = value.isoformat()
+            elif value is None and model_name == "employment_start_date":
+                value = ""
+            section[public_name] = value
+        values[section_name] = section
+    values["emergencyInformation"]["identityDocument"] = "existing" if application.identity_document else ""
+    values["emergencyInformation"]["applicantPhoto"] = "existing" if application.applicant_photo else ""
+    return values
 
 
 class BursaryApplicationPublicSerializer(serializers.Serializer):
     personalDetails = BursaryPersonalDetailsSerializer()
     organisationDetails = BursaryOrganisationDetailsSerializer()
-    bursaryRequest = BursaryRequestSerializer()
+    emergencyInformation = BursaryEmergencyInformationSerializer()
     pathwaySelection = BursaryPathwaySelectionSerializer()
     termsAndConsents = BursaryTermsSerializer()
     reviewAndDeclaration = BursaryReviewSerializer()
-
-    mandatory_terms = (
-        "linkedInAwardPostConsent", "secondProgressPostConsent", "tagIpcConsent",
-        "reshareAndQuoteConsent", "professionalHeadshotConsent", "participationConsent",
-        "approvedMediaUseConsent", "reportRestrictionsConsent",
+    identityDocument = serializers.FileField(
+        write_only=True,
+        required=False,
+        validators=[validate_identity_document],
     )
+    applicantPhoto = serializers.ImageField(
+        write_only=True,
+        required=False,
+        validators=[validate_image],
+    )
+
     mandatory_review = (
         "section1Complete", "section2CompleteOrNotApplicable", "section3Complete",
         "section4Complete", "section5Complete", "informationAccurateDeclaration",
@@ -399,9 +389,6 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
                 "departmentOrBusinessUnit": "",
                 "employmentStartDate": None,
                 "employmentType": "",
-                "lineManagerName": "",
-                "lineManagerEmail": "",
-                "employerAwareness": "",
                 "pathwayRoleSupport": "",
             }
         return super().to_internal_value(data)
@@ -412,17 +399,6 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         terms = attrs["termsAndConsents"]
         review = attrs["reviewAndDeclaration"]
         errors = {}
-
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            owns_membership_reference = Application.objects.filter(
-                Q(application_reference__iexact=personal["membershipReference"]),
-                Q(applicant=request.user) | Q(approved_user=request.user),
-            ).exists()
-            if not owns_membership_reference:
-                errors.setdefault("personalDetails", {})["membershipReference"] = (
-                    "This membership reference is not linked to the account currently signed in."
-                )
 
         if personal["currentlyEmployed"]:
             if organisation["organisationNotApplicable"]:
@@ -441,26 +417,19 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
                 "organisationNotApplicable": "Mark organisation details not applicable when you are not employed.",
             }
 
-        missing_terms = {
-            field: "You must accept this mandatory term."
-            for field in self.mandatory_terms
-            if terms.get(field) is not True
-        }
-        if missing_terms:
-            errors.setdefault("termsAndConsents", {}).update(missing_terms)
-
-        restrictions = terms["publicityRestrictions"]
-        if len(restrictions) != len(set(restrictions)):
-            errors.setdefault("termsAndConsents", {})["publicityRestrictions"] = "Select each restriction once."
-        if "none_declared" in restrictions and len(restrictions) > 1:
-            errors.setdefault("termsAndConsents", {})["publicityRestrictions"] = (
-                "None declared cannot be selected with another restriction."
+        if terms.get("mandatoryTermsAccepted") is not True:
+            errors.setdefault("termsAndConsents", {})["mandatoryTermsAccepted"] = (
+                "Accept all mandatory terms before continuing."
             )
-        if any(value != "none_declared" for value in restrictions):
-            if not terms.get("publicityRestrictionDetails", "").strip():
-                errors.setdefault("termsAndConsents", {})["publicityRestrictionDetails"] = (
-                    "Describe the restriction, approval or safe alternative."
-                )
+
+        if not self.instance and not attrs.get("identityDocument"):
+            errors.setdefault("emergencyInformation", {})["identityDocument"] = (
+                "Upload a passport or other proof of identification."
+            )
+        if not self.instance and not attrs.get("applicantPhoto"):
+            errors.setdefault("emergencyInformation", {})["applicantPhoto"] = (
+                "Upload a recent applicant photo."
+            )
 
         missing_review = {
             field: "You must confirm this item."
@@ -469,15 +438,14 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         }
         if missing_review:
             errors.setdefault("reviewAndDeclaration", {}).update(missing_review)
-        if review["dateSigned"] < personal["dateOfBirth"]:
-            errors.setdefault("reviewAndDeclaration", {})["dateSigned"] = "Enter a valid signing date."
-
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
 
     @transaction.atomic
     def create(self, validated_data):
+        identity_document = validated_data.pop("identityDocument", None)
+        applicant_photo = validated_data.pop("applicantPhoto", None)
         model_values = {}
         for section_name, field_map in PUBLIC_SECTION_FIELD_MAP.items():
             section_data = validated_data[section_name]
@@ -488,6 +456,25 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         model_values["submitted_at"] = now
         model_values["terms_accepted_at"] = now
         model_values["declarations_accepted_at"] = now
+        membership_application = self.context.get("membership_application")
+        model_values["membership_reference"] = (
+            membership_application.application_reference if membership_application else ""
+        )
+        model_values["submitted_by"] = self.context.get("submitted_by")
+        model_values.update({
+            "linkedin_award_post_consent": True,
+            "second_progress_post_consent": True,
+            "tag_ipc_consent": True,
+            "reshare_and_quote_consent": True,
+            "professional_headshot_consent": True,
+            "participation_consent": True,
+            "approved_media_use_consent": True,
+            "report_restrictions_consent": True,
+        })
+        if identity_document:
+            model_values["identity_document"] = identity_document
+        if applicant_photo:
+            model_values["applicant_photo"] = applicant_photo
         application = BursaryApplication.objects.create(**model_values)
         BursaryApplicationStatusHistory.objects.create(
             application=application,
@@ -496,6 +483,40 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
             internal_reason="Application submitted.",
         )
         return application
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        changed_by = validated_data.pop("changed_by", None)
+        identity_document = validated_data.pop("identityDocument", None)
+        applicant_photo = validated_data.pop("applicantPhoto", None)
+        previous_status = instance.status
+        model_values = {}
+        for section_name, field_map in PUBLIC_SECTION_FIELD_MAP.items():
+            section_data = validated_data[section_name]
+            for public_name, model_name in field_map.items():
+                if public_name in section_data:
+                    model_values[model_name] = section_data[public_name]
+
+        now = timezone.now()
+        for model_name, value in model_values.items():
+            setattr(instance, model_name, value)
+        if identity_document:
+            instance.identity_document = identity_document
+        if applicant_photo:
+            instance.applicant_photo = applicant_photo
+        instance.status = BursaryApplication.Status.UNDER_REVIEW
+        instance.submitted_at = now
+        instance.terms_accepted_at = now
+        instance.declarations_accepted_at = now
+        instance.save()
+        BursaryApplicationStatusHistory.objects.create(
+            application=instance,
+            previous_status=previous_status,
+            new_status=BursaryApplication.Status.UNDER_REVIEW,
+            changed_by=changed_by,
+            internal_reason="Applicant resubmitted the requested information.",
+        )
+        return instance
 
     def to_representation(self, instance):
         return {
@@ -524,7 +545,7 @@ class BursaryStatusHistorySerializer(serializers.ModelSerializer):
 
 class BursaryApplicationListSerializer(serializers.ModelSerializer):
     applicant_name = serializers.SerializerMethodField()
-    preferred_pathway_label = serializers.CharField(source="get_preferred_pathway_display", read_only=True)
+    preferred_pathway_label = serializers.CharField(source="get_bursary_selection_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
@@ -532,8 +553,7 @@ class BursaryApplicationListSerializer(serializers.ModelSerializer):
         fields = [
             "id", "application_reference", "membership_reference", "applicant_name", "email",
             "mobile_phone_e164", "country", "currently_employed", "organisation_name",
-            "preferred_pathway", "preferred_pathway_label", "bursary_amount_requested_gbp",
-            "requested_bursary_percentage", "status", "status_label", "submitted_at",
+            "preferred_pathway", "preferred_modules", "preferred_pathway_label", "status", "status_label", "submitted_at",
         ]
         read_only_fields = fields
 
@@ -542,10 +562,12 @@ class BursaryApplicationListSerializer(serializers.ModelSerializer):
 
 
 class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
-    preferred_pathway_label = serializers.CharField(source="get_preferred_pathway_display", read_only=True)
+    preferred_pathway_label = serializers.CharField(source="get_bursary_selection_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     assigned_reviewer_name = serializers.SerializerMethodField()
     status_history = BursaryStatusHistorySerializer(many=True, read_only=True)
+    identity_document = serializers.SerializerMethodField()
+    applicant_photo = serializers.SerializerMethodField()
 
     class Meta:
         model = BursaryApplication
@@ -554,6 +576,12 @@ class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
     def get_assigned_reviewer_name(self, application):
         user = application.assigned_reviewer
         return (user.get_full_name().strip() or user.get_username()) if user else ""
+
+    def get_identity_document(self, application):
+        return f"/api/admin/bursary-applications/{application.pk}/identity-document" if application.identity_document else ""
+
+    def get_applicant_photo(self, application):
+        return f"/api/admin/bursary-applications/{application.pk}/applicant-photo" if application.applicant_photo else ""
 
 
 class BursaryApplicationStatusUpdateSerializer(serializers.Serializer):
@@ -568,11 +596,14 @@ class BursaryApplicationStatusUpdateSerializer(serializers.Serializer):
     def validate(self, attrs):
         internal_reason = attrs.get("internal_reason", "").strip()
         if (
-            attrs["status"] == BursaryApplication.Status.REJECTED
+            attrs["status"] in (
+                BursaryApplication.Status.REJECTED,
+                BursaryApplication.Status.NEEDS_INFORMATION,
+            )
             and not internal_reason
         ):
             raise serializers.ValidationError({
-                "internal_reason": "Enter the rejection reason that will be sent to the applicant.",
+                "internal_reason": "Enter the message that will be sent to the applicant.",
             })
         attrs["internal_reason"] = internal_reason
         return attrs

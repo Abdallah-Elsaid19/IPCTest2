@@ -20,7 +20,7 @@ from accounts.graph_mail import (
 )
 from accounts.models import AdminProfile
 from applications.models import Application
-from ipc_backend.validators import normalise_uk_telephone
+from ipc_backend.validators import normalise_international_telephone
 
 
 logger = logging.getLogger(__name__)
@@ -68,10 +68,10 @@ def generate_unique_ipc_email(identifier: str) -> str:
 
 def _create_standard_user(application: Application):
     try:
-        telephone = normalise_uk_telephone(application.phone)
+        telephone = normalise_international_telephone(application.phone)
     except ValidationError as error:
         raise ApprovalConflict(
-            "The application must contain a valid UK telephone number before it can be approved."
+            "The application must contain a valid international telephone number before it can be approved."
         ) from error
     requested_username = application.username.strip().lower()
     if requested_username and User.objects.filter(username__iexact=requested_username).exists():

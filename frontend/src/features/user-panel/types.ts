@@ -111,24 +111,26 @@ export interface ScholarshipApplicationDetail {
     job_title: string;
     industry: string;
   };
-  bursary_request: {
-    quoted_pathway_cost_gbp: string | null;
-    amount_requested_gbp: string;
-    requested_percentage: string;
-    other_contribution_gbp: string | null;
-    proceed_with_lower_bursary: string;
-  };
   pathway: {
     name: string;
     preferred_start: string;
     highest_relevant_qualification: string;
     professional_memberships: string;
   };
+  emergency_contact: {
+    full_name: string;
+    relationship: string;
+    email: string;
+    phone: string;
+  };
+  support_needs: {
+    declared: boolean;
+    categories: string[];
+    primary: string;
+    identity_document_uploaded: boolean;
+    applicant_photo_uploaded: boolean;
+  };
   statements: {
-    financial_circumstances: string;
-    scholarship_outcome: string;
-    measurable_result: string;
-    learning_application_and_contribution: string;
     relevant_experience: string;
     pathway_fit_reason: string;
     additional_review_information: string;

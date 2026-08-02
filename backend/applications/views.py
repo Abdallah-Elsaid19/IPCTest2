@@ -2,6 +2,7 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Count, Window
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from requests import RequestException
@@ -21,6 +22,7 @@ from .serializers import (
     AdminApplicationListSerializer,
     ApplicationSerializer,
     ApplicationStatusUpdateSerializer,
+    USERNAME_PATTERN,
 )
 from .services import (
     ApprovalConflict,
@@ -34,6 +36,28 @@ class ApplicationViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Application.objects.select_related("membership_grade", "form_definition").all()
     serializer_class = ApplicationSerializer
     permission_classes = [permissions.AllowAny]
+
+    @action(detail=False, methods=["get"], url_path="username-availability")
+    def username_availability(self, request):
+        username = str(request.query_params.get("username", "")).strip().lower()
+        if not USERNAME_PATTERN.fullmatch(username):
+            return Response({
+                "available": False,
+                "message": (
+                    "Use 3-30 lowercase letters, numbers, dots, underscores or hyphens; "
+                    "start and end with a letter or number."
+                ),
+            })
+
+        user_model = get_user_model()
+        reserved = (
+            Application.objects.filter(username__iexact=username).exists()
+            or user_model.objects.filter(username__iexact=username).exists()
+        )
+        return Response({
+            "available": not reserved,
+            "message": "Choose another username; this one is already reserved." if reserved else "Username is available.",
+        })
 
 
 class ApplicationPagination(PageNumberPagination):

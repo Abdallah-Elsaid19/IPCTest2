@@ -2,6 +2,29 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { isManagedItemActive, useManagedSection } from "@/components/content/ManagedContentProvider";
 
+const disciplineBackgroundImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/c41914b6eabf473eb69f27db8a0ae2cd.png";
+
+function splitDisciplineLabel(label: string) {
+  if (label.length <= 16) return [label];
+
+  const words = label.trim().split(/\s+/);
+  if (words.length < 2) return [label];
+
+  let splitAt = 1;
+  let smallestDifference = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < words.length; index += 1) {
+    const firstLineLength = words.slice(0, index).join(" ").length;
+    const secondLineLength = words.slice(index).join(" ").length;
+    const difference = Math.abs(firstLineLength - secondLineLength);
+    if (difference < smallestDifference) {
+      smallestDifference = difference;
+      splitAt = index;
+    }
+  }
+
+  return [words.slice(0, splitAt).join(" "), words.slice(splitAt).join(" ")];
+}
+
 const disciplines = [
   {
     id: "d1",
@@ -96,6 +119,12 @@ export default function DisciplineSystem() {
 
   return (
     <section ref={ref} className="relative bg-background-950 section-padding overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${disciplineBackgroundImage})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-background-950/80" aria-hidden="true" />
       {/* ── Dot grid ── */}
       <div className="absolute inset-0 dot-grid opacity-[0.05]" />
 
@@ -129,10 +158,10 @@ export default function DisciplineSystem() {
           <span className="flex-1 h-px bg-gradient-to-r from-primary-500/40 to-transparent" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-0 items-center">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
           {/* ── Left: Radial Diagram ── */}
-          <div className="lg:col-span-6 flex justify-center">
-            <div className="relative w-full max-w-[520px] aspect-square">
+          <div className="flex justify-center lg:col-span-7">
+            <div className="relative aspect-square w-full max-w-[660px]">
               <svg viewBox="0 0 520 520" className="w-full h-full">
                 {/* ── Outer decorative rings ── */}
                 <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="oklch(0.685 0.132 72 / 0.1)" strokeWidth="0.5" />
@@ -222,19 +251,28 @@ export default function DisciplineSystem() {
                       {(() => {
                         const midAngle = (d.angle + endAngle) / 2;
                         const a = (midAngle - 90) * (Math.PI / 180);
-                        const labelR = (innerR + midR) / 2;
+                        const labelR = (midR + outerR) / 2;
                         const lx = cx + labelR * Math.cos(a);
                         const ly = cy + labelR * Math.sin(a);
+                        const labelLines = splitDisciplineLabel(d.label);
                         return (
                           <text
                             x={lx}
                             y={ly}
                             textAnchor="middle"
                             dominantBaseline="central"
-                            className={`text-[7px] font-semibold uppercase tracking-[0.12em] fill-background-100 transition-all duration-400 ${isActive ? "text-[8px]" : ""}`}
+                            className={`text-[7.5px] font-semibold uppercase fill-background-100 transition-all duration-400 ${isActive ? "text-[8px]" : ""}`}
                             style={{ fontFamily: "var(--font-label)" }}
                           >
-                            {d.label}
+                            {labelLines.map((line, lineIndex) => (
+                              <tspan
+                                key={line}
+                                x={lx}
+                                dy={lineIndex === 0 && labelLines.length > 1 ? "-0.55em" : lineIndex === 0 ? 0 : "1.2em"}
+                              >
+                                {line}
+                              </tspan>
+                            ))}
                           </text>
                         );
                       })()}
@@ -271,7 +309,7 @@ export default function DisciplineSystem() {
           </div>
 
           {/* ── Right: Context ── */}
-          <div className="lg:col-span-5 lg:col-start-8">
+          <div className="lg:col-span-4 lg:col-start-9">
             <h3 className="font-heading text-[clamp(1.5rem,3vw,2.5rem)] font-extrabold text-background-50 leading-[1.1] tracking-[-0.02em] mb-6">
               {content.title}
             </h3>

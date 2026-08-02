@@ -9,6 +9,10 @@ export const ACCEPTED_DOCUMENT_TYPES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
+export const ACCEPTED_IDENTITY_DOCUMENT_TYPES = [
+  ...ACCEPTED_DOCUMENT_TYPES,
+  ...ACCEPTED_IMAGE_TYPES,
+];
 
 function firstFile(value: unknown) {
   if (value instanceof File) return value;
@@ -25,6 +29,14 @@ export const requiredDocumentSchema = z
   .custom<FileList | File>((value) => Boolean(firstFile(value)), "Please upload the required file.")
   .refine((value) => (firstFile(value)?.size || 0) <= MAX_DOCUMENT_SIZE, "File must be less than 10MB.")
   .refine((value) => ACCEPTED_DOCUMENT_TYPES.includes(firstFile(value)?.type || ""), "Only PDF, DOC, and DOCX files are allowed.");
+
+export const requiredIdentityDocumentSchema = z
+  .custom<FileList | File>((value) => Boolean(firstFile(value)), "Upload a passport or other proof of identification.")
+  .refine((value) => (firstFile(value)?.size || 0) <= MAX_DOCUMENT_SIZE, "File must be less than 10MB.")
+  .refine(
+    (value) => ACCEPTED_IDENTITY_DOCUMENT_TYPES.includes(firstFile(value)?.type || ""),
+    "Only PDF, DOC, DOCX, JPG, JPEG, PNG and WebP files are allowed.",
+  );
 
 export function getSelectedFile(value: FileList | File | undefined) {
   return firstFile(value);

@@ -217,8 +217,16 @@ export default function DirectoryPage({ kind }: { kind: keyof typeof config }) {
                       {application.submitted_at
                         ? `Submitted ${new Date(application.submitted_at).toLocaleDateString("en-GB")}`
                         : `Updated ${new Date(application.updated_at).toLocaleDateString("en-GB")}`}
-                    </span>
+                      </span>
                   </div>
+                  {application.source === "bursary" && application.status === "needs_information" && (
+                    <Link
+                      to="/bursary-scholarship-application"
+                      className="btn-primary mt-4 w-full rounded-xl text-center"
+                    >
+                      Update application
+                    </Link>
+                  )}
                 </Card>
               ))}
             </div>
@@ -227,7 +235,7 @@ export default function DirectoryPage({ kind }: { kind: keyof typeof config }) {
               <Empty
                 title={query.trim() ? "No matching applications" : "No applications yet"}
                 text={query.trim()
-                  ? "Try searching by application reference, pathway or status."
+                  ? "Try searching by application reference, module or status."
                   : "Your submitted IPC bursary and scholarship applications will appear here."}
               />
             </div>
@@ -366,9 +374,18 @@ function ApplicationDetailsModal({
                 <Status value={detail.status} />
               </div>
 
+              {detail.status === "needs_information" && (
+                <Link
+                  to="/bursary-scholarship-application"
+                  onClick={onClose}
+                  className="btn-primary w-full rounded-xl text-center sm:w-auto"
+                >
+                  Update requested information
+                </Link>
+              )}
+
               <DetailSection title="Application overview">
-                <Detail label="Pathway" value={detail.pathway.name} />
-                <Detail label="Preferred start" value={detail.pathway.preferred_start} />
+                <Detail label="Modules" value={detail.pathway.name} />
                 <Detail label="Membership reference" value={detail.membership_reference} mono />
                 <Detail label="Submitted" value={formatDetailDate(detail.submitted_at)} />
               </DetailSection>
@@ -382,14 +399,6 @@ function ApplicationDetailsModal({
                 <Detail label="Country" value={detail.applicant.country} />
               </DetailSection>
 
-              <DetailSection title="Bursary request">
-                <Detail label="Pathway cost" value={formatGbp(detail.bursary_request.quoted_pathway_cost_gbp)} />
-                <Detail label="Amount requested" value={formatGbp(detail.bursary_request.amount_requested_gbp)} />
-                <Detail label="Requested percentage" value={`${detail.bursary_request.requested_percentage}%`} />
-                <Detail label="Other contribution" value={formatGbp(detail.bursary_request.other_contribution_gbp)} />
-                <Detail label="Lower bursary response" value={detail.bursary_request.proceed_with_lower_bursary} />
-              </DetailSection>
-
               {detail.organisation.applicable && (
                 <DetailSection title="Organisation">
                   <Detail label="Organisation" value={detail.organisation.name} />
@@ -398,22 +407,30 @@ function ApplicationDetailsModal({
                 </DetailSection>
               )}
 
-              <DetailSection title="Pathway background">
-                <Detail label="Highest relevant qualification" value={detail.pathway.highest_relevant_qualification} />
+              <DetailSection title="Module background">
                 <Detail label="Professional memberships or certifications" value={detail.pathway.professional_memberships} />
+              </DetailSection>
+
+              <DetailSection title="Emergency contact">
+                <Detail label="Full name" value={detail.emergency_contact.full_name} />
+                <Detail label="Relationship" value={detail.emergency_contact.relationship} />
+                <Detail label="Email" value={detail.emergency_contact.email} />
+                <Detail label="Phone" value={detail.emergency_contact.phone} />
+              </DetailSection>
+
+              <DetailSection title="Identification and support information">
+                <Detail label="Support need declared" value={detail.support_needs.declared ? "Yes" : "No"} />
+                <Detail label="Primary support need" value={detail.support_needs.primary} />
+                <Detail label="Identity evidence" value={detail.support_needs.identity_document_uploaded ? "Uploaded" : "Not uploaded"} />
+                <Detail label="Applicant photo" value={detail.support_needs.applicant_photo_uploaded ? "Uploaded" : "Not uploaded"} />
               </DetailSection>
 
               <section>
                 <h3 className="text-lg font-black text-[#171411]">Application statements</h3>
                 <div className="mt-3 space-y-3">
                   {[
-                    ["Financial circumstances", detail.statements.financial_circumstances],
-                    ["Scholarship outcome", detail.statements.scholarship_outcome],
-                    ["Measurable result", detail.statements.measurable_result],
-                    ["Learning application and contribution", detail.statements.learning_application_and_contribution],
                     ["Relevant experience", detail.statements.relevant_experience],
-                    ["Why this pathway fits", detail.statements.pathway_fit_reason],
-                    ["Additional information", detail.statements.additional_review_information],
+                    ["Why the applicant wants an IPC bursary", detail.statements.pathway_fit_reason],
                   ].filter(([, value]) => value).map(([label, value]) => (
                     <div key={label} className="rounded-xl border border-[#E2D8CC] bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-[#887C70]">{label}</p>
@@ -455,12 +472,4 @@ function formatDetailDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function formatGbp(value: string | null) {
-  if (!value) return "Not provided";
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-  }).format(Number(value));
 }

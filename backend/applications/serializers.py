@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-from ipc_backend.validators import clean_text, normalise_uk_telephone, validate_upload
+from ipc_backend.validators import clean_text, normalise_international_telephone, validate_upload
 from memberships.models import MembershipGrade
 
 from .models import (
@@ -127,7 +127,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
     def validate_phone(self, value):
         try:
-            return normalise_uk_telephone(value)
+            return normalise_international_telephone(value)
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.messages) from error
 

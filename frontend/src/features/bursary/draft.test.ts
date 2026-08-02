@@ -16,8 +16,8 @@ describe("bursary draft persistence", () => {
           firstName: "Abdallah",
           email: "abdallah@example.com",
         },
-        bursaryRequest: {
-          bursaryAmountRequestedGbp: 3000,
+        emergencyInformation: {
+          emergencyContactFullName: "Amina Elsaid",
         },
       },
     }), now);
@@ -26,7 +26,7 @@ describe("bursary draft persistence", () => {
     expect(draft?.completedSteps).toEqual([0, 1, 2]);
     expect(draft?.values.personalDetails.firstName).toBe("Abdallah");
     expect(draft?.values.personalDetails.lastName).toBe("");
-    expect(draft?.values.bursaryRequest.bursaryAmountRequestedGbp).toBe(3000);
+    expect(draft?.values.emergencyInformation.emergencyContactFullName).toBe("Amina Elsaid");
   });
 
   it("rejects expired and corrupt drafts", () => {

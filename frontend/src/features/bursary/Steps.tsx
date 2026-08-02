@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ExternalLink } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, FileCheck, Upload } from "lucide-react";
 import {
   parsePhoneNumberFromString,
   type CountryCode,
@@ -11,7 +11,6 @@ import {
   Callout,
   ConsentCheckbox,
   FieldShell,
-  NumberField,
   RadioGroup,
   SelectField,
   StepHeading,
@@ -19,12 +18,16 @@ import {
   TextField,
 } from "./FormFields";
 import { countriesByIso2, phoneCountries, residentialCountries } from "./countries";
-import { bursaryApi, pathwayLabels } from "./api";
-import { bursaryPathways } from "./pathways";
+import { getSelectedFile } from "@/lib/validations/uploadSchema";
+
+import { moduleLabels } from "./api";
+import { bursaryModules } from "./pathways";
 import {
   defaultBursaryApplicationValues,
+  latestEligibleBirthDate,
   type BursaryApplicationFormValues,
 } from "./schema";
+import { SignaturePad } from "./SignaturePad";
 
 const countryOptions = residentialCountries.map(({ iso2, name }) => ({ value: name, label: name, iso2 }));
 
@@ -131,7 +134,7 @@ function PhoneFields() {
             onClick={() => setOpen((value) => !value)}
             aria-haspopup="listbox"
             aria-expanded={open}
-            className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3 text-left text-sm outline-none focus:ring-2 focus:ring-primary-500/20 ${countryError ? "border-red-500" : "border-background-300"}`}
+            className={`flex min-h-12 w-full items-center justify-between gap-3 border bg-white px-4 py-3 text-left text-sm outline-none focus:ring-2 focus:ring-primary-500/20 ${countryError ? "border-red-500" : "border-background-300"}`}
           >
             {selected ? (
               <span className="flex min-w-0 items-center gap-2.5">
@@ -143,7 +146,7 @@ function PhoneFields() {
             <ChevronDown size={17} className="shrink-0" />
           </button>
           {open && (
-            <div className="absolute z-40 mt-2 w-full min-w-[18rem] overflow-hidden rounded-xl border border-background-300 bg-white shadow-xl">
+            <div className="absolute z-40 mt-2 w-full min-w-[18rem] overflow-hidden border border-background-300 bg-white shadow-xl">
               <input
                 id="bursary-phone-country-search"
                 type="search"
@@ -160,7 +163,7 @@ function PhoneFields() {
                     <button
                       type="button"
                       onClick={() => selectCountry(country)}
-                      className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-primary-50 focus:bg-primary-50 focus:outline-none"
+                      className="flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-primary-50 focus:bg-primary-50 focus:outline-none"
                     >
                       <CountryFlag iso2={country.iso2} />
                       <span className="min-w-0 flex-1 truncate">{country.name}</span>
@@ -191,7 +194,7 @@ function PhoneFields() {
               required
               aria-invalid={Boolean(error)}
               aria-describedby={describedBy}
-              className={`min-h-12 w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 ${error ? "border-red-500" : "border-background-300"}`}
+              className={`min-h-12 w-full border bg-white px-4 py-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 ${error ? "border-red-500" : "border-background-300"}`}
               {...register("personalDetails.phoneNationalNumber", {
                 onChange: (event) => {
                   event.target.value = event.target.value.replace(/[^\d+().\s-]/g, "");
@@ -212,18 +215,8 @@ function PhoneFields() {
 }
 
 export function PersonalDetailsStep() {
-  const {
-    watch,
-    setValue,
-    setError,
-    clearErrors,
-    getFieldState,
-  } = useFormContext<BursaryApplicationFormValues>();
+  const { watch, setValue } = useFormContext<BursaryApplicationFormValues>();
   const employed = watch("personalDetails.currentlyEmployed");
-  const membershipReference = watch("personalDetails.membershipReference");
-  const [membershipReferenceStatus, setMembershipReferenceStatus] = useState<
-    "idle" | "checking" | "verified"
-  >("idle");
 
   useEffect(() => {
     if (employed === false) {
@@ -237,54 +230,6 @@ export function PersonalDetailsStep() {
     }
   }, [employed, setValue]);
 
-  useEffect(() => {
-    const reference = membershipReference.trim();
-    const fieldName = "personalDetails.membershipReference" as const;
-    const currentError = getFieldState(fieldName).error;
-    if (currentError?.type === "membershipReferenceOwnership") {
-      clearErrors(fieldName);
-    }
-    if (!reference) {
-      setMembershipReferenceStatus("idle");
-      return;
-    }
-
-    const controller = new AbortController();
-    setMembershipReferenceStatus("checking");
-    const timer = window.setTimeout(async () => {
-      try {
-        const result = await bursaryApi.validateMembershipReference(reference, controller.signal);
-        if (controller.signal.aborted) return;
-        if (!result.authenticated) {
-          setMembershipReferenceStatus("idle");
-          return;
-        }
-        if (result.valid) {
-          clearErrors(fieldName);
-          setMembershipReferenceStatus("verified");
-        } else {
-          setMembershipReferenceStatus("idle");
-          setError(fieldName, {
-            type: "membershipReferenceOwnership",
-            message: result.message || "This membership reference is not linked to the account currently signed in.",
-          });
-        }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setMembershipReferenceStatus("idle");
-        setError(fieldName, {
-          type: "membershipReferenceOwnership",
-          message: "We could not verify this membership reference. Please try again.",
-        });
-      }
-    }, 450);
-
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [clearErrors, getFieldState, membershipReference, setError]);
-
   return (
     <>
       <StepHeading
@@ -294,25 +239,9 @@ export function PersonalDetailsStep() {
         <Callout><strong>Purpose of this form.</strong> This learner-facing application enables IPC to assess a request for a bursary and scholarship place. It is not an employer agreement. Save a completed copy for your records before submission.</Callout>
       </StepHeading>
       <div className="grid min-w-0 gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <TextField
-          name="personalDetails.membershipReference"
-          label="Membership reference"
-          required
-          wide
-          placeholder="For example, IPC-XXXXXXXXXX"
-          helper={
-            membershipReferenceStatus === "checking"
-              ? "Checking this reference against your signed-in account..."
-              : membershipReferenceStatus === "verified"
-                ? "Verified — this membership reference belongs to your account."
-                : "Enter the reference from your IPC membership record. It must belong to the account currently signed in."
-          }
-        />
-        <TextField name="personalDetails.title" label="Title" autoComplete="honorific-prefix" />
-        <TextField name="personalDetails.preferredName" label="Preferred name" autoComplete="nickname" />
         <TextField name="personalDetails.firstName" label="First name" required autoComplete="given-name" />
         <TextField name="personalDetails.lastName" label="Last name" required autoComplete="family-name" />
-        <TextField name="personalDetails.dateOfBirth" label="Date of birth" type="date" required helper="Use DD/MM/YYYY when entering or reviewing this date." autoComplete="bday" />
+        <TextField name="personalDetails.dateOfBirth" label="Date of birth" type="date" required max={latestEligibleBirthDate()} helper="You must be at least 20 years old to apply." autoComplete="bday" />
         <TextField name="personalDetails.email" label="Email address" type="email" inputMode="email" required autoComplete="email" />
         <PhoneFields />
         <TextField name="personalDetails.homeAddressLine1" label="Home address line 1" required autoComplete="address-line1" />
@@ -333,8 +262,8 @@ export function PersonalDetailsStep() {
           legend="Are you currently employed by an organisation?"
           required
           options={[
-            { value: true, label: "Yes — complete Section 2" },
-            { value: false, label: "No — Section 2 is not applicable" },
+            { value: true, label: "Yes" },
+            { value: false, label: "No" },
           ]}
         />
         <RadioGroup
@@ -366,7 +295,7 @@ export function OrganisationDetailsStep() {
         <Callout><strong>Learner-facing section.</strong> The details below help IPC understand the professional context for your application. This form does not request apprenticeship levy funding, Department for Education funding or an employer payment commitment.</Callout>
       </StepHeading>
       {!employed && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-primary-300 bg-primary-50 p-5" role="status">
+        <div className="mb-6 flex items-start gap-3 border border-primary-300 bg-primary-50 p-5" role="status">
           <Check className="mt-0.5 shrink-0 text-primary-800" size={20} />
           <div>
             <p className="font-semibold text-background-950">Not applicable — you indicated that you are not currently employed.</p>
@@ -393,89 +322,140 @@ export function OrganisationDetailsStep() {
         <TextField name="organisationDetails.departmentOrBusinessUnit" label="Department or business unit" />
         <TextField name="organisationDetails.employmentStartDate" label="Employment start date" type="date" />
         <SelectField name="organisationDetails.employmentType" label="Employment type" options={["Full time", "Part time", "Contract", "Temporary", "Other"].map((value) => ({ value, label: value }))} />
-        <TextField name="organisationDetails.lineManagerName" label="Line manager name" />
-        <TextField name="organisationDetails.lineManagerEmail" label="Line manager email" type="email" inputMode="email" />
-        <RadioGroup
-          name="organisationDetails.employerAwareness"
-          legend="Does your employer know that you are applying?"
-          options={[
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
-            { value: "discuss_later", label: "Prefer to discuss later" },
-          ]}
-        />
-        <TextareaField name="organisationDetails.pathwayRoleSupport" label="How will the selected pathway support your current role and organisation?" />
+        <TextareaField name="organisationDetails.pathwayRoleSupport" label="How will the selected module support your current role and organisation?" />
       </div>}
     </>
   );
 }
 
-export function BursaryRequestStep() {
+function ApplicationUploadField({
+  name,
+  label,
+  accept,
+  helper,
+}: {
+  name: "emergencyInformation.identityDocument" | "emergencyInformation.applicantPhoto";
+  label: string;
+  accept: string;
+  helper: string;
+}) {
+  const { setValue, watch, formState: { errors } } = useFormContext<BursaryApplicationFormValues>();
+  const value = watch(name);
+  const selectedFile = typeof value === "string" ? undefined : getSelectedFile(value);
+  const fieldError = name.endsWith("identityDocument")
+    ? errors.emergencyInformation?.identityDocument?.message
+    : errors.emergencyInformation?.applicantPhoto?.message;
+
+  return (
+    <FieldShell name={name} label={label} required helper={helper} wide>
+      {({ id, describedBy }) => (
+        <label htmlFor={id} className={`flex min-h-28 cursor-pointer items-center justify-center gap-3 border border-dashed bg-white px-5 py-6 text-center transition hover:border-primary-600 hover:bg-primary-50 ${fieldError ? "border-red-500" : "border-background-400"}`}>
+          <input
+            id={id}
+            type="file"
+            accept={accept}
+            aria-describedby={describedBy}
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.item(0);
+              if (file) setValue(name, file, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+            }}
+          />
+          {value === "existing" || selectedFile ? <FileCheck size={22} className="shrink-0 text-emerald-700" /> : <Upload size={22} className="shrink-0 text-primary-800" />}
+          <span>
+            <strong className="block text-sm text-background-950">
+              {selectedFile?.name || (value === "existing" ? "File already provided" : "Add evidence")}
+            </strong>
+            <span className="mt-1 block text-xs text-foreground-500">Choose a file from your device</span>
+          </span>
+        </label>
+      )}
+    </FieldShell>
+  );
+}
+
+export function EmergencyInformationStep() {
+  const { watch, setValue } = useFormContext<BursaryApplicationFormValues>();
+  const hasSupportNeed = watch("emergencyInformation.hasDisabilityOrHealthCondition");
+
+  useEffect(() => {
+    if (hasSupportNeed === false) {
+      setValue("emergencyInformation.healthProblemCategories", [], { shouldDirty: true, shouldValidate: false });
+      setValue("emergencyInformation.primaryHealthProblem", "", { shouldDirty: true, shouldValidate: false });
+    }
+  }, [hasSupportNeed, setValue]);
+
   return (
     <>
       <StepHeading
-        title="IPC Bursary Request and Scholarship Outcomes"
-        intro="Explain the IPC bursary support you are requesting and the outcomes you intend to achieve through the scholarship. This section is for an IPC bursary only."
-      >
-        <Callout><strong>IPC bursary only.</strong> This section is not an employer funding agreement, apprenticeship levy request, Department for Education funding application or student finance application. An application does not guarantee an award, and IPC may offer a different amount or place conditions on an award.</Callout>
-      </StepHeading>
+        title="Emergency Contact and Identification"
+        intro="Provide a trusted emergency contact, proof of identity and any support information that will help IPC look after you during the programme."
+      />
       <div className="grid gap-5 md:grid-cols-2">
-        <NumberField name="bursaryRequest.quotedPathwayCostGbp" label="Quoted pathway cost (GBP), if known" />
-        <NumberField name="bursaryRequest.bursaryAmountRequestedGbp" label="IPC bursary amount requested (GBP)" required />
-        <NumberField name="bursaryRequest.requestedBursaryPercentage" label="Requested bursary as % of eligible cost" required helper="Enter a percentage, for example 50%." />
-        <NumberField name="bursaryRequest.otherContributionAvailableGbp" label="Other contribution available (GBP)" helper="Personal, employer, sponsor or other confirmed support." />
-        <RadioGroup
-          name="bursaryRequest.proceedWithLowerBursary"
-          legend="Could you proceed if IPC offers a lower bursary?"
-          required
-          options={[
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
-            { value: "discuss", label: "I would need to discuss the offer" },
-          ]}
+        <TextField name="emergencyInformation.emergencyContactFullName" label="Emergency contact full name" required autoComplete="name" />
+        <TextField name="emergencyInformation.emergencyContactEmail" label="Emergency contact email address" type="email" inputMode="email" required autoComplete="email" />
+        <TextField name="emergencyInformation.emergencyContactPhone" label="Emergency contact phone number" type="tel" inputMode="tel" required autoComplete="tel" />
+        <ApplicationUploadField
+          name="emergencyInformation.identityDocument"
+          label="Passport or proof of identification"
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+          helper="Upload a clear passport or other government-issued proof of identity. PDF, DOC, DOCX, JPG, PNG or WebP; maximum 10MB."
         />
-        <TextareaField name="bursaryRequest.financialCircumstances" label="Financial circumstances and why IPC support is needed" required />
-        <TextareaField name="bursaryRequest.scholarshipOutcome" label="What professional, academic or community outcome will this scholarship enable?" required />
-        <TextareaField name="bursaryRequest.measurableResult" label="What measurable result do you aim to achieve during the pathway?" required />
-        <TextareaField name="bursaryRequest.learningApplicationAndContribution" label="How will you apply the learning within 3 to 12 months and contribute to the IPC community or profession?" required />
+        <ApplicationUploadField
+          name="emergencyInformation.applicantPhoto"
+          label="Your photo"
+          accept="image/jpeg,image/png,image/webp"
+          helper="Upload a clear, recent photo of yourself. JPG, PNG or WebP; maximum 2MB."
+        />
+      </div>
+      <div className="mt-8 border border-background-300 bg-background-100 p-5">
+        <RadioGroup
+          name="emergencyInformation.hasDisabilityOrHealthCondition"
+          legend="Do you consider yourself to have a long-term disability, health problem or learning difficulty?"
+          required
+          options={[{ value: true, label: "Yes" }, { value: false, label: "No" }]}
+        />
+        {hasSupportNeed === true && (
+          <div className="mt-6">
+            <TextareaField
+              name="emergencyInformation.primaryHealthProblem"
+              label="If you require any additional support in order for you to successfully complete your course, please specify the details below"
+              required
+              rows={4}
+              helper="Share only what you are comfortable providing and what IPC needs to support your participation."
+            />
+          </div>
+        )}
       </div>
     </>
   );
 }
 
-export function PathwaySelectionStep() {
+export function ModuleSelectionStep() {
   const { register, watch, formState: { errors } } = useFormContext<BursaryApplicationFormValues>();
-  const selected = watch("pathwaySelection.preferredPathway");
-  const error = errors.pathwaySelection?.preferredPathway?.message;
+  const selected = watch("pathwaySelection.preferredModules") || [];
+  const error = errors.pathwaySelection?.preferredModules?.message;
   return (
     <>
       <StepHeading
-        title="Pathway Selection"
-        intro="Select one preferred pathway. Final confirmation is subject to eligibility, bursary assessment, cohort capacity and an agreed learning plan."
+        title="Module Selection"
+        intro="Select one or more preferred modules. Final confirmation is subject to eligibility, bursary assessment, cohort capacity and an agreed learning plan."
       />
       <fieldset>
-        <legend className="mb-4 text-sm font-semibold text-background-950">Preferred pathway <span className="text-primary-700">*</span></legend>
+        <legend className="mb-4 text-sm font-semibold text-background-950">Preferred modules <span className="text-primary-700">*</span></legend>
         <div className="grid gap-4 lg:grid-cols-2">
-          {bursaryPathways.map((pathway) => (
-            <label key={pathway.value} className={`relative flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition hover:border-primary-500 ${selected === pathway.value ? "border-primary-600 bg-primary-50 shadow-sm" : "border-background-300 bg-white"}`}>
+          {bursaryModules.map((module) => (
+            <label key={module.value} className={`relative flex cursor-pointer items-start gap-4 border p-5 transition hover:border-primary-500 ${selected.includes(module.value) ? "border-primary-600 bg-primary-50 shadow-sm" : "border-background-300 bg-white"}`}>
               <input
-                type="radio"
-                value={pathway.value}
+                type="checkbox"
+                value={module.value}
                 className="mt-1 h-5 w-5 shrink-0 accent-[oklch(var(--primary-600))]"
-                {...register("pathwaySelection.preferredPathway")}
+                {...register("pathwaySelection.preferredModules")}
               />
               <span>
-                <strong className="block text-lg text-background-950">{pathway.title}</strong>
-                <span className="mt-1 block text-xs font-semibold uppercase tracking-wide text-primary-800">{pathway.meta}</span>
-                {pathway.components.length > 0 && (
-                  <span className="mt-4 block">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-foreground-500">Mandatory core components</span>
-                    <span className="mt-2 block space-y-1 text-sm text-foreground-700">
-                      {pathway.components.map((component) => <span key={component} className="block">• {component}</span>)}
-                    </span>
-                  </span>
-                )}
-                <span className="mt-4 block text-sm leading-6 text-foreground-600">{pathway.description}</span>
+                <strong className="block text-lg text-background-950">{module.title}</strong>
+                <span className="mt-1 block text-xs font-semibold uppercase tracking-wide text-primary-800">{module.meta}</span>
+                <span className="mt-4 block text-sm leading-6 text-foreground-600">{module.description}</span>
               </span>
             </label>
           ))}
@@ -483,101 +463,33 @@ export function PathwaySelectionStep() {
         {error && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>}
       </fieldset>
       <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <TextField name="pathwaySelection.preferredStartMonthOrIntake" label="Preferred start month or intake" required />
-        <TextField name="pathwaySelection.highestRelevantQualification" label="Highest relevant qualification" />
         <TextareaField name="pathwaySelection.professionalMembershipsOrCertifications" label="Relevant professional memberships or certifications" rows={3} />
         <TextareaField name="pathwaySelection.relevantExperience" label="Relevant project, programme, PMO or project controls experience" required />
-        <TextareaField name="pathwaySelection.pathwayFitReason" label="Why is this pathway the right fit for your goals?" required />
+        <TextareaField name="pathwaySelection.pathwayFitReason" label="Why do you want to receive an IPC bursary?" required />
       </div>
     </>
   );
 }
 
-const mandatoryConsents = [
-  ["linkedInAwardPostConsent", "LinkedIn award post within 14 days", "I will publish a LinkedIn post announcing the award within 14 calendar days of written award confirmation."],
-  ["secondProgressPostConsent", "Second progress or completion post", "I will publish a second LinkedIn post during the pathway or on completion to share progress, outcomes or completion."],
-  ["tagIpcConsent", "Tag the Institute of Project Controls", "I will tag the Institute of Project Controls in both required LinkedIn posts."],
-  ["reshareAndQuoteConsent", "Reshare and quote", "I allow IPC to reshare, quote and reference the required posts, with reasonable editing for length while preserving their meaning."],
-  ["professionalHeadshotConsent", "Professional headshot", "I will provide a current professional headshot suitable for approved IPC communications."],
-  ["participationConsent", "Participation", "I will participate, where reasonably requested and agreed, in approved photos, videos, interviews, testimonials and case studies connected to the bursary or scholarship."],
-  ["approvedMediaUseConsent", "Approved use of name, image, video and story", "I permit IPC to use my approved name, image, video and learner story on its website, social media, digital advertising, email, brochures, events, reports, publications and sponsor-impact materials."],
-  ["reportRestrictionsConsent", "Report restrictions promptly", "I will tell IPC about any safeguarding, accessibility, religious, security, confidentiality or employer-related publicity restriction, required approval or change in circumstances."],
-] as const;
-
-const restrictionOptions = [
-  ["none_declared", "None declared"],
-  ["safeguarding", "Safeguarding"],
-  ["accessibility", "Accessibility"],
-  ["religious", "Religious"],
-  ["security", "Security"],
-  ["confidentiality", "Confidentiality"],
-  ["employer_related", "Employer-related"],
-  ["other", "Other"],
-] as const;
+const mandatoryConsentCopy = "I have reviewed and accept the bursary participation terms: sharing an award and progress update where appropriate, mentioning IPC, allowing IPC to reshare approved content, providing a professional photo, taking part only where mutually agreed, permitting agreed use of approved programme content, and promptly telling IPC about any privacy, accessibility, employer or other adjustment I may need.";
 
 export function TermsAndConsentsStep() {
-  const { watch, setValue, formState: { errors } } = useFormContext<BursaryApplicationFormValues>();
-  const selected = watch("termsAndConsents.publicityRestrictions");
-  const restrictionError = errors.termsAndConsents?.publicityRestrictions?.message;
-
-  const toggleRestriction = (value: (typeof restrictionOptions)[number][0], checked: boolean) => {
-    if (value === "none_declared" && checked) {
-      setValue("termsAndConsents.publicityRestrictions", ["none_declared"], { shouldDirty: true, shouldValidate: true });
-      return;
-    }
-    const withoutNone = selected.filter((item) => item !== "none_declared" && item !== value);
-    const next = checked ? [...withoutNone, value] : withoutNone;
-    setValue("termsAndConsents.publicityRestrictions", next.length ? next : ["none_declared"], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
   return (
     <>
       <StepHeading
         title="Mandatory Terms and Consents"
-        intro="The mandatory acknowledgements below are conditions of an IPC bursary or scholarship award. Tick every mandatory box. The newsletter choice is optional."
+        intro="Please review these practical commitments. They help IPC support and celebrate award recipients clearly and respectfully. The newsletter choice is optional."
       >
-        <Callout><strong>Safe and approved publicity.</strong> IPC will consider restrictions recorded on this page and will not knowingly require disclosure of confidential, secure, safeguarding-sensitive or employer-protected information. Where possible, IPC may agree a safe alternative that still demonstrates scholarship impact.</Callout>
+        <Callout><strong>Your comfort matters.</strong> Any participation or content use will be handled in an agreed context. If you need a privacy, accessibility, employer or other adjustment, tell IPC so a suitable approach can be agreed with you.</Callout>
       </StepHeading>
-      <fieldset>
-        <legend className="sr-only">Eight mandatory bursary terms</legend>
-        <div className="space-y-3">
-          {mandatoryConsents.map(([name, title, copy]) => (
-            <ConsentCheckbox key={name} name={`termsAndConsents.${name}`} title={title} copy={copy} />
-          ))}
-        </div>
-      </fieldset>
-      <fieldset className="mt-8 rounded-2xl border border-background-300 bg-background-100 p-5">
-        <legend className="px-2 text-base font-semibold text-background-950">Publicity restriction or reasonable-adjustment record</legend>
-        <p className="mb-4 text-sm leading-6 text-foreground-600">Tick all that apply, then describe the restriction, required approval, protected detail or safe alternative below.</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {restrictionOptions.map(([value, label]) => (
-            <label key={value} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-background-300 bg-white px-3 py-2 text-sm hover:border-primary-500">
-              <input
-                type="checkbox"
-                checked={selected.includes(value)}
-                onChange={(event) => toggleRestriction(value, event.target.checked)}
-                className="h-4 w-4 accent-[oklch(var(--primary-600))]"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-        {restrictionError && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{restrictionError}</p>}
-        <div className="mt-5">
-          <TextareaField name="termsAndConsents.publicityRestrictionDetails" label="Publicity restriction details" helper="Only provide what IPC needs to record the restriction or safe alternative." />
-        </div>
-      </fieldset>
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <TextField
-          name="termsAndConsents.professionalHeadshotReference"
-          label="Professional headshot file name or secure link"
-          helper="This site does not expose a public upload. Enter a file name or an existing secure link if available."
-          wide
+      <fieldset className="border border-background-300 bg-white p-4 text-sm">
+        <legend className="sr-only">Mandatory bursary terms</legend>
+        <ConsentCheckbox
+          name="termsAndConsents.mandatoryTermsAccepted"
+          title="Accept all mandatory bursary terms"
+          copy={mandatoryConsentCopy}
         />
-      </div>
+      </fieldset>
       <div className="mt-5">
         <ConsentCheckbox
           name="termsAndConsents.generalMarketingConsent"
@@ -592,15 +504,15 @@ export function TermsAndConsentsStep() {
 const checklist = [
   ["section1Complete", "Section 1 — Personal Details is complete."],
   ["section2CompleteOrNotApplicable", "Section 2 — Organisation Details is complete or marked not applicable."],
-  ["section3Complete", "Section 3 — IPC Bursary Request and Scholarship Outcomes is complete."],
-  ["section4Complete", "Section 4 — one preferred pathway is selected."],
-  ["section5Complete", "Section 5 — all mandatory terms are accepted and any restrictions are recorded."],
+  ["section3Complete", "Section 3 — Emergency Contact and Identification is complete."],
+  ["section4Complete", "Section 4 — at least one preferred module is selected."],
+  ["section5Complete", "Section 5 — all mandatory terms have been reviewed and accepted."],
 ] as const;
 
 const declarations = [
   ["informationAccurateDeclaration", "I confirm that the information provided is accurate and complete."],
   ["noAwardGuaranteeDeclaration", "I understand that an application does not guarantee a bursary or scholarship award."],
-  ["pathwayTermsDeclaration", "If awarded, I agree to the pathway plan and mandatory terms in this form."],
+  ["pathwayTermsDeclaration", "If awarded, I agree to the module plan and mandatory terms in this form."],
   ["processingConsentDeclaration", "I consent to IPC processing the application information for the purposes stated above."],
   ["applicantIdentityDeclaration", "I confirm that I am the learner and applicant signing this form."],
 ] as const;
@@ -617,13 +529,13 @@ function ReviewCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-background-300 bg-white p-5">
+    <section className="border border-background-300 bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-semibold text-background-950">{title}</h3>
           <p className={`mt-1 text-xs font-semibold ${valid ? "text-emerald-700" : "text-red-700"}`}>{valid ? "Technically valid" : "Needs attention"}</p>
         </div>
-        <button type="button" onClick={onEdit} className="rounded-lg border border-background-300 px-3 py-2 text-xs font-semibold hover:border-primary-500 hover:bg-primary-50">Edit</button>
+        <button type="button" onClick={onEdit} className="border border-background-300 px-3 py-2 text-xs font-semibold hover:border-primary-500 hover:bg-primary-50">Edit</button>
       </div>
       <div className="mt-4 text-sm leading-6 text-foreground-600">{children}</div>
     </section>
@@ -637,14 +549,14 @@ export function ReviewAndDeclarationStep({
   completedSteps: Set<number>;
   onEdit: (step: number) => void;
 }) {
-  const { watch } = useFormContext<BursaryApplicationFormValues>();
+  const { register, watch } = useFormContext<BursaryApplicationFormValues>();
   const values = watch();
   const birthYear = values.personalDetails.dateOfBirth.slice(0, 4);
   return (
     <>
       <StepHeading
-        title="Review, Declaration and Signature"
-        intro="Review Sections 1 to 5 before signing. Your signature must be provided by you as the learner and applicant."
+        title="Review and Declaration"
+        intro="Review Sections 1 to 5 and confirm the required declarations before submitting."
       />
       <div className="grid gap-4 md:grid-cols-2">
         <ReviewCard title="1. Personal Details" valid={completedSteps.has(0)} onEdit={() => onEdit(0)}>
@@ -657,49 +569,55 @@ export function ReviewAndDeclarationStep({
             ? <p>Not applicable — not currently employed.</p>
             : <><p><strong>{values.organisationDetails.organisationName}</strong></p><p>{values.organisationDetails.jobTitle}</p></>}
         </ReviewCard>
-        <ReviewCard title="3. Bursary Request and Outcomes" valid={completedSteps.has(2)} onEdit={() => onEdit(2)}>
-          <p>Requested: <strong>£{Number(values.bursaryRequest.bursaryAmountRequestedGbp || 0).toLocaleString("en-GB")}</strong> ({values.bursaryRequest.requestedBursaryPercentage || 0}%)</p>
-          <p>Sensitive financial statement: Provided for IPC review.</p>
+        <ReviewCard title="3. Emergency Contact and Identification" valid={completedSteps.has(2)} onEdit={() => onEdit(2)}>
+          <p><strong>{values.emergencyInformation.emergencyContactFullName || "Not provided"}</strong></p>
+          <p>Identity and applicant photo: provided for secure IPC review.</p>
+          <p>Support needs declared: {values.emergencyInformation.hasDisabilityOrHealthCondition ? "Yes" : "No"}</p>
         </ReviewCard>
-        <ReviewCard title="4. Pathway Selection" valid={completedSteps.has(3)} onEdit={() => onEdit(3)}>
-          <p><strong>{pathwayLabels[values.pathwaySelection.preferredPathway] || "Not selected"}</strong></p>
-          <p>Preferred intake: {values.pathwaySelection.preferredStartMonthOrIntake || "Not provided"}</p>
+        <ReviewCard title="4. Module Selection" valid={completedSteps.has(3)} onEdit={() => onEdit(3)}>
+          <p><strong>{values.pathwaySelection.preferredModules.map((value) => moduleLabels[value]).filter(Boolean).join(", ") || "Not selected"}</strong></p>
         </ReviewCard>
         <ReviewCard title="5. Mandatory Terms and Consents" valid={completedSteps.has(4)} onEdit={() => onEdit(4)}>
-          <p>Eight mandatory terms accepted.</p>
-          <p>Restrictions: {values.termsAndConsents.publicityRestrictions.map((value) => value.replaceAll("_", " ")).join(", ")}</p>
+          <p>All mandatory bursary terms accepted.</p>
           <p>General marketing: {values.termsAndConsents.generalMarketingConsent ? "Yes" : "No"}</p>
         </ReviewCard>
       </div>
       <div className="mt-8">
-        <Callout><strong>Submission checklist.</strong> Confirm that the application is complete, the preferred pathway is selected, the bursary request and outcomes are explained, and every mandatory term in Section 5 is ticked.</Callout>
+        <Callout><strong>Submission checklist.</strong> Confirm that the application is complete, the emergency contact and identification evidence are provided, at least one preferred module is selected, and the mandatory terms in Section 5 are accepted.</Callout>
       </div>
       <fieldset className="mt-6 space-y-3">
         <legend className="mb-3 font-semibold text-background-950">Required submission checklist</legend>
         {checklist.map(([name, copy]) => (
-          <ConsentCheckbox key={name} name={`reviewAndDeclaration.${name}`} copy={copy} />
+          <ConsentCheckbox key={name} name={`reviewAndDeclaration.${name}`} copy={copy} deferErrorUntilSubmit />
         ))}
       </fieldset>
-      <section className="mt-8 rounded-2xl border border-background-300 bg-background-100 p-5">
+      <section className="mt-8 border border-background-300 bg-background-100 p-5">
         <h3 className="font-semibold text-background-950">Applicant declaration</h3>
         <p className="mt-3 text-sm leading-7 text-foreground-700">
-          I declare that the information in this application is accurate and complete to the best of my knowledge. I understand that submission does not guarantee an award and that IPC may consider eligibility, pathway fit, available funds, cohort capacity and evidence supplied. If awarded, I agree to follow the approved learning plan and the mandatory terms in Section 5. I authorise IPC to contact me about this application and to process the information provided for application assessment, award administration, learner support, safeguarding, compliance and impact reporting. I will notify IPC promptly if any material information or declared restriction changes.
+          I declare that the information in this application is accurate and complete to the best of my knowledge. I understand that submission does not guarantee an award and that IPC may consider eligibility, module suitability, financial need, available funds, cohort capacity and evidence supplied. If awarded, I agree to follow the approved learning plan and the mandatory terms in Section 5. I authorise IPC to contact me about this application and to process the information provided for application assessment, award administration, learner support, safeguarding, compliance and impact reporting. I will let IPC know if my circumstances or support needs change.
         </p>
       </section>
       <fieldset className="mt-6 space-y-3">
         <legend className="sr-only">Required applicant declarations</legend>
         {declarations.map(([name, copy]) => (
-          <ConsentCheckbox key={name} name={`reviewAndDeclaration.${name}`} copy={copy} />
+          <ConsentCheckbox key={name} name={`reviewAndDeclaration.${name}`} copy={copy} deferErrorUntilSubmit />
         ))}
       </fieldset>
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <TextField name="reviewAndDeclaration.fullLegalName" label="Full legal name" required autoComplete="name" />
-        <TextField name="reviewAndDeclaration.dateSigned" label="Date signed" type="date" required helper="Use DD/MM/YYYY when entering or reviewing this date." />
-        <TextField name="reviewAndDeclaration.electronicSignature" label="Typed or electronic signature" required helper="Type your signature manually. It is not generated for you." />
-        <TextField name="reviewAndDeclaration.signaturePlace" label="Place or city of signature" required />
-        <TextField name="reviewAndDeclaration.preferredSecureSubmissionReference" label="Preferred secure submission reference" wide />
-        <TextareaField name="reviewAndDeclaration.additionalReviewInformation" label="Anything else IPC should consider before reviewing this application?" />
+      <div className="mt-8">
+        <label htmlFor="bursary-date-signed-display" className="mb-2 block text-sm font-semibold text-background-950">
+          Date signed <span className="text-primary-700" aria-hidden="true">*</span>
+        </label>
+        <input type="hidden" {...register("reviewAndDeclaration.dateSigned")} />
+        <input
+          id="bursary-date-signed-display"
+          type="date"
+          value={values.reviewAndDeclaration.dateSigned}
+          disabled
+          className="min-h-12 w-full border border-background-300 bg-background-100 px-4 py-3 text-sm text-background-700 disabled:cursor-not-allowed disabled:opacity-100 md:max-w-md"
+        />
+        <p className="mt-1.5 text-xs leading-5 text-foreground-500">Set automatically from your device.</p>
       </div>
+      <SignaturePad />
       <p className="mt-6 text-xs leading-5 text-foreground-500">
         LinkedIn links open externally. IPC will only use the submitted information for the stated application purposes.{" "}
         <a href="/privacy" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary-800 underline">

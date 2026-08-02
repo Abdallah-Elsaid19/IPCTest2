@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { bursaryPathways } from "./pathways";
+import { bursaryModules } from "./pathways";
 import {
   bursaryApplicationSchema,
   defaultBursaryApplicationValues,
+  latestEligibleBirthDate,
   normaliseMobileNumber,
   type BursaryApplicationFormValues,
 } from "./schema";
@@ -13,7 +14,6 @@ function validValues(): BursaryApplicationFormValues {
   Object.assign(values.personalDetails, {
     firstName: "Abdallah",
     lastName: "Elsaid",
-    membershipReference: "IPC-MEMBER-TEST",
     dateOfBirth: "1990-05-12",
     email: "abdallah@example.com",
     phoneCountryIso2: "GB",
@@ -33,31 +33,21 @@ function validValues(): BursaryApplicationFormValues {
     organisationName: "Example Projects Ltd",
     jobTitle: "Project controls analyst",
   });
-  Object.assign(values.bursaryRequest, {
-    bursaryAmountRequestedGbp: 3000,
-    requestedBursaryPercentage: 50,
-    proceedWithLowerBursary: "discuss",
-    financialCircumstances: "Support is needed due to current financial commitments.",
-    scholarshipOutcome: "Progression into a senior project controls role.",
-    measurableResult: "Deliver a monthly controls maturity dashboard.",
-    learningApplicationAndContribution: "Apply learning and share a community case study.",
+  Object.assign(values.emergencyInformation, {
+    emergencyContactFullName: "Amina Elsaid",
+    emergencyContactEmail: "amina@example.com",
+    emergencyContactPhone: "+201001234567",
+    identityDocument: "existing",
+    applicantPhoto: "existing",
+    hasDisabilityOrHealthCondition: false,
   });
   Object.assign(values.pathwaySelection, {
-    preferredPathway: "operational",
-    preferredStartMonthOrIntake: "September 2026",
+    preferredModules: ["ai", "pmp"],
     relevantExperience: "Five years in project planning and cost control.",
-    pathwayFitReason: "The pathway matches current responsibilities.",
+    pathwayFitReason: "IPC support would make this module accessible to me.",
   });
   Object.assign(values.termsAndConsents, {
-    linkedInAwardPostConsent: true,
-    secondProgressPostConsent: true,
-    tagIpcConsent: true,
-    reshareAndQuoteConsent: true,
-    professionalHeadshotConsent: true,
-    participationConsent: true,
-    approvedMediaUseConsent: true,
-    reportRestrictionsConsent: true,
-    publicityRestrictions: ["none_declared"],
+    mandatoryTermsAccepted: true,
   });
   Object.assign(values.reviewAndDeclaration, {
     section1Complete: true,
@@ -70,10 +60,8 @@ function validValues(): BursaryApplicationFormValues {
     pathwayTermsDeclaration: true,
     processingConsentDeclaration: true,
     applicantIdentityDeclaration: true,
-    fullLegalName: "Abdallah Elsaid",
     dateSigned: "2026-07-30",
-    electronicSignature: "Abdallah Elsaid",
-    signaturePlace: "London",
+    electronicSignature: "data:image/png;base64,iVBORw0KGgo=",
   });
   return values;
 }
@@ -84,6 +72,15 @@ describe("bursary application validation", () => {
     values.personalDetails.phoneNationalNumber = "12345";
     values.personalDetails.mobilePhoneE164 = "";
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
+  });
+
+  it("requires the applicant to be at least 20 years old", () => {
+    const values = validValues();
+    const today = new Date();
+    values.personalDetails.dateOfBirth = `${today.getFullYear() - 19}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
+    values.personalDetails.dateOfBirth = latestEligibleBirthDate(today);
+    expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
   });
 
   it("normalises a selected country and national number to E.164", () => {
@@ -117,43 +114,46 @@ describe("bursary application validation", () => {
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
   });
 
-  it.each([-1, 101])("rejects bursary percentage %s", (percentage) => {
+  it("requires at least one stable module value", () => {
     const values = validValues();
-    values.bursaryRequest.requestedBursaryPercentage = percentage;
+    values.pathwaySelection.preferredModules = [];
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
   });
 
-  it("requires exactly one stable pathway value", () => {
+  it("offers the published bursary modules", () => {
+    expect(bursaryModules.map(({ value }) => value)).toEqual([
+      "ai",
+      "pmi_sp",
+      "evm",
+      "risk",
+      "ppc",
+      "msp",
+      "managing_portfolios",
+      "stakeholder_management",
+      "pmp",
+      "pmo",
+    ]);
+    expect(bursaryApplicationSchema.safeParse({
+      ...validValues(),
+      pathwaySelection: {
+        ...validValues().pathwaySelection,
+        preferredModules: ["operational"],
+      },
+    }).success).toBe(false);
+  });
+
+  it("requires the combined mandatory Section 5 consent", () => {
     const values = validValues();
-    values.pathwaySelection.preferredPathway = "" as "operational";
+    values.termsAndConsents.mandatoryTermsAccepted = false as true;
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
   });
 
-  it("preserves mandatory Operational and Strategic core components", () => {
-    for (const pathwayValue of ["operational", "strategic"]) {
-      const pathway = bursaryPathways.find(({ value }) => value === pathwayValue);
-      expect(pathway?.components).toContain("Project Management Professional (PMP)");
-      expect(pathway?.components).toContain("AI in Project Controls");
-    }
-  });
-
-  it("requires all eight mandatory Section 5 consents", () => {
+  it("requires support details when disability support is declared", () => {
     const values = validValues();
-    values.termsAndConsents.tagIpcConsent = false as true;
+    values.emergencyInformation.hasDisabilityOrHealthCondition = true;
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
-  });
-
-  it("makes None declared mutually exclusive with restrictions", () => {
-    const values = validValues();
-    values.termsAndConsents.publicityRestrictions = ["none_declared", "security"];
-    expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
-  });
-
-  it("requires restriction details for an actual restriction", () => {
-    const values = validValues();
-    values.termsAndConsents.publicityRestrictions = ["confidentiality"];
-    values.termsAndConsents.publicityRestrictionDetails = "";
-    expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
+    values.emergencyInformation.primaryHealthProblem = "I may need additional time and accessible learning materials.";
+    expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
   });
 
   it("keeps optional marketing consent non-blocking", () => {
@@ -165,6 +165,12 @@ describe("bursary application validation", () => {
   it("requires all final declaration boxes", () => {
     const values = validValues();
     values.reviewAndDeclaration.applicantIdentityDeclaration = false as true;
+    expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
+  });
+
+  it("requires a drawn signature before final submission", () => {
+    const values = validValues();
+    values.reviewAndDeclaration.electronicSignature = "";
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
   });
 });

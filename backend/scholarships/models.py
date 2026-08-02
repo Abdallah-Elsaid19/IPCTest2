@@ -4,6 +4,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+
+from ipc_backend.validators import (
+    bursary_identity_upload_to,
+    bursary_photo_upload_to,
+    validate_identity_document,
+    validate_image,
+)
 from ipc_backend.validators import validate_content_section
 from .dashboard_defaults import (
     default_gateway_ai_spotlight,
@@ -181,7 +188,21 @@ class BursaryApplication(models.Model):
         APPROVED = "approved", "Approved"
         REJECTED = "rejected", "Rejected"
 
+    class PreferredModule(models.TextChoices):
+        AI = "ai", "AI"
+        PMI_SP = "pmi_sp", "PMI-SP"
+        EVM = "evm", "EVM"
+        RISK = "risk", "Risk"
+        PPC = "ppc", "PPC"
+        MSP = "msp", "MSP"
+        MANAGING_PORTFOLIOS = "managing_portfolios", "Managing Portfolios"
+        STAKEHOLDER_MANAGEMENT = "stakeholder_management", "Stakeholder"
+        PMP = "pmp", "PMP"
+        PMO = "pmo", "PMO"
+
     class PreferredPathway(models.TextChoices):
+        # Retained only so applications submitted before the move to modules
+        # keep their original display label.
         OPERATIONAL = "operational", "Operational Pathway"
         STRATEGIC = "strategic", "Strategic Pathway"
         CHARTERED = "chartered", "Chartered Pathway"
@@ -214,6 +235,13 @@ class BursaryApplication(models.Model):
     submitted_at = models.DateTimeField(default=timezone.now, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="submitted_bursary_applications",
+    )
     assigned_reviewer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -271,22 +299,57 @@ class BursaryApplication(models.Model):
 
     # Section 3 — Bursary request
     quoted_pathway_cost_gbp = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    bursary_amount_requested_gbp = models.DecimalField(max_digits=12, decimal_places=2)
-    requested_bursary_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    bursary_amount_requested_gbp = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    requested_bursary_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     other_contribution_available_gbp = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    proceed_with_lower_bursary = models.CharField(max_length=16, choices=LowerBursaryResponse.choices)
-    financial_circumstances = models.TextField()
-    scholarship_outcome = models.TextField()
-    measurable_result = models.TextField()
-    learning_application_and_contribution = models.TextField()
+    proceed_with_lower_bursary = models.CharField(max_length=16, choices=LowerBursaryResponse.choices, blank=True)
+    financial_circumstances = models.TextField(blank=True)
+    scholarship_outcome = models.TextField(blank=True)
+    measurable_result = models.TextField(blank=True)
+    learning_application_and_contribution = models.TextField(blank=True)
+    emergency_contact_full_name = models.CharField(max_length=180, default="")
+    emergency_contact_relationship = models.CharField(max_length=120, default="", blank=True)
+    emergency_contact_email = models.EmailField(blank=True)
+    emergency_contact_phone = models.CharField(max_length=40, default="")
+    has_disability_or_health_condition = models.BooleanField(default=False)
+    health_problem_categories = models.JSONField(default=list)
+    primary_health_problem = models.TextField(blank=True)
+    identity_document = models.FileField(
+        upload_to=bursary_identity_upload_to,
+        validators=[validate_identity_document],
+        blank=True,
+    )
+    applicant_photo = models.ImageField(
+        upload_to=bursary_photo_upload_to,
+        validators=[validate_image],
+        blank=True,
+    )
 
     # Section 4 — Pathway selection
-    preferred_pathway = models.CharField(max_length=40, choices=PreferredPathway.choices)
-    preferred_start_month_or_intake = models.CharField(max_length=120)
+    preferred_pathway = models.CharField(
+        "legacy preferred pathway",
+        max_length=40,
+        choices=PreferredPathway.choices,
+        blank=True,
+        default="",
+    )
+    preferred_modules = models.JSONField(default=list)
+    preferred_start_month_or_intake = models.CharField(max_length=120, blank=True)
     highest_relevant_qualification = models.CharField(max_length=255, blank=True)
     professional_memberships_or_certifications = models.TextField(blank=True)
     relevant_experience = models.TextField()
-    pathway_fit_reason = models.TextField()
+    pathway_fit_reason = models.TextField("reason for requesting an IPC bursary")
+
+    def get_bursary_selection_display(self):
+        module_labels = dict(self.PreferredModule.choices)
+        selected_modules = [
+            module_labels[value]
+            for value in self.preferred_modules
+            if value in module_labels
+        ]
+        if selected_modules:
+            return ", ".join(selected_modules)
+        return self.get_preferred_pathway_display() if self.preferred_pathway else ""
 
     # Section 5 — Mandatory terms and consents
     linkedin_award_post_consent = models.BooleanField()
@@ -297,6 +360,7 @@ class BursaryApplication(models.Model):
     participation_consent = models.BooleanField()
     approved_media_use_consent = models.BooleanField()
     report_restrictions_consent = models.BooleanField()
+    mandatory_terms_accepted = models.BooleanField(default=False)
     publicity_restrictions = models.JSONField(default=list)
     publicity_restriction_details = models.TextField(blank=True)
     professional_headshot_reference = models.CharField(max_length=500, blank=True)
@@ -314,10 +378,10 @@ class BursaryApplication(models.Model):
     pathway_terms_declaration = models.BooleanField()
     processing_consent_declaration = models.BooleanField()
     applicant_identity_declaration = models.BooleanField()
-    full_legal_name = models.CharField(max_length=255)
-    date_signed = models.DateField()
-    electronic_signature = models.CharField(max_length=255)
-    signature_place = models.CharField(max_length=180)
+    full_legal_name = models.CharField(max_length=255, blank=True)
+    date_signed = models.DateField(null=True, blank=True)
+    electronic_signature = models.TextField(blank=True)
+    signature_place = models.CharField(max_length=180, blank=True)
     preferred_secure_submission_reference = models.CharField(max_length=180, blank=True)
     additional_review_information = models.TextField(blank=True)
     declarations_accepted_at = models.DateTimeField(default=timezone.now, editable=False)

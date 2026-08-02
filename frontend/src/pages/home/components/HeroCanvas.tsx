@@ -23,10 +23,8 @@ export default function HeroCanvas() {
     ],
     cta_label: "Explore Membership & Recognition",
     cta_url: "/membership",
-    secondary_cta_label: "View London Master Classes",
-    secondary_cta_url: "/events",
     tertiary_cta_label: "Contact the Institute",
-    tertiary_cta_url: "/information-session",
+    tertiary_cta_url: "/contact",
     image_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/4f05a0f54f8c4bbbab2916e0126a28b9.webp",
     image_alt: "IPC symbol of wisdom, foresight and professional judgement",
     annotations: dataAnnotations.map((item) => item.label),
@@ -52,7 +50,7 @@ export default function HeroCanvas() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full min-h-[100svh] overflow-hidden border-2 border-background-800 bg-background-950  sm:min-h-[100dvh] sm:border-0"
+      className="relative min-h-[100svh] w-full overflow-hidden bg-background-950 sm:min-h-[100dvh]"
     >
       {/* ── Dot Grid Pattern ── */}
       <div className="absolute inset-0 dot-grid-gold opacity-35" />
@@ -127,6 +125,12 @@ export default function HeroCanvas() {
       </div>
 
       {/* ── Feather-to-data transition mesh ── */}
+      {/* Blend the image into the dark section below without a visible colour step. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[52%] bg-gradient-to-b from-transparent via-background-950/75 to-background-950 sm:h-[46%]"
+        aria-hidden="true"
+      />
+
       <div className="absolute inset-y-0 right-[54%] hidden w-[8%] pointer-events-none feather-texture opacity-40 sm:block" style={{
         background: "linear-gradient(90deg, oklch(var(--background-950) / 0) 0%, oklch(var(--primary-500) / 0.06) 40%, oklch(var(--primary-500) / 0.02) 100%)"
       }} />
@@ -165,10 +169,10 @@ export default function HeroCanvas() {
             className={`mb-5 transition-all duration-1000 sm:mb-8 md:mb-10 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
           >
-            <span className="mb-3 hidden max-w-xl border-l-2 border-primary-500 pl-3 text-[10px] leading-relaxed text-background-300 sm:block">
+            {/* <span className="mb-3 hidden max-w-xl border-l-2 border-primary-500 pl-3 text-[10px] leading-relaxed text-background-300 sm:block">
               {content.announcement}
-            </span>
-            <span className="mb-5 hidden text-[10px] font-mono uppercase tracking-[0.3em] text-primary-500/70 sm:block">
+            </span> */}
+            <span className="mb-5 hidden text-[13px] font-mono uppercase tracking-[0.3em] text-primary-500/70 sm:block">
               {content.eyebrow}
             </span>
             <h1 aria-label={content.title} className="max-w-[330px] font-heading text-[clamp(2.35rem,10vw,2.75rem)] font-extrabold leading-[0.95] tracking-[-0.045em] text-background-50 sm:max-w-[1050px] sm:text-[clamp(3rem,4.2vw,4.5rem)] sm:leading-[0.94] sm:tracking-[-0.035em]">
@@ -185,7 +189,7 @@ export default function HeroCanvas() {
             <div className="mb-2 hidden w-20 gold-rule sm:block" />
             <p className="max-w-[315px] text-[13px] font-normal leading-[1.55] text-background-300 sm:max-w-[400px] sm:text-sm sm:font-medium sm:leading-loose md:text-base">
               {content.description}</p>
-            <p className="hidden max-w-[540px] text-xs leading-relaxed text-background-400 lg:block">{content.details.join(" ")}</p>
+            {/* <p className="hidden max-w-[540px] text-xs leading-relaxed text-background-400 lg:block">{content.details.join(" ")}</p> */}
             <div className="flex flex-wrap gap-3">
               <Link
                 to={content.cta_url}
@@ -194,8 +198,7 @@ export default function HeroCanvas() {
                 <span>{content.cta_label}</span>
                 <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
-              <Link to={content.secondary_cta_url} className="hidden min-h-[46px] items-center border border-background-500 px-5 text-xs font-semibold text-background-50 transition-colors hover:border-primary-400 sm:inline-flex">{content.secondary_cta_label}</Link>
-              <Link to={content.tertiary_cta_url} className="hidden min-h-[46px] items-center px-2 text-xs font-semibold text-background-300 transition-colors hover:text-primary-300 lg:inline-flex">{content.tertiary_cta_label}</Link>
+              <Link to="/contact" className="inline-flex min-h-[46px] items-center border border-background-500 px-5 text-xs font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300">{content.tertiary_cta_label}</Link>
             </div>
           </div>
         </div>

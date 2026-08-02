@@ -261,18 +261,19 @@ export default function GradeFinderModal({
                   {result.copy}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <a
-                    href="mailto:office@instituteofprojectcontrols.org?subject=Membership%20Grade%20Enquiry"
-                    className="btn-primary inline-flex min-h-12 items-center justify-center"
-                  >
-                    Discuss this grade
-                  </a>
                   <button
                     type="button"
                     onClick={restartQuiz}
-                    className="inline-flex min-h-12 items-center justify-center border border-background-500 px-5 text-sm font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background-950 motion-reduce:transition-none"
+                    className="btn-primary inline-flex min-h-12 items-center justify-center px-5"
                   >
                     Retake guide
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex min-h-12 items-center justify-center border border-background-500 px-5 text-sm font-semibold text-background-50 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background-950 motion-reduce:transition-none"
+                  >
+                    Done
                   </button>
                 </div>
               </div>

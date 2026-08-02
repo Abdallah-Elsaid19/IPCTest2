@@ -16,6 +16,9 @@ import ProfessionalVisibility from "@/pages/membership/components/ProfessionalVi
 import MembershipQuestions from "@/pages/membership/components/MembershipQuestions";
 import GradeFinderModal from "@/pages/membership/components/GradeFinderModal";
 
+const membershipHeroBackground = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/54a9aa170171439581b2022efdf51f29.webp";
+const membershipGradesBackground = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f3a1049f03fb4811b7d859f44f2491d1.webp";
+
 function MembershipHero() {
   const content = useManagedSection("hero", {
     eyebrow: "Professional recognition",
@@ -25,10 +28,27 @@ function MembershipHero() {
     cta_url: "#grades",
   });
   return (
-    <section className="relative flex min-h-[70vh] items-center overflow-hidden bg-background-950 pb-20">
-      <div className="absolute inset-0"><ResponsiveImage src="/images/membership/hero.svg" alt="" width={1600} height={900} sizes="100vw" priority className="h-full w-full object-cover opacity-30" /></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-background-950 via-background-950/95 to-background-950/70" />
-      <div className="container-content relative z-10 w-full pt-24 md:pt-32">
+    <section className="relative min-h-[720px] overflow-hidden bg-background-950 pb-12 sm:flex sm:min-h-[76svh] sm:items-center sm:pb-20 md:min-h-[80vh]">
+      <div className="absolute inset-x-0 top-0 aspect-[8/5] w-full sm:inset-y-0 sm:left-auto sm:right-0 sm:h-auto sm:w-[72%] sm:aspect-auto lg:w-[68%]">
+        <ResponsiveImage
+          src={membershipHeroBackground}
+          alt=""
+          width={1600}
+          height={1000}
+          sizes="(max-width: 639px) 100vw, 72vw"
+          priority
+          className="h-full w-full object-contain object-top sm:object-right"
+        />
+      </div>
+      <div
+        className="absolute inset-0 hidden sm:block"
+        style={{
+          background: "linear-gradient(90deg, oklch(var(--background-950)) 0%, oklch(var(--background-950) / 0.98) 27%, oklch(var(--background-950) / 0.78) 47%, oklch(var(--background-950) / 0.16) 72%, transparent 100%)",
+        }}
+      />
+      <div className="absolute inset-0 hidden bg-gradient-to-b from-background-950/30 via-transparent to-background-950/65 sm:block" />
+      <div className="absolute inset-x-0 top-0 aspect-[8/5] bg-gradient-to-b from-transparent from-[35%] via-background-950/45 via-[70%] to-background-950 sm:hidden" />
+      <div className="container-content relative z-10 w-full pt-[calc(62.5vw+1.5rem)] sm:pt-24 md:pt-32">
         <div className="max-w-3xl reveal">
           <span className="eyebrow mb-4 block text-primary-400">{content.eyebrow}</span>
           <h1 className="mb-6 font-heading text-4xl font-bold leading-[1.1] text-background-50 sm:text-5xl md:text-6xl lg:text-7xl">{content.title}</h1>
@@ -170,9 +190,18 @@ export default function Membership() {
       {/* ===== GRADE CARDS GRID ===== */}
       <section
         id="grades"
-        className="bg-background-50 section-padding scroll-mt-16"
+        className="relative overflow-hidden bg-background-50 section-padding scroll-mt-16"
       >
-        <div className="container-content">
+        <ResponsiveImage
+          src={membershipGradesBackground}
+          alt=""
+          width={2048}
+          height={1152}
+          sizes="100vw"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover object-top"
+        />
+        <div className="absolute inset-0 bg-background-50/45" aria-hidden="true" />
+        <div className="container-content relative z-10">
           <div className="reveal text-center mb-12">
             <span className="eyebrow text-primary-500 mb-3 block">
               Choose Your Grade
@@ -211,7 +240,7 @@ export default function Membership() {
             </div>
           )}
           <div
-            className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:p-20 ${
+            className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-20 lg:pb-20 ${
               isLoading || loadError ? "hidden" : ""
             }`}
           >
@@ -273,20 +302,6 @@ export default function Membership() {
         returnFocusElement={gradeFinderTrigger}
       />
 
-      <section className="border-y border-background-200 bg-background-100 py-12">
-        <div className="container-content">
-          <h2 className="font-heading text-2xl font-semibold text-background-950">Continue your professional route</h2>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              ["Publications and research", "/publications"],
-              ["Events and Master Classes", "/events"],
-              ["Regional clubs", "/clubs"],
-              ["Employer capability", "/employers"],
-            ].map(([label, path]) => <Link key={path} to={path} className="flex items-center justify-between border border-background-300 bg-background-50 p-4 text-sm font-semibold text-foreground-800 hover:border-primary-500">{label}<i className="ri-arrow-right-line text-primary-600" /></Link>)}
-          </div>
-        </div>
-      </section>
-
       {/* ===== FINAL CTA ===== */}
       <section className="bg-background-950 py-20 md:py-28">
         <div className="container-content">
@@ -303,8 +318,8 @@ export default function Membership() {
               {gradeCards.map((grade) => (
                 <Link
                   key={grade.slug}
-                  to={`/membership/${grade.slug}/apply`}
-                  className="group flex items-center justify-between border border-background-800 bg-background-900 p-4 hover:border-primary-500/60"
+                  to={`/membership/${grade.slug}`}
+                  className="group flex items-center justify-between border border-background-800 bg-background-900 p-4 transition-colors hover:border-primary-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                   <div>
                     <span className="block text-sm font-semibold text-background-100">

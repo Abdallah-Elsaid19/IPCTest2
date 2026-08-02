@@ -223,7 +223,8 @@ class ScholarshipViewSet(SearchViewSet):
             | Q(email__iexact=request.user.email),
         ).values_list("application_reference", flat=True)
         return BursaryApplication.objects.filter(
-            Q(membership_reference__in=membership_references)
+            Q(submitted_by=request.user)
+            | Q(membership_reference__in=membership_references)
             | Q(email__iexact=request.user.email),
         ).distinct()
 
@@ -236,7 +237,7 @@ class ScholarshipViewSet(SearchViewSet):
                 "source": "bursary",
                 "application_reference": application.application_reference,
                 "title": "IPC Bursary",
-                "pathway": application.get_preferred_pathway_display(),
+                "pathway": application.get_bursary_selection_display(),
                 "status": application.status,
                 "status_label": application.get_status_display(),
                 "submitted_at": application.submitted_at,
@@ -298,24 +299,26 @@ class ScholarshipViewSet(SearchViewSet):
                 "job_title": application.job_title,
                 "industry": application.industry_or_sector,
             },
-            "bursary_request": {
-                "quoted_pathway_cost_gbp": application.quoted_pathway_cost_gbp,
-                "amount_requested_gbp": application.bursary_amount_requested_gbp,
-                "requested_percentage": application.requested_bursary_percentage,
-                "other_contribution_gbp": application.other_contribution_available_gbp,
-                "proceed_with_lower_bursary": application.get_proceed_with_lower_bursary_display(),
-            },
             "pathway": {
-                "name": application.get_preferred_pathway_display(),
+                "name": application.get_bursary_selection_display(),
                 "preferred_start": application.preferred_start_month_or_intake,
                 "highest_relevant_qualification": application.highest_relevant_qualification,
                 "professional_memberships": application.professional_memberships_or_certifications,
             },
+            "emergency_contact": {
+                "full_name": application.emergency_contact_full_name,
+                "relationship": application.emergency_contact_relationship,
+                "email": application.emergency_contact_email,
+                "phone": application.emergency_contact_phone,
+            },
+            "support_needs": {
+                "declared": application.has_disability_or_health_condition,
+                "categories": application.health_problem_categories,
+                "primary": application.primary_health_problem,
+                "identity_document_uploaded": bool(application.identity_document),
+                "applicant_photo_uploaded": bool(application.applicant_photo),
+            },
             "statements": {
-                "financial_circumstances": application.financial_circumstances,
-                "scholarship_outcome": application.scholarship_outcome,
-                "measurable_result": application.measurable_result,
-                "learning_application_and_contribution": application.learning_application_and_contribution,
                 "relevant_experience": application.relevant_experience,
                 "pathway_fit_reason": application.pathway_fit_reason,
                 "additional_review_information": application.additional_review_information,

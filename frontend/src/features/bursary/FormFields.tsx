@@ -9,7 +9,7 @@ import {
 import type { BursaryApplicationFormValues } from "./schema";
 
 const inputClass =
-  "min-h-12 min-w-0 w-full max-w-full rounded-xl border bg-white px-4 py-3 text-sm text-background-950 outline-none transition placeholder:text-foreground-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20";
+  "min-h-12 min-w-0 w-full max-w-full border bg-white px-4 py-3 text-sm text-background-950 outline-none transition placeholder:text-foreground-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20";
 
 function errorAt(
   errors: Record<string, unknown>,
@@ -70,6 +70,7 @@ export function TextField({
   inputMode,
   autoComplete,
   disabled,
+  max,
   registerOptions,
 }: {
   name: FieldPath<BursaryApplicationFormValues>;
@@ -82,6 +83,7 @@ export function TextField({
   inputMode?: "text" | "email" | "url" | "tel" | "decimal";
   autoComplete?: string;
   disabled?: boolean;
+  max?: string;
   registerOptions?: RegisterOptions<BursaryApplicationFormValues>;
 }) {
   const { register } = useFormContext<BursaryApplicationFormValues>();
@@ -98,6 +100,7 @@ export function TextField({
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           disabled={disabled}
+          max={max}
           className={`${inputClass} ${error ? "border-red-500" : "border-background-300"} disabled:cursor-not-allowed disabled:bg-background-100`}
           {...register(name, registerOptions)}
         />
@@ -226,7 +229,7 @@ export function RadioGroup({
         render={({ field }) => (
           <div className="grid gap-3 sm:grid-cols-3">
             {options.map((option) => (
-              <label key={String(option.value)} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-background-300 bg-white px-4 py-3 text-sm hover:border-primary-500 has-[:checked]:border-primary-600 has-[:checked]:bg-primary-50">
+              <label key={String(option.value)} className="flex min-h-12 cursor-pointer items-center gap-3 border border-background-300 bg-white px-4 py-3 text-sm hover:border-primary-500 has-[:checked]:border-primary-600 has-[:checked]:bg-primary-50">
                 <input
                   type="radio"
                   name={field.name}
@@ -254,18 +257,27 @@ export function ConsentCheckbox({
   title,
   copy,
   optional,
+  deferErrorUntilSubmit,
 }: {
   name: FieldPath<BursaryApplicationFormValues>;
   title?: string;
   copy: string;
   optional?: boolean;
+  deferErrorUntilSubmit?: boolean;
 }) {
-  const { register, formState: { errors } } = useFormContext<BursaryApplicationFormValues>();
-  const error = errorAt(errors as unknown as Record<string, unknown>, name);
+  const { register, formState: { errors, submitCount, touchedFields } } = useFormContext<BursaryApplicationFormValues>();
+  const rawError = errorAt(errors as unknown as Record<string, unknown>, name);
+  const touched = name.split(".").reduce<unknown>(
+    (current, segment) => current && typeof current === "object"
+      ? (current as Record<string, unknown>)[segment]
+      : undefined,
+    touchedFields as unknown as Record<string, unknown>,
+  );
+  const error = deferErrorUntilSubmit && !touched && submitCount === 0 ? undefined : rawError;
   const id = `bursary-${name.replaceAll(".", "-")}`;
   return (
     <div>
-      <label htmlFor={id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${error ? "border-red-400 bg-red-50" : "border-background-300 bg-white hover:border-primary-500"}`}>
+      <label htmlFor={id} className={`flex cursor-pointer items-start gap-3 border p-4 ${error ? "border-red-400 bg-red-50" : "border-background-300 bg-white hover:border-primary-500"}`}>
         <input
           id={id}
           type="checkbox"
@@ -288,7 +300,7 @@ export function ConsentCheckbox({
 
 export function Callout({ children }: { children: ReactNode }) {
   return (
-    <aside className="rounded-xl border-l-4 border-primary-500 bg-primary-50 px-5 py-4 text-sm leading-6 text-foreground-700">
+    <aside className="border-l-4 border-primary-500 bg-primary-50 px-5 py-4 text-sm leading-6 text-foreground-700">
       {children}
     </aside>
   );

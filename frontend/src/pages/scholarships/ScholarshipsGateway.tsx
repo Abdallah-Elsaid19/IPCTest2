@@ -33,11 +33,7 @@ const CONFIG = {
   KBC_CHARTERED_PATHWAY_URL: "https://kentbusinesscollege.com/project-control-professional-level-6/#pathways",
   KBC_APM_PATHWAY_URL: "https://kentbusinesscollege.com/college-of-project-management/associate-project-manager-level-4-with-pmp/",
   KBC_APPLICATION_URL: "https://kentbusinesscollege.com/",
-  IPC_ADVISER_URL: "mailto:office@instituteofprojectcontrols.org?subject=IPC%20Pathway%20Advice",
   IPC_FUNDING_PAGE_URL: "#funding",
-  IPC_CONTACT_URL: "/contact",
-  PRIVACY_POLICY_URL: "/privacy",
-  TERMS_URL: "/privacy#terms",
 } as const;
 
 const IPC_LOGO_URL =
@@ -45,7 +41,28 @@ const IPC_LOGO_URL =
 const KENT_LOGO_URL =
   "https://kentbusinesscollege.com/wp-content/uploads/2025/12/Kent-Business-College-e1768393206822.png";
 
+const IPC_PARTNERSHIP_ICONS = [
+  GraduationCap,
+  Target,
+  BrainCircuit,
+  Users,
+  Sparkles,
+  BriefcaseBusiness,
+] as const;
+
+const KENT_PARTNERSHIP_ICONS = [
+  FileCheck2,
+  BookOpen,
+  ShieldCheck,
+  HeartHandshake,
+  GraduationCap,
+  Network,
+] as const;
+
 export type PathwayId = "operational" | "strategic" | "pmo" | "chartered" | "apm";
+
+const PUBLIC_PATHWAY_IDS = new Set<PathwayId>(["chartered", "pmo", "apm"]);
+const RETIRED_PATHWAY_PATTERN = /\b(?:Operational|Strategic)\b/i;
 
 export type Pathway = {
   id: PathwayId;
@@ -296,38 +313,75 @@ export const PATHWAYS: Pathway[] = [
   },
 ];
 
-const FUNDING_OPTIONS = [
+const MODULE_OFFERS = [
   {
-    percentage: "100%",
-    title: "Funded if eligible",
-    profile: "Applicants meeting the applicable residency, employment, age and employer requirements.",
-    detail:
-      "A fully funded route may be available following formal assessment. Employer participation may be required and current funding rules apply.",
-    decision: "Kent Business College confirms final eligibility.",
+    id: "individual-module",
+    label: "Individual module",
+    title: "Choose a professional module",
+    modules: ["AI", "PMI SP", "EVM", "Risk", "PPC", "MSP", "Managing Portfolios"],
+    courseCost: "£4,000",
+    ipcSupport: "50%",
+    amountPayable: "£2,000",
+    details: [
+      "Each module is selected and assessed individually.",
+      "An approved installment plan may extend to twice the module duration.",
+      "A 12-month module may therefore use a 24-month installment plan by Direct Debit.",
+    ],
+    bonus: null,
   },
   {
-    percentage: "95% / 5%",
-    title: "Before 1 August 2026",
-    profile: "Eligible employed professionals whose employer can approve and support participation.",
+    id: "pmp-modules",
+    label: "PMP modules",
+    title: "PMP two-module programme",
+    modules: ["PMP module 01", "PMP module 02"],
+    courseCost: "£8,000",
+    ipcSupport: "75%",
+    amountPayable: "£2,000",
+    details: [
+      "PMP is treated as a two-module programme.",
+      "The remaining balance may use an installment plan by Direct Debit, subject to approval.",
+      "Final module dates and installment terms are confirmed before enrolment.",
+    ],
+    bonus: null,
+  },
+  {
+    id: "pmo-chartered-modules",
+    label: "PMO / Chartered modules",
+    title: "Four-module professional package",
+    modules: ["PMO", "Risk", "Plan", "Stakeholder"],
+    courseCost: "£16,000",
+    ipcSupport: "75%",
+    amountPayable: "£4,000",
+    details: [
+      "16-month learning duration.",
+      "£400 non-refundable deposit, leaving a £3,600 balance.",
+      "24 monthly installments of £150 by Direct Debit.",
+    ],
+    bonus: {
+      label: "Included by IPC",
+      title: "ChPP certificate cost",
+      description: "IPC will cover the cost of the ChPP certificate.",
+      image: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/c49b55b4496342219ee90b7b048c7dc7.png",
+    },
+  },
+] as const;
+
+const FUNDING_OPTIONS = [
+  {
+    percentage: "50%",
+    title: "Individual module support",
+    profile: "For AI, PMI SP, EVM, Risk, PPC, MSP and Managing Portfolios modules, subject to assessment.",
     detail:
-      "For eligible starts before 1 August 2026, a levy-paying employer with insufficient account funds may receive a 95% government contribution, with a 5% employer contribution.",
-    decision: "The start date, funded product and employer account position must be confirmed.",
+      "A £4,000 individual module may receive a 50% IPC contribution, leaving £2,000 to pay.",
+    decision: "For a 12-month module, an approved 24-month installment plan may be available by Direct Debit.",
   },
   {
     percentage: "75%",
-    title: "IPC bursary support",
-    profile: "Unemployed applicants, some Chartered Pathway applicants and people unable to use the publicly funded route.",
+    title: "Enhanced module support",
+    profile: "For PMP modules and the PMO / Chartered module package, subject to assessment.",
     detail:
-      "IPC may contribute up to 75% of the applicable pathway cost following a separate bursary assessment.",
-    decision: "Subject to pathway, approval and available IPC funds.",
-  },
-  {
-    percentage: "50%",
-    title: "IPC bursary support",
-    profile: "Employed, employer-sponsored or self-funding professionals using an eligible IPC Bursary Route.",
-    detail:
-      "IPC may contribute up to 50%, with payment arrangements potentially available for the remaining balance.",
-    decision: "Subject to bursary assessment, available places and payment terms.",
+      "PMP: £8,000 cost, 75% IPC support and £2,000 to pay. PMO / Chartered modules: £16,000 cost, 75% IPC support and £4,000 to pay.",
+    decision: "For PMO / Chartered modules: £400 non-refundable deposit, followed by 24 monthly installments of £150 by Direct Debit.",
   },
 ];
 
@@ -363,6 +417,40 @@ const FAQS = [
   ["What is the difference between a Government Funding Band and IPC Professional Support?", "A Government Funding Band is the maximum eligible public contribution for the funded product. IPC Professional Support is a separate potential contribution towards additional professional value or an IPC Bursary Route. The two figures must not be treated as one guaranteed award or cash payment."],
   ["What do Levy, Non-Levy and Levy Transfer mean?", "Levy describes funding through an eligible employer’s government funding account. Non-Levy describes an eligible employer that does not pay the levy and may reserve government support. Levy Transfer is an agreed transfer from another eligible employer’s account. Rules, limits and employer contributions depend on the start date and funded product."],
 ];
+
+const CURRENT_FAQS = [
+  ["What does IPC fund?", "IPC may contribute towards approved modules, professional packages, examinations, membership, events and selected development benefits. All support is discretionary and subject to written approval."],
+  ["What does Kent Business College provide?", "Where appointed, Kent Business College manages admission, delivery, learner support, assessment, examinations and certification. IPC manages its own bursary and professional-support decisions."],
+  ["What is an IPC bursary?", "An IPC bursary is a contribution designed to reduce financial barriers to professional development. It is normally applied directly to approved costs rather than paid as unrestricted cash."],
+  ["What IPC support options are available?", "Applicants may be considered for support of up to 50% or 75%, depending on their circumstances, selected package and available IPC funds."],
+  ["Is IPC support guaranteed?", "No. An award is confirmed only when IPC issues a written offer stating the approved contribution and conditions."],
+  ["Who can apply for IPC support?", "Employed, self-employed, unemployed, career-changing and returning professionals may apply. Veterans, charity leaders, social-impact applicants and people facing genuine access barriers may also be considered."],
+  ["Do I need extensive project controls experience to apply?", "No. IPC also considers potential, motivation, career direction, character, professional impact and suitability for the selected route."],
+  ["How are IPC applications assessed?", "IPC considers need, commitment, professional potential, pathway suitability, intended impact, supporting evidence and available funds."],
+  ["Can employed professionals apply?", "Yes. You should declare any employer contribution or development budget available to you."],
+  ["Can self-employed, unemployed and career-returning professionals apply?", "Yes. Explain your circumstances, current barriers, career objective and how the support would improve your professional opportunities."],
+  ["Can international professionals apply?", "Yes, where the selected option is available internationally. Delivery, payment, identification and examination arrangements must be confirmed separately."],
+  ["Do I need employer support to apply?", "Not for every route. However, employed applicants may need permission before using workplace documents, photographs or confidential project information."],
+  ["Can my employer or another sponsor pay the remaining balance?", "Yes. An employer, charity, sponsor, family member or other approved organisation may contribute. All contributions must be declared."],
+  ["Is the bursary paid directly to me, and can I pay the balance in instalments?", "The bursary is normally applied directly to approved costs. Instalment plans may be available for the remaining balance, subject to written terms."],
+  ["What professional module options can I choose?", "You may choose one professional module, a PMP-led two-module package or a wider four-module professional package."],
+  ["Can I choose my own professional modules?", "Yes, you may state your preferences. The final combination is confirmed after reviewing suitability, experience, availability and career goals."],
+  ["What is the PMP two-module programme?", "It combines PMP development with one complementary module, such as AI, risk, scheduling, earned value, PMO or portfolio management."],
+  ["What is the four-module professional package?", "It combines four connected modules to provide broader development across project management, project controls, AI, planning, risk, PMO or related areas."],
+  ["What is the AI in Project Controls Certificate?", "It covers responsible AI use in planning, forecasting, risk, reporting, performance analysis, scenario modelling and project decision-making."],
+  ["What is a professional pathway credit?", "A credit shows how a module contributes to the overall IPC pathway structure. It is not automatically equivalent to a university academic credit."],
+  ["How do I choose the right module or professional route?", "Choose according to your current role, experience, career objective, capability gaps and intended professional impact. IPC may recommend a more suitable option."],
+  ["Does an IPC route automatically provide chartered status?", "No. External chartered status requires a separate application and independent assessment by the relevant professional organisation."],
+  ["What is included in the all-inclusive professional package?", "It may include selected modules, examinations, membership, learning materials, masterclasses, clubs, recognition activities and progression support."],
+  ["Are examinations, memberships, healthcare and progression included?", "Only where they are specifically listed in your written offer. Benefits vary between packages."],
+  ["Is private healthcare included?", "Only in selected packages and subject to the healthcare provider's eligibility and policy conditions."],
+  ["Is Level 7 or MBA progression guaranteed?", "No. Any academic progression is subject to the institution's entry requirements, availability, fees and admissions decision."],
+  ["What evidence may be required?", "IPC may request identification, a CV, LinkedIn profile, employment information, references, financial-need evidence or documents supporting your bursary category."],
+  ["Can I use confidential workplace documents?", "Only with permission. Remove or anonymise client, financial, personal, commercial and confidential project information."],
+  ["How long does the IPC review process take?", "The review begins when your application and evidence are complete. Timing depends on application volume, checks, package availability and whether further information is needed."],
+  ["When will successful IPC bursary applicants be announced?", "Successful applicants will be announced on 10 August 2026 and contacted directly using the details in their application. Being shortlisted or asked for more information does not confirm an award. The award is official only after a written offer is issued."],
+  ["What happens after my application is approved?", "You will receive a written offer confirming the selected package, IPC contribution, remaining balance, benefits, payment arrangements, award conditions and next steps."],
+] as const;
 
 const commitmentItems = [
   "2 hours for live online teaching each week",
@@ -530,9 +618,9 @@ const GATEWAY_CONTENT = {
   },
   faq: {
     eyebrow: "Frequently asked questions",
-    title: "The practical details, answered carefully.",
-    description: "Where arrangements vary, the answer directs you to formal confirmation rather than making assumptions.",
-    items: FAQS.map(([question, answer]) => ({ question, answer })),
+    title: "The practical details, answered clearly.",
+    description: "Every application is reviewed individually. Final support, module selection, benefits, payment arrangements and award conditions are confirmed in writing.",
+    items: CURRENT_FAQS.map(([question, answer]) => ({ question, answer })),
   },
   final_cta: {
     eyebrow: "Your next step",
@@ -608,17 +696,15 @@ export default function ScholarshipsGateway() {
   const rawPathways = useManagedSection<Pathway[]>("pathways", PATHWAYS);
   const pathways = useMemo(() => {
     if (!pathwaysActive) return [];
-    const order: PathwayId[] = ["operational", "strategic", "chartered", "pmo", "apm"];
-    return [...rawPathways.filter(isManagedItemActive)]
+    const order: PathwayId[] = ["chartered", "pmo", "apm"];
+    return [...rawPathways.filter((item) => isManagedItemActive(item) && PUBLIC_PATHWAY_IDS.has(item.id))]
       .sort((left, right) => order.indexOf(left.id) - order.indexOf(right.id));
   }, [pathwaysActive, rawPathways]);
-  const managedFundingOptions = content.funding.options.filter(isManagedItemActive);
-  const fundingOptions = managedFundingOptions;
-  const managedFaqItems = content.faq.items.filter(isManagedItemActive);
-  const faqItems = managedFaqItems;
+  const fundingOptions = FUNDING_OPTIONS;
+  const faqItems = CURRENT_FAQS.map(([question, answer]) => ({ question, answer }));
   const managedComparisonRows = content.comparison.rows.filter(isManagedItemActive);
   const comparisonRows = managedComparisonRows;
-  const [pathwayId, setPathwayId] = useState<PathwayId>("operational");
+  const [pathwayId, setPathwayId] = useState<PathwayId>("chartered");
   const [fundingIndex, setFundingIndex] = useState(0);
   const [commitments, setCommitments] = useState<boolean[]>(content.commitment.items.map(() => false));
   const [commitmentResult, setCommitmentResult] = useState("");
@@ -706,8 +792,8 @@ export default function ScholarshipsGateway() {
               <Link to="/bursary-scholarship-application" className="btn-primary">
                 Apply now <ArrowRight size={17} aria-hidden="true" />
               </Link>
-              <a href="#pathways" className="btn-secondary">
-                {content.hero.secondary_cta_label}
+              <a href="#modules" className="btn-secondary">
+                Explore the modules
               </a>
             </div>
             <div className="mt-8 flex items-start gap-3 border-l-2 border-primary-400 pl-4 text-sm leading-6 text-background-300">
@@ -740,70 +826,120 @@ export default function ScholarshipsGateway() {
       )}
 
       {isManagedItemActive(content.partnership) && (
-      <section className="bg-background-50 section-padding">
-        <div className="container-content">
-          <div className="reveal">
-            <SectionIntro
-              eyebrow={content.partnership.eyebrow}
-              title={content.partnership.title}
-              copy={content.partnership.description}
-            />
+      <section className="relative overflow-hidden bg-background-50 section-padding">
+        <div className="pointer-events-none absolute -right-40 -top-44 h-[34rem] w-[34rem] rounded-full border border-[#71599b]/10" aria-hidden="true" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-[24rem] w-[24rem] rounded-full border border-primary-500/10" aria-hidden="true" />
+        <div className="pointer-events-none absolute right-16 top-16 h-3 w-3 rounded-full bg-[#71599b]/30" aria-hidden="true" />
+
+        <div className="container-content relative">
+          <div className="reveal max-w-5xl">
+            <p className="eyebrow text-primary-700">{content.partnership.eyebrow}</p>
+            <span className="mt-5 block h-0.5 w-20 bg-primary-500" aria-hidden="true" />
+            <h2 className="mt-6 max-w-4xl text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-background-950 sm:text-5xl lg:text-6xl">
+              {content.partnership.title}
+            </h2>
+            <p className="mt-6 max-w-4xl text-base leading-8 text-foreground-600 md:text-lg">
+              {content.partnership.description}
+            </p>
           </div>
-          <div className="reveal relative mt-12">
-            <div className="grid border-l border-t border-background-300 md:grid-cols-2">
-              <article className="border-b border-r border-background-300 p-7 md:p-10">
-                <div className="flex min-h-16 items-start justify-between gap-5">
-                  <img
-                    src={IPC_LOGO_URL}
-                    alt="Institute of Project Controls"
-                    width={210}
-                    height={64}
-                    loading="lazy"
-                    className="block max-h-16 w-auto max-w-[190px] object-contain object-left"
-                  />
+
+          <div className="reveal relative mt-12 grid gap-5 lg:grid-cols-2 lg:gap-12">
+            <article className="relative overflow-hidden border border-primary-500/20 bg-[#fffaf3] p-7 shadow-[0_16px_45px_rgba(40,32,20,0.06)] sm:p-9 lg:p-10">
+              <div className="pointer-events-none absolute -bottom-36 -right-28 h-80 w-80 rounded-full border border-primary-500/10" aria-hidden="true" />
+              <div className="relative">
+                <div className="flex h-20 items-center justify-between gap-5">
+                  <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+                    <img
+                      src={IPC_LOGO_URL}
+                      alt=""
+                      width={88}
+                      height={80}
+                      loading="lazy"
+                      className="block max-h-20 w-auto max-w-[88px] shrink-0 object-contain"
+                    />
+                    <p className="max-w-[14rem] bg-gradient-to-r from-primary-700 via-primary-500 to-primary-300 bg-clip-text font-label text-sm font-semibold uppercase leading-relaxed tracking-[0.15em] text-transparent sm:text-base">
+                      Institute of Project Controls
+                    </p>
+                  </div>
                   <span className="eyebrow shrink-0 text-right text-primary-700">IPC</span>
                 </div>
-                <p className="mt-7 eyebrow text-primary-700">Institute of Project Controls</p>
-                <h3 className="mt-3 text-2xl text-background-950">{content.partnership.ipc_title}</h3>
-                <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {content.partnership.ipc_items.map((item) => <IconBullet key={item}>{item}</IconBullet>)}
+                <span className="mt-6 block h-0.5 w-12 bg-primary-500" aria-hidden="true" />
+                <h3 className="mt-5 max-w-xl text-2xl font-semibold leading-tight text-background-950 sm:text-3xl">
+                  {content.partnership.ipc_title}
+                </h3>
+                <ul className="mt-8 grid gap-x-8 gap-y-6 sm:grid-cols-2">
+                  {content.partnership.ipc_items.map((item, index) => {
+                    const ItemIcon = IPC_PARTNERSHIP_ICONS[index % IPC_PARTNERSHIP_ICONS.length];
+                    return (
+                      <li key={item} className="flex items-start gap-4 text-sm font-medium leading-6 text-foreground-700">
+                        <span className="grid h-11 w-11 shrink-0 place-items-center border border-primary-500/25 bg-white/70 text-primary-700">
+                          <ItemIcon size={20} strokeWidth={1.8} aria-hidden="true" />
+                        </span>
+                        <span className="pt-2">{item}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
-              </article>
-              <article className="border-b border-r border-background-300 bg-[#f5f1f8] p-7 md:p-10">
-                <div className="flex min-h-16 items-start justify-between gap-5">
+              </div>
+            </article>
+
+            <article className="relative overflow-hidden border border-[#71599b]/20 bg-[#f8f5fc] p-7 shadow-[0_16px_45px_rgba(45,31,70,0.07)] sm:p-9 lg:p-10">
+              <div className="pointer-events-none absolute -bottom-36 -left-28 h-80 w-80 rounded-full border border-[#71599b]/10" aria-hidden="true" />
+              <div className="relative">
+                <div className="flex h-20 items-center justify-between gap-5">
                   <img
                     src={KENT_LOGO_URL}
                     alt="Kent Business College"
-                    width={210}
-                    height={64}
+                    width={250}
+                    height={72}
                     loading="lazy"
-                    className="block max-h-16 w-auto max-w-[190px] object-contain object-left"
+                    className="block max-h-[4.5rem] w-auto max-w-[220px] object-contain object-left"
                   />
                   <span className="eyebrow shrink-0 text-right text-[#655080]">Education partner</span>
                 </div>
-                <p className="mt-7 eyebrow text-[#655080]">Kent Business College</p>
-                <h3 className="mt-3 text-2xl text-background-950">{content.partnership.kent_title}</h3>
-                <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {content.partnership.kent_items.map((item) => (
-                    <IconBullet key={item} iconClassName="text-[#71599b]">{item}</IconBullet>
-                  ))}
+                <span className="mt-6 block h-0.5 w-12 bg-[#71599b]" aria-hidden="true" />
+                <h3 className="mt-5 max-w-xl text-2xl font-semibold leading-tight text-background-950 sm:text-3xl">
+                  {content.partnership.kent_title}
+                </h3>
+                <ul className="mt-8 grid gap-x-8 gap-y-6 sm:grid-cols-2">
+                  {content.partnership.kent_items.map((item, index) => {
+                    const ItemIcon = KENT_PARTNERSHIP_ICONS[index % KENT_PARTNERSHIP_ICONS.length];
+                    return (
+                      <li key={item} className="flex items-start gap-4 text-sm font-medium leading-6 text-foreground-700">
+                        <span className="grid h-11 w-11 shrink-0 place-items-center border border-[#71599b]/25 bg-white/70 text-[#71599b]">
+                          <ItemIcon size={20} strokeWidth={1.8} aria-hidden="true" />
+                        </span>
+                        <span className="pt-2">{item}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
-                <a
-                  href={CONFIG.KBC_APPLICATION_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-8 inline-flex min-h-12 items-center justify-center gap-3 bg-[#71599b] px-6 py-3 font-label text-xs font-semibold uppercase tracking-[0.03em] text-white transition-colors hover:bg-[#5f477e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#71599b] focus-visible:ring-offset-2"
-                >
-                  {content.partnership.kent_cta_label} <ArrowRight size={16} aria-hidden="true" />
-                </a>
-              </article>
-            </div>
+              </div>
+            </article>
+
             <div
-              className="absolute left-1/2 top-1/2 z-10 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center border-4 border-background-50 bg-primary-500 text-background-950 shadow-[0_10px_30px_rgba(19,21,26,0.18)]"
+              className="absolute left-1/2 top-1/2 z-10 hidden h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center border-[6px] border-background-50 bg-[linear-gradient(135deg,#d89524_0%,#d89524_49%,#71599b_51%,#71599b_100%)] text-white shadow-[0_14px_38px_rgba(30,24,42,0.2)] lg:grid"
               aria-label="IPC and Kent Business College collaboration"
             >
-              <Handshake size={28} strokeWidth={2} aria-hidden="true" />
+              <span className="grid h-[4.35rem] w-[4.35rem] place-items-center bg-white text-background-950">
+                <Handshake size={32} strokeWidth={2} aria-hidden="true" />
+              </span>
             </div>
+          </div>
+
+          <div className="reveal mt-6 flex items-center gap-5 border border-background-300 bg-white px-5 py-4 shadow-[0_10px_30px_rgba(19,21,26,0.05)] sm:px-8">
+            <span className="grid h-12 w-12 shrink-0 place-items-center border border-[#71599b]/20 bg-[#f8f5fc] text-[#71599b]" aria-hidden="true">
+              <ShieldCheck size={24} strokeWidth={1.8} />
+            </span>
+            <span className="hidden h-px flex-1 bg-background-200 sm:block" aria-hidden="true" />
+            <a
+              href={CONFIG.KBC_APPLICATION_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto inline-flex min-h-12 items-center justify-center gap-3 px-2 font-label text-xs font-semibold uppercase tracking-[0.03em] text-[#655080] transition-colors hover:text-[#4f396c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#71599b] focus-visible:ring-offset-2"
+            >
+              {content.partnership.kent_cta_label} <ArrowRight size={17} aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>
@@ -836,12 +972,12 @@ export default function ScholarshipsGateway() {
         <div className="container-content">
           <div className="reveal">
             <SectionIntro
-              eyebrow={content.funding.eyebrow}
-              title={content.funding.title}
-              copy={content.funding.description}
+              eyebrow="Funding options"
+              title="Two module-support options. One careful assessment."
+              copy="Compare the potential IPC contribution and the remaining module cost before requesting a formal assessment."
             />
           </div>
-          <div className="reveal mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="reveal mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
             {fundingOptions.map((option, index) => (
               <button
                 key={option.percentage}
@@ -857,9 +993,6 @@ export default function ScholarshipsGateway() {
                 <span className={`block font-heading text-5xl font-semibold ${fundingIndex === index ? "text-primary-300" : "text-primary-700"}`}>{option.percentage}</span>
                 <span className="mt-4 block text-lg font-semibold">{option.title}</span>
                 <span className={`mt-5 block text-sm leading-6 ${fundingIndex === index ? "text-background-300" : "text-foreground-600"}`}>{option.profile}</span>
-                <span className={`mt-7 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${fundingIndex === index ? "text-primary-300" : "text-primary-700"}`}>
-                  Check eligibility <ArrowRight size={15} aria-hidden="true" />
-                </span>
               </button>
             ))}
           </div>
@@ -869,17 +1002,115 @@ export default function ScholarshipsGateway() {
               <p className="font-semibold text-background-950">{selectedFunding.detail}</p>
               <p className="mt-2 text-sm leading-6 text-foreground-600">{selectedFunding.decision}</p>
             </div>
-            <a href="#eligibility" className="btn-primary">Check this route</a>
+            <Link to="/bursary-scholarship-application" className="btn-primary">
+              Apply now
+            </Link>
           </div>
           )}
           <p className="mt-6 text-xs leading-6 text-foreground-500">
-            {content.funding.notice}
+            Module costs, IPC support and installment arrangements are subject to assessment, approval, available funds and written confirmation.
           </p>
         </div>
       </section>
       )}
 
-      {pathwaysActive && pathway && isManagedItemActive(content.pathways_intro) && (
+      {isManagedItemActive(content.pathways_intro) && (
+      <section id="modules" className="scroll-mt-24 bg-[#10151f] section-padding text-background-50">
+        <div className="container-content">
+          <div className="reveal">
+            <SectionIntro
+              eyebrow="Module explorer"
+              title="Choose the modules that fit your professional goals."
+              copy="Compare module costs, potential IPC support and the remaining payment before requesting a formal assessment."
+              light
+            />
+          </div>
+
+          <div className="reveal mt-12 grid gap-5 xl:grid-cols-3">
+            {MODULE_OFFERS.map((offer, index) => (
+              <article key={offer.id} className="flex h-full flex-col border border-white/15 bg-white/[0.035] p-6 md:p-8">
+                <div className="flex items-start justify-between gap-5 border-b border-white/15 pb-6 xl:h-36">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary-300">
+                      {String(index + 1).padStart(2, "0")} / {offer.label}
+                    </p>
+                    <h3 className="mt-4 text-2xl font-semibold leading-tight md:text-3xl">{offer.title}</h3>
+                  </div>
+                  <BookOpen className="shrink-0 text-primary-300" size={28} strokeWidth={1.6} aria-hidden="true" />
+                </div>
+
+                <div className="mt-6 xl:h-40">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-background-400">Included modules</p>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {offer.modules.map((module) => (
+                      <li key={module} className="border border-white/15 bg-white/[0.04] px-3 py-2 text-xs text-background-200">
+                        {module}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <dl className="mt-7 grid grid-cols-3 border border-white/15">
+                  <div className="border-r border-white/15 p-4">
+                    <dt className="text-[10px] uppercase tracking-wider text-background-500">Cost</dt>
+                    <dd className="mt-2 text-lg font-semibold text-background-50">{offer.courseCost}</dd>
+                  </div>
+                  <div className="border-r border-white/15 p-4">
+                    <dt className="text-[10px] uppercase tracking-wider text-background-500">IPC support</dt>
+                    <dd className="mt-2 text-lg font-semibold text-primary-300">{offer.ipcSupport}</dd>
+                  </div>
+                  <div className="p-4">
+                    <dt className="text-[10px] uppercase tracking-wider text-background-500">You pay</dt>
+                    <dd className="mt-2 text-lg font-semibold text-background-50">{offer.amountPayable}</dd>
+                  </div>
+                </dl>
+
+                <ul className="mt-7 space-y-3 text-sm leading-6 text-background-300 xl:h-72">
+                  {offer.details.map((detail) => (
+                    <li key={detail} className="flex items-start gap-3">
+                      <Check className="mt-1 shrink-0 text-primary-300" size={16} aria-hidden="true" />
+                      <span>{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {offer.bonus && (
+                  <div className="mb-7">
+                    <div className="border border-primary-400/45 bg-primary-400/[0.07] p-4">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-300">{offer.bonus.label}</p>
+                      <h4 className="mt-2 text-base font-semibold text-background-50">{offer.bonus.title}</h4>
+                      <p className="mt-2 text-xs leading-5 text-background-300">{offer.bonus.description}</p>
+                    </div>
+                    <div className="mt-4">
+                      <img
+                        src={offer.bonus.image}
+                        alt="ChPP certification"
+                        width={1200}
+                        height={800}
+                        loading="lazy"
+                        className="block h-auto w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+
+          <div className="reveal mt-8">
+            <Link to="/bursary-scholarship-application" className="btn-primary">
+              Apply now <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+
+          <p className="mt-6 max-w-4xl text-xs leading-6 text-background-400">
+            All costs, contributions, deposits and installment arrangements are indicative until eligibility, module selection and funding are formally assessed and confirmed in writing.
+          </p>
+        </div>
+      </section>
+      )}
+
+      {false && pathwaysActive && pathway && isManagedItemActive(content.pathways_intro) && (
       <section id="pathways" className="scroll-mt-24 bg-[#10151f] section-padding text-background-50">
         <div className="container-content">
           <div className="reveal">
@@ -943,14 +1174,10 @@ export default function ScholarshipsGateway() {
                     <p className="mt-2 text-sm leading-6 text-background-300">{pathway.audience}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-px bg-white/15">
+                <div className="bg-white/15">
                   <div className="bg-[#171d28] p-5">
                     <p className="text-3xl font-semibold text-primary-300">{pathway.credits}</p>
                     <p className="mt-2 text-xs text-background-400">Potential structure</p>
-                  </div>
-                  <div className="bg-[#171d28] p-5">
-                    <p className="text-3xl font-semibold text-[#bca9d7]">{pathway.hours}</p>
-                    <p className="mt-2 text-xs text-background-400">{pathway.hoursLabel}</p>
                   </div>
                 </div>
               </div>
@@ -1019,19 +1246,18 @@ export default function ScholarshipsGateway() {
       </section>
       )}
 
-      {pathwaysActive && pathway && isManagedItemActive(content.learning) && (
+      {isManagedItemActive(content.learning) && (
       <section className="bg-background-50 section-padding">
         <div className="container-content">
           <div className="reveal">
             <SectionIntro
-              eyebrow={`${pathway.name} · ${content.learning.eyebrow}`}
+              eyebrow={content.learning.eyebrow}
               title={content.learning.title}
               copy={content.learning.description}
             />
           </div>
-          <div className="reveal mt-12 grid gap-px bg-background-300 md:grid-cols-3">
+          <div className="reveal mt-12 grid gap-px bg-background-300 md:grid-cols-2">
             {[
-              [pathway.hours, pathway.hoursLabel, pathway.duration],
               ["2 hours", "weekly live teaching", "Interactive online session"],
               ["8 hours", "typical weekly study", "2 + 3 + 3 hours"],
             ].map(([value, label, detail]) => (
@@ -1318,10 +1544,14 @@ export default function ScholarshipsGateway() {
         <div className="container-content">
           <div className="reveal">
             <SectionIntro
-              eyebrow={content.faq.eyebrow}
-              title={content.faq.title}
-              copy={content.faq.description}
+              eyebrow="Frequently asked questions"
+              title="The practical details, answered clearly."
+              copy="Every application is reviewed individually. Final support, module selection, benefits, payment arrangements and award conditions are confirmed in writing."
             />
+            <div className="mt-8 border-l-4 border-primary-500 bg-primary-50 px-5 py-4 text-sm leading-6 text-foreground-700">
+              <strong className="text-background-950">Bursary Selection Announcement:</strong>{" "}
+              Successful applicants will be announced on 10 August 2026.
+            </div>
           </div>
           <div className="reveal mt-12 grid gap-3 lg:grid-cols-2 lg:items-start">
             {faqItems.map(({ question, answer }) => (
@@ -1349,15 +1579,10 @@ export default function ScholarshipsGateway() {
             <p className="mt-6 max-w-2xl text-base leading-8 text-background-300">{content.final_cta.description}</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link to="/bursary-scholarship-application" className="btn-primary">Apply now <ArrowRight size={16} aria-hidden="true" /></Link>
-              <a href={CONFIG.IPC_ADVISER_URL} className="btn-secondary">{content.final_cta.secondary_cta_label}</a>
-              <a href="#pathways" className="inline-flex min-h-12 items-center px-4 text-sm font-semibold text-primary-300 underline decoration-primary-500 underline-offset-8">Find the right pathway</a>
+              <Link to="/information-session" className="btn-secondary">Speak to an IPC module adviser</Link>
+              <a href="#modules" className="inline-flex min-h-12 items-center px-4 text-sm font-semibold text-primary-300 underline decoration-primary-500 underline-offset-8">Explore the modules</a>
               <a href={CONFIG.IPC_FUNDING_PAGE_URL} className="inline-flex min-h-12 items-center px-4 text-sm font-semibold text-primary-300 underline decoration-primary-500 underline-offset-8">Check funding options</a>
             </div>
-          </div>
-          <div className="reveal mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-xs text-background-500">
-            <a href={CONFIG.PRIVACY_POLICY_URL} className="hover:text-background-200">Privacy policy</a>
-            <a href={CONFIG.TERMS_URL} className="hover:text-background-200">Terms</a>
-            <a href={CONFIG.IPC_CONTACT_URL} className="hover:text-background-200">Contact IPC</a>
           </div>
         </div>
       </section>

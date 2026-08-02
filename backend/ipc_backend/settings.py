@@ -174,7 +174,10 @@ EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="office@instituteofprojectcontrols.org")
 IPC_REVIEW_EMAIL = env("IPC_REVIEW_EMAIL", default=DEFAULT_FROM_EMAIL)
 EVENT_SUPPORT_EMAIL = env("EVENT_SUPPORT_EMAIL", default=IPC_REVIEW_EMAIL)
-FRONTEND_URL = env("FRONTEND_URL", default="https://localhost:5173")
+FRONTEND_URL = env(
+    "FRONTEND_URL",
+    default="https://instituteofprojectcontrols.com",
+).rstrip("/")
 IPC_ACCOUNT_EMAIL_DOMAIN = env("IPC_ACCOUNT_EMAIL_DOMAIN", default="ipc.com")
 
 GRAPH_TENANT_ID = env("GRAPH_TENANT_ID", default="")

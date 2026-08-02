@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 import {
   bursaryApi,
-  pathwayLabels,
+  moduleLabels,
   type BursaryAdminQuery,
   type PaginatedBursaryApplications,
 } from "@/features/bursary/api";
@@ -18,8 +18,6 @@ import { notifications } from "@/lib/notifications";
 
 const fieldClass = "h-10 rounded-xl border border-[#D4C6B5] bg-white px-3 text-xs outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20";
 
-const formatCurrency = (value: string) =>
-  new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
@@ -98,7 +96,7 @@ export default function AdminBursaryApplicationsPage() {
       <AdminPageHeader
         eyebrow="Scholarships"
         title="Bursary & Scholarship Applications"
-        description="Review learner applications, funding requests, pathway choices and mandatory declarations."
+        description="Review learner applications, funding requests, module choices and mandatory declarations."
       />
       <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {cards.map(([label, count]) => (
@@ -134,10 +132,10 @@ export default function AdminBursaryApplicationsPage() {
               </select>
             </label>
             <label>
-              <span className="sr-only">Pathway</span>
+              <span className="sr-only">Module</span>
               <select value={filters.pathway} onChange={(event) => { setFilters((value) => ({ ...value, pathway: event.target.value })); setPage(1); }} className={`${fieldClass} w-full`}>
-                <option value="">All pathways</option>
-                {Object.entries(pathwayLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                <option value="">All modules</option>
+                {Object.entries(moduleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <label>
@@ -166,7 +164,6 @@ export default function AdminBursaryApplicationsPage() {
                 <option value="-submitted_at">Newest first</option>
                 <option value="submitted_at">Oldest first</option>
                 <option value="first_name">Applicant name</option>
-                <option value="-bursary_amount_requested_gbp">Bursary amount — high to low</option>
                 <option value="status">Status</option>
               </select>
             </label>
@@ -182,10 +179,10 @@ export default function AdminBursaryApplicationsPage() {
           <div className="p-5"><EmptyState>No bursary applications match the current filters.</EmptyState></div>
         ) : (
           <div className={`overflow-x-auto ${isLoading ? "opacity-60" : ""}`} aria-busy={isLoading}>
-            <table className="min-w-[1400px] w-full text-left text-sm">
+            <table className="min-w-[1150px] w-full text-left text-sm">
               <thead className="bg-[#ECE2D6] text-[10px] uppercase tracking-wider text-[#5E554C]">
                 <tr>
-                  {["Reference", "Applicant", "Mobile", "Country", "Employment", "Organisation", "Pathway", "Bursary", "Requested %", "Status", "Submitted", "Actions"].map((heading) => (
+                  {["Reference", "Applicant", "Mobile", "Country", "Employment", "Organisation", "Module", "Status", "Submitted", "Actions"].map((heading) => (
                     <th key={heading} className="px-4 py-3.5">{heading}</th>
                   ))}
                 </tr>
@@ -200,8 +197,6 @@ export default function AdminBursaryApplicationsPage() {
                     <td className="px-4 py-4">{item.currently_employed ? "Employed" : "Not employed"}</td>
                     <td className="max-w-48 truncate px-4 py-4" title={item.organisation_name}>{item.organisation_name || "Not applicable"}</td>
                     <td className="px-4 py-4">{item.preferred_pathway_label}</td>
-                    <td className="whitespace-nowrap px-4 py-4 font-semibold">{formatCurrency(item.bursary_amount_requested_gbp)}</td>
-                    <td className="px-4 py-4">{Number(item.requested_bursary_percentage).toLocaleString()}%</td>
                     <td className="px-4 py-4"><StatusBadge status={item.status} /></td>
                     <td className="whitespace-nowrap px-4 py-4 text-[#756B61]">{formatDate(item.submitted_at)}</td>
                     <td className="px-4 py-4 text-right">

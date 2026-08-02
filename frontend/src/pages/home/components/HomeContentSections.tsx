@@ -29,6 +29,12 @@ interface HomeSection {
 }
 
 const emptySection: HomeSection = { eyebrow: "", title: "", description: "", items: [] };
+const audienceBackgroundImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/039fc75f7728429f8a294535a1709411.png";
+const ecosystemFeaturedImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/d0f6d70df5284b2f9ed7cf6719c378c5.png";
+const eventsBackgroundImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/6021c9e5d78345d08a725310665764a5.png";
+const scholarshipsBackgroundImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/843058ed72c640f7883802573e14de22.png";
+const awardsBackgroundImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/9218ac450fae4f9a83ea3e4946430ff9.png";
+const clubsMapImage = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b53e42f5674147bcad53ecaa0e2d041b.png";
 
 function SectionActions({ content, dark = false, align = "center" }: { content: HomeSection; dark?: boolean; align?: "center" | "start" }) {
   if (!content.primary_cta_label && !content.secondary_cta_label) return null;
@@ -51,11 +57,13 @@ function HomeFeatureSection({
   dark = false,
   muted = false,
   columns = 4,
+  backgroundImage,
 }: {
   sectionKey: string;
   dark?: boolean;
   muted?: boolean;
   columns?: 3 | 4;
+  backgroundImage?: string;
 }) {
   const content = useManagedSection<HomeSection>(sectionKey, emptySection);
   const background = dark ? "bg-background-950" : muted ? "bg-background-100" : "bg-background-50";
@@ -63,8 +71,18 @@ function HomeFeatureSection({
   const body = Array.isArray(content.body) ? content.body : content.body ? [content.body] : [];
 
   return (
-    <section className={`${background} section-padding`}>
-      <div className="container-content">
+    <section className={`relative overflow-hidden ${background} section-padding`}>
+      {backgroundImage && (
+        <>
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${backgroundImage})` }}
+            aria-hidden="true"
+          />
+          <div className={`absolute inset-0 ${dark ? "bg-background-950/55" : "bg-background-100/55"}`} aria-hidden="true" />
+        </>
+      )}
+      <div className="container-content relative z-10">
         <div className="reveal">
           <SectionHeader
             eyebrow={content.eyebrow}
@@ -124,7 +142,13 @@ function HomeRadialFeatureSection({ sectionKey }: { sectionKey: string }) {
 
   return (
     <section className="relative overflow-hidden bg-background-50 section-padding">
-      <div className="absolute inset-0 dot-grid opacity-20" />
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${eventsBackgroundImage})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-background-50/25" aria-hidden="true" />
+      <div className="absolute inset-0 dot-grid opacity-[0.05]" />
       <div className="container-content relative z-10">
         <div className="grid items-center gap-14 lg:grid-cols-[1.08fr_.92fr] lg:gap-12">
           <div className="reveal">
@@ -265,17 +289,23 @@ export function HomeValues() { return <HomeFeatureSection sectionKey="values" mu
 export function HomeAudiences() {
   const content = useManagedSection<HomeSection>("audiences", emptySection);
   return (
-    <section className="bg-background-50 section-padding">
-      <div className="container-content">
+    <section className="relative overflow-hidden bg-background-50 section-padding">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${audienceBackgroundImage})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-background-50/60" aria-hidden="true" />
+      <div className="container-content relative z-10">
         <div className="reveal"><SectionHeader eyebrow={content.eyebrow} title={content.title} subtitle={content.description} centered /></div>
-        <div className="reveal mt-12 overflow-x-auto border border-background-200/70 md:mt-16" tabIndex={0} aria-label="Audience value proposition">
+        <div className="reveal mt-12 overflow-x-auto border border-background-200/70 bg-background-50/90 shadow-lg backdrop-blur-sm md:mt-16" tabIndex={0} aria-label="Audience value proposition">
           <table className="w-full min-w-[900px] border-collapse">
             <thead className="bg-background-950 text-background-50">
               <tr>{["Audience", "Value from IPC", "Core message"].map((label) => <th key={label} className="px-6 py-5 text-left text-xs uppercase tracking-wider">{label}</th>)}</tr>
             </thead>
             <tbody>
               {content.items.filter(isManagedItemActive).map((item, index) => (
-                <tr key={item.title} className={`border-b border-background-200/70 ${index % 2 ? "bg-background-100/60" : ""}`}>
+                <tr key={item.title} className={`border-b border-background-200/70 ${index % 2 ? "bg-background-100/90" : "bg-background-50/90"}`}>
                   <th scope="row" className="w-1/5 px-6 py-6 text-left align-top font-semibold text-background-950">{item.title}</th>
                   <td className="w-2/5 px-6 py-6 align-top text-sm leading-relaxed text-foreground-600">{item.value}</td>
                   <td className="w-2/5 px-6 py-6 align-top text-sm font-medium leading-relaxed text-background-950">{item.message}</td>
@@ -330,8 +360,13 @@ export function HomeEcosystem() {
               >
                 {featured && (
                   <>
-                    <div className="pointer-events-none absolute -right-28 -top-28 h-80 w-80 rounded-full border border-primary-500/15" />
-                    <div className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full border border-dashed border-primary-500/15" />
+                    <img
+                      src={ecosystemFeaturedImage}
+                      alt=""
+                      className="pointer-events-none absolute inset-x-0 top-0 h-[54%] w-full object-cover object-center"
+                      aria-hidden="true"
+                    />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-[54%] bg-gradient-to-b from-background-950/15 via-transparent to-accent-950/95" />
                   </>
                 )}
                 <div className="relative z-10 flex items-start justify-between gap-5">
@@ -372,7 +407,13 @@ export function HomeScholarships() {
 
   return (
     <section className="relative overflow-hidden bg-background-950 section-padding">
-      <div className="absolute inset-0 dot-grid opacity-[0.06]" />
+      <div
+        className="absolute inset-0 hidden bg-contain bg-center bg-no-repeat md:block"
+        style={{ backgroundImage: `url(${scholarshipsBackgroundImage})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-background-950/45" aria-hidden="true" />
+      <div className="absolute inset-0 dot-grid opacity-[0.04]" />
       <div className="container-content relative z-10">
         <div className="grid items-start gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
           <div className="reveal lg:sticky lg:top-28">
@@ -449,8 +490,54 @@ export function HomeScholarships() {
   );
 }
 
-export function HomeAwards() { return <HomeFeatureSection sectionKey="awards" muted />; }
-export function HomeClubs() { return <HomeFeatureSection sectionKey="clubs" />; }
+export function HomeAwards() { return <HomeFeatureSection sectionKey="awards" muted backgroundImage={awardsBackgroundImage} />; }
+
+export function HomeClubs() {
+  const content = useManagedSection<HomeSection>("clubs", emptySection);
+  const items = content.items.filter(isManagedItemActive);
+
+  return (
+    <section className="relative overflow-hidden bg-background-50 section-padding">
+      <img
+        src={clubsMapImage}
+        alt=""
+        className="pointer-events-none absolute inset-y-0 right-0 h-full w-[72%] object-contain object-right opacity-25 md:opacity-55 lg:w-[58%] lg:opacity-90"
+        aria-hidden="true"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background-50 via-background-50/75 to-transparent" aria-hidden="true" />
+      <div className="container-content relative z-10">
+        <div className="grid items-start gap-x-10 gap-y-10 lg:grid-cols-12">
+          <div className="reveal lg:col-span-8">
+            <span className="eyebrow text-primary-700">{content.eyebrow}</span>
+            <span className="mt-4 block h-px w-36 bg-primary-500" />
+            <h2 className="mt-6 max-w-4xl font-heading text-[clamp(2.3rem,4vw,4.25rem)] font-extrabold leading-[1.02] text-background-950">
+              {content.title}
+            </h2>
+            <p className="mt-7 max-w-4xl text-base leading-relaxed text-foreground-600 md:text-lg">
+              {content.description}
+            </p>
+          </div>
+
+          <div className="reveal grid gap-4 sm:grid-cols-2 lg:col-span-10 xl:grid-cols-4">
+            {items.map((item) => (
+              <article key={item.title} className="relative flex min-h-72 flex-col border border-background-200/80 bg-background-50 p-6">
+                <h3 className="whitespace-nowrap pr-8 font-heading text-base font-semibold text-background-950 2xl:text-lg">{item.title}</h3>
+                <i className={`${item.icon ?? "ri-map-pin-line"} absolute right-6 top-6 text-xl text-primary-700`} aria-hidden="true" />
+                <span className="mt-5 h-px w-10 bg-primary-500" />
+                <p className="mt-5 text-sm leading-relaxed text-foreground-600">{item.description}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="reveal lg:col-span-8">
+            <SectionActions content={{ ...content, secondary_cta_label: "Support a Club" }} align="start" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function HomePublications() { return <HomeFeatureSection sectionKey="publications" muted />; }
 export function HomePartners() { return <HomeFeatureSection sectionKey="partners" dark />; }
 
@@ -462,6 +549,20 @@ export function HomeSponsorship() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeItem = items[Math.min(activeIndex, Math.max(items.length - 1, 0))];
   const routeY = [54, 126, 198, 270, 342];
+  const routePaths = [
+    "M 218 54 H 472 Q 520 54 520 96",
+    "M 218 126 H 292 Q 312 126 326 142 L 430 178",
+    "M 218 198 H 416",
+    "M 218 270 H 292 Q 312 270 326 254 L 430 222",
+    "M 218 342 H 356 Q 378 342 378 320 V 296 Q 378 276 398 276 H 440",
+  ];
+  const routeNodes = [
+    [[320, 54], [472, 54], [520, 96]],
+    [[292, 126], [326, 142], [430, 178]],
+    [[288, 198], [416, 198]],
+    [[292, 270], [326, 254], [430, 222]],
+    [[356, 342], [378, 320], [440, 276]],
+  ];
 
   return (
     <section className="overflow-hidden bg-background-50 section-padding">
@@ -496,22 +597,49 @@ export function HomeSponsorship() {
 
               <div className="relative z-10 mt-6 hidden h-[400px] lg:block">
                 <svg viewBox="0 0 700 400" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+                  <defs>
+                    <filter id="sponsorship-route-glow" x="-40%" y="-40%" width="180%" height="180%">
+                      <feGaussianBlur stdDeviation="3.5" result="blur" />
+                      <feFlood floodColor="#d99121" floodOpacity="0.75" />
+                      <feComposite in2="blur" operator="in" />
+                      <feMerge>
+                        <feMergeNode />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
                   {routeItems.map((item, index) => {
                     const active = activeIndex === index || activeIndex === items.length - 1;
                     return (
-                      <path
-                        key={item.title}
-                        d={`M 218 ${routeY[index]} C 360 ${routeY[index]}, 390 200, 520 200`}
-                        fill="none"
-                        stroke={active ? "oklch(0.685 0.132 72 / 0.68)" : "oklch(0.685 0.132 72 / 0.14)"}
-                        strokeWidth={active ? "2" : "1"}
-                        strokeDasharray={activeIndex === items.length - 1 ? "0" : active ? "0" : "4 8"}
-                        className="transition-all duration-500"
-                      />
+                      <g key={item.title} className="transition-all duration-500">
+                        <path
+                          d={routePaths[index]}
+                          fill="none"
+                          stroke={active ? "#d99121" : "#77736a"}
+                          strokeWidth={active ? "3.5" : "2.5"}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          opacity={active ? "1" : "0.56"}
+                          filter={active ? "url(#sponsorship-route-glow)" : undefined}
+                          className="transition-all duration-500"
+                        />
+                        {routeNodes[index]?.map(([cx, cy], nodeIndex) => (
+                          <circle
+                            key={`${item.title}-${nodeIndex}`}
+                            cx={cx}
+                            cy={cy}
+                            r={active ? "5" : "4"}
+                            fill={active ? "#d99121" : "#77736a"}
+                            opacity={active ? "1" : "0.72"}
+                            filter={active ? "url(#sponsorship-route-glow)" : undefined}
+                            className="transition-all duration-500"
+                          />
+                        ))}
+                      </g>
                     );
                   })}
-                  <circle cx="520" cy="200" r="86" fill="none" stroke="oklch(0.685 0.132 72 / 0.14)" />
-                  <circle cx="520" cy="200" r="62" fill="none" stroke="oklch(0.685 0.132 72 / 0.22)" strokeDasharray="4 7" />
+                  <circle cx="520" cy="200" r="104" fill="none" stroke="#d99121" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.48" />
+                  <circle cx="520" cy="200" r="82" fill="none" stroke="#d99121" strokeWidth="2.5" opacity="0.9" filter="url(#sponsorship-route-glow)" />
                 </svg>
 
                 {routeItems.map((item, index) => {
@@ -544,10 +672,10 @@ export function HomeSponsorship() {
                     onMouseEnter={() => setActiveIndex(items.length - 1)}
                     onFocus={() => setActiveIndex(items.length - 1)}
                     onClick={() => setActiveIndex(items.length - 1)}
-                    className={`absolute left-[74.3%] top-1/2 flex h-36 w-36 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border p-5 text-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+                    className={`absolute left-[74.3%] top-1/2 flex h-40 w-40 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 p-5 text-center shadow-[0_0_22px_rgba(217,145,33,0.3),inset_0_0_28px_rgba(217,145,33,0.08)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
                       activeIndex === items.length - 1
-                        ? "scale-110 border-primary-500 bg-primary-500 text-background-950"
-                        : "border-primary-500/40 bg-background-900 text-background-50 hover:border-primary-500"
+                        ? "scale-105 border-primary-400 bg-primary-500 text-background-950 shadow-[0_0_34px_rgba(217,145,33,0.55)]"
+                        : "border-primary-500/90 bg-background-950 text-background-50 hover:border-primary-400 hover:shadow-[0_0_30px_rgba(217,145,33,0.48),inset_0_0_28px_rgba(217,145,33,0.1)]"
                     }`}
                   >
                     <i className={`${strategicItem.icon ?? "ri-links-line"} text-2xl`} aria-hidden="true" />

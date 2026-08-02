@@ -1,7 +1,8 @@
+import json
 import logging
 
 from django.contrib.auth import get_user_model
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
@@ -18,6 +19,7 @@ from applications.models import Application
 from accounts.graph_mail import (
     GraphMailError,
     send_bursary_approval_email as send_graph_bursary_approval_email,
+    send_bursary_needs_information_email as send_graph_bursary_needs_information_email,
     send_bursary_rejection_email as send_graph_bursary_rejection_email,
 )
 from accounts.models import AdminNotification
@@ -37,6 +39,7 @@ from .serializers import (
     BursaryApplicationPublicSerializer,
     BursaryApplicationStatusUpdateSerializer,
     ScholarshipGatewayContentSerializer,
+    bursary_application_to_public_values,
 )
 
 
@@ -54,6 +57,35 @@ PATHWAY_DETAIL_FIELDS = {
 logger = logging.getLogger(__name__)
 
 
+def approved_membership_for_user(user, for_update=False):
+    if not user.is_authenticated:
+        return None
+    queryset = Application.objects.filter(
+        Q(approved_user=user) | Q(applicant=user) | Q(email__iexact=user.email),
+        status=Application.Status.APPROVED,
+    )
+    if for_update:
+        queryset = queryset.select_for_update()
+    return queryset.order_by("-approved_at", "-pk").first()
+
+
+def bursary_payload_from_request(request):
+    raw_payload = request.data.get("payload")
+    if raw_payload is None:
+        return request.data
+    try:
+        payload = json.loads(raw_payload)
+    except (TypeError, ValueError) as error:
+        raise ValueError("The bursary application payload is invalid.") from error
+    if not isinstance(payload, dict):
+        raise ValueError("The bursary application payload is invalid.")
+    if request.FILES.get("identityDocument"):
+        payload["identityDocument"] = request.FILES["identityDocument"]
+    if request.FILES.get("applicantPhoto"):
+        payload["applicantPhoto"] = request.FILES["applicantPhoto"]
+    return payload
+
+
 def deliver_bursary_approval_email(application_id):
     application = BursaryApplication.objects.filter(pk=application_id).first()
     if application is None or application.approval_email_sent_at is not None:
@@ -65,7 +97,7 @@ def deliver_bursary_approval_email(application_id):
             recipient=application.email,
             name=recipient_name,
             application_reference=application.application_reference,
-            pathway=application.get_preferred_pathway_display(),
+            pathway=application.get_bursary_selection_display(),
         )
     except GraphMailError:
         logger.exception(
@@ -91,7 +123,7 @@ def deliver_bursary_rejection_email(application_id, reason):
             recipient=application.email,
             name=recipient_name,
             application_reference=application.application_reference,
-            pathway=application.get_preferred_pathway_display(),
+            pathway=application.get_bursary_selection_display(),
             reason=reason,
         )
     except GraphMailError:
@@ -107,6 +139,26 @@ def deliver_bursary_rejection_email(application_id, reason):
     ).update(rejection_email_sent_at=timezone.now())
 
 
+def deliver_bursary_needs_information_email(application_id, message, recipient):
+    application = BursaryApplication.objects.filter(pk=application_id).first()
+    if application is None:
+        return
+    recipient_name = application.preferred_name.strip() or application.first_name
+    try:
+        send_graph_bursary_needs_information_email(
+            recipient=recipient,
+            name=recipient_name,
+            application_reference=application.application_reference,
+            pathway=application.get_bursary_selection_display(),
+            message=message,
+        )
+    except GraphMailError:
+        logger.exception(
+            "Microsoft Graph could not send the bursary information-request email for application %s.",
+            application.application_reference,
+        )
+
+
 def create_bursary_status_notifications(application, rejection_reason=""):
     linked_applications = Application.objects.filter(
         application_reference__iexact=application.membership_reference,
@@ -117,6 +169,8 @@ def create_bursary_status_notifications(application, rejection_reason=""):
         for user_id in linked_users
         if user_id
     }
+    if application.submitted_by_id:
+        recipient_ids.add(application.submitted_by_id)
     recipients = get_user_model().objects.filter(
         Q(pk__in=recipient_ids) | Q(email__iexact=application.email),
     ).distinct()
@@ -132,7 +186,10 @@ def create_bursary_status_notifications(application, rejection_reason=""):
         f"Your IPC Bursary application {application.application_reference} "
         f"is now {application.get_status_display()}."
     )
-    if application.status == BursaryApplication.Status.REJECTED and rejection_reason:
+    if application.status in (
+        BursaryApplication.Status.REJECTED,
+        BursaryApplication.Status.NEEDS_INFORMATION,
+    ) and rejection_reason:
         message = f"{message} Reason: {rejection_reason}"
 
     UserNotification.objects.bulk_create([
@@ -141,14 +198,31 @@ def create_bursary_status_notifications(application, rejection_reason=""):
             notification_type="bursary_application",
             title=titles[application.status],
             message=message[:2000],
-            target_url="/user/scholarships",
+            target_url=(
+                f"/bursary-scholarship-application?applicationReference={application.application_reference}"
+                if application.status == BursaryApplication.Status.NEEDS_INFORMATION
+                else "/user/scholarships"
+            ),
         )
         for recipient in recipients
     ])
 
 
+def owned_bursary_applications(user):
+    membership_references = Application.objects.filter(
+        Q(applicant=user) | Q(approved_user=user) | Q(email__iexact=user.email),
+    ).values_list("application_reference", flat=True)
+    return BursaryApplication.objects.filter(
+        Q(submitted_by=user)
+        | Q(membership_reference__in=membership_references)
+        | Q(email__iexact=user.email),
+    ).distinct()
+
+
 class ScholarshipContentView(APIView):
     permission_classes = [permissions.AllowAny]
+
+    public_pathway_ids = {"chartered", "pmo", "apm"}
 
     def get(self, request):
         gateway_content = ScholarshipGatewayContent.objects.filter(
@@ -169,7 +243,11 @@ class ScholarshipContentView(APIView):
         pages = [
             page
             for page in (pathways_content.pages if pathways_active else [])
-            if isinstance(page, dict) and page.get("is_active", True) is not False
+            if (
+                isinstance(page, dict)
+                and page.get("is_active", True) is not False
+                and page.get("id") in self.public_pathway_ids
+            )
         ]
         pathways = [
             {
@@ -246,6 +324,47 @@ class BursaryApplicationCreateViewSet(mixins.CreateModelMixin, viewsets.GenericV
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "bursary_application"
 
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        authenticated_user = request.user if request.user.is_authenticated else None
+        membership_application = approved_membership_for_user(request.user, for_update=True)
+        try:
+            payload = bursary_payload_from_request(request)
+        except ValueError as error:
+            return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=payload)
+        serializer.context["membership_application"] = membership_application
+        serializer.context["submitted_by"] = authenticated_user
+        serializer.is_valid(raise_exception=True)
+        submitted_email = serializer.validated_data["personalDetails"]["email"]
+        existing_filter = Q(email__iexact=submitted_email)
+        if authenticated_user:
+            existing_filter |= Q(submitted_by=authenticated_user)
+        if membership_application:
+            existing_filter |= Q(
+                membership_reference__iexact=membership_application.application_reference,
+            )
+        existing = BursaryApplication.objects.filter(existing_filter).order_by(
+            "-submitted_at", "-pk",
+        ).first()
+        if existing:
+            return Response({
+                "detail": (
+                    "A bursary application already exists for this applicant. "
+                    "It can only be edited when its status is Needs information."
+                ),
+                "applicationReference": existing.application_reference,
+                "status": existing.status,
+            }, status=status.HTTP_409_CONFLICT)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
+
     def perform_create(self, serializer):
         application = serializer.save()
 
@@ -276,6 +395,113 @@ class BursaryApplicationCreateViewSet(mixins.CreateModelMixin, viewsets.GenericV
         transaction.on_commit(notify)
 
 
+class BursaryApplicationCurrentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def _selected_application(user, application_reference="", for_update=False):
+        queryset = owned_bursary_applications(user)
+        if for_update:
+            queryset = queryset.select_for_update()
+        if application_reference:
+            return queryset.filter(
+                application_reference__iexact=application_reference,
+            ).first()
+        editable = queryset.filter(
+            status=BursaryApplication.Status.NEEDS_INFORMATION,
+        ).order_by("-updated_at", "-pk").first()
+        return editable or queryset.order_by("-submitted_at", "-pk").first()
+
+    def get(self, request):
+        application = self._selected_application(
+            request.user,
+            request.query_params.get("applicationReference", "").strip(),
+        )
+        if application is None:
+            return Response({
+                "hasApplication": False,
+                "editable": False,
+                "applicationReference": "",
+                "status": None,
+                "statusLabel": "",
+                "updatedAt": None,
+                "values": None,
+            })
+
+        editable = application.status == BursaryApplication.Status.NEEDS_INFORMATION
+        return Response({
+            "hasApplication": True,
+            "editable": editable,
+            "applicationReference": application.application_reference,
+            "status": application.status,
+            "statusLabel": application.get_status_display(),
+            "updatedAt": application.updated_at,
+            "values": (
+                bursary_application_to_public_values(application)
+                if editable
+                else None
+            ),
+        })
+
+    @transaction.atomic
+    def patch(self, request):
+        application = self._selected_application(
+            request.user,
+            request.query_params.get("applicationReference", "").strip(),
+            for_update=True,
+        )
+        if (
+            application is None
+            or application.status != BursaryApplication.Status.NEEDS_INFORMATION
+        ):
+            return Response(
+                {"detail": "This bursary application is not open for editing."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        try:
+            payload = bursary_payload_from_request(request)
+        except ValueError as error:
+            return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = BursaryApplicationPublicSerializer(
+            application,
+            data=payload,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        application = serializer.save(changed_by=request.user)
+        create_bursary_status_notifications(application)
+
+        def notify():
+            applicant_name = f"{application.first_name} {application.last_name}".strip()
+            create_admin_notifications(
+                notification_type=AdminNotification.NotificationType.BURSARY_APPLICATION,
+                title="Bursary application resubmitted",
+                message=(
+                    f"{applicant_name} resubmitted requested information for "
+                    f"{application.application_reference}."
+                ),
+                source_type="bursary_application",
+                source_id=application.pk,
+                target_url=f"/admin/bursary-applications/{application.pk}",
+            )
+            send_mail(
+                "IPC bursary application update received",
+                (
+                    f"Dear {application.first_name},\n\n"
+                    "We have received the updated information for your IPC bursary application.\n"
+                    f"Application reference: {application.application_reference}\n\n"
+                    "Your application is now back under review."
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [application.email],
+                fail_silently=True,
+            )
+
+        transaction.on_commit(notify)
+        return Response(BursaryApplicationPublicSerializer(application).data)
+
+
 class BursaryApplicationPagination(PageNumberPagination):
     page_size = 15
     page_size_query_param = "page_size"
@@ -304,7 +530,6 @@ class AdminBursaryApplicationViewSet(
         "submitted_at",
         "first_name",
         "last_name",
-        "bursary_amount_requested_gbp",
         "status",
     ]
     ordering = ["-submitted_at"]
@@ -327,8 +552,8 @@ class AdminBursaryApplicationViewSet(
         date_to = params.get("date_to")
         if status_value in BursaryApplication.Status.values:
             queryset = queryset.filter(status=status_value)
-        if pathway in BursaryApplication.PreferredPathway.values:
-            queryset = queryset.filter(preferred_pathway=pathway)
+        if pathway in BursaryApplication.PreferredModule.values:
+            queryset = queryset.filter(preferred_modules__contains=[pathway])
         if employed in ("true", "false"):
             queryset = queryset.filter(currently_employed=employed == "true")
         if country:
@@ -350,6 +575,24 @@ class AdminBursaryApplicationViewSet(
         )
         response.data["summary"] = counts
         return response
+
+    @action(detail=True, methods=["get"], url_path="identity-document")
+    def identity_document(self, request, pk=None):
+        application = self.get_object()
+        if not application.identity_document:
+            raise Http404("Identity document not found.")
+        return FileResponse(
+            application.identity_document.open("rb"),
+            as_attachment=True,
+            filename=application.identity_document.name.rsplit("/", 1)[-1],
+        )
+
+    @action(detail=True, methods=["get"], url_path="applicant-photo")
+    def applicant_photo(self, request, pk=None):
+        application = self.get_object()
+        if not application.applicant_photo:
+            raise Http404("Applicant photo not found.")
+        return FileResponse(application.applicant_photo.open("rb"), as_attachment=False)
 
     @action(detail=True, methods=["patch"], url_path="status")
     @transaction.atomic
@@ -419,7 +662,29 @@ class AdminBursaryApplicationViewSet(
                 transaction.on_commit(
                     lambda application_id=application.pk, reason=internal_reason:
                         deliver_bursary_rejection_email(application_id, reason)
-                )
+            )
+            if new_status == BursaryApplication.Status.NEEDS_INFORMATION:
+                account_emails = []
+                if application.submitted_by and application.submitted_by.email:
+                    account_emails.append(application.submitted_by.email)
+                if application.membership_reference:
+                    account_emails.extend(get_user_model().objects.filter(
+                        Q(
+                            membership_application__application_reference__iexact=application.membership_reference
+                        )
+                        | Q(
+                            membership_applications__application_reference__iexact=application.membership_reference
+                        )
+                    ).exclude(email="").values_list("email", flat=True).distinct())
+                email_recipients = list(dict.fromkeys([
+                    application.email,
+                    *account_emails,
+                ]))
+                for recipient in email_recipients:
+                    transaction.on_commit(
+                        lambda application_id=application.pk, message=internal_reason, email=recipient:
+                            deliver_bursary_needs_information_email(application_id, message, email)
+                    )
         return Response(BursaryApplicationDetailSerializer(
             application,
             context={"request": request},

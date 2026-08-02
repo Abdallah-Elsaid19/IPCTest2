@@ -150,6 +150,8 @@ const DEFAULT_PATHWAY_DETAILS: PathwayDetailContent[] = (Object.keys(VISUAL_DETA
   funding: PATHWAY_FUNDING[id],
 }));
 
+const PUBLIC_PATHWAY_IDS = new Set<PathwayId>(["chartered", "pmo", "apm"]);
+
 const creditSpanClasses: Record<number, string> = {
   1: "sm:col-span-1",
   2: "sm:col-span-2",
@@ -162,7 +164,9 @@ const creditSpanClasses: Record<number, string> = {
 function ManagedScholarshipPathwayDetailPage() {
   const { pathwayId } = useParams();
   const pathwaysActive = useManagedSection<boolean>("pathways_active", true);
-  const managedPathways = useManagedSection<Pathway[]>("pathways", PATHWAYS).filter(isManagedItemActive);
+  const managedPathways = useManagedSection<Pathway[]>("pathways", PATHWAYS).filter(
+    (item) => isManagedItemActive(item) && PUBLIC_PATHWAY_IDS.has(item.id),
+  );
   const pathways = pathwaysActive ? managedPathways : [];
   const managedDetails = useManagedSection<PathwayDetailContent[]>("pathway_details", DEFAULT_PATHWAY_DETAILS).filter(isManagedItemActive);
   const pathway = pathways.find((item) => item.id === pathwayId);
