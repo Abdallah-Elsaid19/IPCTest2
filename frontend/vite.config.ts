@@ -77,6 +77,9 @@ export default defineConfig({
   build: {
     sourcemap: true,
     outDir: 'out',
+    // The server's .htaccess can be locked briefly on Windows. It is kept in
+    // place while prepare-build.mjs removes the rest of the previous build.
+    emptyOutDir: false,
   },
   resolve: {
     alias: {
