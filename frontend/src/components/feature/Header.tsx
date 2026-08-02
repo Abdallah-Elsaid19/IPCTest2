@@ -52,7 +52,7 @@ export default function Header() {
       <aside className="absolute inset-x-0 top-0 z-[60] flex h-9 items-center border-b border-background-800 bg-black text-background-50 shadow-sm">
         <div className="container-content min-w-0 text-center">
           <Link
-            to="/bursary-scholarship-application"
+            to="/scholarships"
             className="inline-block max-w-full truncate text-[11px] leading-none underline decoration-primary-400/70 underline-offset-4 transition-colors hover:text-primary-300 sm:text-xs"
           >
             <strong>Scholarships open:</strong>{" "}

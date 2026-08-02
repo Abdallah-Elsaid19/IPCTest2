@@ -295,7 +295,7 @@ export function HomeAudiences() {
         style={{ backgroundImage: `url(${audienceBackgroundImage})` }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-background-50/60" aria-hidden="true" />
+      <div className="absolute inset-0 bg-background-50/35" aria-hidden="true" />
       <div className="container-content relative z-10">
         <div className="reveal"><SectionHeader eyebrow={content.eyebrow} title={content.title} subtitle={content.description} centered /></div>
         <div className="reveal mt-12 overflow-x-auto border border-background-200/70 bg-background-50/90 shadow-lg backdrop-blur-sm md:mt-16" tabIndex={0} aria-label="Audience value proposition">
@@ -321,7 +321,12 @@ export function HomeAudiences() {
 
 export function HomeEcosystem() {
   const content = useManagedSection<HomeSection>("ecosystem", emptySection);
-  const items = content.items.filter(isManagedItemActive);
+  const items = content.items
+    .filter(isManagedItemActive)
+    .filter((item) => item.title !== "Corporate & Academic Partners" && item.label !== "Partnership")
+    .map((item) => item.title === "Magazine & Research" || item.label === "Knowledge"
+      ? { ...item, url: "/publications" }
+      : item);
   const cardSpans = [
     "lg:col-span-2 lg:row-span-2",
     "lg:col-span-1",

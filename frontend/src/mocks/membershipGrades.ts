@@ -122,12 +122,8 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
         {
           step: 1,
           title: "Submit your application",
-          content: "Complete the online membership application form with your details. If you need help getting started, check out our application checklist and our application guide.",
+          content: "Complete the online membership application form with your details.",
           icon: "ri-file-edit-line",
-          links: [
-            { label: "application checklist", href: "mailto:office@instituteofprojectcontrols.org" },
-            { label: "application guide", href: "mailto:office@instituteofprojectcontrols.org" },
-          ],
           ctaText: "Apply Now",
           ctaHref: "mailto:office@instituteofprojectcontrols.org",
         },

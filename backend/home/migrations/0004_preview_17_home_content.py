@@ -141,8 +141,7 @@ def sync_preview_17_content(apps, schema_editor):
             card("ri-graduation-cap-line", "Scholarships & Bursaries", "Support for eligible learners, professionals, veterans, returners, consultants and community contributors.", label="Access", cta="Explore Scholarships", url="/scholarships"),
             card("ri-award-line", "Awards & Prizes", "Academic, commercial, professional and special recognition for work that advances the discipline.", label="Achievement", cta="Explore Awards", url="/awards"),
             card("ri-community-line", "Regional Clubs", "Local professional talks, networking, mentoring and employer engagement in four regional communities.", label="Community", cta="Explore Clubs", url="/clubs"),
-            card("ri-book-open-line", "Magazine & Research", "Professional articles, academic papers, case studies, interviews, research notes and practitioner insight.", label="Knowledge", cta="Contribute Knowledge", url="/information-session"),
-            card("ri-links-line", "Corporate & Academic Partners", "Workforce development, student engagement, research, employer capability and professional progression.", label="Partnership", cta="Discuss Partnership", url="/information-session"),
+            card("ri-book-open-line", "Magazine & Research", "Professional articles, academic papers, case studies, interviews, research notes and practitioner insight.", label="Knowledge", cta="Contribute Knowledge", url="/publications"),
             card("ri-hand-heart-line", "Sponsorship", "Support learners, events, awards, clubs, publications, research and social-impact activity.", label="Impact", cta="Explore Sponsorship", url="/sponsorship"),
         ],
     }
