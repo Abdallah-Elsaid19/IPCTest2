@@ -308,8 +308,8 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
         },
       ],
       priceLabel: "Annual subscription:",
-      priceValue: "GBP 95",
-      pricePeriod: "per year",
+      priceValue: "Complimentary",
+      pricePeriod: "first year",
       ctaText: "Join now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
       employerNote:
@@ -348,7 +348,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       },
     },
     pricingBanner: {
-      text: "Professional membership is GBP 95 per year",
+      text: "Professional membership is complimentary in your first year",
       ctaText: "Join now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
     },
@@ -384,7 +384,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       queriesIntl: "International queries: office@instituteofprojectcontrols.org",
     },
     stats: [
-      { value: "95", label: "GBP annual investment", prefix: "", suffix: "", highlight: true },
+      { value: "0", label: "GBP first year", prefix: "", suffix: "", highlight: true },
       { value: "15+", label: "CPD hours per year", suffix: "" },
       { value: "50+", label: "Events & conferences annually", suffix: "" },
       { value: "40%", label: "Faster career progression", suffix: "" },
@@ -463,8 +463,8 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
         },
       ],
       priceLabel: "Annual subscription:",
-      priceValue: "GBP 145",
-      pricePeriod: "per year",
+      priceValue: "Complimentary",
+      pricePeriod: "first year",
       ctaText: "Apply now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
       employerNote:
@@ -503,7 +503,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       },
     },
     pricingBanner: {
-      text: "Associate Fellowship L3 is GBP 145 per year",
+      text: "Associate Fellowship L3 is complimentary in your first year",
       ctaText: "Apply now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
     },
@@ -539,7 +539,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       queriesIntl: "International queries: office@instituteofprojectcontrols.org",
     },
     stats: [
-      { value: "145", label: "GBP annual subscription", prefix: "", suffix: "", highlight: true },
+      { value: "0", label: "GBP first year", prefix: "", suffix: "", highlight: true },
       { value: "92%", label: "Assessment success rate", suffix: "" },
       { value: "3,200+", label: "Recognised practitioners", suffix: "" },
       { value: "18", label: "Months average progression", suffix: " mo" },
@@ -618,8 +618,8 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
         },
       ],
       priceLabel: "Annual subscription:",
-      priceValue: "GBP 195",
-      pricePeriod: "per year",
+      priceValue: "Complimentary",
+      pricePeriod: "first year",
       ctaText: "Apply now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
       employerNote:
@@ -658,7 +658,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       },
     },
     pricingBanner: {
-      text: "Associate Fellowship L4 is GBP 195 per year",
+      text: "Associate Fellowship L4 is complimentary in your first year",
       ctaText: "Apply now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
     },
@@ -694,7 +694,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       queriesIntl: "International queries: office@instituteofprojectcontrols.org",
     },
     stats: [
-      { value: "195", label: "GBP annual subscription", prefix: "", suffix: "", highlight: true },
+      { value: "0", label: "GBP first year", prefix: "", suffix: "", highlight: true },
       { value: "85%", label: "Employer-funded applications", suffix: "" },
       { value: "2x", label: "LinkedIn profile visibility", suffix: "" },
       { value: "1,800+", label: "Senior practitioners", suffix: "" },
@@ -773,8 +773,8 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
         },
       ],
       priceLabel: "Annual subscription:",
-      priceValue: "GBP 295",
-      pricePeriod: "per year",
+      priceValue: "Complimentary",
+      pricePeriod: "first year",
       ctaText: "Apply now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
       employerNote:
@@ -813,7 +813,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       },
     },
     pricingBanner: {
-      text: "Fellowship is GBP 295 per year",
+      text: "Fellowship is complimentary in your first year",
       ctaText: "Apply now",
       ctaHref: "mailto:office@instituteofprojectcontrols.org",
     },
@@ -849,7 +849,7 @@ export const membershipGrades: Record<string, MembershipGradeData> = {
       queriesIntl: "International queries: office@instituteofprojectcontrols.org",
     },
     stats: [
-      { value: "295", label: "GBP annual subscription", prefix: "", suffix: "", highlight: true },
+      { value: "0", label: "GBP first year", prefix: "", suffix: "", highlight: true },
       { value: "500+", label: "Senior fellows globally", suffix: "" },
       { value: "15+", label: "Years average experience", suffix: "" },
       { value: "98%", label: "Annual retention rate", suffix: "" },

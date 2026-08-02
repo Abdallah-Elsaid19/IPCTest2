@@ -211,7 +211,6 @@ interface Props {
 
 export default function MembershipGradeTemplate({ data }: Props) {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
-  const [videoConsent, setVideoConsent] = useState(false);
   const location = useLocation();
   const { user, isLoading: isAuthLoading } = useAuth();
   const applicationPath = `/membership/${data.slug}/apply`;
@@ -427,83 +426,19 @@ export default function MembershipGradeTemplate({ data }: Props) {
               </div>
             </div>
             <div className="lg:col-span-5 reveal-right">
-              {data.whySection.testimonial ? (
-                <>
-                  {data.whySection.testimonial.videoUrl ? (
-                    <div>
-                      {!videoConsent ? (
-                        <div className="relative">
-                          <div className="absolute -top-3 -right-3 w-20 h-20 md:w-24 md:h-24 bg-[#2563EB] z-0" />
-                          <div className="relative z-10 aspect-video bg-background-950 overflow-hidden">
-                            <ResponsiveImage
-                              src={data.whySection.testimonial.thumbnailUrl || data.heroPersonImage}
-                              alt={`${data.whySection.testimonial.author} thumbnail`}
-                              width={800}
-                              height={450}
-                              sizes="(max-width: 1024px) 100vw, 40vw"
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/25" />
-                            <button
-                              onClick={() => setVideoConsent(true)}
-                              className="absolute inset-0 flex items-center justify-center cursor-pointer group/play"
-                            >
-                              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-white bg-white/15 backdrop-blur-sm flex items-center justify-center group-hover/play:scale-110 transition-transform duration-300">
-                                <i className="ri-play-fill text-2xl md:text-3xl text-white ml-0.5" />
-                              </div>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-background-950">
-                          <iframe
-                            src={data.whySection.testimonial.videoUrl}
-                            title={`${data.whySection.testimonial.author} testimonial`}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full"
-                          />
-                        </div>
-                      )}
-                      <div className="p-5 border-t border-background-200/60 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-background-200 flex items-center justify-center overflow-hidden">
-                          <i className="ri-user-line text-background-500 text-base" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-background-950">{data.whySection.testimonial.author}</p>
-                          <p className="text-xs text-foreground-500">{data.whySection.testimonial.role}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-background-100 border border-background-200/60 p-6 md:p-8">
-                      <i className="ri-double-quotes-l text-3xl text-primary-500/30 mb-4 block" />
-                      <p className="text-sm md:text-base text-foreground-700 leading-relaxed mb-6 italic">
-                        {data.whySection.testimonial.quote}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-background-200 flex items-center justify-center overflow-hidden">
-                          <i className="ri-user-line text-background-500 text-lg" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-background-950">{data.whySection.testimonial.author}</p>
-                          <p className="text-xs text-foreground-500">{data.whySection.testimonial.role}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="bg-background-100 border border-background-200/60 p-6 md:p-8">
-                  <div className="flex items-center justify-center h-full min-h-[200px]">
-                    <div className="text-center">
-                      <i className="ri-medal-line text-3xl text-primary-500/30 mb-3 block" />
-                      <p className="text-sm text-foreground-500">Professional recognition</p>
-                      <p className="text-xs text-foreground-400 mt-1">{data.title} designation</p>
-                    </div>
-                  </div>
+              <div className="relative mx-auto max-w-md">
+                <div className="absolute -top-3 -right-3 h-20 w-20 bg-[#2563EB] md:h-24 md:w-24" />
+                <div className="relative z-10 aspect-[3/4] overflow-hidden bg-background-950">
+                  <ResponsiveImage
+                    src={data.heroPersonImage}
+                    alt={`${data.title} membership`}
+                    width={900}
+                    height={1200}
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -517,7 +452,10 @@ export default function MembershipGradeTemplate({ data }: Props) {
         <div className="absolute inset-0 bg-gradient-to-r from-background-950 via-background-950 to-background-900/80" />
         <div className="relative z-10 container-content">
           <div className="max-w-2xl mx-auto text-center reveal">
-            <p className="text-sm text-background-500 mb-8 max-w-md mx-auto">
+            <h2 className="font-heading text-2xl font-semibold text-background-50 md:text-3xl">
+              {data.pricingBanner.text}
+            </h2>
+            <p className="mx-auto mb-8 mt-4 max-w-md text-sm text-background-500">
               Join a growing community of project controls professionals and unlock your career potential.
             </p>
             {showPricingCta && (
@@ -582,7 +520,7 @@ export default function MembershipGradeTemplate({ data }: Props) {
               { q: "How long does the application process take?", a: "Applications are typically reviewed within two to four weeks, depending on the completeness of your evidence and the grade being sought." },
               { q: "Can I upgrade my membership grade later?", a: "Yes. All grades are designed as a progressive pathway. Members may progress to higher grades when their experience and evidence meet the requirements." },
               { q: "What counts as acceptable evidence?", a: "Evidence includes your CV, professional statements, CPD records, work portfolios, case studies, training certificates and references. Specific requirements vary by grade." },
-              { q: "Is there a fee for membership?", a: `Yes. ${data.title} has an annual subscription fee. Full details are shown in the pricing section above.` },
+              { q: "Is there a fee for membership?", a: `The first year of ${data.title} is complimentary. Renewal details will be confirmed before the end of your first year.` },
               { q: "Do I need to be based in the UK?", a: "No. The Institute of Project Controls is an international body. Membership is open to project controls professionals wherever they are based." },
             ].map((faq, index) => (
               <div key={index} className={`reveal reveal-delay-${index + 1} bg-background-50 border border-background-200/60 overflow-hidden`}>
