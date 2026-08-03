@@ -212,7 +212,7 @@ export default function AdminLayout() {
 
   return (
     <div
-      className={`min-h-screen bg-[#F4ECE1] text-[#221E1A] transition-[grid-template-columns] duration-300 xl:grid ${collapsed ? "xl:grid-cols-[96px_minmax(0,1fr)]" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}
+      className={`min-h-[100svh] bg-[#F4ECE1] text-[#221E1A] transition-[grid-template-columns] duration-300 xl:grid ${collapsed ? "xl:grid-cols-[96px_minmax(0,1fr)]" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}
     >
       <SEO
         title={`Admin — ${pageLabel}`}
@@ -220,7 +220,7 @@ export default function AdminLayout() {
         canonicalPath={location.pathname}
         noIndex
       />
-      <aside className="sticky top-0 hidden h-screen p-5 pr-0 xl:block">
+      <aside className="sticky top-0 hidden h-[100dvh] p-5 pr-0 xl:block">
         {sidebar}
       </aside>
       {mobileOpen && (
@@ -231,15 +231,15 @@ export default function AdminLayout() {
             onClick={closeMobile}
             aria-label="Close navigation overlay"
           />
-          <aside className="fixed inset-y-0 left-0 z-[80] w-[280px] p-4 xl:hidden">
+          <aside className="fixed inset-y-0 left-0 z-[80] w-[min(280px,calc(100vw-1rem))] p-2 sm:p-4 xl:hidden">
             {sidebar}
           </aside>
         </>
       )}
 
-      <div className="min-w-0 p-4 xl:py-5 xl:pr-5 ">
-        <header className="sticky top-4 z-40 flex h-16 items-center justify-between rounded-2xl border border-white/80 bg-[#FFFDF9]/95 px-4 shadow-[0_8px_30px_rgba(66,48,31,0.06)] backdrop-blur-xl md:px-6">
-          <div className="flex items-center gap-3">
+      <div className="min-w-0 p-2 sm:p-4 xl:py-5 xl:pr-5">
+        <header className="sticky top-2 z-40 flex h-16 min-w-0 items-center justify-between gap-2 rounded-2xl border border-white/80 bg-[#FFFDF9]/95 px-3 shadow-[0_8px_30px_rgba(66,48,31,0.06)] backdrop-blur-xl sm:top-4 sm:px-4 md:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -248,14 +248,14 @@ export default function AdminLayout() {
             >
               <Menu size={20} />
             </button>
-            <div>
-              <p className="text-sm font-bold">Admin / {pageLabel}</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold">Admin / {pageLabel}</p>
               <p className="hidden text-xs text-[#7A7066] sm:block">
                 Institute of Project Controls
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <AdminNotificationBell />
             <Link
               to="/admin/profile"

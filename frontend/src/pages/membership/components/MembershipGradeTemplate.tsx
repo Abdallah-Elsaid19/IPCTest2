@@ -565,7 +565,7 @@ export default function MembershipGradeTemplate({ data }: Props) {
               </div>
             </div>
             {showApplicationCta && (
-              <Link to={applicationPath} className="inline-flex items-center gap-2 px-6 py-3 border border-background-700 text-background-300 text-sm font-medium hover:bg-background-800 hover:text-background-100 transition-all duration-200 whitespace-nowrap">
+              <Link to={applicationPath} className="inline-flex max-w-full items-center justify-center gap-2 border border-background-700 px-5 py-3 text-center text-sm font-medium text-background-300 transition-all duration-200 hover:bg-background-800 hover:text-background-100 sm:px-6">
                 {data.howToApply.ctaText}
                 <i className="ri-arrow-right-line" />
               </Link>

@@ -43,7 +43,7 @@ export default function MobileMenu({ isOpen, onClose, currentPath, returnFocusRe
   return (
     <div className={`fixed inset-0 z-[60] transition-opacity ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} aria-hidden={!isOpen}>
       <div className="absolute inset-0 bg-background-950/70 backdrop-blur-sm" onClick={onClose} />
-      <div role="dialog" aria-modal="true" aria-label="Site menu" className={`absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-background-50 shadow-2xl transition-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
+      <div role="dialog" aria-modal="true" aria-label="Site menu" className={`absolute right-0 top-0 flex h-[100dvh] w-full max-w-sm flex-col bg-background-50 shadow-2xl transition-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
         <div className="flex h-16 items-center justify-between border-b border-background-200 px-6">
           <span className="font-heading text-lg font-semibold text-background-950">Menu</span>
           <button ref={closeRef} onClick={onClose} className="flex h-10 w-10 items-center justify-center hover:bg-background-200/50" aria-label="Close menu"><i className="ri-close-line text-2xl" /></button>
@@ -66,7 +66,7 @@ export default function MobileMenu({ isOpen, onClose, currentPath, returnFocusRe
             );
           })}
         </nav>
-        <div className="border-t border-background-200 px-6 py-5">
+        <div className="border-t border-background-200 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:px-6">
           {isLoading ? <div className="h-11 animate-pulse bg-primary-500/20" /> : user ? <div className="space-y-3"><Link to={user.is_staff ? "/admin" : "/user/dashboard"} onClick={onClose} className="btn-primary block text-center text-sm">{user.is_staff ? "Admin Dashboard" : "User Panel"}</Link><button onClick={() => { void logout(); onClose(); }} className="btn-ghost w-full text-sm">Sign out</button></div> : <Link to="/login" onClick={onClose} className="btn-primary block text-center text-sm">Sign In</Link>}
           <Link to="/contact" onClick={onClose} className="btn-ghost mt-3 block text-center text-sm">Contact the Institute</Link>
         </div>

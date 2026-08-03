@@ -192,7 +192,7 @@ export default function PublicClubPage() {
           <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_20rem] lg:items-end">
             <div>
               <span className="eyebrow text-primary-300">{hero?.eyebrow || "IPC regional community"}</span>
-              <h1 className="mt-5 max-w-4xl font-heading text-5xl font-bold leading-[1.02] md:text-7xl">{club.name}</h1>
+              <h1 className="mt-5 max-w-4xl font-heading text-4xl font-bold leading-[1.04] sm:text-5xl md:text-7xl">{club.name}</h1>
               <p className="mt-7 max-w-3xl text-lg leading-8 text-white/75">{club.summary}</p>
               <div className="mt-9 flex flex-wrap gap-3">
                 {active ? (

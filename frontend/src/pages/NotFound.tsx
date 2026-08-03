@@ -8,7 +8,7 @@ export default function NotFound() {
   const location = useLocation();
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-screen text-center px-4">
+    <div className="relative flex min-h-[100svh] flex-col items-center justify-center px-4 text-center">
       <SEO {...pageSeo.notFound} canonicalPath={location.pathname} />
       
       <div className="relative z-10 flex w-full max-w-2xl flex-col items-center">

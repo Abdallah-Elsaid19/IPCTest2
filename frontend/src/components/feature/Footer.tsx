@@ -46,8 +46,8 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 md:mt-16 pt-8 border-t border-background-800">
-          <div className="flex justify-end">
-            <p className="text-xs text-background-600 shrink-0">
+          <div className="flex justify-center text-center sm:justify-end sm:text-right">
+            <p className="text-xs leading-relaxed text-background-600 sm:shrink-0">
               &copy; {new Date().getFullYear()} Institute of Project Controls. All rights reserved.
             </p>
           </div>

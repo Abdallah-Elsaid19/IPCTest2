@@ -138,7 +138,7 @@ export default function ClubEnquiryModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background-950/75 p-4 backdrop-blur-sm motion-safe:animate-[fade-in_180ms_ease-out] sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-background-950/75 p-2 backdrop-blur-sm motion-safe:animate-[fade-in_180ms_ease-out] sm:p-6"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -149,7 +149,7 @@ export default function ClubEnquiryModal({
         aria-modal="true"
         aria-labelledby="club-enquiry-title"
         aria-describedby="club-enquiry-description"
-        className="relative max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-background-200 bg-background-50 shadow-2xl shadow-background-950/30 motion-safe:animate-[fade-in_180ms_ease-out]"
+        className="relative max-h-[calc(100dvh-1rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-background-200 bg-background-50 shadow-2xl shadow-background-950/30 motion-safe:animate-[fade-in_180ms_ease-out] sm:max-h-[calc(100dvh-3rem)]"
       >
         <button
           ref={closeButtonRef}

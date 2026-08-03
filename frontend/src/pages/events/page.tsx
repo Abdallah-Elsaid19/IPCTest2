@@ -298,7 +298,7 @@ export default function Events() {
                         href={event.url || "#register"}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary-500 text-background-950 hover:bg-primary-400 transition-all duration-300 whitespace-nowrap"
+                        className="inline-flex max-w-full items-center justify-center gap-2 bg-primary-500 px-5 py-2.5 text-center text-sm font-semibold text-background-950 transition-all duration-300 hover:bg-primary-400"
                       >
                         Register on Eventbrite
                         <i className="ri-arrow-right-line" />

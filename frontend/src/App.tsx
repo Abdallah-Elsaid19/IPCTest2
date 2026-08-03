@@ -41,9 +41,9 @@ function PublicLayout() {
   useScrollReveal();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-[100svh] min-w-0 flex-col overflow-x-clip">
       <Header />
-      <main className="flex-grow pt-9">
+      <main className="min-w-0 flex-grow pt-9">
         <AppRoutes />
       </main>
       <Footer />

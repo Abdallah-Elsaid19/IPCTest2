@@ -32,7 +32,7 @@ export default function ContributeHero() {
         <div className="container-content relative z-10 grid items-center gap-14 pt-12 lg:grid-cols-[1.05fr_.95fr]">
           <div className="reveal max-w-3xl">
             <span className="eyebrow text-primary-400">{section.eyebrow}</span>
-            <h1 className="mt-5 font-heading text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">{section.title} <span className="text-primary-400">{section.highlight}</span></h1>
+            <h1 className="mt-5 font-heading text-4xl font-bold leading-[1.06] sm:text-6xl lg:text-7xl">{section.title} <span className="text-primary-400">{section.highlight}</span></h1>
             <p className="mt-7 max-w-2xl text-base leading-[1.8] text-background-200 md:text-lg">{section.description}</p>
             <div className="mt-9 flex flex-wrap gap-3"><a href={section.primary_cta_url} className="btn-primary">{section.primary_cta_label}</a><a href={section.secondary_cta_url} className="btn-secondary">{section.secondary_cta_label}</a></div>
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-background-300"><a href="#applicant-route" className="hover:text-primary-300">I need professional support <i className="ri-arrow-right-line" /></a><a href="#funder-route" className="hover:text-primary-300">My organisation wants to fund impact <i className="ri-arrow-right-line" /></a></div>
@@ -44,7 +44,7 @@ export default function ContributeHero() {
           </div>
         </div>
       </section>
-      <section className="overflow-hidden border-y border-primary-600/30 bg-primary-500 py-4" aria-label="Funded opportunity themes"><p className="whitespace-nowrap text-center font-mono text-xs font-bold uppercase tracking-[.16em] text-background-950">Talent pipeline · Professional access · Social value · Ethical visibility · Applied research · Regional skills</p></section>
+      <section className="overflow-hidden border-y border-primary-600/30 bg-primary-500 px-4 py-4" aria-label="Funded opportunity themes"><p className="text-center font-mono text-[11px] font-bold uppercase leading-relaxed tracking-[.1em] text-background-950 sm:text-xs sm:tracking-[.16em]">Talent pipeline · Professional access · Social value · Ethical visibility · Applied research · Regional skills</p></section>
     </>
   );
 }

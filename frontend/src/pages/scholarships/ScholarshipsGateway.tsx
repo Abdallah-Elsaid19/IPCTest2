@@ -693,6 +693,7 @@ export default function ScholarshipsGateway() {
   const content = useManagedSection<ScholarshipGatewayContent>("gateway", GATEWAY_CONTENT);
   const seo = useManagedSection<ScholarshipSeoContent>("seo", SCHOLARSHIP_SEO);
   const pathwaysActive = useManagedSection<boolean>("pathways_active", true);
+  const showPathways = false;
   const rawPathways = useManagedSection<Pathway[]>("pathways", PATHWAYS);
   const pathways = useMemo(() => {
     if (!pathwaysActive) return [];
@@ -779,7 +780,7 @@ export default function ScholarshipsGateway() {
         <div className="container-content relative grid min-h-[680px] items-center gap-14 py-20 lg:grid-cols-[1.25fr_0.75fr]">
           <div className="reveal">
             <p className="eyebrow text-primary-300">{content.hero.eyebrow}</p>
-            <h1 className="mt-6 max-w-4xl text-5xl font-semibold leading-[1.01] tracking-[-0.05em] sm:text-6xl lg:text-7xl">
+            <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-[1.03] tracking-[-0.04em] sm:text-6xl sm:tracking-[-0.05em] lg:text-7xl">
               {content.hero.title}
             </h1>
             <p className="mt-8 max-w-2xl text-lg leading-8 text-background-200">
@@ -1050,7 +1051,7 @@ export default function ScholarshipsGateway() {
                   </ul>
                 </div>
 
-                <dl className="mt-7 grid grid-cols-3 border border-white/15">
+                <dl className="mt-7 grid border border-white/15 sm:grid-cols-3">
                   <div className="border-r border-white/15 p-4">
                     <dt className="text-[10px] uppercase tracking-wider text-background-500">Cost</dt>
                     <dd className="mt-2 text-lg font-semibold text-background-50">{offer.courseCost}</dd>
@@ -1110,7 +1111,7 @@ export default function ScholarshipsGateway() {
       </section>
       )}
 
-      {false && pathwaysActive && pathway && isManagedItemActive(content.pathways_intro) && (
+      {showPathways && pathwaysActive && pathway && isManagedItemActive(content.pathways_intro) && (
       <section id="pathways" className="scroll-mt-24 bg-[#10151f] section-padding text-background-50">
         <div className="container-content">
           <div className="reveal">

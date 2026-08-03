@@ -127,7 +127,7 @@ export default function MembershipPhoneFields({ value, error, onChange }: Member
           </button>
 
           {open && (
-            <div className="absolute z-40 mt-2 w-full min-w-[18rem] overflow-hidden border border-background-300 bg-white shadow-xl">
+            <div className="absolute z-40 mt-2 w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden border border-background-300 bg-white shadow-xl sm:min-w-[18rem]">
               <input
                 id="membership-phone-country-search"
                 type="search"

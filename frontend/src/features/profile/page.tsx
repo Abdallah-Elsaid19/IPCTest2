@@ -137,7 +137,7 @@ export default function UserProfilePage() {
   );
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#F4ECE1] pb-12 pt-24 md:pt-32">
+    <div className="min-h-[calc(100svh-5rem)] bg-[#F4ECE1] pb-12 pt-24 md:pt-32">
       <SEO {...pageSeo.profile} />
       {isEditing ? <form onSubmit={handleSubmit(submit)} noValidate>{profile}</form> : profile}
     </div>

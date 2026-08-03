@@ -19,7 +19,7 @@ export function ProtectedRoute({children, requireStaff = false, requireAdmin = f
       return <AdminRouteLoading />;
     return (
       <div
-        className="min-h-screen bg-background-950 grid place-items-center text-primary-500"
+        className="grid min-h-[100svh] place-items-center bg-background-950 text-primary-500"
         role="status"
       >
         Loading session…
@@ -36,7 +36,7 @@ export function ProtectedRoute({children, requireStaff = false, requireAdmin = f
 
 export function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="min-h-screen bg-background-950" />;
+  if (isLoading) return <div className="min-h-[100svh] bg-background-950" />;
   if (user) return <Navigate to={user.is_staff ? "/admin" : "/home"} replace />;
   return children;
 }

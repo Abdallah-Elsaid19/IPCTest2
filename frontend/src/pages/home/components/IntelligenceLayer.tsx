@@ -138,11 +138,15 @@ export default function IntelligenceLayer() {
                     role="button"
                     tabIndex={0}
                     aria-label={`${p.label}: ${p.description}`}
-                    onMouseEnter={() => setActiveNode(i)}
-                    onMouseLeave={() => setActiveNode(null)}
+                    onPointerEnter={(event) => {
+                      if (event.pointerType !== "touch") setActiveNode(i);
+                    }}
+                    onPointerLeave={(event) => {
+                      if (event.pointerType !== "touch") setActiveNode(null);
+                    }}
                     onFocus={() => setActiveNode(i)}
                     onBlur={() => setActiveNode(null)}
-                    onClick={() => setActiveNode(i)}
+                    onClick={() => setActiveNode(activeNode === i ? null : i)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
@@ -184,7 +188,7 @@ export default function IntelligenceLayer() {
             </div>
 
             {/* ── Legend ── */}
-            <div className="mt-6 flex items-center gap-6">
+            <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-[2px] bg-primary-500" />
                 <span className="text-[11px] text-background-400 font-medium">Digital controls systems</span>

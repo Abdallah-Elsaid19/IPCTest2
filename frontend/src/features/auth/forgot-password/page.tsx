@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { z } from "zod";
 
 import SEO from "@/components/seo/SEO";
-import { LANDING_BACKGROUND_VIDEO } from "@/config/media";
+import { AUTH_BACKGROUND_VIDEO } from "@/config/media";
 import { pageSeo } from "@/config/pageSeo";
 import { notifications } from "@/lib/notifications";
 import { authApi } from "../authApi";
@@ -37,9 +37,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-background-950 px-4 py-8">
+    <main className="relative grid min-h-[100svh] place-items-center overflow-hidden bg-background-950 px-3 py-5 sm:px-4 sm:py-8">
       <SEO {...pageSeo.forgotPassword} />
-      <video src={LANDING_BACKGROUND_VIDEO} autoPlay loop muted playsInline aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+      <video src={AUTH_BACKGROUND_VIDEO} autoPlay loop muted playsInline aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-background-950/75" />
       <section className="relative z-10 w-full max-w-lg border border-background-700/50 bg-background-950/80 p-7 text-background-50 shadow-2xl backdrop-blur-md sm:p-10">
         <div className="flex items-center gap-3">

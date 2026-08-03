@@ -105,6 +105,18 @@ export default function DisciplineSystem() {
   const midR = 170;
   const innerR = 100;
   const eyeR = 28;
+  const activeIndex = managedDisciplines.findIndex((discipline) => discipline.id === activeId);
+  const activeEndAngle = activeIndex >= 0
+    ? activeIndex < managedDisciplines.length - 1
+      ? managedDisciplines[activeIndex + 1].angle
+      : 360
+    : 0;
+  const activeLookAngle = active
+    ? ((active.angle + activeEndAngle) / 2 - 90) * (Math.PI / 180)
+    : 0;
+  const pupilTravel = active ? 12 : 0;
+  const pupilOffsetX = pupilTravel * Math.cos(activeLookAngle);
+  const pupilOffsetY = pupilTravel * Math.sin(activeLookAngle);
 
   const segmentPath = (startAngle: number, endAngle: number, r: number) => {
     const s = (startAngle - 90) * (Math.PI / 180);
@@ -197,11 +209,17 @@ export default function DisciplineSystem() {
                       role="button"
                       tabIndex={0}
                       aria-label={`${d.label}: ${d.desc}`}
+                      aria-pressed={isActive}
                       onClick={() => setActiveId(isActive ? null : d.id)}
-                      onMouseEnter={() => setActiveId(d.id)}
-                      onMouseLeave={() => setActiveId(null)}
+                      onPointerEnter={(event) => {
+                        if (event.pointerType !== "touch") setActiveId(d.id);
+                      }}
+                      onPointerLeave={(event) => {
+                        if (event.pointerType !== "touch") setActiveId(null);
+                      }}
                       onFocus={() => setActiveId(d.id)}
                       onBlur={() => setActiveId(null)}
+                      style={{ touchAction: "manipulation" }}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
@@ -285,9 +303,15 @@ export default function DisciplineSystem() {
                 {/* ── Eye iris ── */}
                 <circle cx={cx} cy={cy} r={eyeR} fill="oklch(0.2 0 0 / 0.7)" stroke="oklch(0.685 0.132 72 / 0.4)" strokeWidth="1.5" />
                 {/* ── Pupil ── */}
-                <circle cx={cx} cy={cy} r={9} fill="oklch(0.12 0 0 / 0.9)" stroke="oklch(0.685 0.132 72 / 0.25)" strokeWidth="0.5" />
-                {/* ── Eye highlight ── */}
-                <circle cx={cx + 6} cy={cy - 6} r={3} fill="oklch(0.685 0.132 72 / 0.5)" className={`transition-opacity duration-1000 ${visible ? "opacity-100" : "opacity-0"}`} />
+                <g
+                  className="pointer-events-none transition-transform duration-300 ease-out motion-reduce:transition-none"
+                  style={{ transform: `translate(${pupilOffsetX}px, ${pupilOffsetY}px)` }}
+                  aria-hidden="true"
+                >
+                  <circle cx={cx} cy={cy} r={9} fill="oklch(0.12 0 0 / 0.9)" stroke="oklch(0.685 0.132 72 / 0.25)" strokeWidth="0.5" />
+                  {/* ── Eye highlight ── */}
+                  <circle cx={cx} cy={cy} r={3} fill="oklch(0.685 0.132 72 / 0.5)" className={`transition-opacity duration-1000 ${visible ? "opacity-100" : "opacity-0"}`} />
+                </g>
 
                 {/* ── Inner eye ring ── */}
                 <circle cx={cx} cy={cy} r={48} fill="none" stroke="oklch(0.685 0.132 72 / 0.15)" strokeWidth="0.5" strokeDasharray="3 5" />
@@ -299,7 +323,7 @@ export default function DisciplineSystem() {
 
               {/* ── Active tooltip ── */}
               {active && (
-                <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-[min(88%,340px)] -translate-x-1/2 border border-primary-500/25 bg-background-900/95 px-6 py-4 text-center shadow-2xl backdrop-blur-md transition-all duration-300">
+                <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden w-[min(88%,340px)] -translate-x-1/2 border border-primary-500/25 bg-background-900/95 px-6 py-4 text-center shadow-2xl backdrop-blur-md transition-all duration-300 sm:block">
                   <span className="mx-auto mb-3 block h-px w-10 bg-primary-500/60" />
                   <span className="mb-1.5 block font-heading text-sm font-bold text-primary-400">{active.label}</span>
                   <span className="block text-xs leading-relaxed text-background-300">{active.desc}</span>
@@ -310,6 +334,29 @@ export default function DisciplineSystem() {
 
           {/* ── Right: Context ── */}
           <div className="lg:col-span-4 lg:col-start-9">
+            <div className="mb-8 grid grid-cols-2 gap-2 sm:hidden" aria-label="Select a competence domain">
+              {managedDisciplines.map((discipline, index) => {
+                const selected = discipline.id === activeId;
+                return (
+                  <button
+                    key={discipline.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setActiveId(selected ? null : discipline.id)}
+                    className={`min-h-12 border px-3 py-2 text-left text-[11px] font-semibold leading-snug transition-colors ${selected ? "border-primary-500 bg-primary-500 text-background-950" : "border-background-700 bg-background-900/70 text-background-200"}`}
+                  >
+                    <span className="mb-1 block font-mono text-[9px] opacity-65">{String(index + 1).padStart(2, "0")}</span>
+                    {discipline.label}
+                  </button>
+                );
+              })}
+              {active && (
+                <div className="col-span-2 border border-primary-500/25 bg-background-900 p-4" role="status">
+                  <strong className="block text-sm text-primary-400">{active.label}</strong>
+                  <p className="mt-2 text-xs leading-relaxed text-background-300">{active.desc}</p>
+                </div>
+              )}
+            </div>
             <h3 className="font-heading text-[clamp(1.5rem,3vw,2.5rem)] font-extrabold text-background-50 leading-[1.1] tracking-[-0.02em] mb-6">
               {content.title}
             </h3>
@@ -325,7 +372,7 @@ export default function DisciplineSystem() {
             </div>
             <div className="flex items-center gap-6">
               <div className="w-10 h-px bg-primary-500/40" />
-              <span className="text-[11px] font-mono text-background-500 tracking-[0.2em] uppercase">Hover to explore</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-background-500"><span className="sm:hidden">Tap to explore</span><span className="hidden sm:inline">Hover or focus to explore</span></span>
             </div>
             <Link
               to="/membership"

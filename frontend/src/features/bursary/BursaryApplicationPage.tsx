@@ -163,14 +163,14 @@ function ApplicationProgress({
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background-200">
         <div className="h-full bg-primary-500 transition-all" style={{ width: `${((currentStep + 1) / 6) * 100}%` }} />
       </div>
-      <ol className="mt-5 grid grid-cols-6 gap-2">
+      <ol className="mt-5 grid grid-cols-6 gap-1 sm:gap-2">
         {stepTitles.map((title, index) => {
           const complete = completedSteps.has(index);
           const current = index === currentStep;
           const skipped = index === 1 && organisationSkipped;
           return (
             <li key={title} className="min-w-0" aria-current={current ? "step" : undefined}>
-              <div className={`mx-auto grid h-9 w-9 place-items-center rounded-full border text-xs font-bold ${current ? "border-primary-600 bg-primary-500 text-background-950" : complete ? "border-emerald-700 bg-emerald-100 text-emerald-800" : "border-background-300 bg-background-100 text-foreground-500"}`}>
+              <div className={`mx-auto grid h-8 w-8 place-items-center rounded-full border text-xs font-bold sm:h-9 sm:w-9 ${current ? "border-primary-600 bg-primary-500 text-background-950" : complete ? "border-emerald-700 bg-emerald-100 text-emerald-800" : "border-background-300 bg-background-100 text-foreground-500"}`}>
                 {complete ? <Check size={16} aria-hidden="true" /> : index + 1}
               </div>
               <p className={`mt-2 hidden text-center text-[10px] leading-4 md:block ${current ? "font-semibold text-background-950" : "text-foreground-500"}`}>

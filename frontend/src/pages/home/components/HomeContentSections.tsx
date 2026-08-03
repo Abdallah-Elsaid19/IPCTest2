@@ -526,7 +526,7 @@ export function HomeClubs() {
           <div className="reveal grid gap-4 sm:grid-cols-2 lg:col-span-10 xl:grid-cols-4">
             {items.map((item) => (
               <article key={item.title} className="relative flex min-h-72 flex-col border border-background-200/80 bg-background-50 p-6">
-                <h3 className="whitespace-nowrap pr-8 font-heading text-base font-semibold text-background-950 2xl:text-lg">{item.title}</h3>
+                <h3 className="pr-8 font-heading text-base font-semibold text-background-950 2xl:text-lg">{item.title}</h3>
                 <i className={`${item.icon ?? "ri-map-pin-line"} absolute right-6 top-6 text-xl text-primary-700`} aria-hidden="true" />
                 <span className="mt-5 h-px w-10 bg-primary-500" />
                 <p className="mt-5 text-sm leading-relaxed text-foreground-600">{item.description}</p>
@@ -575,7 +575,7 @@ export function HomeSponsorship() {
         <div className="grid items-start gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-16">
           <div className="reveal lg:sticky lg:top-28">
             <span className="eyebrow text-primary-700">{content.eyebrow}</span>
-            <h2 className="mt-7 max-w-3xl font-heading text-6xl font-extrabold leading-[0.96] tracking-[-0.04em] text-background-950">{content.title}</h2>
+            <h2 className="mt-7 max-w-3xl font-heading text-4xl font-extrabold leading-[0.98] tracking-[-0.04em] text-background-950 sm:text-5xl lg:text-6xl">{content.title}</h2>
             <p className="mt-8 max-w-xl text-base leading-relaxed text-foreground-600 md:text-lg">{content.description}</p>
             {content.body && (
               <p className="mt-6 max-w-xl border-l-[3px] border-primary-500 pl-5 text-sm leading-relaxed text-foreground-600">

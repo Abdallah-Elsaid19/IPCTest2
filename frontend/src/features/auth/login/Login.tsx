@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
-import { LANDING_BACKGROUND_VIDEO } from "@/config/media";
+import { AUTH_BACKGROUND_VIDEO } from "@/config/media";
 import { notifications } from "@/lib/notifications";
 import { useAuth } from "../AuthContext";
 import SEO from "@/components/seo/SEO";
@@ -54,21 +54,21 @@ export default function Login() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background-950 px-4 py-4 sm:px-8 sm:py-5">
+    <main className="relative min-h-[100svh] overflow-hidden bg-background-950 px-3 py-3 sm:px-8 sm:py-5">
       <SEO {...pageSeo.login} />
       <video
-        src={LANDING_BACKGROUND_VIDEO}
+        src={AUTH_BACKGROUND_VIDEO}
         autoPlay
         loop
         muted
         playsInline
         aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-background-950/50" />
       <div className="absolute inset-0 dot-grid-gold opacity-10" />
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[566px] flex-col justify-center sm:min-h-[calc(100vh-2.5rem)]">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[566px] flex-col justify-center sm:min-h-[calc(100svh-2.5rem)]">
         <section
           className="w-full border border-background-700/40 bg-background-950/30 px-6 py-7 shadow-[0_28px_80px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-[54px] sm:py-9"
           aria-labelledby="login-title"

@@ -89,7 +89,7 @@ export function ServicesExperienceHero() {
       <div className="container-content relative grid min-h-[770px] gap-12 py-20 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:py-24">
         <div className="reveal">
           <span className="eyebrow text-primary-400">{content.eyebrow}</span>
-          <h1 className="mt-6 max-w-4xl font-heading text-5xl font-semibold leading-[.96] tracking-[-.04em] sm:text-6xl lg:text-7xl">{content.title}</h1>
+          <h1 className="mt-6 max-w-4xl font-heading text-4xl font-semibold leading-[.98] tracking-[-.04em] sm:text-6xl lg:text-7xl">{content.title}</h1>
           <p className="mt-7 max-w-2xl text-lg leading-relaxed text-background-200 md:text-xl">{content.description}</p>
           <p className="mt-5 max-w-2xl text-sm leading-[1.8] text-background-400 md:text-base">{content.body}</p>
           <div className="mt-7 max-w-2xl border-l-2 border-primary-500 bg-background-900/70 px-5 py-4 text-sm leading-relaxed text-background-300">
@@ -109,7 +109,7 @@ export function ServicesExperienceHero() {
               <div><span className="eyebrow text-primary-400">{content.panel_eyebrow}</span><h2 className="mt-4 max-w-md font-heading text-3xl font-semibold leading-tight">{content.panel_title}</h2></div>
               <i className="ri-radar-line text-4xl text-primary-400" aria-hidden="true" />
             </div>
-            <div className="mt-7 grid grid-cols-2 gap-3">
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
               {panelItems.map((item, index) => (
                 <article key={item.title} className="group min-h-44 border border-background-50/10 bg-background-950/70 p-5 transition-colors hover:border-primary-500/50">
                   <div className="flex items-center justify-between"><span className="font-mono text-[10px] font-bold text-primary-400">0{index + 1}</span><i className={`${item.icon ?? "ri-focus-3-line"} text-xl text-primary-400`} /></div>

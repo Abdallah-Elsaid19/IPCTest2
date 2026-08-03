@@ -115,7 +115,7 @@ function ClubStatusModal({
   return (
     <div className="fixed inset-0 z-[130] grid place-items-center overflow-y-auto bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="club-status-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onClose(); }}>
       <section className="my-8 w-full max-w-[690px] overflow-hidden rounded-[22px] border border-[#DED2C3] bg-[#FFFDF9] shadow-[0_28px_80px_rgba(0,0,0,.28)]">
-        <header className="flex items-start justify-between border-b border-[#E5DACD] px-8 py-7">
+        <header className="flex items-start justify-between gap-3 border-b border-[#E5DACD] px-4 py-5 sm:px-8 sm:py-7">
           <div>
             <p className="font-mono text-[10px] font-black uppercase tracking-[.24em] text-primary-800">Club membership</p>
             <h2 id="club-status-title" className="mt-2 text-2xl font-black text-[#1E1B18]">Edit request status</h2>
@@ -123,8 +123,8 @@ function ClubStatusModal({
           <button type="button" disabled={saving} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl hover:bg-[#F2EADF] disabled:opacity-50" aria-label="Close"><X size={21} /></button>
         </header>
 
-        <div className="px-8 py-8">
-          <div className="grid gap-7 rounded-2xl border border-[#DED2C3] bg-[#F7F1E9] p-6 sm:grid-cols-2">
+        <div className="px-4 py-5 sm:px-8 sm:py-8">
+          <div className="grid gap-5 rounded-2xl border border-[#DED2C3] bg-[#F7F1E9] p-4 sm:grid-cols-2 sm:gap-7 sm:p-6">
             <ModalDetail label="Applicant" value={request.applicant_name} secondary={request.applicant_email} />
             <ModalDetail label="Requested club" value={request.club_name} />
             <div>
@@ -143,9 +143,9 @@ function ClubStatusModal({
           </label>
         </div>
 
-        <footer className="flex justify-end gap-3 border-t border-[#E5DACD] px-8 py-6">
-          <button type="button" disabled={saving} onClick={onClose} className="h-14 rounded-2xl border border-[#D7C9B8] bg-white px-6 text-sm font-black text-[#332E29] hover:bg-[#F7F1E9] disabled:opacity-50">Cancel</button>
-          <button type="button" disabled={saving || nextStatus === request.status} onClick={() => onSave(nextStatus)} className="inline-flex h-14 min-w-40 items-center justify-center gap-2 rounded-2xl bg-primary-500 px-7 text-sm font-black text-[#171411] hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50">{saving && <LoaderCircle className="animate-spin" size={17} />}{saving ? "Saving…" : "Save changes"}</button>
+        <footer className="flex flex-col-reverse gap-3 border-t border-[#E5DACD] px-4 py-4 sm:flex-row sm:justify-end sm:px-8 sm:py-6">
+          <button type="button" disabled={saving} onClick={onClose} className="h-12 w-full rounded-2xl border border-[#D7C9B8] bg-white px-5 text-sm font-black text-[#332E29] hover:bg-[#F7F1E9] disabled:opacity-50 sm:h-14 sm:w-auto sm:px-6">Cancel</button>
+          <button type="button" disabled={saving || nextStatus === request.status} onClick={() => onSave(nextStatus)} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-5 text-sm font-black text-[#171411] hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 sm:w-auto sm:min-w-40 sm:px-7">{saving && <LoaderCircle className="animate-spin" size={17} />}{saving ? "Saving…" : "Save changes"}</button>
         </footer>
       </section>
     </div>

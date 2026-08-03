@@ -52,7 +52,7 @@ export default function PasswordResetPage() {
   };
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#0B0B0B] px-4 py-8">
+    <main className="grid min-h-[100svh] place-items-center bg-[#0B0B0B] px-3 py-5 sm:px-4 sm:py-8">
       <SEO {...pageSeo.resetPassword} />
       <section className="w-full max-w-lg border border-white/15 bg-[#11100F] p-7 text-white shadow-2xl sm:p-10">
         <div className="flex items-center gap-3">

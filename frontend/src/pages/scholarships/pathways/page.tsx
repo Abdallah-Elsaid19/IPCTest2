@@ -201,7 +201,7 @@ function ManagedScholarshipPathwayDetailPage() {
           <div className="mt-12 grid items-end gap-12 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="reveal">
               <p className="eyebrow" style={{ color: detail.accent }}>IPC pathway guide · {pathway.stage}</p>
-              <h1 className="mt-6 max-w-4xl text-5xl font-semibold leading-[1.01] tracking-[-0.05em] sm:text-6xl lg:text-7xl">{pathway.name}</h1>
+              <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-[1.03] tracking-[-0.04em] sm:text-6xl sm:tracking-[-0.05em] lg:text-7xl">{pathway.name}</h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-background-200">{detail.promise}</p>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-background-400">{pathway.audience}</p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">

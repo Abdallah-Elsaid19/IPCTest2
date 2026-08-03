@@ -381,7 +381,7 @@ export default function MembershipApplicationPage() {
   }
 
   return (
-    <section className="min-h-screen bg-background-50 pb-20 pt-28 md:pt-32">
+    <section className="min-h-[100svh] bg-background-50 pb-20 pt-28 md:pt-32">
       {applySeo}
       <div className="container-content max-w-4xl">
         <Progress currentStep={currentStep} />

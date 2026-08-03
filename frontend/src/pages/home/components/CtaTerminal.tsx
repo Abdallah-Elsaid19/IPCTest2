@@ -116,7 +116,7 @@ export default function CtaTerminal() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 to="/membership"
-                className="group inline-flex items-center gap-3 px-6 py-3.5 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-colors duration-400 whitespace-nowrap"
+                className="group inline-flex max-w-full items-center justify-center gap-3 bg-primary-500 px-5 py-3.5 text-center text-sm font-bold tracking-wide text-background-950 transition-colors duration-400 hover:bg-primary-400 sm:px-6"
               >
                 <span>Find your starting grade</span>
                 <i className="ri-arrow-right-line group-hover:translate-x-1 transition-transform duration-300" />
@@ -204,7 +204,7 @@ export default function CtaTerminal() {
               </div>
 
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.2em] text-foreground-500">
-                Hover or select to explore
+                <span className="sm:hidden">Tap to explore</span><span className="hidden sm:inline">Hover or select to explore</span>
               </span>
             </div>
           </div>

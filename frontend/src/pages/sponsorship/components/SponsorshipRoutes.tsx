@@ -84,8 +84,8 @@ export default function SponsorshipRoutes() {
         </div>
 
         <div className="reveal mt-12 border border-background-200/70 bg-background-50 md:mt-16">
-          <div className="overflow-x-auto border-b border-background-200/70">
-            <div role="tablist" aria-label="Sponsorship routes" className="grid min-w-[1040px] grid-cols-8">
+          <div className="border-b border-background-200/70">
+            <div role="tablist" aria-label="Sponsorship routes" className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8">
               {managedRoutes.map((route) => {
                 const active = route.id === activeId;
                 return (

@@ -133,30 +133,30 @@ export default function UserPanelLayout() {
   );
 
   return (
-    <div className={`user-panel-shell min-h-screen bg-[#F4ECE1] text-[#221E1A] transition-[grid-template-columns] duration-300 xl:grid ${
+    <div className={`user-panel-shell min-h-[100svh] bg-[#F4ECE1] text-[#221E1A] transition-[grid-template-columns] duration-300 xl:grid ${
       collapsed ? "xl:grid-cols-[96px_minmax(0,1fr)]" : "xl:grid-cols-[280px_minmax(0,1fr)]"
     }`}>
-      <aside className="sticky top-0 hidden h-screen p-5 pr-0 xl:block">{sidebar}</aside>
+      <aside className="sticky top-0 hidden h-[100dvh] p-5 pr-0 xl:block">{sidebar}</aside>
       {mobileOpen && (
         <>
           <button type="button" className="fixed inset-0 z-[70] bg-black/45 xl:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation overlay" />
-          <aside className="fixed inset-y-0 left-0 z-[80] w-[280px] p-4 xl:hidden">{sidebar}</aside>
+          <aside className="fixed inset-y-0 left-0 z-[80] w-[min(280px,calc(100vw-1rem))] p-2 sm:p-4 xl:hidden">{sidebar}</aside>
         </>
       )}
 
-      <div className="min-w-0 p-4 xl:py-5 xl:pr-5">
-        <header className="sticky top-4 z-40 flex h-16 items-center justify-between rounded-2xl border border-white/80 bg-[#FFFDF9]/95 px-4 shadow-[0_8px_30px_rgba(66,48,31,0.06)] backdrop-blur-xl md:px-6">
-          <div className="flex items-center gap-3">
+      <div className="min-w-0 p-2 sm:p-4 xl:py-5 xl:pr-5">
+        <header className="sticky top-2 z-40 flex h-16 min-w-0 items-center justify-between gap-2 rounded-2xl border border-white/80 bg-[#FFFDF9]/95 px-3 shadow-[0_8px_30px_rgba(66,48,31,0.06)] backdrop-blur-xl sm:top-4 sm:px-4 md:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button type="button" className="grid h-10 w-10 place-items-center rounded-xl border border-[#D4C6B5] xl:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
               <Menu size={20} />
             </button>
-            <div className="flex items-center gap-1 text-sm text-[#7A7066]">
+            <div className="flex min-w-0 items-center gap-1 text-sm text-[#7A7066]">
               <span className="hidden sm:inline">Member area</span>
               <ChevronRight className="hidden sm:block" size={14} />
-              <span className="font-semibold text-[#221E1A]">{section}</span>
+              <span className="truncate font-semibold text-[#221E1A]">{section}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <UserNotificationBell />
             <NavLink to="profile" className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[#F4ECE1]">
               <div className="hidden text-right sm:block">
@@ -172,7 +172,7 @@ export default function UserPanelLayout() {
           </div>
         </header>
 
-        <main className="mt-4 min-h-[calc(100vh-6.75rem)] rounded-2xl border border-white/70 bg-white/65 px-5 py-7 text-[#221E1A] shadow-[0_8px_30px_rgba(66,48,31,0.04)] md:px-8 md:py-9">
+        <main className="mt-2 min-h-[calc(100vh-6.75rem)] min-w-0 rounded-2xl border border-white/70 bg-white/65 px-3 py-5 text-[#221E1A] shadow-[0_8px_30px_rgba(66,48,31,0.04)] sm:mt-4 sm:px-5 sm:py-7 md:px-8 md:py-9">
           <div className="mx-auto max-w-[1500px]"><Outlet /></div>
         </main>
       </div>

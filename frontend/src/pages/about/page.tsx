@@ -105,7 +105,7 @@ const staticAboutHero: AboutPageContent["hero"] = {
 
 function AboutContentError({ message }: { message: string }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background-950 px-6">
+    <div className="flex min-h-[100svh] items-center justify-center bg-background-950 px-6">
       <div className="border border-red-900/60 bg-red-950/30 px-8 py-6 text-center text-red-200" role="alert">
         {message}
       </div>
@@ -334,7 +334,7 @@ function SceneHero({ content, heroProgress, globalScrollY, ref: forwardedRef }: 
     <section
       ref={forwardedRef}
       id="scene-hero"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background-950"
+      className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-background-950"
       style={{
         /* Owl lifts up and scales down slightly as user scrolls */
         ["--owl-y" as string]: `${-heroProgress * 80}px`,
@@ -446,10 +446,10 @@ function SceneHero({ content, heroProgress, globalScrollY, ref: forwardedRef }: 
         <h1 className="mb-6 max-w-none font-heading text-[clamp(1.45rem,3.25vw,3rem)] font-extrabold leading-[1.02] tracking-[-0.04em] text-background-50 [text-shadow:0_3px_24px_rgba(0,0,0,1),0_1px_3px_rgba(0,0,0,1)]">
           <span className="sr-only">{content.title} {content.title_accent}</span>
           <span aria-hidden="true">
-            <span className="block whitespace-nowrap">A professional</span>
-            <span className="block whitespace-nowrap">institution for the</span>
-            <span className="block whitespace-nowrap">people behind</span>
-            <span className="block whitespace-nowrap text-primary-300">credible project decisions.</span>
+            <span className="block sm:whitespace-nowrap">A professional</span>
+            <span className="block sm:whitespace-nowrap">institution for the</span>
+            <span className="block sm:whitespace-nowrap">people behind</span>
+            <span className="block text-primary-300 sm:whitespace-nowrap">credible project decisions.</span>
           </span>
         </h1>
 
@@ -461,7 +461,7 @@ function SceneHero({ content, heroProgress, globalScrollY, ref: forwardedRef }: 
         {/* CTA */}
         <Link
           to={content.cta_url}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer"
+          className="inline-flex max-w-full cursor-pointer items-center justify-center gap-3 bg-primary-500 px-5 py-3.5 text-center text-sm font-bold tracking-wide text-background-950 transition-all duration-300 hover:bg-primary-400 sm:px-8 sm:py-4"
         >
           <span>{content.cta_label}</span>
           <i className="ri-arrow-right-line" />
@@ -1320,12 +1320,12 @@ function SceneFinale({
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to={content.primary_cta_url}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap cursor-pointer">
+                className="inline-flex max-w-full cursor-pointer items-center justify-center gap-2 bg-primary-500 px-5 py-3.5 text-center text-sm font-bold tracking-wide text-background-950 transition-all duration-300 hover:bg-primary-400 sm:px-8 sm:py-4">
                 <i className="ri-award-line" />
                 <span>{content.primary_cta_label}</span>
               </Link>
               <Link to={content.secondary_cta_url}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-background-950 text-sm font-bold tracking-wide border border-background-300 hover:border-primary-500 transition-all duration-300 whitespace-nowrap cursor-pointer">
+                className="inline-flex max-w-full cursor-pointer items-center justify-center gap-2 border border-background-300 bg-transparent px-5 py-3.5 text-center text-sm font-bold tracking-wide text-background-950 transition-all duration-300 hover:border-primary-500 sm:px-8 sm:py-4">
                 <i className="ri-mail-line" />
                 <span>{content.secondary_cta_label}</span>
               </Link>

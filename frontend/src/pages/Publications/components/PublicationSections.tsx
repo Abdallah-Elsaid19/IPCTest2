@@ -89,7 +89,7 @@ export function PublicationHero() {
       <div className="container-content relative grid min-h-[760px] gap-12 py-20 lg:grid-cols-[1.06fr_.94fr] lg:items-center lg:py-24">
         <div className="reveal">
           <span className="eyebrow text-primary-400">{content.eyebrow}</span>
-          <h1 className="mt-6 max-w-4xl font-heading text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-background-50 sm:text-6xl lg:text-7xl">
+          <h1 className="mt-6 max-w-4xl font-heading text-4xl font-semibold leading-[0.98] tracking-[-0.04em] text-background-50 sm:text-6xl lg:text-7xl">
             {content.title}
           </h1>
           <p className="mt-7 max-w-2xl text-lg leading-relaxed text-background-200 md:text-xl">

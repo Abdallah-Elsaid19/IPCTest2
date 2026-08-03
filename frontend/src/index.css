@@ -116,6 +116,8 @@
 
   html {
     scroll-behavior: smooth;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body {
@@ -126,6 +128,29 @@
     -moz-osx-font-smoothing: grayscale;
     overflow-wrap: anywhere;
     word-break: break-word;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  #root {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    min-width: 0;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -173,6 +198,74 @@
   .section-padding {
     padding-top: 5rem;
     padding-bottom: 5rem;
+  }
+
+  @media (max-width: 639px) {
+    .container-content {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .section-padding {
+      padding-top: 4rem;
+      padding-bottom: 4rem;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-ghost {
+      max-width: 100%;
+      min-height: 2.75rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .eyebrow {
+      letter-spacing: 0.1em;
+    }
+
+    input,
+    select,
+    textarea {
+      max-width: 100%;
+      font-size: 16px;
+    }
+
+    .Toastify__toast-container {
+      left: 0.5rem !important;
+      right: 0.5rem !important;
+      top: 0.5rem !important;
+      width: auto !important;
+      padding: 0 !important;
+    }
+
+    .Toastify__toast {
+      margin-bottom: 0.5rem !important;
+      border-radius: 0.75rem !important;
+    }
+
+    .fixed[aria-modal="true"] {
+      align-items: flex-start !important;
+      justify-content: center !important;
+      overflow-y: auto !important;
+      padding: 0.5rem !important;
+      overscroll-behavior: contain;
+    }
+
+    .fixed[aria-modal="true"] > :first-child {
+      max-width: 100%;
+      max-height: calc(100dvh - 1rem);
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      overflow-y: auto;
+    }
+
+    .fixed[aria-modal="true"] footer {
+      flex-wrap: wrap;
+    }
   }
 
   @media (min-width: 768px) {

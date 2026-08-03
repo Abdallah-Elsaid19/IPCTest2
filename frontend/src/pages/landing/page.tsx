@@ -19,7 +19,7 @@ export default function LandingPage() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen overflow-hidden bg-background-950"
+      className="relative h-[100svh] min-h-[32rem] w-full overflow-hidden bg-background-950 sm:h-[100dvh]"
     >
       <SEO {...pageSeo.landing} structuredData={landingStructuredData} />
       {/* ── Dot Grid Pattern ── */}
@@ -160,20 +160,20 @@ export default function LandingPage() {
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
 
       {/* ── Light Charcoal Overlay ── */}
       <div className="absolute inset-0 bg-background-950/60 pointer-events-none" />
 
       {/* ── Centered Content ── */}
-      <div className="relative z-20 flex flex-col items-center justify-center h-full text-center px-6 md:px-10">
+      <div className="relative z-20 flex h-full flex-col items-center justify-center px-4 py-8 text-center sm:px-6 md:px-10">
         {/* Institutional label */}
         <div
           className={`mb-5 md:mb-7 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
           style={{ transitionDelay: "400ms" }}
         >
-          <span className="text-[10px] font-mono text-primary-500/80 tracking-[0.35em] uppercase">
+          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-primary-500/80 sm:text-[10px] sm:tracking-[0.35em]">
             Recognition · Competence · Community · Career
           </span>
         </div>
@@ -183,7 +183,7 @@ export default function LandingPage() {
           className={`mb-5 md:mb-7 transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
           style={{ transitionDelay: "600ms" }}
         >
-          <h1 className="font-heading text-[clamp(2.6rem,6.5vw,5.5rem)] font-extrabold text-background-50 leading-[0.95] tracking-[-0.03em]">
+          <h1 className="font-heading text-[clamp(2.15rem,11vw,5.5rem)] font-extrabold leading-[0.95] tracking-[-0.03em] text-background-50">
             A professional home
             <br />
             for <span className="text-primary-500">project controls</span>
@@ -208,7 +208,7 @@ export default function LandingPage() {
         >
           <Link
             to="/home"
-            className="group inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-background-950 text-sm font-bold tracking-wide hover:bg-primary-400 transition-all duration-300 whitespace-nowrap"
+            className="group inline-flex max-w-full items-center justify-center gap-3 bg-primary-500 px-5 py-3.5 text-center text-sm font-bold tracking-wide text-background-950 transition-all duration-300 hover:bg-primary-400 sm:px-8 sm:py-4"
           >
             <span>Explore the Institution</span>
             <i className="ri-arrow-right-line group-hover:translate-x-1.5 transition-transform duration-300" />

@@ -20,11 +20,11 @@ const navigation = [
 export default function AdminRouteLoading() {
   return (
     <div
-      className="min-h-screen bg-[#F4ECE1] text-[#221E1A] xl:grid xl:grid-cols-[280px_minmax(0,1fr)]"
+      className="min-h-[100svh] bg-[#F4ECE1] text-[#221E1A] xl:grid xl:grid-cols-[280px_minmax(0,1fr)]"
       role="status"
       aria-label="Loading admin session"
     >
-      <aside className="hidden h-screen p-5 pr-0 xl:block">
+      <aside className="hidden h-[100dvh] p-5 pr-0 xl:block">
         <div className="flex h-full flex-col overflow-hidden rounded-[22px] bg-[#0B0B0B] text-white shadow-[0_18px_50px_rgba(11,11,11,0.18)]">
           <div className="flex h-[72px] items-center justify-between border-b border-white/10 px-5">
             <div className="flex items-center gap-3">

@@ -61,9 +61,9 @@ export default function Header() {
         </div>
       </aside>
       <header ref={headerRef} className={`fixed inset-x-0 z-50 border-b transition-[top,background-color,border-color] duration-300 ${scrolled ? "top-0 border-background-800/60 bg-background-950/95 shadow-sm backdrop-blur-xl" : isHome ? "top-9 border-transparent bg-transparent xl:border-background-200 xl:bg-white" : "top-9 border-background-200 bg-white"}`}>
-        <div className={`container-content ${useHomeMobileHeader ? "!px-8 xl:!px-10" : ""}`}>
+        <div className={`container-content ${useHomeMobileHeader ? "!px-4 sm:!px-8 xl:!px-10" : ""}`}>
           <div className={`flex items-center justify-between ${useHomeMobileHeader ? "h-[72px]" : "h-16 md:h-18"}`}>
-            <Link to="/home" className="relative inline-flex h-12 w-40 shrink-0 items-center justify-center" aria-label="Institute of Project Controls home">
+            <Link to="/home" className="relative inline-flex h-12 w-36 shrink-0 items-center justify-center sm:w-40" aria-label="Institute of Project Controls home">
               {useHomeMobileHeader && (
                 <span className="absolute left-0 font-mono text-[10px] uppercase leading-[1.7] tracking-[0.32em] text-primary-500 xl:hidden">
                   Institute of<br />Project Controls
@@ -115,7 +115,7 @@ export default function Header() {
             </div>
           </div>
           {useHomeMobileHeader && (
-            <div className="absolute inset-x-8 bottom-0 h-px bg-background-700/45 xl:hidden">
+            <div className="absolute inset-x-4 bottom-0 h-px bg-background-700/45 sm:inset-x-8 xl:hidden">
               <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_oklch(var(--primary-500))]" />
             </div>
           )}

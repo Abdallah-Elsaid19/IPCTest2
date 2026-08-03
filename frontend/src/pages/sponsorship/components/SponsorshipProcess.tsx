@@ -56,7 +56,7 @@ export default function SponsorshipProcess() {
               ))}
             </ul>
           </div>
-          <Link to={content.cta_url} className="btn-primary whitespace-nowrap">{content.cta_label}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
+          <Link to={content.cta_url} className="btn-primary max-w-full whitespace-normal text-center">{content.cta_label}<i className="ri-arrow-right-line" aria-hidden="true" /></Link>
         </div>
       </div>
     </section>
