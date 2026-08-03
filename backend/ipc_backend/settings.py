@@ -145,6 +145,10 @@ REST_FRAMEWORK = {
             "DRF_BURSARY_APPLICATION_THROTTLE",
             default="100/min" if DEBUG else "20/hour",
         ),
+        "scholarship_announcement": env(
+            "DRF_SCHOLARSHIP_ANNOUNCEMENT_THROTTLE",
+            default="120/min",
+        ),
         "bursary_membership_validation": env(
             "DRF_BURSARY_MEMBERSHIP_VALIDATION_THROTTLE",
             default="240/min" if DEBUG else "60/min",
@@ -178,6 +182,13 @@ FRONTEND_URL = env(
     "FRONTEND_URL",
     default="https://instituteofprojectcontrols.com",
 ).rstrip("/")
+IPC_EMAIL_LOGO_URL = env(
+    "IPC_EMAIL_LOGO_URL",
+    default=(
+        "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/"
+        "e6e47869fdd1459f891ad4c5852798c5.png"
+    ),
+)
 IPC_ACCOUNT_EMAIL_DOMAIN = env("IPC_ACCOUNT_EMAIL_DOMAIN", default="ipc.com")
 
 GRAPH_TENANT_ID = env("GRAPH_TENANT_ID", default="")

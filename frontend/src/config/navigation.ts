@@ -27,32 +27,65 @@ export const footerNavigation = [
   {
     label: "Institute",
     links: [
-      // { label: "Home", path: "/home" },
       { label: "About IPC", path: "/about" },
-      // { label: "Employers", path: "/employers" },
-      // { label: "Partnerships", path: "/partnerships" },
-      { label: "Contact", path: "/contact" },
+      { label: "Our Purpose", path: "/about#scene-who" },
+      { label: "Vision", path: "/about#scene-vision" },
+      { label: "Mission", path: "/about#scene-mission" },
+      { label: "Core Values", path: "/about#scene-values" },
     ],
   },
   {
-    label: "Professional Routes",
+    label: "Memberships",
     links: [
-      { label: "Membership & Recognition", path: "/membership" },
-      { label: "Events & Master Classes", path: "/events" },
+      { label: "Membership Overview", path: "/membership" },
+      { label: "Affiliate", path: "/membership/affiliate" },
+      { label: "Professional Member", path: "/membership/professional" },
+      { label: "Associate Fellow L3", path: "/membership/associate-fellow-l3" },
+      { label: "Associate Fellow L4", path: "/membership/associate-fellow-l4" },
+      { label: "Fellow", path: "/membership/fellow" },
+      { label: "How to Apply", path: "/membership#application-journey" },
+    ],
+  },
+  {
+    label: "Community",
+    links: [
+      { label: "Events", path: "/events" },
       { label: "Regional Clubs", path: "/clubs" },
-      { label: "Professional Services", path: "/services" },
       { label: "Awards & Prizes", path: "/awards" },
     ],
   },
   {
-    label: "Impact & Resources",
+    label: "Resources",
+    links: [
+      { label: "Publications", path: "/publications" },
+      { label: "Professional Services", path: "/services" },
+      { label: "Services Catalogue", path: "/services#service-catalogue" },
+      { label: "Capability Review", path: "/services#capability-review" },
+      { label: "Information Session", path: "/information-session" },
+    ],
+  },
+  {
+    label: "Scholarships & Bursaries",
     links: [
       { label: "Scholarships & Bursaries", path: "/scholarships" },
       { label: "Apply for a Bursary", path: "/bursary-scholarship-application" },
+      { label: "Programme Modules", path: "/scholarships#modules" },
+      { label: "Announcement", path: "/scholarships/announcement" },
+    ],
+  },
+  {
+    label: "Partner with IPC",
+    links: [
       { label: "Sponsorship", path: "/sponsorship" },
-      // { label: "Funded Opportunities", path: "/fund" },
-      { label: "Publications & Research", path: "/publications" },
+      { label: "Discuss a Partnership", path: "/information-session" },
+    ],
+  },
+  {
+    label: "Support",
+    links: [
+      { label: "Contact Support", path: "/contact" },
       { label: "Privacy & Policies", path: "/privacy" },
+      { label: "Account Sign In", path: "/login" },
     ],
   },
 ] satisfies Array<{ label: string; links: NavigationLink[] }>;

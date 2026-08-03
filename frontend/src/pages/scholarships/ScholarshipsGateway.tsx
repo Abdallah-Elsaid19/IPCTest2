@@ -789,13 +789,20 @@ export default function ScholarshipsGateway() {
             <p className="mt-4 max-w-2xl text-base leading-7 text-background-400">
               {content.hero.supporting_text}
             </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link to="/bursary-scholarship-application" className="btn-primary">
                 Apply now <ArrowRight size={17} aria-hidden="true" />
               </Link>
               <a href="#modules" className="btn-secondary">
                 Explore the modules
               </a>
+              <Link
+                to="/scholarships/announcement"
+                className="inline-flex min-h-12 items-center justify-center gap-2 border border-primary-400/50 bg-primary-400/[0.08] px-5 py-3 text-center text-sm font-semibold text-primary-200 transition-colors hover:border-primary-300 hover:bg-primary-400/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+              >
+                <Clock3 size={17} aria-hidden="true" />
+                Announcement countdown
+              </Link>
             </div>
             <div className="mt-8 flex items-start gap-3 border-l-2 border-primary-400 pl-4 text-sm leading-6 text-background-300">
               <ShieldCheck className="mt-0.5 shrink-0 text-primary-300" size={18} aria-hidden="true" />

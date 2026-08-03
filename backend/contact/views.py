@@ -1,6 +1,6 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from rest_framework import mixins, permissions, viewsets
+from ipc_backend.email_branding import send_branded_mail as send_mail
 from .models import ContactSubmission
 from .serializers import ContactSubmissionSerializer
 

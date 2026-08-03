@@ -11,11 +11,39 @@ import "react-toastify/dist/ReactToastify.css";
 import useScrollReveal from "./hooks/useScrollReveal";
 
 function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname, search]);
+    if (!hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+
+    const targetId = decodeURIComponent(hash.slice(1));
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    let observer: MutationObserver | null = null;
+    let timeoutId: number | undefined;
+
+    const scrollToTarget = () => {
+      const target = document.getElementById(targetId);
+      if (!target) return false;
+      target.scrollIntoView({ behavior, block: "start" });
+      observer?.disconnect();
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      return true;
+    };
+
+    if (!scrollToTarget()) {
+      observer = new MutationObserver(scrollToTarget);
+      observer.observe(document.body, { childList: true, subtree: true });
+      timeoutId = window.setTimeout(() => observer?.disconnect(), 4_000);
+    }
+
+    return () => {
+      observer?.disconnect();
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, [pathname, search, hash]);
 
   return null;
 }

@@ -5,7 +5,6 @@ from secrets import token_urlsafe
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.http import Http404
 from django.db.models import Q
@@ -17,6 +16,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
+
+from ipc_backend.email_branding import send_branded_mail as send_mail
 
 from .eventbrite import EventbriteError, exchange_code_for_token, get_authorization_url, save_connection
 from .models import Event, EventPageContent, EventRegistration, EventbriteAttendeeSnapshot

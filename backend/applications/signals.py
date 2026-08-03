@@ -1,7 +1,7 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from ipc_backend.email_branding import send_branded_mail as send_mail
 from .models import Application, ApplicationStatusHistory
 
 

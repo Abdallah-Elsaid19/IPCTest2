@@ -4,7 +4,6 @@ import logging
 from django.contrib.auth import get_user_model
 from django.http import FileResponse, Http404
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -25,6 +24,7 @@ from accounts.graph_mail import (
 from accounts.models import AdminNotification
 from accounts.notification_service import create_admin_notifications
 from user_panel.models import UserNotification
+from ipc_backend.email_branding import send_branded_mail as send_mail
 
 from .models import (
     BursaryApplication,
@@ -38,6 +38,7 @@ from .serializers import (
     BursaryApplicationNoteSerializer,
     BursaryApplicationPublicSerializer,
     BursaryApplicationStatusUpdateSerializer,
+    ScholarshipAnnouncementRecipientSerializer,
     ScholarshipGatewayContentSerializer,
     bursary_application_to_public_values,
 )
@@ -506,6 +507,39 @@ class BursaryApplicationPagination(PageNumberPagination):
     page_size = 15
     page_size_query_param = "page_size"
     max_page_size = 50
+
+
+class ScholarshipAnnouncementRecipientsView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "scholarship_announcement"
+
+    def get(self, request):
+        recipients = BursaryApplication.objects.filter(
+            status=BursaryApplication.Status.APPROVED,
+            approved_media_use_consent=True,
+        ).order_by("first_name", "last_name", "pk")
+        return Response(ScholarshipAnnouncementRecipientSerializer(recipients, many=True).data)
+
+
+class ScholarshipAnnouncementRecipientPhotoView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "scholarship_announcement"
+
+    def get(self, request, pk):
+        try:
+            application = BursaryApplication.objects.get(
+                pk=pk,
+                status=BursaryApplication.Status.APPROVED,
+                approved_media_use_consent=True,
+                professional_headshot_consent=True,
+            )
+        except BursaryApplication.DoesNotExist as error:
+            raise Http404("Recipient photo not found.") from error
+        if not application.applicant_photo:
+            raise Http404("Recipient photo not found.")
+        return FileResponse(application.applicant_photo.open("rb"), as_attachment=False)
 
 
 class AdminBursaryApplicationViewSet(

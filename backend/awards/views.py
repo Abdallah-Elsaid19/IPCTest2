@@ -1,12 +1,12 @@
 from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.http import Http404
 from django.db.models.deletion import ProtectedError
 from django.utils.text import slugify
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveAPIView
+from ipc_backend.email_branding import send_branded_mail as send_mail
 from .models import AwardCategory, AwardPageContent, AwardProgramme, AwardsInterest
 from .serializers import (
     AdminAwardCategorySerializer,

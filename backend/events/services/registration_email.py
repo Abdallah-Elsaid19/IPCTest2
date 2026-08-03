@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from events.models import EventRegistration
+from ipc_backend.email_branding import add_ipc_logo
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def send_registration_confirmation(registration_id):
             reply_to=[getattr(settings, "EVENT_SUPPORT_EMAIL", settings.IPC_REVIEW_EMAIL)],
         )
         message.attach_alternative(
-            render_to_string("events/emails/registration_confirmation.html", context),
+            add_ipc_logo(render_to_string("events/emails/registration_confirmation.html", context)),
             "text/html",
         )
         message.send(fail_silently=False)

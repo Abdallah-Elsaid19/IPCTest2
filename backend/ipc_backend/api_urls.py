@@ -11,7 +11,11 @@ from awards.views import (
     AwardsInterestViewSet,
 )
 from contact.views import ContactSubmissionViewSet
-from newsletter.views import NewsletterSignupViewSet
+from newsletter.views import (
+    AdminScholarshipAnnouncementReminderViewSet,
+    NewsletterSignupViewSet,
+    ScholarshipAnnouncementReminderViewSet,
+)
 from memberships.views import AdminMembershipGradeViewSet, MembershipContentView, MembershipGradeViewSet
 from media_library.views import MediaAssetViewSet
 from ipc_backend.views import csrf_cookie
@@ -22,6 +26,8 @@ from scholarships.views import (
     BursaryApplicationCreateViewSet,
     BursaryApplicationCurrentView,
     BursaryMembershipReferenceValidationView,
+    ScholarshipAnnouncementRecipientPhotoView,
+    ScholarshipAnnouncementRecipientsView,
     ScholarshipContentView,
 )
 from sponsorship.views import SponsorshipContentView
@@ -52,6 +58,7 @@ router.register("award-categories", AwardCategoryViewSet, basename="award-catego
 router.register("awards/interest", AwardsInterestViewSet, basename="awards-interest")
 router.register("contact", ContactSubmissionViewSet, basename="contact")
 router.register("newsletter", NewsletterSignupViewSet, basename="newsletter")
+router.register("scholarship-reminders", ScholarshipAnnouncementReminderViewSet, basename="scholarship-reminder")
 router.register("media", MediaAssetViewSet, basename="media")
 router.register("admin/applications", AdminApplicationViewSet, basename="admin-application")
 router.register("admin/users", AdminUserViewSet, basename="admin-user")
@@ -64,6 +71,7 @@ router.register("admin/support", AdminSupportViewSet, basename="admin-support")
 router.register("admin/club-memberships", AdminClubMembershipViewSet, basename="admin-club-membership")
 router.register("admin/clubs", AdminClubViewSet, basename="admin-club")
 router.register("admin/event-registrations", AdminEventRegistrationViewSet, basename="admin-event-registration")
+router.register("admin/scholarship-reminders", AdminScholarshipAnnouncementReminderViewSet, basename="admin-scholarship-reminder")
 router.register("bursary-applications", BursaryApplicationCreateViewSet, basename="bursary-application")
 router.register("admin/bursary-applications", AdminBursaryApplicationViewSet, basename="admin-bursary-application")
 
@@ -88,6 +96,16 @@ urlpatterns = [
     path("clubs/content", ClubPageContentView.as_view(), name="club-page-content"),
     path("clubs/<slug:slug>", PublicClubDetailView.as_view(), name="public-club-detail"),
     path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
+    path(
+        "scholarship-announcement/recipients",
+        ScholarshipAnnouncementRecipientsView.as_view(),
+        name="scholarship-announcement-recipients",
+    ),
+    path(
+        "scholarship-announcement/recipients/<int:pk>/photo",
+        ScholarshipAnnouncementRecipientPhotoView.as_view(),
+        name="scholarship-announcement-recipient-photo",
+    ),
     path(
         "bursary-applications/validate-membership-reference",
         BursaryMembershipReferenceValidationView.as_view(),

@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import models
 from django.http import Http404
 from django.utils import timezone
@@ -14,6 +13,7 @@ from rest_framework.views import APIView
 from events.models import Event
 from events.serializers import EventSerializer
 from user_panel.models import Club, ClubMembership
+from ipc_backend.email_branding import send_branded_mail as send_mail
 
 from .models import ClubPageContent, ClubPagesContent
 from .serializers import ClubEnquiryCreateSerializer, ClubPageContentSerializer

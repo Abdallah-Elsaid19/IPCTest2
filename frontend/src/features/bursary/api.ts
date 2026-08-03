@@ -206,7 +206,7 @@ export const bursaryApi = {
     return apiJson<PaginatedBursaryApplications>(
       `/api/admin/bursary-applications${suffix}`,
       undefined,
-      { signal, requestSource: "AdminBursaryApplications" },
+      { signal, cache: "no-store", requestSource: "AdminBursaryApplications" },
     );
   },
   detail: (id: number, signal?: AbortSignal) =>

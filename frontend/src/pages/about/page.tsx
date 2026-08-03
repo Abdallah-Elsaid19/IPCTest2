@@ -443,13 +443,13 @@ function SceneHero({ content, heroProgress, globalScrollY, ref: forwardedRef }: 
         <div className="mb-7 w-16 gold-rule" />
 
         {/* Headline */}
-        <h1 className="mb-6 max-w-none font-heading text-[clamp(1.45rem,3.25vw,3rem)] font-extrabold leading-[1.02] tracking-[-0.04em] text-background-50 [text-shadow:0_3px_24px_rgba(0,0,0,1),0_1px_3px_rgba(0,0,0,1)]">
+        <h1 className="mb-6 max-w-none font-heading text-4xl font-extrabold leading-[1.02] tracking-[-0.04em] text-background-50 [text-shadow:0_3px_24px_rgba(0,0,0,1),0_1px_3px_rgba(0,0,0,1)] sm:text-5xl md:text-6xl lg:text-7xl">
           <span className="sr-only">{content.title} {content.title_accent}</span>
           <span aria-hidden="true">
-            <span className="block sm:whitespace-nowrap">A professional</span>
-            <span className="block sm:whitespace-nowrap">institution for the</span>
-            <span className="block sm:whitespace-nowrap">people behind</span>
-            <span className="block text-primary-300 sm:whitespace-nowrap">credible project decisions.</span>
+            <span className="block lg:whitespace-nowrap">A professional</span>
+            <span className="block lg:whitespace-nowrap">institution for the</span>
+            <span className="block lg:whitespace-nowrap">people behind</span>
+            <span className="block text-primary-300 lg:whitespace-nowrap">credible project decisions.</span>
           </span>
         </h1>
 

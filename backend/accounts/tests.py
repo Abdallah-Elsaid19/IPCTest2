@@ -823,6 +823,8 @@ class AdminUserManagementApiTests(APITestCase):
 @override_settings(
     GRAPH_SENDER="office@ipc.example.com",
     PASSWORD_RESET_EXPIRE_MINUTES=30,
+    FRONTEND_URL="https://ipc.example.com",
+    IPC_EMAIL_LOGO_URL="https://ipc.example.com/logo.png",
 )
 class MembershipWelcomeMailTests(SimpleTestCase):
     @patch("accounts.graph_mail.requests.post")
@@ -882,6 +884,9 @@ class MembershipWelcomeMailTests(SimpleTestCase):
             self.assertNotIn("PlainTextPassword123", content)
         self.assertIn("Membership Grade: MIPC", plain)
         self.assertIn("<strong>Membership Grade:</strong> MIPC", html)
+        self.assertIn('src="https://ipc.example.com/logo.png"', html)
+        self.assertIn('alt="Institute of Project Controls"', html)
+        self.assertNotIn(">IPC</strong>", html)
         href = re.search(r'href="([^"]*reset-password[^"]*)"', html)
         self.assertIsNotNone(href)
         query = parse_qs(urlparse(html_lib.unescape(href.group(1))).query)

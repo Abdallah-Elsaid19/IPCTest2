@@ -772,12 +772,7 @@ export function HomeFinalCta() {
           <p className="mx-auto mt-5 max-w-3xl text-base leading-relaxed text-background-300 md:text-lg">{content.description}</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Link to={content.primary_cta_url} className="btn-primary">{content.primary_cta_label}</Link>
-            <Link to={content.secondary_cta_url} className="btn-secondary">{content.secondary_cta_label}</Link>
             <Link to={content.tertiary_cta_url} className="btn-secondary">{content.tertiary_cta_label}</Link>
-          </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-xs text-background-400">
-            <span>{content.address}</span>
-            <a href={`mailto:${content.email}`} className="text-primary-300">{content.email}</a>
           </div>
         </div>
       </div>

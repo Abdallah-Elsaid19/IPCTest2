@@ -13,6 +13,7 @@ const AssociateFellowL4GradePage = lazy(() => import("../pages/membership/grades
 const FellowGradePage = lazy(() => import("../pages/membership/grades/fellow/page"));
 const MembershipApplicationPage = lazy(() => import("../pages/membership/apply/page"));
 const Scholarships = lazy(() => import("../pages/scholarships/page"));
+const ScholarshipAnnouncementPage = lazy(() => import("../pages/scholarships/announcement/page"));
 const ScholarshipPathwayDetailPage = lazy(() => import("../pages/scholarships/pathways/page"));
 const BursaryApplicationPage = lazy(() => import("@/features/bursary/BursaryApplicationPage"));
 const Sponsorship = lazy(() => import("../pages/sponsorship/page"));
@@ -83,6 +84,7 @@ const routes: RouteObject[] = [
   { path: "/membership/fellow", element: <FellowGradePage /> },
   { path: "/membership/:grade/apply", element: <MembershipApplicationPage /> },
   { path: "/scholarships", element: <Scholarships /> },
+  { path: "/scholarships/announcement", element: <ScholarshipAnnouncementPage /> },
   { path: "/scholarships/pathways/:pathwayId", element: <ScholarshipPathwayDetailPage /> },
   { path: "/bursary-scholarship-application", element: <BursaryApplicationPage /> },
   { path: "/sponsorship", element: <Sponsorship /> },

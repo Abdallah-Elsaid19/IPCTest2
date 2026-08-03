@@ -561,6 +561,52 @@ class BursaryApplicationListSerializer(serializers.ModelSerializer):
         return f"{application.first_name} {application.last_name}".strip()
 
 
+class ScholarshipAnnouncementRecipientSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    award = serializers.CharField(source="get_bursary_selection_display", read_only=True)
+    modules = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    year = serializers.SerializerMethodField()
+    photo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BursaryApplication
+        fields = [
+            "id",
+            "name",
+            "award",
+            "country",
+            "modules",
+            "category",
+            "year",
+            "photo_url",
+        ]
+        read_only_fields = fields
+
+    def get_name(self, application):
+        first_name = application.preferred_name.strip() or application.first_name.strip()
+        return f"{first_name} {application.last_name.strip()}".strip()
+
+    def get_modules(self, application):
+        module_labels = dict(BursaryApplication.PreferredModule.choices)
+        return [
+            module_labels[module]
+            for module in application.preferred_modules
+            if module in module_labels
+        ]
+
+    def get_category(self, application):
+        return "IPC Scholarship Fund"
+
+    def get_year(self, application):
+        return 2026
+
+    def get_photo_url(self, application):
+        if not application.applicant_photo or not application.professional_headshot_consent:
+            return ""
+        return f"/api/scholarship-announcement/recipients/{application.pk}/photo"
+
+
 class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
     preferred_pathway_label = serializers.CharField(source="get_bursary_selection_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)

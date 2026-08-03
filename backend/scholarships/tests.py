@@ -469,6 +469,31 @@ class BursaryApplicationApiTests(APITestCase):
     def test_public_endpoint_does_not_allow_listing(self):
         self.assertEqual(self.client.get("/api/bursary-applications").status_code, 405)
 
+    def test_announcement_endpoint_only_exposes_approved_public_recipient_fields(self):
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+        application = BursaryApplication.objects.get(pk=created.data["id"])
+
+        before_approval = self.client.get("/api/scholarship-announcement/recipients")
+        self.assertEqual(before_approval.status_code, 200, before_approval.data)
+        self.assertEqual(before_approval.data, [])
+
+        application.status = BursaryApplication.Status.APPROVED
+        application.applicant_photo = ""
+        application.save(update_fields=["status", "applicant_photo", "updated_at"])
+        announced = self.client.get("/api/scholarship-announcement/recipients")
+
+        self.assertEqual(announced.status_code, 200, announced.data)
+        self.assertEqual(len(announced.data), 1)
+        self.assertEqual(announced.data[0]["name"], "Amina Khan")
+        self.assertEqual(announced.data[0]["award"], "AI, PMP")
+        self.assertEqual(announced.data[0]["modules"], ["AI", "PMP"])
+        self.assertEqual(announced.data[0]["category"], "IPC Scholarship Fund")
+        self.assertEqual(announced.data[0]["year"], 2026)
+        self.assertEqual(announced.data[0]["photo_url"], "")
+        self.assertNotIn("email", announced.data[0])
+        self.assertNotIn("mobile_phone_e164", announced.data[0])
+
     def test_invalid_phone_is_rejected_for_selected_country(self):
         payload = valid_bursary_payload()
         payload["personalDetails"]["phoneNationalNumber"] = "12345"

@@ -77,7 +77,12 @@ export default function Header() {
               {navigation.map((item) => {
                 const isActive = isNavigationGroupActive(location.pathname, item);
                 if (item.path) {
-                  return <Link key={item.label} to={item.path} className={`relative flex items-center px-2.5 text-[12px] font-medium tracking-wide transition-colors ${isActive ? activeClass : inactiveClass}`}>{item.label}{isActive && <span className="absolute inset-x-2.5 bottom-0 h-px bg-primary-500" />}</Link>;
+                  return (
+                    <Link key={item.label} to={item.path} className={`group relative flex items-center px-2.5 text-[12px] font-medium tracking-wide transition-colors ${isActive ? activeClass : inactiveClass}`}>
+                      {item.label}
+                      <span className={`absolute inset-x-2.5 bottom-0 h-px origin-left bg-primary-500 transition-transform duration-300 ease-out ${isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
+                    </Link>
+                  );
                 }
                 const isOpen = openGroup === item.label;
                 const id = `nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`;
@@ -95,10 +100,10 @@ export default function Header() {
                           requestAnimationFrame(() => document.querySelector<HTMLAnchorElement>(`#${id} a`)?.focus());
                         }
                       }}
-                      className={`relative flex items-center gap-1 px-2.5 text-[12px] font-medium tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 ${isActive ? activeClass : inactiveClass}`}
+                      className={`group relative flex items-center gap-1 px-2.5 text-[12px] font-medium tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 ${isActive ? activeClass : inactiveClass}`}
                     >
                       {item.label}<i className={`ri-arrow-down-s-line transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
-                      {isActive && <span className="absolute inset-x-2.5 bottom-0 h-px bg-primary-500" />}
+                      <span className={`absolute inset-x-2.5 bottom-0 h-px origin-left bg-primary-500 transition-transform duration-300 ease-out ${isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
                     </button>
                     <div id={id} className={`absolute left-1/2 top-full w-72 -translate-x-1/2 border border-background-800/70 bg-background-950 p-2 shadow-2xl transition ${isOpen ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0"}`}>
                       {item.children?.map((child) => <Link key={child.path} to={child.path} className="block border-l border-transparent px-4 py-3 text-sm text-background-300 transition hover:border-primary-500 hover:bg-background-900 hover:text-primary-400 focus-visible:border-primary-500 focus-visible:outline-none">{child.label}</Link>)}

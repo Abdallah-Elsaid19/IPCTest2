@@ -10,6 +10,8 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from ipc_backend.email_branding import add_ipc_logo
+
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,7 @@ def _send_mime_message(*, recipient, subject, text_body, html_body, reply_to=Non
     # Base64 transfer encoding prevents Graph/mail clients from treating MIME
     # soft line breaks (`=`) as visible characters or dropping the next byte.
     message.set_content(text_body, cte="base64")
-    message.add_alternative(html_body, subtype="html", cte="base64")
+    message.add_alternative(add_ipc_logo(html_body), subtype="html", cte="base64")
     encoded_message = base64.b64encode(
         message.as_bytes(policy=policy.SMTP)
     ).decode("ascii")
@@ -121,6 +123,48 @@ Institute of Project Controls
     )
 
 
+def send_scholarship_announcement_reminder_email(*, recipient):
+    countdown_url = f"{settings.FRONTEND_URL.rstrip('/')}/scholarships/announcement"
+    safe_countdown_url = html.escape(countdown_url, quote=True)
+    subject = "IPC scholarship announcement reminder — 10 August 2026"
+    text_body = f"""Hello,
+
+This is your requested reminder that successful IPC scholarship and bursary applicants will be announced on 10 August 2026.
+
+View the announcement countdown and scholarship information:
+{countdown_url}
+
+Being contacted or receiving this reminder does not confirm selection for the IPC Fund. Selection is official only after IPC issues written confirmation.
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.65;max-width:620px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:25px">Scholarship announcement reminder</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Hello,</p>
+          <p>This is your requested reminder that successful IPC scholarship and bursary applicants will be announced on <strong>10 August 2026</strong>.</p>
+          <p style="margin:24px 0"><a href="{safe_countdown_url}" style="display:inline-block;background:#d79525;color:#171411;text-decoration:none;font-weight:bold;padding:12px 18px">View announcement countdown</a></p>
+          <p style="font-size:13px;color:#655d55">Being contacted or receiving this reminder does not confirm selection for the <strong>IPC Fund</strong>. Selection is official only after IPC issues written confirmation.</p>
+          <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    try:
+        _send_mime_message(
+            recipient=recipient,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+        )
+    except (ImproperlyConfigured, requests.RequestException) as exc:
+        raise GraphMailError("Microsoft Graph could not send the scholarship reminder email.") from exc
+
+
 def send_password_reset_email(*, recipient, name, reset_url):
     sender = _required_setting("GRAPH_SENDER")
     safe_name = html.escape(name or "IPC member")
@@ -141,7 +185,7 @@ def send_password_reset_email(*, recipient, name, reset_url):
         json={
             "message": {
                 "subject": "Reset your IPC password",
-                "body": {"contentType": "HTML", "content": body},
+                "body": {"contentType": "HTML", "content": add_ipc_logo(body)},
                 "toRecipients": [{"emailAddress": {"address": recipient}}],
             },
             "saveToSentItems": True,
