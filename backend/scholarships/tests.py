@@ -776,6 +776,7 @@ class BursaryApplicationApiTests(APITestCase):
             "attempted": True,
             "sent": True,
             "recipient_count": 1,
+            "error_codes": [],
         })
         application = BursaryApplication.objects.get(pk=created.data["id"])
         self.assertIsNotNone(application.approval_email_sent_at)
@@ -827,6 +828,7 @@ class BursaryApplicationApiTests(APITestCase):
             "attempted": True,
             "sent": False,
             "recipient_count": 1,
+            "error_codes": ["graph_rejected"],
         })
         application = BursaryApplication.objects.get(pk=created.data["id"])
         self.assertIsNone(application.approval_email_sent_at)
@@ -879,6 +881,7 @@ class BursaryApplicationApiTests(APITestCase):
             "attempted": True,
             "sent": True,
             "recipient_count": 1,
+            "error_codes": [],
         })
         application = BursaryApplication.objects.get(pk=created.data["id"])
         self.assertEqual(application.status, BursaryApplication.Status.REJECTED)
@@ -964,6 +967,7 @@ class BursaryApplicationApiTests(APITestCase):
             "attempted": True,
             "sent": True,
             "recipient_count": 2,
+            "error_codes": [],
         })
         notification = UserNotification.objects.get(
             recipient=self.member,

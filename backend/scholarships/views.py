@@ -60,6 +60,17 @@ PATHWAY_DETAIL_FIELDS = {
 logger = logging.getLogger(__name__)
 
 
+def mail_delivery_result(sent, error_code=""):
+    return sent, error_code
+
+
+def graph_mail_error_code(error):
+    message = str(error).lower()
+    if "authentication" in message or "access token" in message:
+        return "authentication_failed"
+    return "graph_rejected"
+
+
 def approved_membership_for_user(user, for_update=False):
     if not user.is_authenticated:
         return None
@@ -92,9 +103,9 @@ def bursary_payload_from_request(request):
 def deliver_bursary_approval_email(application_id):
     application = BursaryApplication.objects.filter(pk=application_id).first()
     if application is None:
-        return False
+        return mail_delivery_result(False, "application_not_found")
     if application.approval_email_sent_at is not None:
-        return True
+        return mail_delivery_result(True)
 
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
@@ -104,26 +115,39 @@ def deliver_bursary_approval_email(application_id):
             application_reference=application.application_reference,
             pathway=application.get_bursary_selection_display(),
         )
-    except (GraphMailError, ImproperlyConfigured, requests.RequestException):
+    except ImproperlyConfigured:
+        logger.exception(
+            "Microsoft Graph is not configured for bursary approval email delivery."
+        )
+        return mail_delivery_result(False, "not_configured")
+    except requests.RequestException:
+        logger.exception(
+            "Microsoft Graph could not be reached for bursary approval email delivery."
+        )
+        return mail_delivery_result(False, "network_error")
+    except GraphMailError as error:
         logger.exception(
             "Microsoft Graph could not send the bursary approval email for application %s.",
             application.application_reference,
         )
-        return False
+        return mail_delivery_result(False, graph_mail_error_code(error))
 
     updated = BursaryApplication.objects.filter(
         pk=application_id,
         approval_email_sent_at__isnull=True,
     ).update(approval_email_sent_at=timezone.now())
-    return bool(updated)
+    return mail_delivery_result(
+        bool(updated),
+        "" if updated else "delivery_not_recorded",
+    )
 
 
 def deliver_bursary_rejection_email(application_id, reason):
     application = BursaryApplication.objects.filter(pk=application_id).first()
     if application is None:
-        return False
+        return mail_delivery_result(False, "application_not_found")
     if application.rejection_email_sent_at is not None:
-        return True
+        return mail_delivery_result(True)
 
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
@@ -134,24 +158,37 @@ def deliver_bursary_rejection_email(application_id, reason):
             pathway=application.get_bursary_selection_display(),
             reason=reason,
         )
-    except (GraphMailError, ImproperlyConfigured, requests.RequestException):
+    except ImproperlyConfigured:
+        logger.exception(
+            "Microsoft Graph is not configured for bursary rejection email delivery."
+        )
+        return mail_delivery_result(False, "not_configured")
+    except requests.RequestException:
+        logger.exception(
+            "Microsoft Graph could not be reached for bursary rejection email delivery."
+        )
+        return mail_delivery_result(False, "network_error")
+    except GraphMailError as error:
         logger.exception(
             "Microsoft Graph could not send the bursary rejection email for application %s.",
             application.application_reference,
         )
-        return False
+        return mail_delivery_result(False, graph_mail_error_code(error))
 
     updated = BursaryApplication.objects.filter(
         pk=application_id,
         rejection_email_sent_at__isnull=True,
     ).update(rejection_email_sent_at=timezone.now())
-    return bool(updated)
+    return mail_delivery_result(
+        bool(updated),
+        "" if updated else "delivery_not_recorded",
+    )
 
 
 def deliver_bursary_needs_information_email(application_id, message, recipient):
     application = BursaryApplication.objects.filter(pk=application_id).first()
     if application is None:
-        return False
+        return mail_delivery_result(False, "application_not_found")
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
         send_graph_bursary_needs_information_email(
@@ -161,13 +198,23 @@ def deliver_bursary_needs_information_email(application_id, message, recipient):
             pathway=application.get_bursary_selection_display(),
             message=message,
         )
-    except (GraphMailError, ImproperlyConfigured, requests.RequestException):
+    except ImproperlyConfigured:
+        logger.exception(
+            "Microsoft Graph is not configured for bursary information-request email delivery."
+        )
+        return mail_delivery_result(False, "not_configured")
+    except requests.RequestException:
+        logger.exception(
+            "Microsoft Graph could not be reached for bursary information-request email delivery."
+        )
+        return mail_delivery_result(False, "network_error")
+    except GraphMailError as error:
         logger.exception(
             "Microsoft Graph could not send the bursary information-request email for application %s.",
             application.application_reference,
         )
-        return False
-    return True
+        return mail_delivery_result(False, graph_mail_error_code(error))
+    return mail_delivery_result(True)
 
 
 def create_bursary_status_notifications(application, rejection_reason=""):
@@ -751,8 +798,13 @@ class AdminBursaryApplicationViewSet(
         ).data
         response_data["status_email"] = {
             "attempted": bool(email_kind),
-            "sent": all(delivery_results) if email_kind else None,
+            "sent": all(result[0] for result in delivery_results) if email_kind else None,
             "recipient_count": len(delivery_results),
+            "error_codes": sorted({
+                result[1]
+                for result in delivery_results
+                if result[1]
+            }),
         }
         return Response(response_data)
 

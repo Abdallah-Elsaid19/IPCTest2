@@ -8,7 +8,9 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, []),
 )
-environ.Env.read_env(BASE_DIR / ".env", overwrite=True)
+# Values supplied by the production process (for example OpenLiteSpeed LSAPI
+# environment variables) must take precedence over the local .env file.
+environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 
 SECRET_KEY = env("SECRET_KEY", default="unsafe-dev-key-change-me")
 DEBUG = env.bool("DEBUG", default=True)

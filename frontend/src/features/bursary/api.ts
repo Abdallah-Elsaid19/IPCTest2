@@ -149,6 +149,7 @@ export type BursaryApplicationDetail = Record<string, unknown> & {
     attempted: boolean;
     sent: boolean | null;
     recipient_count: number;
+    error_codes: string[];
   };
 };
 

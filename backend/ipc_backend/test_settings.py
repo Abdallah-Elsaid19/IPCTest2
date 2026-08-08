@@ -8,3 +8,5 @@ DATABASES = {
     }
 }
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+DEBUG = True
+SECURE_SSL_REDIRECT = False
