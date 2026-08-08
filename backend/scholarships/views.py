@@ -1,7 +1,9 @@
 import json
 import logging
 
+import requests
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 from django.http import FileResponse, Http404
 from django.conf import settings
 from django.db import transaction
@@ -89,8 +91,10 @@ def bursary_payload_from_request(request):
 
 def deliver_bursary_approval_email(application_id):
     application = BursaryApplication.objects.filter(pk=application_id).first()
-    if application is None or application.approval_email_sent_at is not None:
-        return
+    if application is None:
+        return False
+    if application.approval_email_sent_at is not None:
+        return True
 
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
@@ -100,23 +104,26 @@ def deliver_bursary_approval_email(application_id):
             application_reference=application.application_reference,
             pathway=application.get_bursary_selection_display(),
         )
-    except GraphMailError:
+    except (GraphMailError, ImproperlyConfigured, requests.RequestException):
         logger.exception(
             "Microsoft Graph could not send the bursary approval email for application %s.",
             application.application_reference,
         )
-        return
+        return False
 
-    BursaryApplication.objects.filter(
+    updated = BursaryApplication.objects.filter(
         pk=application_id,
         approval_email_sent_at__isnull=True,
     ).update(approval_email_sent_at=timezone.now())
+    return bool(updated)
 
 
 def deliver_bursary_rejection_email(application_id, reason):
     application = BursaryApplication.objects.filter(pk=application_id).first()
-    if application is None or application.rejection_email_sent_at is not None:
-        return
+    if application is None:
+        return False
+    if application.rejection_email_sent_at is not None:
+        return True
 
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
@@ -127,23 +134,24 @@ def deliver_bursary_rejection_email(application_id, reason):
             pathway=application.get_bursary_selection_display(),
             reason=reason,
         )
-    except GraphMailError:
+    except (GraphMailError, ImproperlyConfigured, requests.RequestException):
         logger.exception(
             "Microsoft Graph could not send the bursary rejection email for application %s.",
             application.application_reference,
         )
-        return
+        return False
 
-    BursaryApplication.objects.filter(
+    updated = BursaryApplication.objects.filter(
         pk=application_id,
         rejection_email_sent_at__isnull=True,
     ).update(rejection_email_sent_at=timezone.now())
+    return bool(updated)
 
 
 def deliver_bursary_needs_information_email(application_id, message, recipient):
     application = BursaryApplication.objects.filter(pk=application_id).first()
     if application is None:
-        return
+        return False
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
         send_graph_bursary_needs_information_email(
@@ -153,11 +161,13 @@ def deliver_bursary_needs_information_email(application_id, message, recipient):
             pathway=application.get_bursary_selection_display(),
             message=message,
         )
-    except GraphMailError:
+    except (GraphMailError, ImproperlyConfigured, requests.RequestException):
         logger.exception(
             "Microsoft Graph could not send the bursary information-request email for application %s.",
             application.application_reference,
         )
+        return False
+    return True
 
 
 def create_bursary_status_notifications(application, rejection_reason=""):
@@ -635,100 +645,116 @@ class AdminBursaryApplicationViewSet(
         return FileResponse(application.applicant_photo.open("rb"), as_attachment=False)
 
     @action(detail=True, methods=["patch"], url_path="status")
-    @transaction.atomic
     def update_status(self, request, pk=None):
-        target = self.get_object()
-        application = BursaryApplication.objects.select_for_update().get(pk=target.pk)
-        previous = application.status
-        final_statuses = {
-            BursaryApplication.Status.APPROVED,
-            BursaryApplication.Status.REJECTED,
-        }
-        if previous in final_statuses:
-            return Response(
-                {"detail": "Approved and rejected applications are final and cannot be changed."},
-                status=status.HTTP_409_CONFLICT,
-            )
-
         serializer = BursaryApplicationStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_status = serializer.validated_data["status"]
         assigned_reviewer_supplied = "assigned_reviewer" in serializer.validated_data
         assigned_reviewer = serializer.validated_data.get("assigned_reviewer")
         internal_reason = serializer.validated_data.get("internal_reason", "").strip()
+        email_kind = ""
+        email_recipients = []
 
-        if (
-            new_status == BursaryApplication.Status.SUBMITTED
-            and previous != BursaryApplication.Status.SUBMITTED
-        ):
-            return Response(
-                {"detail": "An application cannot be moved back to Submitted."},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        changed_fields = []
-        if new_status != previous:
-            application.status = new_status
-            changed_fields.append("status")
-        if assigned_reviewer_supplied and application.assigned_reviewer != assigned_reviewer:
-            application.assigned_reviewer = assigned_reviewer
-            changed_fields.append("assigned_reviewer")
-        if changed_fields:
-            application.save(update_fields=[*changed_fields, "updated_at"])
-        if new_status != previous:
-            BursaryApplicationStatusHistory.objects.create(
-                application=application,
-                previous_status=previous,
-                new_status=new_status,
-                changed_by=request.user,
-                internal_reason=internal_reason,
-            )
-            getattr(application, "_prefetched_objects_cache", {}).pop("status_history", None)
-            create_bursary_status_notifications(
-                application,
-                rejection_reason=internal_reason,
-            )
-            if (
-                new_status == BursaryApplication.Status.APPROVED
-                and application.approval_email_sent_at is None
-            ):
-                transaction.on_commit(
-                    lambda application_id=application.pk: deliver_bursary_approval_email(application_id)
+        with transaction.atomic():
+            target = self.get_object()
+            application = BursaryApplication.objects.select_for_update().get(pk=target.pk)
+            previous = application.status
+            final_statuses = {
+                BursaryApplication.Status.APPROVED,
+                BursaryApplication.Status.REJECTED,
+            }
+            if previous in final_statuses:
+                return Response(
+                    {"detail": "Approved and rejected applications are final and cannot be changed."},
+                    status=status.HTTP_409_CONFLICT,
                 )
+
             if (
-                new_status == BursaryApplication.Status.REJECTED
-                and application.rejection_email_sent_at is None
+                new_status == BursaryApplication.Status.SUBMITTED
+                and previous != BursaryApplication.Status.SUBMITTED
             ):
-                transaction.on_commit(
-                    lambda application_id=application.pk, reason=internal_reason:
-                        deliver_bursary_rejection_email(application_id, reason)
+                return Response(
+                    {"detail": "An application cannot be moved back to Submitted."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            changed_fields = []
+            if new_status != previous:
+                application.status = new_status
+                changed_fields.append("status")
+            if assigned_reviewer_supplied and application.assigned_reviewer != assigned_reviewer:
+                application.assigned_reviewer = assigned_reviewer
+                changed_fields.append("assigned_reviewer")
+            if changed_fields:
+                application.save(update_fields=[*changed_fields, "updated_at"])
+            if new_status != previous:
+                BursaryApplicationStatusHistory.objects.create(
+                    application=application,
+                    previous_status=previous,
+                    new_status=new_status,
+                    changed_by=request.user,
+                    internal_reason=internal_reason,
+                )
+                getattr(application, "_prefetched_objects_cache", {}).pop("status_history", None)
+                create_bursary_status_notifications(
+                    application,
+                    rejection_reason=internal_reason,
+                )
+                if (
+                    new_status == BursaryApplication.Status.APPROVED
+                    and application.approval_email_sent_at is None
+                ):
+                    email_kind = "approval"
+                elif (
+                    new_status == BursaryApplication.Status.REJECTED
+                    and application.rejection_email_sent_at is None
+                ):
+                    email_kind = "rejection"
+                elif new_status == BursaryApplication.Status.NEEDS_INFORMATION:
+                    email_kind = "needs_information"
+                    account_emails = []
+                    if application.submitted_by and application.submitted_by.email:
+                        account_emails.append(application.submitted_by.email)
+                    if application.membership_reference:
+                        account_emails.extend(get_user_model().objects.filter(
+                            Q(
+                                membership_application__application_reference__iexact=application.membership_reference
+                            )
+                            | Q(
+                                membership_applications__application_reference__iexact=application.membership_reference
+                            )
+                        ).exclude(email="").values_list("email", flat=True).distinct())
+                    email_recipients = list(dict.fromkeys([
+                        application.email,
+                        *account_emails,
+                    ]))
+
+        delivery_results = []
+        if email_kind == "approval":
+            delivery_results.append(deliver_bursary_approval_email(application.pk))
+        elif email_kind == "rejection":
+            delivery_results.append(deliver_bursary_rejection_email(application.pk, internal_reason))
+        elif email_kind == "needs_information":
+            delivery_results.extend(
+                deliver_bursary_needs_information_email(
+                    application.pk,
+                    internal_reason,
+                    recipient,
+                )
+                for recipient in email_recipients
             )
-            if new_status == BursaryApplication.Status.NEEDS_INFORMATION:
-                account_emails = []
-                if application.submitted_by and application.submitted_by.email:
-                    account_emails.append(application.submitted_by.email)
-                if application.membership_reference:
-                    account_emails.extend(get_user_model().objects.filter(
-                        Q(
-                            membership_application__application_reference__iexact=application.membership_reference
-                        )
-                        | Q(
-                            membership_applications__application_reference__iexact=application.membership_reference
-                        )
-                    ).exclude(email="").values_list("email", flat=True).distinct())
-                email_recipients = list(dict.fromkeys([
-                    application.email,
-                    *account_emails,
-                ]))
-                for recipient in email_recipients:
-                    transaction.on_commit(
-                        lambda application_id=application.pk, message=internal_reason, email=recipient:
-                            deliver_bursary_needs_information_email(application_id, message, email)
-                    )
-        return Response(BursaryApplicationDetailSerializer(
+
+        application = self.get_queryset().get(pk=application.pk)
+        response_data = BursaryApplicationDetailSerializer(
             application,
             context={"request": request},
-        ).data)
+        ).data
+        response_data["status_email"] = {
+            "attempted": bool(email_kind),
+            "sent": all(delivery_results) if email_kind else None,
+            "recipient_count": len(delivery_results),
+        }
+        return Response(response_data)
 
     @action(detail=True, methods=["patch"], url_path="notes")
     def update_notes(self, request, pk=None):

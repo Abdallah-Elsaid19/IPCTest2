@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` and proxies `/api` to `http://localhost:8000`.
+The frontend runs on `http://localhost:5173` and proxies `/api` to `http://localhost:8030`.
 
 ## Backend
 
@@ -30,10 +30,10 @@ docker compose up -d postgres
 python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py runserver
+python manage.py runserver 8030
 ```
 
-Django Admin: `http://localhost:8000/admin/`
+Django Admin: `http://localhost:8030/admin/`
 
 ## Environment
 

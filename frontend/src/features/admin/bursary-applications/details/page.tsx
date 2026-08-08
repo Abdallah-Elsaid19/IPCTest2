@@ -191,7 +191,14 @@ export default function AdminBursaryApplicationDetailsPage() {
       setNextStatus(updated.status);
       setShowStatusModal(false);
       setStatusReason("");
-      notifications.success(assignToMe ? "Application assigned to you." : "Application status updated.");
+      if (updated.status_email?.attempted && !updated.status_email.sent) {
+        notifications.error("Application status updated, but the applicant email could not be sent. Please check the server mail settings and try again.");
+      } else if (updated.status_email?.attempted) {
+        const recipientLabel = updated.status_email.recipient_count === 1 ? "recipient" : "recipients";
+        notifications.success(`Application status updated and email sent to ${updated.status_email.recipient_count} ${recipientLabel}.`);
+      } else {
+        notifications.success(assignToMe ? "Application assigned to you." : "Application status updated.");
+      }
     } catch (requestError) {
       notifications.error(requestError instanceof Error ? requestError.message : "Could not update the application.");
     } finally {

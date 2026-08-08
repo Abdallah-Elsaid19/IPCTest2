@@ -8,7 +8,7 @@ export default function AdminProfilePage() {
   if (!user) return null;
 
   const djangoAdminUrl = (
-    import.meta.env.VITE_DJANGO_ADMIN_URL || "http://localhost:8000/admin/"
+    import.meta.env.VITE_DJANGO_ADMIN_URL || "http://localhost:8030/admin/"
   ).replace(/\/?$/, "/");
 
   return (
