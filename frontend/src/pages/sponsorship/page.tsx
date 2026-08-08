@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
+import { ManagedContentProvider, ManagedSectionGate } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 import SponsorshipBenefits from "./components/SponsorshipBenefits";
@@ -47,7 +47,9 @@ export default function Sponsorship() {
       <SponsorshipRecognitionLevels />
       <SponsorshipIntegrity />
       <SponsorshipProcess />
-      <SponsorshipFaq />
+      <ManagedSectionGate name="faq">
+        <SponsorshipFaq />
+      </ManagedSectionGate>
       <SponsorshipFinalCta />
       </div>
     </ManagedContentProvider>

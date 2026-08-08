@@ -31,7 +31,7 @@ export const requiredDocumentSchema = z
   .refine((value) => ACCEPTED_DOCUMENT_TYPES.includes(firstFile(value)?.type || ""), "Only PDF, DOC, and DOCX files are allowed.");
 
 export const requiredIdentityDocumentSchema = z
-  .custom<FileList | File>((value) => Boolean(firstFile(value)), "Upload a passport or other proof of identification.")
+  .custom<FileList | File>((value) => Boolean(firstFile(value)), "Upload a government-issued proof of identification.")
   .refine((value) => (firstFile(value)?.size || 0) <= MAX_DOCUMENT_SIZE, "File must be less than 10MB.")
   .refine(
     (value) => ACCEPTED_IDENTITY_DOCUMENT_TYPES.includes(firstFile(value)?.type || ""),

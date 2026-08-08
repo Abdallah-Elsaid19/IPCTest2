@@ -42,7 +42,7 @@ export function prepareBursarySubmissionPayload(
     const file = getSelectedFile(identityDocument);
     if (file) formData.append("identityDocument", file);
   }
-  if (applicantPhoto !== "existing") {
+  if (applicantPhoto && applicantPhoto !== "existing") {
     const file = getSelectedFile(applicantPhoto);
     if (file) formData.append("applicantPhoto", file);
   }
@@ -168,8 +168,9 @@ export const moduleLabels: Record<string, string> = {
   msp: "MSP",
   managing_portfolios: "Managing Portfolios",
   stakeholder_management: "Stakeholder",
+  pmo_module: "PMO",
   pmp: "PMP",
-  pmo: "PMO",
+  pmo: "Certified PMO",
 };
 
 export const bursaryApi = {

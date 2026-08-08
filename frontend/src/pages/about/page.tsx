@@ -1222,6 +1222,8 @@ function SceneAboutFaq({
   const items = content.items.filter((item) => item.is_active !== false);
   const [openItem, setOpenItem] = useState(0);
 
+  if (content.is_active === false) return null;
+
   return (
     <section className="bg-background-50 py-24 md:py-36">
       <div className="container-content grid items-start gap-14 lg:grid-cols-[.75fr_1.25fr] lg:gap-20">

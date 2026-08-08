@@ -4,7 +4,7 @@ import { SimpleInterestForm } from "@/components/forms/SimpleInterestForm";
 import { footerNavigation } from "@/config/navigation";
 
 const footerLogoUrl =
-  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/6a97d877629743568d5134c4ff2255b8.png";
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e02c630d912045a286f5e144186827e6.webp";
 
 export default function Footer() {
   return (

@@ -40,6 +40,10 @@ const IPC_LOGO_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
 const KENT_LOGO_URL =
   "https://kentbusinesscollege.com/wp-content/uploads/2025/12/Kent-Business-College-e1768393206822.png";
+const AI_SPOTLIGHT_BACKGROUND_URL =
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/2689471e91444b2a9db6670c172036e2.webp";
+const ALL_INCLUSIVE_BACKGROUND_URL =
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b4bc056cfa164feca8dc939778cc94c9.webp";
 
 const IPC_PARTNERSHIP_ICONS = [
   GraduationCap,
@@ -57,6 +61,21 @@ const KENT_PARTNERSHIP_ICONS = [
   HeartHandshake,
   GraduationCap,
   Network,
+] as const;
+
+const AUDIENCE_ICONS = [
+  GraduationCap,
+  Target,
+  Clock3,
+  BriefcaseBusiness,
+  Network,
+  Users,
+  BookOpen,
+  HeartHandshake,
+  Sparkles,
+  Handshake,
+  Laptop2,
+  BrainCircuit,
 ] as const;
 
 export type PathwayId = "operational" | "strategic" | "pmo" | "chartered" | "apm";
@@ -313,34 +332,70 @@ export const PATHWAYS: Pathway[] = [
   },
 ];
 
-const MODULE_OFFERS = [
+type ModuleOffer = {
+  id: string;
+  label: string;
+  title: string;
+  description?: string;
+  modules: string[];
+  courseCost: string;
+  ipcSupport: string;
+  amountPayable: string;
+  details: string[];
+  bonus: {
+    label: string;
+    title: string;
+    description: string;
+    image: string;
+  } | null;
+  is_active?: boolean;
+};
+
+const MODULE_OFFERS: ModuleOffer[] = [
   {
     id: "individual-module",
     label: "Individual module",
     title: "Choose a professional module",
-    modules: ["AI", "PMI SP", "EVM", "Risk", "PPC", "MSP", "Managing Portfolios"],
+    modules: ["AI", "PMI SP", "EVM", "Risk", "PPC", "MSP", "Managing Portfolios", "PMO"],
     courseCost: "£4,000",
     ipcSupport: "50%",
     amountPayable: "£2,000",
     details: [
       "Each module is selected and assessed individually.",
-      "An approved installment plan may extend to twice the module duration.",
-      "A 12-month module may therefore use a 24-month installment plan by Direct Debit.",
+      "4-month learning duration for each module.",
+      "The £2,000 remaining balance may be paid in 8 monthly installments of £250 by Direct Debit, subject to approval.",
     ],
     bonus: null,
   },
   {
     id: "pmp-modules",
-    label: "PMP modules",
-    title: "PMP two-module programme",
-    modules: ["PMP module 01", "PMP module 02"],
+    label: "PMP credits",
+    title: "Project Management Professional",
+    description: "The PMP is worth two credits and has an eight-month learning duration.",
+    modules: [],
     courseCost: "£8,000",
     ipcSupport: "75%",
     amountPayable: "£2,000",
     details: [
-      "PMP is treated as a two-module programme.",
-      "The remaining balance may use an installment plan by Direct Debit, subject to approval.",
-      "Final module dates and installment terms are confirmed before enrolment.",
+      "The PMP is worth two credits.",
+      "8-month learning duration.",
+      "The £2,000 remaining balance may be paid in 16 monthly installments of £125 by Direct Debit, subject to approval.",
+    ],
+    bonus: null,
+  },
+  {
+    id: "apm-modules",
+    label: "APM modules",
+    title: "APM modules",
+    description: "A 12-month APM package combining PMP and AI in Project Controls.",
+    modules: ["PMP", "AI"],
+    courseCost: "£12,000",
+    ipcSupport: "TBC",
+    amountPayable: "TBC",
+    details: [
+      "APM combines the two-credit PMP with AI in Project Controls.",
+      "12-month learning duration.",
+      "IPC Fund support and the remaining balance are confirmed after individual assessment.",
     ],
     bonus: null,
   },
@@ -364,21 +419,21 @@ const MODULE_OFFERS = [
       image: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/c49b55b4496342219ee90b7b048c7dc7.png",
     },
   },
-] as const;
+];
 
 const FUNDING_OPTIONS = [
   {
     percentage: "50%",
     title: "Individual module support",
-    profile: "For AI, PMI SP, EVM, Risk, PPC, MSP and Managing Portfolios modules, subject to assessment.",
+    profile: "For AI, PMI SP, EVM, Risk, PPC, MSP, Managing Portfolios and PMO modules, subject to assessment.",
     detail:
       "A £4,000 individual module may receive a 50% IPC contribution, leaving £2,000 to pay.",
-    decision: "For a 12-month module, an approved 24-month installment plan may be available by Direct Debit.",
+    decision: "For a 4-month module, the £2,000 remaining balance may be paid in 8 monthly installments of £250 by Direct Debit, subject to approval.",
   },
   {
     percentage: "75%",
     title: "Enhanced module support",
-    profile: "For PMP modules and the PMO / Chartered module package, subject to assessment.",
+    profile: "For the PMP and the PMO / Chartered module package, subject to assessment.",
     detail:
       "PMP: £8,000 cost, 75% IPC support and £2,000 to pay. PMO / Chartered modules: £16,000 cost, 75% IPC support and £4,000 to pay.",
     decision: "For PMO / Chartered modules: £400 non-refundable deposit, followed by 24 monthly installments of £150 by Direct Debit.",
@@ -433,9 +488,9 @@ const CURRENT_FAQS = [
   ["Do I need employer support to apply?", "Not for every route. However, employed applicants may need permission before using workplace documents, photographs or confidential project information."],
   ["Can my employer or another sponsor pay the remaining balance?", "Yes. An employer, charity, sponsor, family member or other approved organisation may contribute. All contributions must be declared."],
   ["Is the bursary paid directly to me, and can I pay the balance in instalments?", "The bursary is normally applied directly to approved costs. Instalment plans may be available for the remaining balance, subject to written terms."],
-  ["What professional module options can I choose?", "You may choose one professional module, a PMP-led two-module package or a wider four-module professional package."],
+  ["What professional module options can I choose?", "You may choose one professional module, the two-credit PMP or a wider four-module professional package."],
   ["Can I choose my own professional modules?", "Yes, you may state your preferences. The final combination is confirmed after reviewing suitability, experience, availability and career goals."],
-  ["What is the PMP two-module programme?", "It combines PMP development with one complementary module, such as AI, risk, scheduling, earned value, PMO or portfolio management."],
+  ["How many credits is the PMP worth?", "The PMP is worth two credits and has an eight-month learning duration."],
   ["What is the four-module professional package?", "It combines four connected modules to provide broader development across project management, project controls, AI, planning, risk, PMO or related areas."],
   ["What is the AI in Project Controls Certificate?", "It covers responsible AI use in planning, forecasting, risk, reporting, performance analysis, scenario modelling and project decision-making."],
   ["What is a professional pathway credit?", "A credit shows how a module contributes to the overall IPC pathway structure. It is not automatically equivalent to a university academic credit."],
@@ -502,10 +557,10 @@ const GATEWAY_CONTENT = {
   },
   funding: {
     eyebrow: "Funding options",
-    title: "Four possible routes. One careful assessment.",
-    description: "Displayed percentages are potential maximum contributions, not guaranteed awards. Select a card to compare the route before requesting a formal assessment.",
+    title: "Two module-support options. One careful assessment.",
+    description: "Compare the potential IPC contribution and the remaining module cost before requesting a formal assessment.",
     options: FUNDING_OPTIONS,
-    notice: "Funding, bursary support, employer contributions, benefits and payment arrangements depend on eligibility, formal assessment, current rules, pathway selection and availability.",
+    notice: "Module costs, IPC support and installment arrangements are subject to assessment, approval, available funds and written confirmation.",
   },
   government_funding: {
     eyebrow: "Government funding routes",
@@ -593,7 +648,7 @@ const GATEWAY_CONTENT = {
   audiences: {
     eyebrow: "Who may benefit",
     title: "Professional development for different career moments.",
-    description: "Suitability depends on the pathway—not on fitting a single professional profile.",
+    description: "Suitability depends on the pathway, not on fitting a single professional profile.",
     items: ["Early-career professionals", "Project planners", "Schedulers", "Project controls specialists", "PMO professionals", "Programme leaders", "Portfolio leaders", "Consultants", "Career changers", "Employers", "Self-employed bursary-route applicants", "Professionals interested in AI"],
   },
   eligibility: {
@@ -693,6 +748,7 @@ export default function ScholarshipsGateway() {
   const content = useManagedSection<ScholarshipGatewayContent>("gateway", GATEWAY_CONTENT);
   const seo = useManagedSection<ScholarshipSeoContent>("seo", SCHOLARSHIP_SEO);
   const pathwaysActive = useManagedSection<boolean>("pathways_active", true);
+  const rawModuleOffers = useManagedSection<ModuleOffer[]>("modules", MODULE_OFFERS);
   const showPathways = false;
   const rawPathways = useManagedSection<Pathway[]>("pathways", PATHWAYS);
   const pathways = useMemo(() => {
@@ -701,7 +757,8 @@ export default function ScholarshipsGateway() {
     return [...rawPathways.filter((item) => isManagedItemActive(item) && PUBLIC_PATHWAY_IDS.has(item.id))]
       .sort((left, right) => order.indexOf(left.id) - order.indexOf(right.id));
   }, [pathwaysActive, rawPathways]);
-  const fundingOptions = FUNDING_OPTIONS;
+  const moduleOffers = rawModuleOffers.filter(isManagedItemActive);
+  const fundingOptions = content.funding.options.filter(isManagedItemActive);
   const faqItems = CURRENT_FAQS.map(([question, answer]) => ({ question, answer }));
   const managedComparisonRows = content.comparison.rows.filter(isManagedItemActive);
   const comparisonRows = managedComparisonRows;
@@ -956,20 +1013,29 @@ export default function ScholarshipsGateway() {
       {isManagedItemActive(content.process) && (
       <section className="bg-[#eef0f3] py-16 md:py-20">
         <div className="container-content">
-          <div className="reveal grid gap-8 lg:grid-cols-[0.7fr_1.3fr]">
-            <div>
+          <div className="reveal">
+            <div className="max-w-3xl">
               <p className="eyebrow text-primary-700">{content.process.eyebrow}</p>
               <h2 className="mt-4 text-3xl text-background-950 md:text-4xl">{content.process.title}</h2>
             </div>
-            <ol className="grid gap-px bg-background-300 sm:grid-cols-2">
-              {content.process.items.filter(isManagedItemActive).map(({ number, title, description }) => (
-                <li key={number} className="bg-background-50 p-6 md:p-8">
-                  <span className="font-mono text-xs text-primary-700">{number}</span>
-                  <h3 className="mt-5 text-lg text-background-950">{title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-foreground-600">{description}</p>
-                </li>
-              ))}
-            </ol>
+            <div className="relative mt-12">
+              <span className="absolute left-[12.5%] right-[12.5%] top-6 hidden h-px bg-primary-500/60 xl:block" aria-hidden="true" />
+              <ol className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                {content.process.items.filter(isManagedItemActive).map(({ number, title, description }) => (
+                  <li key={number} className="relative flex flex-col pt-16">
+                    <span className="absolute left-1/2 top-0 z-10 grid h-12 w-12 -translate-x-1/2 place-items-center border border-primary-500 bg-[#eef0f3] font-mono text-sm font-semibold text-primary-700">
+                      {number}
+                    </span>
+                    <article className="group h-full border border-background-300 bg-background-50 p-6 transition duration-300 ease-out hover:-translate-y-2 hover:border-primary-500 hover:shadow-[0_18px_40px_rgba(56,42,20,0.12)] md:p-7">
+                      <h3 className="min-h-14 text-lg font-semibold leading-7 text-background-950">{title}</h3>
+                      <span className="mt-5 block h-0.5 w-10 bg-primary-600 transition-[width] duration-300 ease-out group-hover:w-full" aria-hidden="true" />
+                      <p className="mt-5 text-sm leading-6 text-foreground-600">{description}</p>
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="mt-10 h-px bg-background-300" aria-hidden="true" />
           </div>
         </div>
       </section>
@@ -980,15 +1046,15 @@ export default function ScholarshipsGateway() {
         <div className="container-content">
           <div className="reveal">
             <SectionIntro
-              eyebrow="Funding options"
-              title="Two module-support options. One careful assessment."
-              copy="Compare the potential IPC contribution and the remaining module cost before requesting a formal assessment."
+              eyebrow={content.funding.eyebrow}
+              title={content.funding.title}
+              copy={content.funding.description}
             />
           </div>
           <div className="reveal mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
             {fundingOptions.map((option, index) => (
               <button
-                key={option.percentage}
+                key={`${option.percentage}-${index}`}
                 type="button"
                 onClick={() => setFundingIndex(index)}
                 aria-pressed={fundingIndex === index}
@@ -1016,13 +1082,13 @@ export default function ScholarshipsGateway() {
           </div>
           )}
           <p className="mt-6 text-xs leading-6 text-foreground-500">
-            Module costs, IPC support and installment arrangements are subject to assessment, approval, available funds and written confirmation.
+            {content.funding.notice}
           </p>
         </div>
       </section>
       )}
 
-      {isManagedItemActive(content.pathways_intro) && (
+      {isManagedItemActive(content.pathways_intro) && moduleOffers.length > 0 && (
       <section id="modules" className="scroll-mt-24 bg-[#10151f] section-padding text-background-50">
         <div className="container-content">
           <div className="reveal">
@@ -1034,10 +1100,10 @@ export default function ScholarshipsGateway() {
             />
           </div>
 
-          <div className="reveal mt-12 grid gap-5 xl:grid-cols-3">
-            {MODULE_OFFERS.map((offer, index) => (
+          <div className="reveal mt-12 grid items-stretch gap-5 xl:grid-cols-2">
+            {moduleOffers.map((offer, index) => (
               <article key={offer.id} className="flex h-full flex-col border border-white/15 bg-white/[0.035] p-6 md:p-8">
-                <div className="flex items-start justify-between gap-5 border-b border-white/15 pb-6 xl:h-36">
+                <div className="flex items-start justify-between gap-5 border-b border-white/15 pb-6 xl:min-h-36">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary-300">
                       {String(index + 1).padStart(2, "0")} / {offer.label}
@@ -1047,33 +1113,37 @@ export default function ScholarshipsGateway() {
                   <BookOpen className="shrink-0 text-primary-300" size={28} strokeWidth={1.6} aria-hidden="true" />
                 </div>
 
-                <div className="mt-6 xl:h-40">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-background-400">Included modules</p>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {offer.modules.map((module) => (
-                      <li key={module} className="border border-white/15 bg-white/[0.04] px-3 py-2 text-xs text-background-200">
-                        {module}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="border-b border-white/15 py-6 xl:min-h-40">
+                  {offer.modules.length > 0 && (
+                    <>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-background-400">Included modules</p>
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {offer.modules.map((module) => (
+                        <li key={module} className="border border-white/15 bg-white/[0.04] px-3 py-2 text-xs text-background-200">
+                          {module}
+                        </li>
+                      ))}
+                    </ul>
+                    </>
+                  )}
                 </div>
 
-                <dl className="mt-7 grid border border-white/15 sm:grid-cols-3">
-                  <div className="border-r border-white/15 p-4">
+                <dl className="mt-6 grid border border-white/15 sm:grid-cols-3">
+                  <div className="flex min-h-16 items-center justify-between gap-3 border-b border-white/15 p-4 sm:border-b-0 sm:border-r">
                     <dt className="text-[10px] uppercase tracking-wider text-background-500">Cost</dt>
-                    <dd className="mt-2 text-lg font-semibold text-background-50">{offer.courseCost}</dd>
+                    <dd className="text-lg font-semibold text-background-50">{offer.courseCost}</dd>
                   </div>
-                  <div className="border-r border-white/15 p-4">
+                  <div className="flex min-h-16 items-center justify-between gap-3 border-b border-white/15 p-4 sm:border-b-0 sm:border-r">
                     <dt className="text-[10px] uppercase tracking-wider text-background-500">IPC support</dt>
-                    <dd className="mt-2 text-lg font-semibold text-primary-300">{offer.ipcSupport}</dd>
+                    <dd className="text-lg font-semibold text-primary-300">{offer.ipcSupport}</dd>
                   </div>
-                  <div className="p-4">
+                  <div className="flex min-h-16 items-center justify-between gap-3 p-4">
                     <dt className="text-[10px] uppercase tracking-wider text-background-500">You pay</dt>
-                    <dd className="mt-2 text-lg font-semibold text-background-50">{offer.amountPayable}</dd>
+                    <dd className="text-lg font-semibold text-background-50">{offer.amountPayable}</dd>
                   </div>
                 </dl>
 
-                <ul className="mt-7 space-y-3 text-sm leading-6 text-background-300 xl:h-72">
+                <ul className="mt-6 space-y-3 text-sm leading-6 text-background-300">
                   {offer.details.map((detail) => (
                     <li key={detail} className="flex items-start gap-3">
                       <Check className="mt-1 shrink-0 text-primary-300" size={16} aria-hidden="true" />
@@ -1089,14 +1159,14 @@ export default function ScholarshipsGateway() {
                       <h4 className="mt-2 text-base font-semibold text-background-50">{offer.bonus.title}</h4>
                       <p className="mt-2 text-xs leading-5 text-background-300">{offer.bonus.description}</p>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-4 flex justify-center">
                       <img
                         src={offer.bonus.image}
                         alt="ChPP certification"
                         width={1200}
                         height={800}
                         loading="lazy"
-                        className="block h-auto w-full object-contain"
+                        className="block max-h-48 w-full object-contain"
                       />
                     </div>
                   </div>
@@ -1351,7 +1421,11 @@ export default function ScholarshipsGateway() {
       )}
 
       {isManagedItemActive(content.ai_spotlight) && (
-      <section className="relative overflow-hidden bg-[#211a2d] section-padding text-background-50">
+      <section
+        className="relative overflow-hidden bg-[#211a2d] bg-cover bg-center section-padding text-background-50"
+        style={{ backgroundImage: `url(${AI_SPOTLIGHT_BACKGROUND_URL})` }}
+      >
+        <div className="absolute inset-0 bg-[#171020]/55" aria-hidden="true" />
         <div className="absolute inset-0 dot-grid opacity-10" aria-hidden="true" />
         <div className="container-content relative grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="reveal">
@@ -1364,7 +1438,7 @@ export default function ScholarshipsGateway() {
           </div>
           <div className="reveal grid gap-px bg-white/15 sm:grid-cols-2">
             {content.ai_spotlight.items.map((item, index) => (
-              <div key={item} className="bg-[#211a2d] p-6">
+              <div key={item} className="bg-[#211a2d]/80 p-6">
                 <span className="font-mono text-xs text-[#bca9d7]">{String(index + 1).padStart(2, "0")}</span>
                 <p className="mt-3 text-sm leading-6 text-background-200">{item}</p>
               </div>
@@ -1430,8 +1504,12 @@ export default function ScholarshipsGateway() {
       )}
 
       {isManagedItemActive(content.all_inclusive) && (
-      <section className="bg-[#eef0f3] section-padding">
-        <div className="container-content grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
+      <section
+        className="relative overflow-hidden bg-[#eef0f3] bg-cover bg-center section-padding"
+        style={{ backgroundImage: `url(${ALL_INCLUSIVE_BACKGROUND_URL})` }}
+      >
+        <div className="absolute inset-0 bg-[#eef0f3]/35" aria-hidden="true" />
+        <div className="container-content relative grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
           <div className="reveal">
             <SectionIntro
               eyebrow={content.all_inclusive.eyebrow}
@@ -1445,7 +1523,7 @@ export default function ScholarshipsGateway() {
             {content.all_inclusive.items.filter(isManagedItemActive).map((item) => {
               const ValueIcon = VALUE_ICONS[item.icon as keyof typeof VALUE_ICONS] ?? CircleCheck;
               return (
-                <article key={item.title} className="flex min-h-44 flex-col justify-center bg-background-50 p-6 md:p-8">
+                <article key={item.title} className="flex min-h-44 flex-col justify-center bg-background-50/95 p-6 md:p-8">
                   <ValueIcon className="text-primary-700" size={24} aria-hidden="true" />
                   <h3 className="mt-5 text-lg text-background-950">{item.title}</h3>
                 </article>
@@ -1457,19 +1535,25 @@ export default function ScholarshipsGateway() {
       )}
 
       {isManagedItemActive(content.audiences) && (
-      <section className="bg-background-50 section-padding">
+      <section className="bg-[#fffaf3] py-16 md:py-20">
         <div className="container-content">
-          <div className="reveal">
+          <div className="reveal max-w-5xl">
             <SectionIntro
               eyebrow={content.audiences.eyebrow}
               title={content.audiences.title}
               copy={content.audiences.description}
             />
           </div>
-          <div className="reveal mt-10 flex flex-wrap gap-3">
-            {content.audiences.items.map((item) => (
-              <span key={item} className="border border-background-300 bg-background-50 px-4 py-3 text-sm text-foreground-700">{item}</span>
-            ))}
+          <div className="reveal mt-8 flex flex-wrap gap-3">
+            {content.audiences.items.map((item, index) => {
+              const AudienceIcon = AUDIENCE_ICONS[index % AUDIENCE_ICONS.length];
+              return (
+                <span key={item} className="inline-flex min-h-11 items-center gap-3 border border-primary-500/30 bg-background-50 px-4 py-3 text-sm font-medium text-foreground-700">
+                  <AudienceIcon className="shrink-0 text-primary-700" size={18} strokeWidth={1.8} aria-hidden="true" />
+                  {item}
+                </span>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1548,29 +1632,32 @@ export default function ScholarshipsGateway() {
       )}
 
       {isManagedItemActive(content.faq) && (
-      <section className="bg-background-50 section-padding">
-        <div className="container-content">
-          <div className="reveal">
+      <section className="bg-[#fffaf3] py-16 md:py-20">
+        <div className="container-content grid gap-10 lg:grid-cols-[0.62fr_1.38fr] lg:gap-14">
+          <div className="reveal lg:pt-10">
             <SectionIntro
               eyebrow="Frequently asked questions"
               title="The practical details, answered clearly."
               copy="Every application is reviewed individually. Final support, module selection, benefits, payment arrangements and award conditions are confirmed in writing."
             />
-            <div className="mt-8 border-l-4 border-primary-500 bg-primary-50 px-5 py-4 text-sm leading-6 text-foreground-700">
+            <span className="mt-7 block h-0.5 w-12 bg-primary-600" aria-hidden="true" />
+          </div>
+          <div className="reveal">
+            <div className="border-l-4 border-primary-500 bg-primary-50 px-5 py-4 text-sm leading-6 text-foreground-700">
               <strong className="text-background-950">Bursary Selection Announcement:</strong>{" "}
               Successful applicants will be announced on 10 August 2026.
             </div>
-          </div>
-          <div className="reveal mt-12 grid gap-3 lg:grid-cols-2 lg:items-start">
-            {faqItems.map(({ question, answer }) => (
-              <details key={question} className="group border border-background-300 bg-background-50 open:border-primary-500">
-                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-5 p-5 font-semibold text-background-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-600">
-                  <span>{question}</span>
-                  <ChevronDown className="shrink-0 text-primary-700 transition-transform group-open:rotate-180" size={19} aria-hidden="true" />
-                </summary>
-                <p className="border-t border-background-300 px-5 py-5 text-sm leading-7 text-foreground-600">{answer}</p>
-              </details>
-            ))}
+            <div className="mt-5 border border-background-300 bg-background-50">
+              {faqItems.map(({ question, answer }) => (
+                <details key={question} className="group border-b border-background-300 bg-background-50 last:border-b-0 open:bg-white">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 font-semibold text-background-950 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-600">
+                    <span>{question}</span>
+                    <ChevronDown className="shrink-0 text-primary-700 transition-transform group-open:rotate-180" size={19} aria-hidden="true" />
+                  </summary>
+                  <p className="border-t border-background-300 px-5 py-5 text-sm leading-7 text-foreground-600">{answer}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -1581,8 +1668,7 @@ export default function ScholarshipsGateway() {
         <div className="absolute inset-0 dot-grid-gold opacity-15" aria-hidden="true" />
         <div className="container-content relative">
           <div className="reveal max-w-4xl">
-            <Sparkles className="text-primary-300" size={30} aria-hidden="true" />
-            <p className="mt-7 eyebrow text-primary-300">{content.final_cta.eyebrow}</p>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary-300">{content.final_cta.eyebrow}</p>
             <h2 className="mt-5 text-4xl leading-tight md:text-6xl">{content.final_cta.title}</h2>
             <p className="mt-6 max-w-2xl text-base leading-8 text-background-300">{content.final_cta.description}</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

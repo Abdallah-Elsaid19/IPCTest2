@@ -36,6 +36,9 @@ type ContentItem = Record<string, unknown>;
 type ItemTarget = { section: string; index: number | null; item: ContentItem };
 type DeleteTarget = { section: string; index: number; item: ContentItem };
 
+const contentTableDisplayName = (table: AdminContentTable) =>
+  table.slug === "scholarship-pathways" ? "modules" : table.table_name;
+
 const newContentId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -304,7 +307,7 @@ export default function AdminContentPage() {
                 className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-black transition ${activeTable.slug === table.slug ? "bg-[#FFFDF9] text-primary-800 shadow-sm" : "text-[#756B61] hover:bg-white/50"}`}
               >
                 <Database size={15} />
-                {table.table_name}
+                {contentTableDisplayName(table)}
               </button>
             ))}
           </div>
@@ -423,7 +426,7 @@ function ContentSectionPanel({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DED2C3] bg-[#FFFDF9] p-5">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary-800">
-            {table.table_name}
+            {contentTableDisplayName(table)}
           </p>
           <h2 className="mt-1 text-xl font-black text-[#202A38]">
             {formatLabel(section)}
@@ -1195,10 +1198,11 @@ function emptyLike(value: unknown): unknown {
   return "";
 }
 function hasBlankRequiredValue(value: unknown, field = ""): boolean {
-  if (typeof value === "string") return field !== "image_alt" && !value.trim();
+  const optional = ["image_alt", "bonus", "modules"].includes(field);
+  if (typeof value === "string") return !optional && !value.trim();
   if (Array.isArray(value))
-    return value.length === 0 || value.some((item) => hasBlankRequiredValue(item));
+    return (!optional && value.length === 0) || value.some((item) => hasBlankRequiredValue(item));
   if (value && typeof value === "object")
     return Object.entries(value).some(([key, child]) => hasBlankRequiredValue(child, key));
-  return value === null || value === undefined;
+  return !optional && (value === null || value === undefined);
 }

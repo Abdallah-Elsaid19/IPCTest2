@@ -93,6 +93,21 @@ class AuthenticationApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_login_accepts_https_vite_fallback_origin(self):
+        client = APIClient(enforce_csrf_checks=True)
+        client.get("/api/csrf", HTTP_ORIGIN="https://localhost:5174")
+        csrf = client.cookies["csrftoken"].value
+
+        response = client.post(
+            "/api/auth/login",
+            {"email": "member@example.com", "password": "Strong-Test-Pass-938!"},
+            format="json",
+            HTTP_ORIGIN="https://localhost:5174",
+            HTTP_X_CSRFTOKEN=csrf,
+        )
+
+        self.assertEqual(response.status_code, 200)
+
     def test_me_refresh_and_logout_flow(self):
         self.post("/api/auth/login", {
             "email": "member@example.com",

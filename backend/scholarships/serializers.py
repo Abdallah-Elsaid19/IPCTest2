@@ -70,7 +70,7 @@ class ScholarshipGatewayContentSerializer(serializers.ModelSerializer):
 class ScholarshipPathwaysContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScholarshipPathwaysContent
-        fields = ["pages", "updated_at"]
+        fields = ["modules", "pages", "updated_at"]
         read_only_fields = fields
 
 
@@ -96,7 +96,7 @@ class BursaryPersonalDetailsSerializer(serializers.Serializer):
     countyOrRegion = serializers.CharField(required=False, allow_blank=True, max_length=120)
     postcode = serializers.CharField(max_length=32, validators=[_required_text])
     country = serializers.CharField(max_length=120, validators=[_required_text])
-    linkedInProfileUrl = serializers.URLField(max_length=500)
+    linkedInProfileUrl = serializers.URLField(required=False, allow_blank=True, max_length=500)
     currentlyEmployed = serializers.BooleanField()
     currentProfessionalStatus = serializers.CharField(required=False, allow_blank=True, max_length=180)
     preferredContactMethod = serializers.ChoiceField(choices=BursaryApplication.ContactMethod.choices)
@@ -118,6 +118,8 @@ class BursaryPersonalDetailsSerializer(serializers.Serializer):
         return value
 
     def validate_linkedInProfileUrl(self, value):
+        if not value:
+            return value
         hostname = (urlparse(value).hostname or "").lower().rstrip(".")
         if hostname != "linkedin.com" and not hostname.endswith(".linkedin.com"):
             raise serializers.ValidationError("Enter a valid LinkedIn profile URL.")
@@ -210,8 +212,8 @@ class BursaryPathwaySelectionSerializer(serializers.Serializer):
         allow_empty=False,
     )
     professionalMembershipsOrCertifications = serializers.CharField(required=False, allow_blank=True, max_length=8000)
-    relevantExperience = serializers.CharField(max_length=12000, validators=[_required_text])
-    pathwayFitReason = serializers.CharField(max_length=12000, validators=[_required_text])
+    relevantExperience = serializers.CharField(required=False, allow_blank=True, default="", max_length=12000)
+    pathwayFitReason = serializers.CharField(required=False, allow_blank=True, default="", max_length=12000)
 
     def validate_preferredModules(self, modules):
         if len(modules) != len(set(modules)):
@@ -424,13 +426,8 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
 
         if not self.instance and not attrs.get("identityDocument"):
             errors.setdefault("emergencyInformation", {})["identityDocument"] = (
-                "Upload a passport or other proof of identification."
+                "Upload a government-issued proof of identification."
             )
-        if not self.instance and not attrs.get("applicantPhoto"):
-            errors.setdefault("emergencyInformation", {})["applicantPhoto"] = (
-                "Upload a recent applicant photo."
-            )
-
         missing_review = {
             field: "You must confirm this item."
             for field in self.mandatory_review

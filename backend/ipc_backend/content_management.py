@@ -90,8 +90,6 @@ CONTENT_TABLES = {
             "partnership",
             "process",
             "funding",
-            "government_funding",
-            "funding_figures",
             "pathways_intro",
             "learning",
             "ai_spotlight",
@@ -107,9 +105,9 @@ CONTENT_TABLES = {
         "publishing": True,
     },
     "scholarship-pathways": {
-        "label": "Scholarship Pathways",
+        "label": "Scholarship Modules",
         "model": ScholarshipPathwaysContent,
-        "fields": ("pages",),
+        "fields": ("modules",),
         "publishing": True,
     },
     "sponsorship": {

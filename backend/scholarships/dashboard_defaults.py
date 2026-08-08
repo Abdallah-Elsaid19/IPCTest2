@@ -64,39 +64,25 @@ def default_gateway_content():
         },
         "funding": {
             "eyebrow": "Funding options",
-            "title": "Four possible routes. One careful assessment.",
-            "description": "Displayed percentages are potential maximum contributions, not guaranteed awards. Select a card to compare the route before requesting a formal assessment.",
+            "title": "Two module-support options. One careful assessment.",
+            "description": "Compare the potential IPC contribution and the remaining module cost before requesting a formal assessment.",
             "options": [
                 {
-                    "percentage": "100%",
-                    "title": "Funded if eligible",
-                    "profile": "Applicants meeting the applicable residency, employment, age and employer requirements.",
-                    "detail": "A fully funded route may be available following formal assessment. Employer participation may be required and current funding rules apply.",
-                    "decision": "Kent Business College confirms final eligibility.",
-                },
-                {
-                    "percentage": "95% / 5%",
-                    "title": "Before 1 August 2026",
-                    "profile": "Eligible employed professionals whose employer can approve and support participation.",
-                    "detail": "For eligible starts before 1 August 2026, a levy-paying employer with insufficient account funds may receive a 95% government contribution, with a 5% employer contribution.",
-                    "decision": "The start date, funded product and employer account position must be confirmed.",
+                    "percentage": "50%",
+                    "title": "Individual module support",
+                    "profile": "For AI, PMI SP, EVM, Risk, PPC, MSP, Managing Portfolios and PMO modules, subject to assessment.",
+                    "detail": "A £4,000 individual module may receive a 50% IPC contribution, leaving £2,000 to pay.",
+                    "decision": "For a 4-month module, the £2,000 remaining balance may be paid in 8 monthly installments of £250 by Direct Debit, subject to approval.",
                 },
                 {
                     "percentage": "75%",
-                    "title": "IPC bursary support",
-                    "profile": "Unemployed applicants, some Chartered Pathway applicants and people unable to use the publicly funded route.",
-                    "detail": "IPC may contribute up to 75% of the applicable pathway cost following a separate bursary assessment.",
-                    "decision": "Subject to pathway, approval and available IPC funds.",
-                },
-                {
-                    "percentage": "50%",
-                    "title": "IPC bursary support",
-                    "profile": "Employed, employer-sponsored or self-funding professionals using an eligible IPC Bursary Route.",
-                    "detail": "IPC may contribute up to 50%, with payment arrangements potentially available for the remaining balance.",
-                    "decision": "Subject to bursary assessment, available places and payment terms.",
+                    "title": "Enhanced module support",
+                    "profile": "For the PMP and the PMO / Chartered module package, subject to assessment.",
+                    "detail": "PMP: £8,000 cost, 75% IPC support and £2,000 to pay. PMO / Chartered modules: £16,000 cost, 75% IPC support and £4,000 to pay.",
+                    "decision": "For PMO / Chartered modules: £400 non-refundable deposit, followed by 24 monthly installments of £150 by Direct Debit.",
                 },
             ],
-            "notice": "Funding, bursary support, employer contributions, benefits and payment arrangements depend on eligibility, formal assessment, current rules, pathway selection and availability.",
+            "notice": "Module costs, IPC support and installment arrangements are subject to assessment, approval, available funds and written confirmation.",
         },
         "government_funding": {
             "eyebrow": "Government funding routes",
@@ -206,7 +192,7 @@ def default_gateway_content():
         "audiences": {
             "eyebrow": "Who may benefit",
             "title": "Professional development for different career moments.",
-            "description": "Suitability depends on the pathway—not on fitting a single professional profile.",
+            "description": "Suitability depends on the pathway, not on fitting a single professional profile.",
             "items": [
                 "Early-career professionals",
                 "Project planners",
@@ -376,6 +362,80 @@ def default_gateway_faq():
 
 def default_gateway_final_cta():
     return default_gateway_content()["final_cta"]
+
+
+def default_module_offers():
+    return [
+        {
+            "id": "individual-module",
+            "label": "Individual module",
+            "title": "Choose a professional module",
+            "description": "Choose one or more eligible professional modules, each assessed individually.",
+            "modules": ["AI", "PMI SP", "EVM", "Risk", "PPC", "MSP", "Managing Portfolios", "PMO"],
+            "courseCost": "£4,000",
+            "ipcSupport": "50%",
+            "amountPayable": "£2,000",
+            "details": [
+                "Each module is selected and assessed individually.",
+                "4-month learning duration for each module.",
+                "The £2,000 remaining balance may be paid in 8 monthly installments of £250 by Direct Debit, subject to approval.",
+            ],
+            "bonus": None,
+        },
+        {
+            "id": "pmp-modules",
+            "label": "PMP credits",
+            "title": "Project Management Professional",
+            "description": "The PMP is worth two credits and has an eight-month learning duration.",
+            "modules": [],
+            "courseCost": "£8,000",
+            "ipcSupport": "75%",
+            "amountPayable": "£2,000",
+            "details": [
+                "The PMP is worth two credits.",
+                "8-month learning duration.",
+                "The £2,000 remaining balance may be paid in 16 monthly installments of £125 by Direct Debit, subject to approval.",
+            ],
+            "bonus": None,
+        },
+        {
+            "id": "apm-modules",
+            "label": "APM modules",
+            "title": "APM modules",
+            "description": "A 12-month APM package combining PMP and AI in Project Controls.",
+            "modules": ["PMP", "AI"],
+            "courseCost": "£12,000",
+            "ipcSupport": "TBC",
+            "amountPayable": "TBC",
+            "details": [
+                "APM combines the two-credit PMP with AI in Project Controls.",
+                "12-month learning duration.",
+                "IPC Fund support and the remaining balance are confirmed after individual assessment.",
+            ],
+            "bonus": None,
+        },
+        {
+            "id": "pmo-chartered-modules",
+            "label": "PMO / Chartered modules",
+            "title": "Four-module professional package",
+            "description": "A four-module PMO and Chartered professional package.",
+            "modules": ["PMO", "Risk", "Plan", "Stakeholder"],
+            "courseCost": "£16,000",
+            "ipcSupport": "75%",
+            "amountPayable": "£4,000",
+            "details": [
+                "16-month learning duration.",
+                "£400 non-refundable deposit, leaving a £3,600 balance.",
+                "24 monthly installments of £150 by Direct Debit.",
+            ],
+            "bonus": {
+                "label": "Included by IPC",
+                "title": "ChPP certificate cost",
+                "description": "IPC will cover the cost of the ChPP certificate.",
+                "image": "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/c49b55b4496342219ee90b7b048c7dc7.png",
+            },
+        },
+    ]
 
 
 def default_pathways():

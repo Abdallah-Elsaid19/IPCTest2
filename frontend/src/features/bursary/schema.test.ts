@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { bursaryModules } from "./pathways";
+import { bursaryModules, calculateBursaryFundingEstimate } from "./pathways";
 import {
   bursaryApplicationSchema,
   defaultBursaryApplicationValues,
@@ -120,6 +120,14 @@ describe("bursary application validation", () => {
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
   });
 
+  it("does not require the removed module-selection questions", () => {
+    const values = validValues();
+    values.pathwaySelection.professionalMembershipsOrCertifications = "";
+    values.pathwaySelection.relevantExperience = "";
+    values.pathwaySelection.pathwayFitReason = "";
+    expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
+  });
+
   it("offers the published bursary modules", () => {
     expect(bursaryModules.map(({ value }) => value)).toEqual([
       "ai",
@@ -130,6 +138,7 @@ describe("bursary application validation", () => {
       "msp",
       "managing_portfolios",
       "stakeholder_management",
+      "pmo_module",
       "pmp",
       "pmo",
     ]);
@@ -140,6 +149,24 @@ describe("bursary application validation", () => {
         preferredModules: ["operational"],
       },
     }).success).toBe(false);
+  });
+
+  it("calculates the selected module costs, IPC discount, and amount payable", () => {
+    expect(calculateBursaryFundingEstimate(["ai", "risk"])).toMatchObject({
+      totalCostGbp: 8_000,
+      totalDiscountGbp: 4_000,
+      totalPayableGbp: 4_000,
+    });
+    expect(calculateBursaryFundingEstimate(["pmp", "pmo"])).toMatchObject({
+      totalCostGbp: 24_000,
+      totalDiscountGbp: 18_000,
+      totalPayableGbp: 6_000,
+    });
+    expect(calculateBursaryFundingEstimate(["pmo_module", "pmo"])).toMatchObject({
+      totalCostGbp: 20_000,
+      totalDiscountGbp: 14_000,
+      totalPayableGbp: 6_000,
+    });
   });
 
   it("requires the combined mandatory Section 5 consent", () => {
@@ -159,6 +186,13 @@ describe("bursary application validation", () => {
   it("keeps optional marketing consent non-blocking", () => {
     const values = validValues();
     values.termsAndConsents.generalMarketingConsent = false;
+    expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
+  });
+
+  it("accepts an application without LinkedIn or an applicant photo", () => {
+    const values = validValues();
+    values.personalDetails.linkedInProfileUrl = "";
+    values.emergencyInformation.applicantPhoto = "";
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
   });
 

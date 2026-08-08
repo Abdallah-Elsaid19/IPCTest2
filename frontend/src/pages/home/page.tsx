@@ -20,7 +20,7 @@ import {
   HomeValues,
   HomeWhyIpc,
 } from "./components/HomeContentSections";
-import { ManagedContentProvider } from "@/components/content/ManagedContentProvider";
+import { ManagedContentProvider, ManagedSectionGate } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 
@@ -65,7 +65,9 @@ export default function Home() {
       <HomePartners />
       <HomeSponsorship />
       <HomeGovernance />
-      <HomeFaq />
+      <ManagedSectionGate name="faq">
+        <HomeFaq />
+      </ManagedSectionGate>
       <HomeFinalCta />
       </div>
     </ManagedContentProvider>

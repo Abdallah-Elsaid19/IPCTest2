@@ -12,11 +12,31 @@ from accounts.models import AdminNotification
 from applications.models import Application, FormDefinition
 from memberships.models import MembershipGrade
 from user_panel.models import UserNotification
-from .dashboard_defaults import default_gateway_content, default_pathway_pages
+from .dashboard_defaults import (
+    default_gateway_content,
+    default_module_offers,
+    default_pathway_pages,
+)
 from .models import BursaryApplication, ScholarshipGatewayContent, ScholarshipPathwaysContent
 
 
 class ScholarshipContentApiTests(APITestCase):
+    def test_default_module_offers_match_the_public_module_explorer(self):
+        modules = default_module_offers()
+
+        self.assertEqual(
+            [item["id"] for item in modules],
+            ["individual-module", "pmp-modules", "apm-modules", "pmo-chartered-modules"],
+        )
+        self.assertIn("PMO", modules[0]["modules"])
+        self.assertEqual(modules[0]["courseCost"], "£4,000")
+        self.assertEqual(modules[1]["courseCost"], "£8,000")
+        self.assertEqual(modules[1]["label"], "PMP credits")
+        self.assertEqual(modules[1]["details"][0], "The PMP is worth two credits.")
+        self.assertEqual(modules[2]["modules"], ["PMP", "AI"])
+        self.assertEqual(modules[2]["courseCost"], "£12,000")
+        self.assertEqual(modules[3]["courseCost"], "£16,000")
+
     def test_gateway_eligibility_describes_the_ipc_bursary_fund_only(self):
         eligibility = default_gateway_content()["eligibility"]
 
@@ -54,6 +74,10 @@ class ScholarshipContentApiTests(APITestCase):
         ScholarshipPathwaysContent.objects.update_or_create(
             key="main",
             defaults={
+                "modules": [{
+                    "id": "pmp-modules",
+                    "title": "Dashboard PMP modules",
+                }],
                 "pages": [{
                     "id": "chartered",
                     "name": "Chartered Pathway",
@@ -71,6 +95,7 @@ class ScholarshipContentApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 200, response.data)
         self.assertIs(response.data["pathways_active"], True)
+        self.assertEqual(response.data["modules"][0]["title"], "Dashboard PMP modules")
         self.assertEqual(response.data["gateway"]["learning"]["rhythm_items"][0]["badge"], "2h")
         self.assertEqual(response.data["pathways"][0]["id"], "chartered")
         self.assertEqual(response.data["pathway_details"][0]["id"], "chartered")
@@ -99,6 +124,7 @@ class ScholarshipContentApiTests(APITestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertIs(response.data["pathways_active"], False)
         self.assertEqual(response.data["pages"], [])
+        self.assertEqual(response.data["modules"], [])
         self.assertEqual(response.data["pathways"], [])
         self.assertEqual(response.data["pathway_details"], [])
 
@@ -159,8 +185,6 @@ class ScholarshipDashboardContentTests(APITestCase):
                 "partnership",
                 "process",
                 "funding",
-                "government_funding",
-                "funding_figures",
                 "pathways_intro",
                 "learning",
                 "ai_spotlight",
@@ -176,7 +200,18 @@ class ScholarshipDashboardContentTests(APITestCase):
         )
         self.assertEqual(
             set(pathways["sections"]),
-            {"pages"},
+            {"modules"},
+        )
+        self.assertEqual(
+            scholarships["sections"]["funding"]["title"],
+            "Two module-support options. One careful assessment.",
+        )
+        self.assertEqual(
+            [
+                option["title"]
+                for option in scholarships["sections"]["funding"]["options"]
+            ],
+            ["Individual module support", "Enhanced module support"],
         )
 
     def test_dashboard_can_update_current_gateway_content(self):
@@ -218,50 +253,31 @@ class ScholarshipDashboardContentTests(APITestCase):
 
     def test_dashboard_can_update_pathway_content_separately(self):
         content = ScholarshipPathwaysContent.objects.get(key="main")
-        pages = [
+        modules = [
             {
                 **item,
-                "duration": "25 months",
-                "funding": {
-                    **item["funding"],
-                    "governmentBand": "£6,500",
-                    "is_active": False,
-                },
-                "modules": [
-                    {
-                        **module,
-                        "is_active": module_index != 0,
-                    }
-                    for module_index, module in enumerate(item["modules"])
-                ],
+                "title": "Dashboard-managed PMP programme",
+                "is_active": False,
             }
-            if item["id"] == "chartered"
+            if item["id"] == "pmp-modules"
             else item
-            for item in content.pages
+            for item in content.modules
         ]
         response = self.client.patch(
             "/api/admin/content/scholarship-pathways",
-            {"sections": {"pages": pages}},
+            {"sections": {"modules": modules}},
             format="json",
         )
         self.assertEqual(response.status_code, 200, response.data)
         content.refresh_from_db()
-        chartered = next(item for item in content.pages if item["id"] == "chartered")
-        self.assertEqual(chartered["duration"], "25 months")
+        pmp = next(item for item in content.modules if item["id"] == "pmp-modules")
+        self.assertEqual(pmp["title"], "Dashboard-managed PMP programme")
         public_response = self.client.get("/api/scholarships")
         self.assertEqual(public_response.status_code, 200, public_response.data)
-        public_chartered = next(
-            item
-            for item in public_response.data["pages"]
-            if item["id"] == "chartered"
+        self.assertNotIn(
+            "pmp-modules",
+            [item["id"] for item in public_response.data["modules"]],
         )
-        self.assertEqual(public_chartered["duration"], "25 months")
-        self.assertEqual(
-            public_chartered["funding"]["governmentBand"],
-            "£6,500",
-        )
-        self.assertIs(public_chartered["funding"]["is_active"], False)
-        self.assertIs(public_chartered["modules"][0]["is_active"], False)
 
     def test_dashboard_active_controls_public_scholarship_page(self):
         response = self.client.patch(
@@ -285,6 +301,7 @@ class ScholarshipDashboardContentTests(APITestCase):
         self.assertEqual(public_response.status_code, 200, public_response.data)
         self.assertIs(public_response.data["pathways_active"], False)
         self.assertEqual(public_response.data["pathways"], [])
+        self.assertEqual(public_response.data["modules"], [])
 
 
 def valid_bursary_payload():
@@ -455,6 +472,31 @@ class BursaryApplicationApiTests(APITestCase):
             source_id=application.pk,
         ).exists())
 
+    def test_individual_pmo_and_certified_pmo_are_distinct_options(self):
+        payload = valid_bursary_payload()
+        payload["pathwaySelection"]["preferredModules"] = ["pmo_module", "pmo"]
+
+        response = self.submit_bursary(payload)
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get()
+        self.assertEqual(application.preferred_modules, ["pmo_module", "pmo"])
+        self.assertEqual(application.get_bursary_selection_display(), "PMO, Certified PMO")
+
+    def test_removed_module_selection_questions_are_not_required(self):
+        payload = valid_bursary_payload()
+        payload["pathwaySelection"].pop("professionalMembershipsOrCertifications")
+        payload["pathwaySelection"].pop("relevantExperience")
+        payload["pathwaySelection"].pop("pathwayFitReason")
+
+        response = self.submit_bursary(payload)
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get()
+        self.assertEqual(application.professional_memberships_or_certifications, "")
+        self.assertEqual(application.relevant_experience, "")
+        self.assertEqual(application.pathway_fit_reason, "")
+
     def test_anonymous_applicant_can_submit_without_an_account(self):
         self.client.force_authenticate(user=None)
 
@@ -465,6 +507,23 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertIsNone(application.submitted_by)
         self.assertEqual(application.membership_reference, "")
         self.assertEqual(application.email, "amina@example.com")
+
+    def test_linkedin_and_applicant_photo_are_optional(self):
+        payload = valid_bursary_payload()
+        payload["personalDetails"]["linkedInProfileUrl"] = ""
+        multipart = valid_bursary_multipart_payload(payload)
+        multipart.pop("applicantPhoto")
+
+        response = self.client.post(
+            "/api/bursary-applications",
+            multipart,
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        application = BursaryApplication.objects.get()
+        self.assertEqual(application.linkedin_profile_url, "")
+        self.assertFalse(application.applicant_photo)
 
     def test_public_endpoint_does_not_allow_listing(self):
         self.assertEqual(self.client.get("/api/bursary-applications").status_code, 405)

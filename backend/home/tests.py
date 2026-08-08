@@ -12,6 +12,10 @@ class HomeContentApiTests(APITestCase):
         response = self.client.get("/api/home/content")
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data["hero"]["title"], self.content.hero["title"])
+        self.assertEqual(
+            response.data["events"]["title"],
+            "Learn what changed the decision not only what appeared on the dashboard.",
+        )
 
         self.content.status = HomeContent.Status.DRAFT
         self.content.save(update_fields=["status"])

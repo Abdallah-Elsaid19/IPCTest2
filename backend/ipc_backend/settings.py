@@ -108,6 +108,10 @@ CORS_ALLOWED_ORIGINS = env(
         "https://localhost:5173",
         "http://127.0.0.1:5173",
         "https://127.0.0.1:5173",
+        "http://localhost:5174",
+        "https://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://127.0.0.1:5174",
     ],
 )
 CSRF_TRUSTED_ORIGINS = env(
@@ -117,6 +121,10 @@ CSRF_TRUSTED_ORIGINS = env(
         "https://localhost:5173",
         "http://127.0.0.1:5173",
         "https://127.0.0.1:5173",
+        "http://localhost:5174",
+        "https://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://127.0.0.1:5174",
     ],
 )
 CORS_ALLOW_CREDENTIALS = True

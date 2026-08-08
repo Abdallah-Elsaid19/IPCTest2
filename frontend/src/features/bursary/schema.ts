@@ -39,6 +39,7 @@ export const pathwayValues = [
   "msp",
   "managing_portfolios",
   "stakeholder_management",
+  "pmo_module",
   "pmp",
   "pmo",
 ] as const;
@@ -58,8 +59,21 @@ const existingOrIdentityDocument = z.union([
   requiredIdentityDocumentSchema,
 ]);
 const existingOrApplicantPhoto = z.union([
+  z.literal(""),
   z.literal("existing"),
   requiredImageSchema,
+]).optional();
+
+const optionalLinkedInUrl = z.union([
+  z.literal(""),
+  z.url("Enter a valid LinkedIn profile URL.").refine((value) => {
+    try {
+      const host = new URL(value).hostname.toLowerCase().replace(/\.$/, "");
+      return host === "linkedin.com" || host.endsWith(".linkedin.com");
+    } catch {
+      return false;
+    }
+  }, "Enter a valid LinkedIn profile URL."),
 ]);
 
 export function normaliseMobileNumber(countryIso2: string, nationalNumber: string) {
@@ -89,14 +103,7 @@ export const bursaryApplicationSchema = z.object({
     countyOrRegion: optionalText(120),
     postcode: requiredText("Postcode", 32),
     country: requiredText("Country", 120),
-    linkedInProfileUrl: z.url("Enter a valid LinkedIn profile URL.").refine((value) => {
-      try {
-        const host = new URL(value).hostname.toLowerCase().replace(/\.$/, "");
-        return host === "linkedin.com" || host.endsWith(".linkedin.com");
-      } catch {
-        return false;
-      }
-    }, "Enter a valid LinkedIn profile URL."),
+    linkedInProfileUrl: optionalLinkedInUrl,
     currentlyEmployed: z.boolean({ error: "Select whether you are currently employed." }),
     currentProfessionalStatus: optionalText(180),
     preferredContactMethod: z.enum(["email", "phone", "either"], {
@@ -135,8 +142,8 @@ export const bursaryApplicationSchema = z.object({
     preferredModules: z.array(z.enum(pathwayValues))
       .min(1, "Select at least one preferred module."),
     professionalMembershipsOrCertifications: optionalText(),
-    relevantExperience: requiredText("Relevant experience"),
-    pathwayFitReason: requiredText("Reason for requesting an IPC bursary"),
+    relevantExperience: optionalText(),
+    pathwayFitReason: optionalText(),
   }),
   termsAndConsents: z.object({
     mandatoryTermsAccepted: accepted("Accept all mandatory terms before continuing."),
@@ -254,7 +261,7 @@ export const defaultBursaryApplicationValues: BursaryApplicationFormValues = {
     emergencyContactFullName: "",
     emergencyContactEmail: "", emergencyContactPhone: "",
     identityDocument: undefined as unknown as File,
-    applicantPhoto: undefined as unknown as File,
+    applicantPhoto: "",
     hasDisabilityOrHealthCondition: undefined as unknown as boolean,
     healthProblemCategories: [], primaryHealthProblem: "",
   },

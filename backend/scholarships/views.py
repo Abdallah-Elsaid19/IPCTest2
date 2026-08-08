@@ -241,6 +241,11 @@ class ScholarshipContentView(APIView):
             and pathways_content.is_active
             and pathways_content.status == ScholarshipPathwaysContent.Status.PUBLISHED
         )
+        modules = [
+            module
+            for module in (pathways_content.modules if pathways_active else [])
+            if isinstance(module, dict) and module.get("is_active", True) is not False
+        ]
         pages = [
             page
             for page in (pathways_content.pages if pathways_active else [])
@@ -277,6 +282,7 @@ class ScholarshipContentView(APIView):
         return Response({
             **gateway_data,
             "pathways_active": pathways_active,
+            "modules": modules,
             "pages": pages,
             "pathways": pathways,
             "pathway_details": pathway_details,

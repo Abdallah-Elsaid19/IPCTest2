@@ -30,6 +30,7 @@ from .dashboard_defaults import (
     default_gateway_pathways_intro,
     default_gateway_process,
     default_gateway_seo,
+    default_module_offers,
     default_pathway_pages,
 )
 
@@ -153,6 +154,7 @@ class ScholarshipPathwaysContent(models.Model):
 
     key = models.SlugField(max_length=40, unique=True, default="main")
     pages = models.JSONField(default=default_pathway_pages, validators=[validate_content_section])
+    modules = models.JSONField(default=default_module_offers, validators=[validate_content_section])
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PUBLISHED)
     is_active = models.BooleanField(default=True)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -197,8 +199,9 @@ class BursaryApplication(models.Model):
         MSP = "msp", "MSP"
         MANAGING_PORTFOLIOS = "managing_portfolios", "Managing Portfolios"
         STAKEHOLDER_MANAGEMENT = "stakeholder_management", "Stakeholder"
+        PMO_MODULE = "pmo_module", "PMO"
         PMP = "pmp", "PMP"
-        PMO = "pmo", "PMO"
+        PMO = "pmo", "Certified PMO"
 
     class PreferredPathway(models.TextChoices):
         # Retained only so applications submitted before the move to modules
@@ -271,7 +274,7 @@ class BursaryApplication(models.Model):
     county_or_region = models.CharField(max_length=120, blank=True)
     postcode = models.CharField(max_length=32)
     country = models.CharField(max_length=120)
-    linkedin_profile_url = models.URLField(max_length=500)
+    linkedin_profile_url = models.URLField(max_length=500, blank=True)
     currently_employed = models.BooleanField()
     current_professional_status = models.CharField(max_length=180, blank=True)
     preferred_contact_method = models.CharField(max_length=16, choices=ContactMethod.choices)

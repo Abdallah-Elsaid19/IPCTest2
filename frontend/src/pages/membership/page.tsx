@@ -4,7 +4,7 @@ import SectionHeader from "@/components/base/SectionHeader";
 import PathwayCard from "@/components/base/PathwayCard";
 import ResponsiveImage from "@/components/base/ResponsiveImage";
 import { apiJson, type MembershipGrade } from "@/lib/api";
-import { ManagedContentProvider, useManagedSection } from "@/components/content/ManagedContentProvider";
+import { ManagedContentProvider, ManagedSectionGate, useManagedSection } from "@/components/content/ManagedContentProvider";
 import ManagedPageSeo from "@/components/content/ManagedPageSeo";
 import { pageSeo } from "@/config/pageSeo";
 import MembershipComparisonTable from "@/pages/membership/components/MembershipComparisonTable";
@@ -294,7 +294,9 @@ export default function Membership() {
 
       <OrganisationalMembership />
 
-      <MembershipQuestions onOpenGradeFinder={setGradeFinderTrigger} />
+      <ManagedSectionGate name="questions">
+        <MembershipQuestions onOpenGradeFinder={setGradeFinderTrigger} />
+      </ManagedSectionGate>
 
       <GradeFinderModal
         isOpen={gradeFinderTrigger !== null}

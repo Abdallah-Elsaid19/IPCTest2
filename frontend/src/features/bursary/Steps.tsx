@@ -21,7 +21,7 @@ import { countriesByIso2, phoneCountries, residentialCountries } from "./countri
 import { getSelectedFile } from "@/lib/validations/uploadSchema";
 
 import { moduleLabels } from "./api";
-import { bursaryModules } from "./pathways";
+import { bursaryModules, calculateBursaryFundingEstimate } from "./pathways";
 import {
   defaultBursaryApplicationValues,
   latestEligibleBirthDate,
@@ -255,7 +255,7 @@ export function PersonalDetailsStep() {
           required
           options={countryOptions.map(({ value, label }) => ({ value, label }))}
         />
-        <TextField name="personalDetails.linkedInProfileUrl" label="LinkedIn profile URL" type="url" inputMode="url" required placeholder="https://www.linkedin.com/in/your-profile" />
+        <TextField name="personalDetails.linkedInProfileUrl" label="LinkedIn profile URL" type="url" inputMode="url" placeholder="https://www.linkedin.com/in/your-profile" />
         <TextField name="personalDetails.currentProfessionalStatus" label="Current job title, professional status or area of practice" />
         <RadioGroup
           name="personalDetails.currentlyEmployed"
@@ -333,11 +333,13 @@ function ApplicationUploadField({
   label,
   accept,
   helper,
+  required = true,
 }: {
   name: "emergencyInformation.identityDocument" | "emergencyInformation.applicantPhoto";
   label: string;
   accept: string;
   helper: string;
+  required?: boolean;
 }) {
   const { setValue, watch, formState: { errors } } = useFormContext<BursaryApplicationFormValues>();
   const value = watch(name);
@@ -347,7 +349,7 @@ function ApplicationUploadField({
     : errors.emergencyInformation?.applicantPhoto?.message;
 
   return (
-    <FieldShell name={name} label={label} required helper={helper} wide>
+    <FieldShell name={name} label={label} required={required} helper={helper} wide>
       {({ id, describedBy }) => (
         <label htmlFor={id} className={`flex min-h-28 cursor-pointer items-center justify-center gap-3 border border-dashed bg-white px-5 py-6 text-center transition hover:border-primary-600 hover:bg-primary-50 ${fieldError ? "border-red-500" : "border-background-400"}`}>
           <input
@@ -397,15 +399,16 @@ export function EmergencyInformationStep() {
         <TextField name="emergencyInformation.emergencyContactPhone" label="Emergency contact phone number" type="tel" inputMode="tel" required autoComplete="tel" />
         <ApplicationUploadField
           name="emergencyInformation.identityDocument"
-          label="Passport or proof of identification"
+          label="Proof of identification"
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
-          helper="Upload a clear passport or other government-issued proof of identity. PDF, DOC, DOCX, JPG, PNG or WebP; maximum 10MB."
+          helper="Upload a clear government-issued proof of identity. PDF, DOC, DOCX, JPG, PNG or WebP; maximum 10MB."
         />
         <ApplicationUploadField
           name="emergencyInformation.applicantPhoto"
           label="Your photo"
           accept="image/jpeg,image/png,image/webp"
-          helper="Upload a clear, recent photo of yourself. JPG, PNG or WebP; maximum 2MB."
+          helper="Optional. If you are selected as a winner, this photo will be displayed on the scholarship winners page. JPG, PNG or WebP; maximum 2MB."
+          required={false}
         />
       </div>
       <div className="mt-8 border border-background-300 bg-background-100 p-5">
@@ -428,6 +431,54 @@ export function EmergencyInformationStep() {
         )}
       </div>
     </>
+  );
+}
+
+function FundingEstimate({ selectedModules }: { selectedModules: readonly string[] }) {
+  const estimate = calculateBursaryFundingEstimate(selectedModules);
+  const formatGbp = (value: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  return (
+    <section className="mt-8 border border-background-300 bg-white">
+      <div className="border-b border-background-300 px-5 py-5 md:px-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-800">Funding estimate</p>
+        <h3 className="mt-2 text-xl font-semibold text-background-950">Your selected modules and estimated costs</h3>
+      </div>
+      <div className="divide-y divide-background-200 px-5 md:px-6">
+        {estimate.lines.map((line) => (
+          <div key={line.value} className="grid gap-2 py-4 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center sm:gap-8">
+            <div>
+              <p className="font-semibold text-background-950">{line.title}</p>
+              <p className="mt-1 text-xs text-foreground-500">Potential IPC Fund contribution: {line.supportPercentage}%</p>
+            </div>
+            <p className="text-foreground-600 sm:text-right">Cost: <strong className="text-background-950">{formatGbp(line.costGbp)}</strong></p>
+            <p className="text-foreground-600 sm:min-w-28 sm:text-right">You pay: <strong className="text-background-950">{formatGbp(line.amountPayableGbp)}</strong></p>
+          </div>
+        ))}
+      </div>
+      <dl className="grid border-t border-background-300 bg-background-100 sm:grid-cols-3">
+        <div className="p-5 md:p-6">
+          <dt className="text-xs font-semibold uppercase tracking-wider text-foreground-500">Total module cost</dt>
+          <dd className="mt-2 text-2xl font-semibold text-background-950">{formatGbp(estimate.totalCostGbp)}</dd>
+        </div>
+        <div className="border-y border-background-300 p-5 sm:border-x sm:border-y-0 md:p-6">
+          <dt className="text-xs font-semibold uppercase tracking-wider text-foreground-500">IPC Fund contribution</dt>
+          <dd className="mt-2 text-2xl font-semibold text-emerald-700">-{formatGbp(estimate.totalDiscountGbp)}</dd>
+        </div>
+        <div className="p-5 md:p-6">
+          <dt className="text-xs font-semibold uppercase tracking-wider text-foreground-500">Estimated amount you pay</dt>
+          <dd className="mt-2 text-2xl font-semibold text-primary-800">{formatGbp(estimate.totalPayableGbp)}</dd>
+        </div>
+      </dl>
+      <p className="border-t border-background-300 px-5 py-4 text-xs leading-5 text-foreground-500 md:px-6">
+        This estimate uses the currently displayed IPC Fund contribution rates. Final module costs and IPC Fund contributions are subject to assessment, approval, available funds and written confirmation.
+      </p>
+    </section>
   );
 }
 
@@ -462,16 +513,12 @@ export function ModuleSelectionStep() {
         </div>
         {error && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>}
       </fieldset>
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <TextareaField name="pathwaySelection.professionalMembershipsOrCertifications" label="Relevant professional memberships or certifications" rows={3} />
-        <TextareaField name="pathwaySelection.relevantExperience" label="Relevant project, programme, PMO or project controls experience" required />
-        <TextareaField name="pathwaySelection.pathwayFitReason" label="Why do you want to receive an IPC bursary?" required />
-      </div>
+      <FundingEstimate selectedModules={selected} />
     </>
   );
 }
 
-const mandatoryConsentCopy = "I have reviewed and accept the bursary participation terms: sharing an award and progress update where appropriate, mentioning IPC, allowing IPC to reshare approved content, providing a professional photo, taking part only where mutually agreed, permitting agreed use of approved programme content, and promptly telling IPC about any privacy, accessibility, employer or other adjustment I may need.";
+const mandatoryConsentCopy = "I have reviewed and accept the bursary participation terms: sharing an award and progress update where appropriate, mentioning IPC, allowing IPC to reshare approved content, taking part only where mutually agreed, permitting agreed use of approved programme content, and promptly telling IPC about any privacy, accessibility, employer or other adjustment I may need.";
 
 export function TermsAndConsentsStep() {
   return (

@@ -38,12 +38,12 @@ export const footerNavigation = [
     label: "Memberships",
     links: [
       { label: "Membership Overview", path: "/membership" },
+      { label: "Membership Benefits", path: "/membership#membership-benefits" },
       { label: "Affiliate", path: "/membership/affiliate" },
       { label: "Professional Member", path: "/membership/professional" },
       { label: "Associate Fellow L3", path: "/membership/associate-fellow-l3" },
       { label: "Associate Fellow L4", path: "/membership/associate-fellow-l4" },
       { label: "Fellow", path: "/membership/fellow" },
-      { label: "How to Apply", path: "/membership#application-journey" },
     ],
   },
   {

@@ -99,8 +99,9 @@ export default function MembershipValuePathway() {
 
   return (
     <section
+      id="membership-benefits"
       aria-labelledby="membership-value-title"
-      className="border-b border-background-200 bg-background-50 section-padding"
+      className="scroll-mt-16 border-b border-background-200 bg-background-50 section-padding"
     >
       <div className="container-content">
         <div className="reveal mx-auto max-w-4xl">
