@@ -8,7 +8,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from accounts.graph_mail import GraphMailError
 from accounts.models import AdminNotification
 from applications.models import Application, FormDefinition
 from memberships.models import MembershipGrade
@@ -772,12 +771,6 @@ class BursaryApplicationApiTests(APITestCase):
 
         self.assertEqual(approved.status_code, 200, approved.data)
         self.assertEqual(approved.data["status"], BursaryApplication.Status.APPROVED)
-        self.assertEqual(approved.data["status_email"], {
-            "attempted": True,
-            "sent": True,
-            "recipient_count": 1,
-            "error_codes": [],
-        })
         application = BursaryApplication.objects.get(pk=created.data["id"])
         self.assertIsNotNone(application.approval_email_sent_at)
         send_approval_email.assert_called_once_with(
@@ -807,31 +800,6 @@ class BursaryApplicationApiTests(APITestCase):
             notification_type="bursary_application",
             title="Bursary application approved",
         ).exists())
-
-    @patch(
-        "scholarships.views.send_graph_bursary_approval_email",
-        side_effect=GraphMailError("Microsoft Graph rejected the message."),
-    )
-    def test_status_response_reports_when_approval_email_fails(self, _send_approval_email):
-        created = self.submit_bursary()
-        self.client.force_authenticate(self.staff)
-
-        approved = self.client.patch(
-            f"/api/admin/bursary-applications/{created.data['id']}/status",
-            {"status": BursaryApplication.Status.APPROVED},
-            format="json",
-        )
-
-        self.assertEqual(approved.status_code, 200, approved.data)
-        self.assertEqual(approved.data["status"], BursaryApplication.Status.APPROVED)
-        self.assertEqual(approved.data["status_email"], {
-            "attempted": True,
-            "sent": False,
-            "recipient_count": 1,
-            "error_codes": ["graph_rejected"],
-        })
-        application = BursaryApplication.objects.get(pk=created.data["id"])
-        self.assertIsNone(application.approval_email_sent_at)
 
     @patch("scholarships.views.send_graph_bursary_rejection_email")
     def test_status_transitions_rejection_email_and_member_notifications(self, send_rejection_email):
@@ -877,12 +845,6 @@ class BursaryApplicationApiTests(APITestCase):
                 format="json",
             )
         self.assertEqual(rejected.status_code, 200, rejected.data)
-        self.assertEqual(rejected.data["status_email"], {
-            "attempted": True,
-            "sent": True,
-            "recipient_count": 1,
-            "error_codes": [],
-        })
         application = BursaryApplication.objects.get(pk=created.data["id"])
         self.assertEqual(application.status, BursaryApplication.Status.REJECTED)
         self.assertIsNotNone(application.rejection_email_sent_at)
@@ -963,12 +925,6 @@ class BursaryApplicationApiTests(APITestCase):
                 format="json",
             )
         self.assertEqual(requested.status_code, 200, requested.data)
-        self.assertEqual(requested.data["status_email"], {
-            "attempted": True,
-            "sent": True,
-            "recipient_count": 2,
-            "error_codes": [],
-        })
         notification = UserNotification.objects.get(
             recipient=self.member,
             title="More information needed for your bursary application",

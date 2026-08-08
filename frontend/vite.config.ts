@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, "");
   const base = process.env.BASE_PATH || env.BASE_PATH || "/";
   const isPreview = Boolean(process.env.IS_PREVIEW || env.IS_PREVIEW);
-  const apiProxyTarget = process.env.API_PROXY_TARGET || env.API_PROXY_TARGET || "http://localhost:8001";
+  const apiProxyTarget = process.env.API_PROXY_TARGET || env.API_PROXY_TARGET || "http://localhost:8000";
   const proxy = {
     "/api": {
       target: apiProxyTarget,
@@ -104,7 +104,7 @@ export default defineConfig(({ mode }) => {
     proxy,
   },
   server: {
-    port: 8030,
+    port: 5173,
     host: "0.0.0.0",
     proxy,
   },

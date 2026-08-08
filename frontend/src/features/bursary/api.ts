@@ -145,12 +145,6 @@ export type BursaryApplicationDetail = Record<string, unknown> & {
   preferred_modules: string[];
   preferred_pathway_label: string;
   status_history: BursaryStatusHistory[];
-  status_email?: {
-    attempted: boolean;
-    sent: boolean | null;
-    recipient_count: number;
-    error_codes: string[];
-  };
 };
 
 export interface BursaryAdminQuery {

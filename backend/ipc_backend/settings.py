@@ -8,9 +8,7 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, []),
 )
-# Values supplied by the production process (for example OpenLiteSpeed LSAPI
-# environment variables) must take precedence over the local .env file.
-environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
+environ.Env.read_env(BASE_DIR / ".env", overwrite=True)
 
 SECRET_KEY = env("SECRET_KEY", default="unsafe-dev-key-change-me")
 DEBUG = env.bool("DEBUG", default=True)
@@ -227,6 +225,6 @@ EVENTBRITE_CLIENT_ID = env("EVENTBRITE_CLIENT_ID", default="")
 EVENTBRITE_CLIENT_SECRET = env("EVENTBRITE_CLIENT_SECRET", default="")
 EVENTBRITE_PRIVATE_TOKEN = env("EVENTBRITE_PRIVATE_TOKEN", default="")
 EVENTBRITE_PUBLIC_TOKEN = env("EVENTBRITE_PUBLIC_TOKEN", default="")
-EVENTBRITE_REDIRECT_URI = env("EVENTBRITE_REDIRECT_URI", default="http://localhost:8030/api/events/eventbrite/callback")
+EVENTBRITE_REDIRECT_URI = env("EVENTBRITE_REDIRECT_URI", default="http://localhost:8000/api/events/eventbrite/callback")
 EVENTBRITE_ORGANIZATION_ID = env("EVENTBRITE_ORGANIZATION_ID", default="")
 EVENTBRITE_REQUEST_TIMEOUT = env.int("EVENTBRITE_REQUEST_TIMEOUT", default=60)

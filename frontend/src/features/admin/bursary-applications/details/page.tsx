@@ -191,25 +191,7 @@ export default function AdminBursaryApplicationDetailsPage() {
       setNextStatus(updated.status);
       setShowStatusModal(false);
       setStatusReason("");
-      if (updated.status_email?.attempted && !updated.status_email.sent) {
-        const deliveryError = updated.status_email.error_codes?.[0];
-        const deliveryMessages: Record<string, string> = {
-          not_configured: "Application status updated, but Microsoft Graph is not configured on the server.",
-          authentication_failed: "Application status updated, but Microsoft Graph authentication failed. Check the production tenant, client ID and client secret.",
-          network_error: "Application status updated, but the server could not reach Microsoft Graph.",
-          graph_rejected: "Application status updated, but Microsoft Graph rejected the email. Check the sender mailbox and Mail.Send application permission.",
-          delivery_not_recorded: "The email was accepted, but its delivery status could not be recorded.",
-        };
-        notifications.error(
-          deliveryMessages[deliveryError]
-          || "Application status updated, but the applicant email could not be sent.",
-        );
-      } else if (updated.status_email?.attempted) {
-        const recipientLabel = updated.status_email.recipient_count === 1 ? "recipient" : "recipients";
-        notifications.success(`Application status updated and email sent to ${updated.status_email.recipient_count} ${recipientLabel}.`);
-      } else {
-        notifications.success(assignToMe ? "Application assigned to you." : "Application status updated.");
-      }
+      notifications.success(assignToMe ? "Application assigned to you." : "Application status updated.");
     } catch (requestError) {
       notifications.error(requestError instanceof Error ? requestError.message : "Could not update the application.");
     } finally {
