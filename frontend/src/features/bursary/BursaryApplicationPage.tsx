@@ -281,19 +281,7 @@ export default function BursaryApplicationPage() {
   });
   const organisationSkipped = methods.watch("personalDetails.currentlyEmployed") === false;
   const finalReview = methods.watch("reviewAndDeclaration");
-  const finalSubmissionReady = [
-    finalReview.section1Complete,
-    finalReview.section2CompleteOrNotApplicable,
-    finalReview.section3Complete,
-    finalReview.section4Complete,
-    finalReview.section5Complete,
-    finalReview.informationAccurateDeclaration,
-    finalReview.noAwardGuaranteeDeclaration,
-    finalReview.pathwayTermsDeclaration,
-    finalReview.processingConsentDeclaration,
-    finalReview.applicantIdentityDeclaration,
-  ].every((value) => value === true)
-    && Boolean(finalReview.dateSigned)
+  const finalSubmissionReady = Boolean(finalReview.dateSigned)
     && finalReview.electronicSignature.startsWith("data:image/png;base64,");
   const formReady = Boolean(
     !authLoading
@@ -575,7 +563,7 @@ export default function BursaryApplicationPage() {
                     data-bursary-final-submit="true"
                     disabled={methods.formState.isSubmitting || !finalSubmissionReady}
                     aria-busy={methods.formState.isSubmitting}
-                    title={finalSubmissionReady ? undefined : "Complete the checklist, declarations and signature before submitting."}
+                    title={finalSubmissionReady ? undefined : "Add your signature before submitting."}
                     className="btn-primary min-h-12 px-5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {methods.formState.isSubmitting ? <><LoaderCircle size={17} className="animate-spin" /> Submitting</> : "Submit application"}

@@ -372,9 +372,23 @@ class AdminEventbriteAttendeesView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get(self, request):
-        # Versioned so deployments that remove result limits do not reuse an
-        # older, truncated attendee cache entry.
-        cache_key = "ipc:admin:eventbrite-attendees:v5"
+        from .models import EventbriteConnection
+
+        configured_organization_id = settings.EVENTBRITE_ORGANIZATION_ID.strip()
+        connection = (
+            EventbriteConnection.objects.filter(
+                organization_id=configured_organization_id,
+            ).first()
+            if configured_organization_id
+            else EventbriteConnection.objects.first()
+        )
+        organization_id = (
+            configured_organization_id
+            or (connection.organization_id if connection else "")
+        )
+        # Scope the cache to the selected organization so a previous account's
+        # attendees can never leak into a newly configured organization.
+        cache_key = f"ipc:admin:eventbrite-attendees:v6:{organization_id or 'unconfigured'}"
         force_refresh = request.query_params.get("refresh") == "1"
         cached = None if force_refresh else cache.get(cache_key)
         if cached is not None:
@@ -385,14 +399,6 @@ class AdminEventbriteAttendeesView(APIView):
                 "synced_at": None,
             })
 
-        from .models import EventbriteConnection
-
-        connection = EventbriteConnection.objects.first()
-        organization_id = (
-            connection.organization_id
-            if connection and connection.organization_id
-            else settings.EVENTBRITE_ORGANIZATION_ID
-        )
         snapshot = EventbriteAttendeeSnapshot.objects.filter(
             organization_id=organization_id,
         ).first()

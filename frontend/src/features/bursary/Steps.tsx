@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ExternalLink, FileCheck, Upload } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, FileCheck, FileText, Upload } from "lucide-react";
 import {
   parsePhoneNumberFromString,
   type CountryCode,
@@ -7,6 +7,7 @@ import {
 import { useFormContext } from "react-hook-form";
 import "flag-icons/css/flag-icons.min.css";
 
+import learnerTermsUrl from "@/assets/documents/ipc-learner-terms-and-conditions-direct-debit-2026-v4.3.pdf?url";
 import {
   Callout,
   ConsentCheckbox,
@@ -518,51 +519,56 @@ export function ModuleSelectionStep() {
   );
 }
 
-const mandatoryConsentCopy = "I have reviewed and accept the bursary participation terms: sharing an award and progress update where appropriate, mentioning IPC, allowing IPC to reshare approved content, taking part only where mutually agreed, permitting agreed use of approved programme content, and promptly telling IPC about any privacy, accessibility, employer or other adjustment I may need.";
+const mandatoryConsentCopy = [
+  "I confirm that I have read and accept the IPC Learner Terms & Conditions (Version 4.3, effective 06 August 2026).",
+  "I also accept the bursary participation terms: sharing an award and progress update where appropriate, mentioning IPC, allowing IPC to reshare approved content, taking part only where mutually agreed, permitting agreed use of approved programme content, and promptly telling IPC about any privacy, accessibility, employer or other adjustment I may need.",
+].join(" ");
 
 export function TermsAndConsentsStep() {
   return (
     <>
       <StepHeading
         title="Mandatory Terms and Consents"
-        intro="Please review these practical commitments. They help IPC support and celebrate award recipients clearly and respectfully. The newsletter choice is optional."
+        intro="Read the IPC Learner Terms & Conditions and review the bursary participation commitments before accepting."
       >
         <Callout><strong>Your comfort matters.</strong> Any participation or content use will be handled in an agreed context. If you need a privacy, accessibility, employer or other adjustment, tell IPC so a suitable approach can be agreed with you.</Callout>
       </StepHeading>
       <fieldset className="border border-background-300 bg-white p-4 text-sm">
         <legend className="sr-only">Mandatory bursary terms</legend>
+        <section
+          aria-labelledby="learner-terms-document-title"
+          className="mb-3 flex flex-col gap-4 border border-background-300 bg-background-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <FileText className="mt-0.5 shrink-0 text-primary-800" size={22} aria-hidden="true" />
+            <div>
+              <h3 id="learner-terms-document-title" className="font-semibold text-background-950">
+                IPC Learner Terms &amp; Conditions
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-foreground-600">
+                Version 4.3 - Effective 06 August 2026 - PDF, 10 pages
+              </p>
+            </div>
+          </div>
+          <a
+            href={learnerTermsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center justify-center gap-2 border border-primary-700 px-4 py-2.5 text-xs font-semibold text-primary-800 transition hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          >
+            Open and read the terms
+            <ExternalLink size={14} aria-hidden="true" />
+          </a>
+        </section>
         <ConsentCheckbox
           name="termsAndConsents.mandatoryTermsAccepted"
-          title="Accept all mandatory bursary terms"
+          title="Accept the learner terms and mandatory bursary commitments"
           copy={mandatoryConsentCopy}
         />
       </fieldset>
-      <div className="mt-5">
-        <ConsentCheckbox
-          name="termsAndConsents.generalMarketingConsent"
-          optional
-          copy="I agree to receive IPC newsletters, events and general marketing communications. I understand this is not required for bursary consideration and I may unsubscribe at any time."
-        />
-      </div>
     </>
   );
 }
-
-const checklist = [
-  ["section1Complete", "Section 1 — Personal Details is complete."],
-  ["section2CompleteOrNotApplicable", "Section 2 — Organisation Details is complete or marked not applicable."],
-  ["section3Complete", "Section 3 — Emergency Contact and Identification is complete."],
-  ["section4Complete", "Section 4 — at least one preferred module is selected."],
-  ["section5Complete", "Section 5 — all mandatory terms have been reviewed and accepted."],
-] as const;
-
-const declarations = [
-  ["informationAccurateDeclaration", "I confirm that the information provided is accurate and complete."],
-  ["noAwardGuaranteeDeclaration", "I understand that an application does not guarantee a bursary or scholarship award."],
-  ["pathwayTermsDeclaration", "If awarded, I agree to the module plan and mandatory terms in this form."],
-  ["processingConsentDeclaration", "I consent to IPC processing the application information for the purposes stated above."],
-  ["applicantIdentityDeclaration", "I confirm that I am the learner and applicant signing this form."],
-] as const;
 
 function ReviewCard({
   title,
@@ -603,7 +609,7 @@ export function ReviewAndDeclarationStep({
     <>
       <StepHeading
         title="Review and Declaration"
-        intro="Review Sections 1 to 5 and confirm the required declarations before submitting."
+        intro="Review Sections 1 to 5, then sign and submit your application."
       />
       <div className="grid gap-4 md:grid-cols-2">
         <ReviewCard title="1. Personal Details" valid={completedSteps.has(0)} onEdit={() => onEdit(0)}>
@@ -626,30 +632,8 @@ export function ReviewAndDeclarationStep({
         </ReviewCard>
         <ReviewCard title="5. Mandatory Terms and Consents" valid={completedSteps.has(4)} onEdit={() => onEdit(4)}>
           <p>All mandatory bursary terms accepted.</p>
-          <p>General marketing: {values.termsAndConsents.generalMarketingConsent ? "Yes" : "No"}</p>
         </ReviewCard>
       </div>
-      <div className="mt-8">
-        <Callout><strong>Submission checklist.</strong> Confirm that the application is complete, the emergency contact and identification evidence are provided, at least one preferred module is selected, and the mandatory terms in Section 5 are accepted.</Callout>
-      </div>
-      <fieldset className="mt-6 space-y-3">
-        <legend className="mb-3 font-semibold text-background-950">Required submission checklist</legend>
-        {checklist.map(([name, copy]) => (
-          <ConsentCheckbox key={name} name={`reviewAndDeclaration.${name}`} copy={copy} deferErrorUntilSubmit />
-        ))}
-      </fieldset>
-      <section className="mt-8 border border-background-300 bg-background-100 p-5">
-        <h3 className="font-semibold text-background-950">Applicant declaration</h3>
-        <p className="mt-3 text-sm leading-7 text-foreground-700">
-          I declare that the information in this application is accurate and complete to the best of my knowledge. I understand that submission does not guarantee an award and that IPC may consider eligibility, module suitability, financial need, available funds, cohort capacity and evidence supplied. If awarded, I agree to follow the approved learning plan and the mandatory terms in Section 5. I authorise IPC to contact me about this application and to process the information provided for application assessment, award administration, learner support, safeguarding, compliance and impact reporting. I will let IPC know if my circumstances or support needs change.
-        </p>
-      </section>
-      <fieldset className="mt-6 space-y-3">
-        <legend className="sr-only">Required applicant declarations</legend>
-        {declarations.map(([name, copy]) => (
-          <ConsentCheckbox key={name} name={`reviewAndDeclaration.${name}`} copy={copy} deferErrorUntilSubmit />
-        ))}
-      </fieldset>
       <div className="mt-8">
         <label htmlFor="bursary-date-signed-display" className="mb-2 block text-sm font-semibold text-background-950">
           Date signed <span className="text-primary-700" aria-hidden="true">*</span>

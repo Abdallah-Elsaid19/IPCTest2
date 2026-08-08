@@ -227,16 +227,6 @@ class BursaryTermsSerializer(serializers.Serializer):
 
 
 class BursaryReviewSerializer(serializers.Serializer):
-    section1Complete = serializers.BooleanField()
-    section2CompleteOrNotApplicable = serializers.BooleanField()
-    section3Complete = serializers.BooleanField()
-    section4Complete = serializers.BooleanField()
-    section5Complete = serializers.BooleanField()
-    informationAccurateDeclaration = serializers.BooleanField()
-    noAwardGuaranteeDeclaration = serializers.BooleanField()
-    pathwayTermsDeclaration = serializers.BooleanField()
-    processingConsentDeclaration = serializers.BooleanField()
-    applicantIdentityDeclaration = serializers.BooleanField()
     dateSigned = serializers.DateField()
     electronicSignature = serializers.CharField(max_length=300000)
 
@@ -311,16 +301,6 @@ PUBLIC_SECTION_FIELD_MAP = {
         "generalMarketingConsent": "general_marketing_consent",
     },
     "reviewAndDeclaration": {
-        "section1Complete": "section_1_complete",
-        "section2CompleteOrNotApplicable": "section_2_complete_or_not_applicable",
-        "section3Complete": "section_3_complete",
-        "section4Complete": "section_4_complete",
-        "section5Complete": "section_5_complete",
-        "informationAccurateDeclaration": "information_accurate_declaration",
-        "noAwardGuaranteeDeclaration": "no_award_guarantee_declaration",
-        "pathwayTermsDeclaration": "pathway_terms_declaration",
-        "processingConsentDeclaration": "processing_consent_declaration",
-        "applicantIdentityDeclaration": "applicant_identity_declaration",
         "dateSigned": "date_signed",
         "electronicSignature": "electronic_signature",
     },
@@ -364,13 +344,6 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         validators=[validate_image],
     )
 
-    mandatory_review = (
-        "section1Complete", "section2CompleteOrNotApplicable", "section3Complete",
-        "section4Complete", "section5Complete", "informationAccurateDeclaration",
-        "noAwardGuaranteeDeclaration", "pathwayTermsDeclaration",
-        "processingConsentDeclaration", "applicantIdentityDeclaration",
-    )
-
     def to_internal_value(self, data):
         personal = data.get("personalDetails", {}) if isinstance(data, dict) else {}
         if personal.get("currentlyEmployed") is False:
@@ -399,7 +372,6 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         personal = attrs["personalDetails"]
         organisation = attrs["organisationDetails"]
         terms = attrs["termsAndConsents"]
-        review = attrs["reviewAndDeclaration"]
         errors = {}
 
         if personal["currentlyEmployed"]:
@@ -428,13 +400,6 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
             errors.setdefault("emergencyInformation", {})["identityDocument"] = (
                 "Upload a government-issued proof of identification."
             )
-        missing_review = {
-            field: "You must confirm this item."
-            for field in self.mandatory_review
-            if review.get(field) is not True
-        }
-        if missing_review:
-            errors.setdefault("reviewAndDeclaration", {}).update(missing_review)
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
@@ -459,6 +424,16 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         )
         model_values["submitted_by"] = self.context.get("submitted_by")
         model_values.update({
+            "section_1_complete": False,
+            "section_2_complete_or_not_applicable": False,
+            "section_3_complete": False,
+            "section_4_complete": False,
+            "section_5_complete": False,
+            "information_accurate_declaration": False,
+            "no_award_guarantee_declaration": False,
+            "pathway_terms_declaration": False,
+            "processing_consent_declaration": False,
+            "applicant_identity_declaration": False,
             "linkedin_award_post_consent": True,
             "second_progress_post_consent": True,
             "tag_ipc_consent": True,

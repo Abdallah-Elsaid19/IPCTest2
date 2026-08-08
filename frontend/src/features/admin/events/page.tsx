@@ -7,9 +7,9 @@ import {
   EyeOff,
   LoaderCircle,
   MapPin,
-  Mail,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   Trash2,
   X,
@@ -31,7 +31,7 @@ const formatEventType = (value: AdminEvent["event_type"]) => ({
 }[value]);
 
 const formatTime = (value: string | null) => value
-  ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date(value))
+  ? `${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(value))} GMT`
   : "Time TBC";
 
 const formatEventDate = (value: string | null) => value
@@ -39,6 +39,7 @@ const formatEventDate = (value: string | null) => value
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "UTC",
     }).format(new Date(value))
   : "Date TBC";
 
@@ -172,23 +173,21 @@ function PaginationControls({
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<AdminEvent[]>([]);
-  const [localRegistrations, setLocalRegistrations] = useState<DashboardRegistration[]>([]);
   const [eventbriteAttendees, setEventbriteAttendees] = useState<DashboardRegistration[]>([]);
   const [attendeesError, setAttendeesError] = useState("");
   const [isEventbriteRefreshing, setIsEventbriteRefreshing] = useState(false);
   const [eventPage, setEventPage] = useState(1);
   const [registrationPage, setRegistrationPage] = useState(1);
   const [busyVisibilityId, setBusyVisibilityId] = useState<number | null>(null);
-  const [busyEmailId, setBusyEmailId] = useState<number | null>(null);
   const [eventSearch, setEventSearch] = useState("");
   const [eventSource, setEventSource] = useState("");
   const [eventType, setEventType] = useState("");
   const [eventVisibility, setEventVisibility] = useState("");
   const [registrationSearch, setRegistrationSearch] = useState("");
-  const [registrationSource, setRegistrationSource] = useState("");
   const [registrationStatus, setRegistrationStatus] = useState("");
   const [registrationEvent, setRegistrationEvent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncingEventbrite, setIsSyncingEventbrite] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
@@ -208,6 +207,24 @@ export default function AdminEventsPage() {
   }, []);
 
   useEffect(() => { void loadEvents(); }, [loadEvents]);
+
+  const syncEventbrite = async () => {
+    if (isSyncingEventbrite) return;
+    setIsSyncingEventbrite(true);
+    try {
+      const result = await adminApi.syncEventbriteEvents();
+      await loadEvents();
+      notifications.success(
+        `Eventbrite synced: ${result.created} created, ${result.updated} updated.`,
+      );
+    } catch (error) {
+      notifications.error(
+        error instanceof Error ? error.message : "Could not sync Eventbrite events.",
+      );
+    } finally {
+      setIsSyncingEventbrite(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -239,14 +256,6 @@ export default function AdminEventsPage() {
           );
         }
       });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    void adminApi.eventRegistrations()
-      .then((response) => { if (active) setLocalRegistrations(response.map((item) => ({ ...item, source: "ipc" }))); })
-      .catch((error: unknown) => { if (active) setAttendeesError(error instanceof Error ? error.message : "IPC registrations could not be loaded."); });
     return () => { active = false; };
   }, []);
 
@@ -321,24 +330,7 @@ export default function AdminEventsPage() {
     }
   };
 
-  const resendConfirmation = async (registration: DashboardRegistration) => {
-    if (typeof registration.id !== "number" || busyEmailId !== null) return;
-    setBusyEmailId(registration.id);
-    try {
-      await adminApi.resendEventConfirmation(registration.id);
-      setLocalRegistrations((current) => current.map((item) => item.id === registration.id ? { ...item, confirmation_email_status: "sent" } : item));
-      notifications.success("Confirmation email sent.");
-    } catch (error) {
-      notifications.error(error instanceof Error ? error.message : "Could not send the confirmation email.");
-    } finally {
-      setBusyEmailId(null);
-    }
-  };
-
-  const registrations = [
-    ...localRegistrations,
-    ...eventbriteAttendees,
-  ]
+  const registrations = [...eventbriteAttendees]
     .sort((left, right) => (
       new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
     ));
@@ -377,17 +369,15 @@ export default function AdminEventsPage() {
       item.email,
       item.event_name,
     ].some((value) => value.toLowerCase().includes(normalizedRegistrationSearch));
-    const matchesSource = !registrationSource || item.source === registrationSource;
     const matchesStatus = !registrationStatus || item.status === registrationStatus;
     const matchesEvent = !registrationEvent || item.event_name === registrationEvent;
-    return matchesSearch && matchesSource && matchesStatus && matchesEvent;
+    return matchesSearch && matchesStatus && matchesEvent;
   });
   const hasEventFilters = Boolean(
     eventSearch.trim() || eventSource || eventType || eventVisibility,
   );
   const hasRegistrationFilters = Boolean(
     registrationSearch.trim()
-      || registrationSource
       || registrationStatus
       || registrationEvent,
   );
@@ -421,7 +411,20 @@ export default function AdminEventsPage() {
         eyebrow="Programme"
         title="Events"
         description="Create, publish and manage IPC events using the live database records."
-        action={<button type="button" onClick={openCreate} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm transition hover:bg-primary-400"><Plus size={17} /> Create event</button>}
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void syncEventbrite()}
+              disabled={isSyncingEventbrite}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D8CCBD] bg-white px-5 text-xs font-black text-[#554E47] shadow-sm transition hover:border-primary-500 hover:text-primary-800 disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              <RefreshCw size={17} className={isSyncingEventbrite ? "animate-spin" : ""} />
+              {isSyncingEventbrite ? "Syncing" : "Sync Eventbrite"}
+            </button>
+            <button type="button" onClick={openCreate} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black text-[#0B0B0B] shadow-sm transition hover:bg-primary-400"><Plus size={17} /> Create event</button>
+          </div>
+        )}
       />
 
       {isLoading ? (
@@ -451,7 +454,7 @@ export default function AdminEventsPage() {
       )}
 
       <section className="mt-10 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#FFFDF9]">
-        <div className="flex items-center justify-between gap-4 border-b border-[#E8DED2] px-5 py-4"><div><h2 className="font-black">Recent registrations</h2><p className="mt-1 text-xs text-[#7B7167]">Latest IPC and Eventbrite registration records.</p></div>{isEventbriteRefreshing && <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary-800"><LoaderCircle size={14} className="animate-spin" /> Updating Eventbrite</span>}</div>
+        <div className="flex items-center justify-between gap-4 border-b border-[#E8DED2] px-5 py-4"><div><h2 className="font-black">Recent registrations</h2><p className="mt-1 text-xs text-[#7B7167]">Latest Eventbrite attendee registrations.</p></div>{isEventbriteRefreshing && <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary-800"><LoaderCircle size={14} className="animate-spin" /> Updating Eventbrite</span>}</div>
         <div className="flex flex-col gap-3 border-b border-[#E8DED2] p-4 xl:flex-row xl:items-center">
           <div className="relative min-w-0 flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8178]" />
@@ -459,16 +462,17 @@ export default function AdminEventsPage() {
             {registrationSearch && <button type="button" onClick={() => { setRegistrationSearch(""); setRegistrationPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8178]" aria-label="Clear registration search"><X size={15} /></button>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <select value={registrationSource} onChange={(changeEvent) => { setRegistrationSource(changeEvent.target.value); setRegistrationPage(1); }} className={filterControlClass} aria-label="Filter registration source"><option value="">All sources</option><option value="ipc">IPC website</option><option value="eventbrite">Eventbrite</option></select>
             <select value={registrationStatus} onChange={(changeEvent) => { setRegistrationStatus(changeEvent.target.value); setRegistrationPage(1); }} className={filterControlClass} aria-label="Filter registration status"><option value="">All statuses</option>{registrationStatusOptions.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}</select>
             <select value={registrationEvent} onChange={(changeEvent) => { setRegistrationEvent(changeEvent.target.value); setRegistrationPage(1); }} className={`${filterControlClass} max-w-56`} aria-label="Filter registration event"><option value="">All events</option>{registrationEventOptions.map((eventName) => <option key={eventName} value={eventName}>{eventName}</option>)}</select>
-            {hasRegistrationFilters && <ClearFiltersButton onClick={() => { setRegistrationSearch(""); setRegistrationSource(""); setRegistrationStatus(""); setRegistrationEvent(""); setRegistrationPage(1); }}/>}
+            {hasRegistrationFilters && (
+              <ClearFiltersButton onClick={() => { setRegistrationSearch(""); setRegistrationStatus(""); setRegistrationEvent(""); setRegistrationPage(1); }} />
+            )}
           </div>
         </div>
-        {attendeesError && <p className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-xs font-semibold text-amber-800">Local registrations are shown, but Eventbrite attendees are unavailable: {attendeesError}</p>}
+        {attendeesError && <p className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-xs font-semibold text-amber-800">Eventbrite attendees are unavailable: {attendeesError}</p>}
         {filteredRegistrations.length ? (
-          <><div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-sm"><thead className="bg-[#ECE2D6] text-[10px] uppercase tracking-wider text-[#766C62]"><tr><th className="px-5 py-3.5">Reference</th><th className="px-5 py-3.5">Registrant</th><th className="px-5 py-3.5">Event / ticket</th><th className="px-5 py-3.5">Qty</th><th className="px-5 py-3.5">Source</th><th className="px-5 py-3.5">Status</th><th className="px-5 py-3.5">Email</th><th className="px-5 py-3.5 text-right">Actions</th></tr></thead><tbody className="divide-y divide-[#E8DED2]">{visibleRegistrations.map((item) => <tr key={`${item.source || "ipc"}-${item.id}`} className="hover:bg-[#FAF5EE]"><td className="px-5 py-4 font-mono text-xs font-bold text-primary-800">{item.reference || `IPC-LEGACY-${item.id}`}</td><td className="px-5 py-4"><p className="font-semibold">{item.name}</p><p className="mt-1 text-xs text-[#8A7E72]">{item.email || "Email unavailable"}</p></td><td className="px-5 py-4 text-[#554E47]"><p>{item.event_name}</p>{item.ticket_name && <p className="mt-1 text-xs text-[#8A7E72]">{item.ticket_name}</p>}</td><td className="px-5 py-4 font-bold">{item.quantity || 1}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider ${item.source === "eventbrite" ? "bg-[#EEE4D7] text-primary-800" : "bg-[#E8E5E1] text-[#615B55]"}`}>{item.source === "eventbrite" ? "Eventbrite" : "IPC website"}</span></td><td className="px-5 py-4"><StatusBadge status={item.status} /></td><td className="px-5 py-4"><StatusBadge status={item.confirmation_email_status || "external"} /></td><td className="px-5 py-4"><div className="flex justify-end gap-2">{item.source !== "eventbrite" && item.reference && <Link to={`/events/registration/${item.reference}`} className="grid h-9 w-9 place-items-center rounded-lg border border-[#D4C6B5] bg-white" aria-label="View registration"><Eye size={15}/></Link>}{item.source !== "eventbrite" && <button type="button" onClick={() => void resendConfirmation(item)} disabled={busyEmailId !== null} className="grid h-9 w-9 place-items-center rounded-lg bg-primary-500 disabled:opacity-50" aria-label="Resend confirmation">{busyEmailId === item.id ? <LoaderCircle className="animate-spin" size={15}/> : <Mail size={15}/>}</button>}</div></td></tr>)}</tbody></table></div><PaginationControls page={registrationPage} pageCount={registrationPageCount} total={filteredRegistrations.length} label="registrations" onPageChange={setRegistrationPage} /></>
-        ) : <div className="p-5"><EmptyState>No event registrations have been received.</EmptyState></div>}
+          <><div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left text-sm"><thead className="bg-[#ECE2D6] text-[10px] uppercase tracking-wider text-[#766C62]"><tr><th className="px-5 py-3.5">Reference</th><th className="px-5 py-3.5">Registrant</th><th className="px-5 py-3.5">Event / ticket</th><th className="px-5 py-3.5">Qty</th><th className="px-5 py-3.5">Source</th><th className="px-5 py-3.5">Status</th></tr></thead><tbody className="divide-y divide-[#E8DED2]">{visibleRegistrations.map((item) => <tr key={`eventbrite-${item.id}`} className="hover:bg-[#FAF5EE]"><td className="px-5 py-4 font-mono text-xs font-bold text-primary-800">{item.reference || `EB-${item.id}`}</td><td className="px-5 py-4"><p className="font-semibold">{item.name}</p><p className="mt-1 text-xs text-[#8A7E72]">{item.email || "Email unavailable"}</p></td><td className="px-5 py-4 text-[#554E47]"><p>{item.event_name}</p>{item.ticket_name && <p className="mt-1 text-xs text-[#8A7E72]">{item.ticket_name}</p>}</td><td className="px-5 py-4 font-bold">{item.quantity || 1}</td><td className="px-5 py-4"><span className="rounded-full bg-[#EEE4D7] px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-primary-800">Eventbrite</span></td><td className="px-5 py-4"><StatusBadge status={item.status} /></td></tr>)}</tbody></table></div><PaginationControls page={registrationPage} pageCount={registrationPageCount} total={filteredRegistrations.length} label="registrations" onPageChange={setRegistrationPage} /></>
+        ) : <div className="p-5"><EmptyState>No Eventbrite registrations have been received.</EmptyState></div>}
       </section>
 
       <EventFormModal event={editingEvent} open={formOpen} isSaving={isSaving} onClose={() => { if (!isSaving) setFormOpen(false); }} onSave={saveEvent} />

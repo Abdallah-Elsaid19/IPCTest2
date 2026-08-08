@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/seo/SEO";
 import { apiJson } from "@/lib/api";
 
-const ANNOUNCEMENT_TIME = Date.parse("2026-08-10T00:00:00+01:00");
+const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T00:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
 
 type CountdownUnit = {
@@ -84,7 +84,7 @@ function AnnouncementDatePanel() {
 
       <div className="w-[min(26rem,82vw)] border border-white/15 bg-[#0d111b]/90 p-3 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md sm:p-4">
         <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-        <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">10 August 2026</p>
+        <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">12 August 2026</p>
         <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">Official announcement date</p>
       </div>
     </>
@@ -261,7 +261,7 @@ function ScholarshipRecipientsReveal() {
           </p>
           <dl className="relative mt-7 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {[
-              ["Announcement date", "10 August 2026"],
+              ["Announcement date", "12 August 2026"],
               ["Academic intake", "2026 programme year"],
               ["Published recipients", isLoading ? "Loading…" : `${recipients.length} recipients`],
               ["Record status", "Official announcement"],
@@ -526,14 +526,14 @@ export default function ScholarshipAnnouncementPage() {
     <div className="relative isolate min-h-[calc(100svh-2.25rem)] overflow-hidden bg-black text-background-50">
       <SEO
         title="IPC Scholarship Announcement Countdown"
-        description="Countdown to the Institute of Project Controls scholarship and bursary announcement on 10 August 2026."
+        description="Countdown to the Institute of Project Controls scholarship and bursary announcement on 12 August 2026."
         canonicalPath="/scholarships/announcement"
-        keywords={["IPC scholarship announcement", "project controls bursary", "10 August 2026"]}
+        keywords={["IPC scholarship announcement", "project controls bursary", "12 August 2026"]}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Event",
           name: "IPC Scholarship and Bursary Announcement",
-          startDate: "2026-08-10",
+          startDate: "2026-08-12",
           eventStatus: "https://schema.org/EventScheduled",
           eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
           organizer: {
@@ -581,7 +581,7 @@ export default function ScholarshipAnnouncementPage() {
             {hasArrived ? "The announcement day is here." : "The next chapter is almost here."}
           </h1>
           <p className="mt-7 max-w-2xl text-base leading-7 text-background-300 sm:text-lg sm:leading-8">
-            Successful IPC scholarship and bursary applicants will be announced on 10 August 2026 and contacted directly using the details in their application.
+            Successful IPC scholarship and bursary applicants will be announced on 12 August 2026 and contacted directly using the details in their application.
           </p>
 
           <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" aria-label="Time remaining until the scholarship announcement">
@@ -657,7 +657,7 @@ export default function ScholarshipAnnouncementPage() {
 
           <div className="absolute left-1/2 top-[-4.75rem] z-20 hidden w-[min(26rem,82vw)] -translate-x-1/2 border border-white/15 bg-[#0d111b]/90 p-4 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md lg:block">
             <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-            <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">10 August 2026</p>
+            <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">12 August 2026</p>
             <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">Official announcement date</p>
           </div>
         </div>

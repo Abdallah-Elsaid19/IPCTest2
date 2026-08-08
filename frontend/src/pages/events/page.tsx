@@ -55,14 +55,24 @@ type EventPageContent = {
 export default function Events() {
   const formatDate = (value?: string | null) => {
     if (!value) return "Date to be confirmed";
-    return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(value));
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(value));
   };
 
   const formatTimeRange = (start?: string | null, end?: string | null) => {
     if (!start) return "Time to be confirmed";
-    const formatter = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "UTC",
+    });
     const startText = formatter.format(new Date(start));
-    return end ? `${startText} - ${formatter.format(new Date(end))}` : startText;
+    return `${end ? `${startText} - ${formatter.format(new Date(end))}` : startText} GMT`;
   };
 
   const [eventbriteEvents, setEventbriteEvents] = useState<EventItem[]>([]);

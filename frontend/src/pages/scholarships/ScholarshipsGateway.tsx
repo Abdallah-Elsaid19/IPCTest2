@@ -503,7 +503,7 @@ const CURRENT_FAQS = [
   ["What evidence may be required?", "IPC may request identification, a CV, LinkedIn profile, employment information, references, financial-need evidence or documents supporting your bursary category."],
   ["Can I use confidential workplace documents?", "Only with permission. Remove or anonymise client, financial, personal, commercial and confidential project information."],
   ["How long does the IPC review process take?", "The review begins when your application and evidence are complete. Timing depends on application volume, checks, package availability and whether further information is needed."],
-  ["When will successful IPC bursary applicants be announced?", "Successful applicants will be announced on 10 August 2026 and contacted directly using the details in their application. Being shortlisted or asked for more information does not confirm an award. The award is official only after a written offer is issued."],
+  ["When will successful IPC bursary applicants be announced?", "Successful applicants will be announced on 12 August 2026 and contacted directly using the details in their application. Being shortlisted or asked for more information does not confirm an award. The award is official only after a written offer is issued."],
   ["What happens after my application is approved?", "You will receive a written offer confirming the selected package, IPC contribution, remaining balance, benefits, payment arrangements, award conditions and next steps."],
 ] as const;
 
@@ -1645,7 +1645,7 @@ export default function ScholarshipsGateway() {
           <div className="reveal">
             <div className="border-l-4 border-primary-500 bg-primary-50 px-5 py-4 text-sm leading-6 text-foreground-700">
               <strong className="text-background-950">Bursary Selection Announcement:</strong>{" "}
-              Successful applicants will be announced on 10 August 2026.
+              Successful applicants will be announced on 12 August 2026.
             </div>
             <div className="mt-5 border border-background-300 bg-background-50">
               {faqItems.map(({ question, answer }) => (

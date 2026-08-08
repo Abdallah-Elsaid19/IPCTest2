@@ -438,7 +438,11 @@ function formatDate(value?: string | null) {
 }
 
 function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return `${new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(value))} GMT`;
 }
 
 function initials(value: string) {

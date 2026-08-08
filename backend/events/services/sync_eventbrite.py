@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
@@ -73,17 +74,30 @@ def _clean_event(event):
 
 @transaction.atomic
 def sync_eventbrite_events(client=None, organization_id=None):
-    connection = EventbriteConnection.objects.first()
+    configured_organization_id = settings.EVENTBRITE_ORGANIZATION_ID.strip()
+    connection = (
+        EventbriteConnection.objects.filter(
+            organization_id=configured_organization_id,
+        ).first()
+        if configured_organization_id
+        else EventbriteConnection.objects.first()
+    )
     client = client or get_configured_client()
-    organization_id = organization_id or (connection.organization_id if connection else None)
+    organization_id = (
+        organization_id
+        or configured_organization_id
+        or (connection.organization_id if connection else None)
+    )
     events = client.get_organization_events(organization_id=organization_id)
     created = updated = skipped = 0
+    synced_eventbrite_ids = []
     for raw_event in events:
         cleaned = _clean_event(raw_event)
         if not cleaned:
             skipped += 1
             continue
         eventbrite_id, defaults = cleaned
+        synced_eventbrite_ids.append(eventbrite_id)
         try:
             description_html = client.get_event_description_html(eventbrite_id)
         except EventbriteError:
@@ -99,7 +113,21 @@ def sync_eventbrite_events(client=None, organization_id=None):
         )
         created += int(was_created)
         updated += int(not was_created)
+    retired = (
+        Event.objects.exclude(eventbrite_id__isnull=True)
+        .exclude(eventbrite_id="")
+        .exclude(eventbrite_id__in=synced_eventbrite_ids)
+        .filter(is_published=True)
+        .update(is_published=False)
+    )
     if connection:
         connection.last_synced_at = timezone.now()
         connection.save(update_fields=["last_synced_at", "updated_at"])
-    return {"success": True, "created": created, "updated": updated, "total": created + updated, "skipped": skipped}
+    return {
+        "success": True,
+        "created": created,
+        "updated": updated,
+        "retired": retired,
+        "total": created + updated,
+        "skipped": skipped,
+    }

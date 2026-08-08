@@ -367,16 +367,6 @@ def valid_bursary_payload():
             "generalMarketingConsent": False,
         },
         "reviewAndDeclaration": {
-            "section1Complete": True,
-            "section2CompleteOrNotApplicable": True,
-            "section3Complete": True,
-            "section4Complete": True,
-            "section5Complete": True,
-            "informationAccurateDeclaration": True,
-            "noAwardGuaranteeDeclaration": True,
-            "pathwayTermsDeclaration": True,
-            "processingConsentDeclaration": True,
-            "applicantIdentityDeclaration": True,
             "fullLegalName": "Amina Khan",
             "dateSigned": "2026-07-30",
             "electronicSignature": "data:image/png;base64,iVBORw0KGgo=",
@@ -719,6 +709,8 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(application.full_legal_name, "")
         self.assertEqual(application.date_signed.isoformat(), "2026-07-30")
         self.assertTrue(application.electronic_signature.startswith("data:image/png;base64,"))
+        self.assertFalse(application.section_1_complete)
+        self.assertFalse(application.applicant_identity_declaration)
 
     def test_combined_mandatory_consent_is_required(self):
         payload = valid_bursary_payload()

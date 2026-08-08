@@ -425,22 +425,24 @@ export default function EventDetailPage() {
   const eventDescription =
     event.description ||
     `Join this Institute of Project Controls event: ${event.title}.`;
+  const displayTimeZone = event.eventbrite_id ? "UTC" : event.timezone;
+  const displayTimeZoneLabel = event.eventbrite_id ? "GMT" : event.timezone;
   const date = dateTime(event.starts_at, {
     day: "2-digit",
     month: "long",
     year: "numeric",
-    timeZone: event.timezone,
+    timeZone: displayTimeZone,
   });
   const startTime = dateTime(event.starts_at, {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: event.timezone,
+    timeZone: displayTimeZone,
   });
   const endTime = event.ends_at
     ? dateTime(event.ends_at, {
         hour: "2-digit",
         minute: "2-digit",
-        timeZone: event.timezone,
+        timeZone: displayTimeZone,
       })
     : "";
   const time = endTime ? `${startTime} – ${endTime}` : startTime;
@@ -546,7 +548,7 @@ export default function EventDetailPage() {
             {
               icon: Clock3,
               label: "Time",
-              value: `${time} (${event.timezone})`,
+              value: `${time} (${displayTimeZoneLabel})`,
             },
             {
               icon: event.is_online_event ? Monitor : MapPin,

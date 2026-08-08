@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -8,12 +8,21 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from datetime import timedelta
 
-from .models import Event, EventPageContent, EventRegistration, EventbriteAttendeeSnapshot
+from .models import (
+    Event,
+    EventPageContent,
+    EventRegistration,
+    EventbriteAttendeeSnapshot,
+    EventbriteConnection,
+)
 from .services.eventbrite import (
     EventbriteClient,
     get_eventbrite_image_url,
     get_eventbrite_thumbnail_url,
 )
+from .services.sync_eventbrite import sync_eventbrite_events
+
+
 class EventbriteClientTests(TestCase):
     @patch.object(EventbriteClient, "_request")
     def test_event_description_uses_full_html_endpoint(self, request):
@@ -64,6 +73,38 @@ class EventbriteClientTests(TestCase):
             get_eventbrite_thumbnail_url(event),
             "https://example.com/preview.jpg",
         )
+
+    @override_settings(EVENTBRITE_ORGANIZATION_ID="ipc-org")
+    def test_sync_prefers_configured_organization_and_retires_old_events(self):
+        EventbriteConnection.objects.create(
+            organization_id="kent-org",
+            organization_name="Kent",
+        )
+        old_event = Event.objects.create(
+            title="Kent Event",
+            slug="kent-event",
+            event_type=Event.EventType.OTHER,
+            eventbrite_id="kent-event-1",
+            status="live",
+            is_published=True,
+        )
+        client = Mock()
+        client.get_organization_events.return_value = [{
+            "id": "ipc-event-1",
+            "name": {"text": "IPC Event"},
+            "status": "live",
+        }]
+        client.get_event_description_html.return_value = ""
+
+        result = sync_eventbrite_events(client=client)
+
+        client.get_organization_events.assert_called_once_with(
+            organization_id="ipc-org",
+        )
+        old_event.refresh_from_db()
+        self.assertFalse(old_event.is_published)
+        self.assertTrue(Event.objects.get(eventbrite_id="ipc-event-1").is_published)
+        self.assertEqual(result["retired"], 1)
 
     @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
     @patch.object(EventbriteClient, "_request")
@@ -253,6 +294,10 @@ class AdminEventApiTests(TestCase):
     @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
     @patch("events.views.get_configured_client")
     def test_staff_can_view_normalized_eventbrite_attendees(self, get_client):
+        EventbriteConnection.objects.create(
+            organization_id="kent-org",
+            organization_name="Kent",
+        )
         synced_event = Event.objects.create(
             title="Eventbrite Controls Conference",
             slug="eventbrite-controls-conference",
@@ -294,6 +339,9 @@ class AdminEventApiTests(TestCase):
         self.assertEqual(cached_response.data["results"][0]["name"], "Nora Ali")
         self.assertEqual(EventbriteAttendeeSnapshot.objects.count(), 1)
         self.assertEqual(get_client.call_count, 1)
+        get_client.return_value.get_organization_attendees.assert_called_once_with(
+            organization_id="org-123",
+        )
 
     @override_settings(EVENTBRITE_ORGANIZATION_ID="org-123")
     @patch("events.views.get_configured_client")

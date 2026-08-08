@@ -135,6 +135,14 @@ export const adminApi = {
     apiJson<AdminEnquiryDetail>(`/api/admin/enquiries/${source}/${id}`),
   application: (id: number) => apiJson<AdminApplicationDetail>(`/api/admin/applications/${id}`),
   events: () => apiJson<AdminEvent[]>("/api/admin/events"),
+  syncEventbriteEvents: () => apiJson<{
+    success: boolean;
+    created: number;
+    updated: number;
+    retired: number;
+    total: number;
+    skipped: number;
+  }>("/api/events/eventbrite/sync", undefined, { method: "POST" }),
   deleteEvent: (id: number) =>
     apiJson<Record<string, never>>(`/api/admin/events/${id}`, undefined, { method: "DELETE" }),
   awardProgrammes: () => apiJson<AdminAwardProgramme[]>("/api/admin/award-programmes"),

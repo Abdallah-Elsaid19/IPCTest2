@@ -85,7 +85,7 @@ function ScholarshipRemindersTable() {
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-800">Announcement reminders</p>
           <h2 className="mt-2 text-xl font-black text-[#171411]">Saved email requests</h2>
-          <p className="mt-1 text-sm text-[#756B61]">People who asked to be reminded about the 10 August 2026 announcement.</p>
+          <p className="mt-1 text-sm text-[#756B61]">People who asked to be reminded about the 12 August 2026 announcement.</p>
         </div>
         <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#D8CCBD] bg-[#F7F1E9] px-4 py-2 text-sm font-bold text-[#4F463E]">
           <Mail size={16} aria-hidden="true" /> {items.length} requests

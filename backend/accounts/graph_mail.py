@@ -126,10 +126,10 @@ Institute of Project Controls
 def send_scholarship_announcement_reminder_email(*, recipient):
     countdown_url = f"{settings.FRONTEND_URL.rstrip('/')}/scholarships/announcement"
     safe_countdown_url = html.escape(countdown_url, quote=True)
-    subject = "IPC scholarship announcement reminder — 10 August 2026"
+    subject = "IPC scholarship announcement reminder — 12 August 2026"
     text_body = f"""Hello,
 
-This is your requested reminder that successful IPC scholarship and bursary applicants will be announced on 10 August 2026.
+This is your requested reminder that successful IPC scholarship and bursary applicants will be announced on 12 August 2026.
 
 View the announcement countdown and scholarship information:
 {countdown_url}
@@ -147,7 +147,7 @@ Institute of Project Controls
         </div>
         <div style="padding:28px">
           <p>Hello,</p>
-          <p>This is your requested reminder that successful IPC scholarship and bursary applicants will be announced on <strong>10 August 2026</strong>.</p>
+          <p>This is your requested reminder that successful IPC scholarship and bursary applicants will be announced on <strong>12 August 2026</strong>.</p>
           <p style="margin:24px 0"><a href="{safe_countdown_url}" style="display:inline-block;background:#d79525;color:#171411;text-decoration:none;font-weight:bold;padding:12px 18px">View announcement countdown</a></p>
           <p style="font-size:13px;color:#655d55">Being contacted or receiving this reminder does not confirm selection for the <strong>IPC Fund</strong>. Selection is official only after IPC issues written confirmation.</p>
           <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>

@@ -147,19 +147,8 @@ export const bursaryApplicationSchema = z.object({
   }),
   termsAndConsents: z.object({
     mandatoryTermsAccepted: accepted("Accept all mandatory terms before continuing."),
-    generalMarketingConsent: z.boolean(),
   }),
   reviewAndDeclaration: z.object({
-    section1Complete: accepted("Confirm that Section 1 is complete."),
-    section2CompleteOrNotApplicable: accepted("Confirm that Section 2 is complete or not applicable."),
-    section3Complete: accepted("Confirm that Section 3 is complete."),
-    section4Complete: accepted("Confirm that Section 4 is complete."),
-    section5Complete: accepted("Confirm that Section 5 is complete."),
-    informationAccurateDeclaration: accepted("You must confirm this declaration."),
-    noAwardGuaranteeDeclaration: accepted("You must confirm this declaration."),
-    pathwayTermsDeclaration: accepted("You must confirm this declaration."),
-    processingConsentDeclaration: accepted("You must confirm this declaration."),
-    applicantIdentityDeclaration: accepted("You must confirm this declaration."),
     dateSigned: isoDate("Enter a valid signing date."),
     electronicSignature: signatureImage,
   }),
@@ -272,14 +261,8 @@ export const defaultBursaryApplicationValues: BursaryApplicationFormValues = {
   },
   termsAndConsents: {
     mandatoryTermsAccepted: false as true,
-    generalMarketingConsent: false,
   },
   reviewAndDeclaration: {
-    section1Complete: false as true, section2CompleteOrNotApplicable: false as true,
-    section3Complete: false as true, section4Complete: false as true,
-    section5Complete: false as true, informationAccurateDeclaration: false as true,
-    noAwardGuaranteeDeclaration: false as true, pathwayTermsDeclaration: false as true,
-    processingConsentDeclaration: false as true, applicantIdentityDeclaration: false as true,
     dateSigned: localIsoDate(), electronicSignature: "",
   },
 };

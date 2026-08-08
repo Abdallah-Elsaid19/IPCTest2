@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -6,11 +6,25 @@ import AutoImport from "unplugin-auto-import/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 // import { readdyJsxRuntimeProxyPlugin } from "./vite.jsx-runtime-proxy";
 
-const base = process.env.BASE_PATH || "/";
-const isPreview = process.env.IS_PREVIEW ? true : false;
 //const proxyPlugins = isPreview ? [readdyJsxRuntimeProxyPlugin()] : [];
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, __dirname, "");
+  const base = process.env.BASE_PATH || env.BASE_PATH || "/";
+  const isPreview = Boolean(process.env.IS_PREVIEW || env.IS_PREVIEW);
+  const apiProxyTarget = process.env.API_PROXY_TARGET || env.API_PROXY_TARGET || "http://localhost:8000";
+  const proxy = {
+    "/api": {
+      target: apiProxyTarget,
+      changeOrigin: true,
+    },
+    "/media": {
+      target: apiProxyTarget,
+      changeOrigin: true,
+    },
+  };
+
+  return {
   cacheDir: resolve(tmpdir(), "ipc-vite-cache-v2"),
   define: {
     __BASE_PATH__: JSON.stringify(base),
@@ -86,18 +100,13 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
+  preview: {
+    proxy,
+  },
   server: {
     port: 5173,
     host: "0.0.0.0",
-    proxy: {
-      "/api": {
-        target: process.env.API_PROXY_TARGET || "http://localhost:8000",
-        changeOrigin: true,
-      },
-      "/media": {
-        target: process.env.API_PROXY_TARGET || "http://localhost:8000",
-        changeOrigin: true,
-      },
-    },
+    proxy,
   },
+  };
 });

@@ -50,16 +50,6 @@ function validValues(): BursaryApplicationFormValues {
     mandatoryTermsAccepted: true,
   });
   Object.assign(values.reviewAndDeclaration, {
-    section1Complete: true,
-    section2CompleteOrNotApplicable: true,
-    section3Complete: true,
-    section4Complete: true,
-    section5Complete: true,
-    informationAccurateDeclaration: true,
-    noAwardGuaranteeDeclaration: true,
-    pathwayTermsDeclaration: true,
-    processingConsentDeclaration: true,
-    applicantIdentityDeclaration: true,
     dateSigned: "2026-07-30",
     electronicSignature: "data:image/png;base64,iVBORw0KGgo=",
   });
@@ -183,23 +173,11 @@ describe("bursary application validation", () => {
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
   });
 
-  it("keeps optional marketing consent non-blocking", () => {
-    const values = validValues();
-    values.termsAndConsents.generalMarketingConsent = false;
-    expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
-  });
-
   it("accepts an application without LinkedIn or an applicant photo", () => {
     const values = validValues();
     values.personalDetails.linkedInProfileUrl = "";
     values.emergencyInformation.applicantPhoto = "";
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
-  });
-
-  it("requires all final declaration boxes", () => {
-    const values = validValues();
-    values.reviewAndDeclaration.applicantIdentityDeclaration = false as true;
-    expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
   });
 
   it("requires a drawn signature before final submission", () => {
