@@ -6,6 +6,7 @@ import ResponsiveImage from "@/components/base/ResponsiveImage";
 import SEO from "@/components/seo/SEO";
 import { buildBreadcrumbSchema } from "@/lib/seo/structuredData";
 import { useAuth } from "@/features/auth/AuthContext";
+import ChatContactButton from "@/features/chat/ChatContactButton";
 
 interface Step {
   step: number;
@@ -215,7 +216,6 @@ export default function MembershipGradeTemplate({ data }: Props) {
   const { user, isLoading: isAuthLoading } = useAuth();
   const applicationPath = `/membership/${data.slug}/apply`;
   const showApplicationCta = shouldRenderCta(data.howToApply.ctaText, data.abbreviation, user, isAuthLoading);
-  const showPricingCta = shouldRenderCta(data.pricingBanner.ctaText, data.abbreviation, user, isAuthLoading);
 
   useScrollReveal(0.08);
 
@@ -341,12 +341,9 @@ export default function MembershipGradeTemplate({ data }: Props) {
               <div className="bg-background-50 border border-background-200/70 p-6 md:p-8 sticky top-6 reveal-right">
                 <h3 className="font-heading text-xl font-semibold text-background-950 mb-4">How to apply</h3>
                 <p className="text-sm text-foreground-600 leading-relaxed mb-6">{data.howToApply.intro}</p>
-                <div className="mb-6 pb-6 border-b border-background-200/50">
-                  <p className="text-sm text-foreground-500 mb-1">{data.howToApply.priceLabel}</p>
-                  <p className="text-2xl font-heading font-bold text-background-950">{data.howToApply.priceValue} <span className="text-sm font-normal text-foreground-500">{data.howToApply.pricePeriod}</span></p>
-                  <p className="mt-3 text-xs leading-relaxed text-emerald-700">
-                    Confirmed IPC event attendees receive a 100% membership discount, reducing this fee to £0.
-                  </p>
+                <div className="mb-6 border-b border-background-200/50 pb-6">
+                  <p className="mb-3 text-sm leading-relaxed text-foreground-600">Speak with our team for current membership information and guidance about this grade.</p>
+                  <ChatContactButton source={`membership-${data.slug}-apply`} className="w-full bg-primary-500 px-4 py-3 text-sm font-semibold text-background-950 transition hover:bg-primary-600" />
                 </div>
                 {data.howToApply.employerNote && (
                   <div className="mb-6 p-4 bg-secondary-50 border border-secondary-200/60">
@@ -447,7 +444,7 @@ export default function MembershipGradeTemplate({ data }: Props) {
         </div>
       </section>
 
-      {/* ===== PRICING BANNER ===== */}
+      {/* ===== MEMBERSHIP INFORMATION BANNER ===== */}
       <section className="relative bg-background-950 py-16 md:py-20 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <ResponsiveImage src={data.heroImage} alt="" width={1600} height={900} sizes="100vw" className="w-full h-full object-cover" />
@@ -456,17 +453,12 @@ export default function MembershipGradeTemplate({ data }: Props) {
         <div className="relative z-10 container-content">
           <div className="max-w-2xl mx-auto text-center reveal">
             <h2 className="font-heading text-2xl font-semibold text-background-50 md:text-3xl">
-              {data.pricingBanner.text}
+              Membership information for {data.title}
             </h2>
             <p className="mx-auto mb-8 mt-4 max-w-md text-sm text-background-500">
-              Join a growing community of project controls professionals and unlock your career potential.
+              Ask our team about this grade, eligibility and the application pathway.
             </p>
-            {showPricingCta && (
-              <Link to={applicationPath} className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary-500 text-background-950 text-sm font-semibold hover:bg-primary-600 transition-all duration-200 group">
-                {data.pricingBanner.ctaText}
-                <i className="ri-arrow-right-line group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            )}
+            <ChatContactButton source={`membership-${data.slug}-banner`} className="inline-flex items-center bg-primary-500 px-8 py-4 text-sm font-semibold text-background-950 transition hover:bg-primary-600" />
           </div>
         </div>
       </section>
@@ -523,7 +515,7 @@ export default function MembershipGradeTemplate({ data }: Props) {
               { q: "How long does the application process take?", a: "Applications are typically reviewed within two to four weeks, depending on the completeness of your evidence and the grade being sought." },
               { q: "Can I upgrade my membership grade later?", a: "Yes. All grades are designed as a progressive pathway. Members may progress to higher grades when their experience and evidence meet the requirements." },
               { q: "What counts as acceptable evidence?", a: "Evidence includes your CV, professional statements, CPD records, work portfolios, case studies, training certificates and references. Specific requirements vary by grade." },
-              { q: "Is there a fee for membership?", a: `${data.title} costs £100 per year. Confirmed IPC event attendees receive a 100% discount, reducing the membership fee to £0.` },
+              { q: "How can I get current membership information?", a: `Use the contact button on this page to ask our team about ${data.title}, eligibility and the current membership arrangements.` },
               { q: "Do I need to be based in the UK?", a: "No. The Institute of Project Controls is an international body. Membership is open to project controls professionals wherever they are based." },
             ].map((faq, index) => (
               <div key={index} className={`reveal reveal-delay-${index + 1} bg-background-50 border border-background-200/60 overflow-hidden`}>

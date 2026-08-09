@@ -7,6 +7,7 @@ import { apiJson, type EventItem } from "@/lib/api";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
 import { subscribeToContentUpdates } from "@/lib/contentSync";
+import ChatContactButton from "@/features/chat/ChatContactButton";
 
 type UpcomingEvent = {
   id?: number;
@@ -240,13 +241,11 @@ export default function Events() {
               </span>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-primary-700">Attendee membership benefit</p>
-                <h2 className="mt-2 font-heading text-xl font-semibold text-background-950">Attend an IPC event and get 100% off membership</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-700">Confirmed attendees receive a 100% discount on the standard £100 annual membership fee, reducing the membership cost to £0.</p>
+                <h2 className="mt-2 font-heading text-xl font-semibold text-background-950">Ask about membership benefits for IPC event attendees</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-700">Our team can explain current eligibility, membership routes and the benefits available after confirmed attendance.</p>
               </div>
             </div>
-            <Link to="/membership" className="inline-flex shrink-0 items-center justify-center gap-2 bg-background-950 px-5 py-3 text-sm font-semibold text-background-50 transition hover:bg-background-800">
-              Explore membership <i className="ri-arrow-right-line" aria-hidden="true" />
-            </Link>
+            <ChatContactButton source="event-attendee-membership" className="inline-flex shrink-0 items-center justify-center bg-background-950 px-5 py-3 text-sm font-semibold text-background-50 transition hover:bg-background-800" />
           </div>
           <div className="mt-12 md:mt-16">
             {eventsLoading && (

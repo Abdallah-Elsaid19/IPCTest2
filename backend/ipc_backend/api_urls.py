@@ -46,6 +46,7 @@ from accounts.dashboard import (
 from accounts.user_management import AdminUserViewSet, PasswordResetConfirmView, PasswordResetRequestView
 from accounts.notification_api import AdminNotificationViewSet
 from user_panel.views import AdminClubMembershipViewSet, AdminClubViewSet, AdminNominationViewSet, AdminSupportViewSet
+from chat.views import ConversationCreateView, ConversationDetailView, ConversationMessagesView, InboundStaffReplyView
 
 router = DefaultRouter(trailing_slash=False)
 router.register("membership-grades", MembershipGradeViewSet, basename="membership-grade")
@@ -76,6 +77,10 @@ router.register("bursary-applications", BursaryApplicationCreateViewSet, basenam
 router.register("admin/bursary-applications", AdminBursaryApplicationViewSet, basename="admin-bursary-application")
 
 urlpatterns = [
+    path("chat/conversations", ConversationCreateView.as_view(), name="chat-conversation-create"),
+    path("chat/conversations/<uuid:public_id>", ConversationDetailView.as_view(), name="chat-conversation-detail"),
+    path("chat/conversations/<uuid:public_id>/messages", ConversationMessagesView.as_view(), name="chat-conversation-messages"),
+    path("chat/inbound/<str:provider>", InboundStaffReplyView.as_view(), name="chat-inbound-reply"),
     path("user/", include("user_panel.urls")),
     path("csrf", csrf_cookie, name="csrf-cookie"),
     path("auth/login", LoginView.as_view(), name="auth-login"),

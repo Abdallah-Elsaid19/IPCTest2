@@ -16,7 +16,7 @@ frontend/.env.local
 
 # Backend
 backend/.env
-backend/.env.example
+!backend/.env.example
 backend/.venv/
 backend/venv/
 backend/__pycache__/
@@ -36,5 +36,5 @@ dist-server/
 # Secrets
 .env
 .env.*
-backend/.env.example
+!backend/.env.example
 frontend/.env.example

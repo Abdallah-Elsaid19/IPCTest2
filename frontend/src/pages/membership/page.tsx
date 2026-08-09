@@ -15,6 +15,7 @@ import ApplicationJourney from "@/pages/membership/components/ApplicationJourney
 import ProfessionalVisibility from "@/pages/membership/components/ProfessionalVisibility";
 import MembershipQuestions from "@/pages/membership/components/MembershipQuestions";
 import GradeFinderModal from "@/pages/membership/components/GradeFinderModal";
+import ChatContactButton from "@/features/chat/ChatContactButton";
 
 const membershipHeroBackground = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/54a9aa170171439581b2022efdf51f29.webp";
 const membershipGradesBackground = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f3a1049f03fb4811b7d859f44f2491d1.webp";
@@ -210,25 +211,22 @@ export default function Membership() {
               Explore Membership Grades
             </h2>
             <p className="text-foreground-600 max-w-2xl mx-auto">
-              Every membership grade has a standard annual price of £100. New
-              applicants begin with Affiliate membership and progress through
-              the IPC membership pathway.
+              New applicants begin with Affiliate membership and progress through
+              the IPC membership pathway. Contact our team for current membership information.
             </p>
           </div>
           <div className="mx-auto mb-10 flex max-w-4xl flex-col gap-5 border border-primary-300 bg-primary-50/95 p-6 text-left shadow-sm sm:flex-row sm:items-center sm:justify-between md:p-8">
             <div className="flex items-start gap-4">
               <span className="grid h-12 w-12 shrink-0 place-items-center bg-primary-500 text-background-950">
-                <i className="ri-percent-line text-xl" aria-hidden="true" />
+                <i className="ri-customer-service-2-line text-xl" aria-hidden="true" />
               </span>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-primary-800">Event attendee benefit</p>
-                <h3 className="mt-2 font-heading text-xl font-semibold text-background-950">Attend an IPC event and receive 100% off membership</h3>
-                <p className="mt-2 text-sm leading-relaxed text-foreground-700">The standard annual membership price is £100. After confirmed event attendance, your membership fee is reduced to £0.</p>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-primary-800">Membership information</p>
+                <h3 className="mt-2 font-heading text-xl font-semibold text-background-950">Find the right IPC membership route</h3>
+                <p className="mt-2 text-sm leading-relaxed text-foreground-700">Our team can explain the available grades, event attendee benefits and application pathway.</p>
               </div>
             </div>
-            <Link to="/events" className="inline-flex shrink-0 items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-sm font-semibold text-background-950 transition hover:bg-primary-600">
-              View events <i className="ri-arrow-right-line" aria-hidden="true" />
-            </Link>
+            <ChatContactButton source="membership-overview" className="inline-flex shrink-0 items-center justify-center bg-primary-500 px-5 py-3 text-sm font-semibold text-background-950 transition hover:bg-primary-600" />
           </div>
           {isLoading && (
             <div
@@ -261,9 +259,8 @@ export default function Membership() {
             }`}
           >
             {gradeCards.map((grade, index) => (
-              <Link
+              <article
                 key={grade.slug}
-                to={`/membership/${grade.slug}`}
                 className="group reveal flex h-full flex-col overflow-hidden border border-background-200/70 bg-background-100 transition-all duration-300 hover:border-primary-300"
                 style={{ transitionDelay: `${index * 80}ms` }}
               >
@@ -288,17 +285,14 @@ export default function Membership() {
                   </p>
 
                   <div className="mt-auto">
-                    <p className="mb-4 text-sm font-bold text-background-950">
-                      £100 <span className="font-normal text-foreground-500">per year</span>
-                    </p>
-
-                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors group-hover:text-primary-700">
+                    <ChatContactButton source={`membership-card-${grade.slug}`} className="mb-4 w-full bg-primary-500 px-4 py-3 text-sm font-semibold text-background-950 transition hover:bg-primary-600" />
+                    <Link to={`/membership/${grade.slug}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors group-hover:text-primary-700">
                       View Details
                       <i className="ri-arrow-right-line" />
-                    </span>
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         </div>

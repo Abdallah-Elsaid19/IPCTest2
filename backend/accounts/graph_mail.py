@@ -57,7 +57,8 @@ def _send_mime_message(*, recipient, subject, text_body, html_body, reply_to=Non
     if reply_to:
         message["Reply-To"] = reply_to
     message["Date"] = formatdate(localtime=True)
-    message["Message-ID"] = make_msgid(domain=sender.rsplit("@", 1)[-1])
+    message_id = make_msgid(domain=sender.rsplit("@", 1)[-1])
+    message["Message-ID"] = message_id
     # Base64 transfer encoding prevents Graph/mail clients from treating MIME
     # soft line breaks (`=`) as visible characters or dropping the next byte.
     message.set_content(text_body, cte="base64")
@@ -78,6 +79,7 @@ def _send_mime_message(*, recipient, subject, text_body, html_body, reply_to=Non
     if response.status_code != 202:
         logger.error("Microsoft Graph sendMail failed with status %s.", response.status_code)
         raise GraphMailError("Microsoft Graph could not send the email.")
+    return message_id.strip("<>")
 
 
 def send_enquiry_reply_email(

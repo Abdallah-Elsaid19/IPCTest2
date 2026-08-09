@@ -9,6 +9,8 @@ import { AuthProvider } from "./features/auth/AuthContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import useScrollReveal from "./hooks/useScrollReveal";
+import ChatProvider from "./features/chat/ChatProvider";
+import ChatWidget from "./features/chat/ChatWidget";
 
 function ScrollToTop() {
   const { pathname, search, hash } = useLocation();
@@ -84,18 +86,21 @@ function App() {
     <I18nextProvider i18n={i18n}>
       <BrowserRouter basename={__BASE_PATH__}>
         <AuthProvider>
-          <ScrollToTop />
-          <AppLayout />
-          <ToastContainer
-            position="top-right"
-            autoClose={3500}
-            newestOnTop
-            closeOnClick
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="dark"
-          />
+          <ChatProvider>
+            <ScrollToTop />
+            <AppLayout />
+            <ChatWidget />
+            <ToastContainer
+              position="top-right"
+              autoClose={3500}
+              newestOnTop
+              closeOnClick
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+          </ChatProvider>
         </AuthProvider>
       </BrowserRouter>
     </I18nextProvider>

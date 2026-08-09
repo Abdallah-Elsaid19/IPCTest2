@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "fund",
     "institutional",
     "user_panel",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -163,6 +164,10 @@ REST_FRAMEWORK = {
             "DRF_BURSARY_MEMBERSHIP_VALIDATION_THROTTLE",
             default="240/min" if DEBUG else "60/min",
         ),
+        "chat_conversation": env("DRF_CHAT_CONVERSATION_THROTTLE", default="5/hour"),
+        "chat_message": env("DRF_CHAT_MESSAGE_THROTTLE", default="30/hour"),
+        "chat_poll": env("DRF_CHAT_POLL_THROTTLE", default="120/min"),
+        "chat_inbound": env("DRF_CHAT_INBOUND_THROTTLE", default="120/min"),
     },
 }
 
@@ -188,6 +193,18 @@ EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="office@instituteofprojectcontrols.org")
 IPC_REVIEW_EMAIL = env("IPC_REVIEW_EMAIL", default=DEFAULT_FROM_EMAIL)
 EVENT_SUPPORT_EMAIL = env("EVENT_SUPPORT_EMAIL", default=IPC_REVIEW_EMAIL)
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+SUPPORT_EMAIL = env("SUPPORT_EMAIL", default=IPC_REVIEW_EMAIL)
+CHAT_INBOUND_DOMAIN = env("CHAT_INBOUND_DOMAIN", default="")
+CHAT_INBOUND_ADDRESS = env("CHAT_INBOUND_ADDRESS", default="")
+CHAT_INBOUND_WEBHOOK_TOKEN = env("CHAT_INBOUND_WEBHOOK_TOKEN", default="")
+CHAT_INBOUND_WEBHOOK_SECRET = env("CHAT_INBOUND_WEBHOOK_SECRET", default="")
+CHAT_STAFF_EMAILS = env.list("CHAT_STAFF_EMAILS", default=[])
+CHAT_STAFF_EMAIL_DOMAINS = env.list("CHAT_STAFF_EMAIL_DOMAINS", default=[])
 FRONTEND_URL = env(
     "FRONTEND_URL",
     default="https://instituteofprojectcontrols.com",
