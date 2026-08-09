@@ -35,7 +35,7 @@ function readableTime(value: string) {
 export default function ChatWidget() {
   const location = useLocation();
   const { isOpen, source, closeChat, toggleChat } = useChat();
-  const hiddenRoute = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/user");
+  const hiddenRoute = !location.pathname.startsWith("/membership");
   const [session, setSession] = useState<StoredChatSession | null>(() => readStoredSession());
   const [conversation, setConversation] = useState<ChatConversation | null>(null);
   const [name, setName] = useState(() => readStoredSession()?.name || "");
