@@ -149,6 +149,7 @@ REST_FRAMEWORK = {
         "admin_enquiry_reply": env("DRF_ADMIN_ENQUIRY_REPLY_THROTTLE", default="30/hour"),
         "password_reset_confirm": env("DRF_PASSWORD_RESET_CONFIRM_THROTTLE", default="10/hour"),
         "event_registration": env("DRF_EVENT_REGISTRATION_THROTTLE", default="10/hour"),
+        "zoho_webhook": env("DRF_ZOHO_WEBHOOK_THROTTLE", default="30/min"),
         "bursary_application": env(
             "DRF_BURSARY_APPLICATION_THROTTLE",
             default="100/min" if DEBUG else "20/hour",
@@ -228,3 +229,6 @@ EVENTBRITE_PUBLIC_TOKEN = env("EVENTBRITE_PUBLIC_TOKEN", default="")
 EVENTBRITE_REDIRECT_URI = env("EVENTBRITE_REDIRECT_URI", default="http://localhost:8000/api/events/eventbrite/callback")
 EVENTBRITE_ORGANIZATION_ID = env("EVENTBRITE_ORGANIZATION_ID", default="")
 EVENTBRITE_REQUEST_TIMEOUT = env.int("EVENTBRITE_REQUEST_TIMEOUT", default=60)
+
+ZOHO_FORMS_WEBHOOK_TOKEN = env("ZOHO_FORMS_WEBHOOK_TOKEN", default="")
+ZOHO_FORMS_EVENT_NAME = env("ZOHO_FORMS_EVENT_NAME", default="")

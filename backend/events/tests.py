@@ -23,6 +23,78 @@ from .services.eventbrite import (
 from .services.sync_eventbrite import sync_eventbrite_events
 
 
+@override_settings(
+    ZOHO_FORMS_WEBHOOK_TOKEN="test-zoho-token",
+    ZOHO_FORMS_EVENT_NAME="London Masterclass Event 2 October 2026",
+)
+class ZohoFormWebhookTests(TestCase):
+    endpoint = "/api/events/zoho/webhook"
+
+    def setUp(self):
+        self.client = APIClient()
+        self.payload = {
+            "first_name": "Amina",
+            "last_name": "Khan",
+            "phone": "+44 7700 900123",
+            "email": "amina@example.com",
+            "programme": "Project Controls Masterclass",
+            "comments": "Vegetarian lunch, please.",
+        }
+
+    def post(self, payload=None, token="test-zoho-token"):
+        return self.client.post(
+            self.endpoint,
+            payload or self.payload,
+            format="json",
+            HTTP_X_ZOHO_WEBHOOK_TOKEN=token,
+        )
+
+    def test_rejects_request_without_matching_webhook_token(self):
+        response = self.post(token="wrong-token")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(EventRegistration.objects.count(), 0)
+
+    def test_creates_zoho_event_registration(self):
+        event = Event.objects.create(
+            title="London Masterclass Event 2 October 2026",
+            slug="london-masterclass-event-2-october-2026",
+            event_type=Event.EventType.LONDON_MASTER_CLASS,
+        )
+
+        response = self.post()
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["created"])
+        registration = EventRegistration.objects.get()
+        self.assertEqual(registration.event, event)
+        self.assertEqual(registration.name, "Amina Khan")
+        self.assertEqual(registration.email, "amina@example.com")
+        self.assertEqual(registration.contact_mobile, "+44 7700 900123")
+        self.assertEqual(registration.ticket_name, "Project Controls Masterclass")
+        self.assertEqual(registration.dietary_access_needs, "Vegetarian lunch, please.")
+        self.assertEqual(registration.payment_provider, "zoho_forms")
+
+    def test_accepts_current_field_aliases_and_deduplicates_repush(self):
+        payload = {
+            "Field_1": "Amina",
+            "Field_2": "Khan",
+            "Field_3": "+44 7700 900123",
+            "Field_4": "amina@example.com",
+            "Field_5": "Project Controls Masterclass",
+            "Field_16": "Vegetarian lunch, please.",
+        }
+
+        first = self.post(payload)
+        second = self.post(payload)
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 200)
+        self.assertFalse(second.data["created"])
+        self.assertEqual(first.data["reference"], second.data["reference"])
+        self.assertEqual(EventRegistration.objects.count(), 1)
+
+
 class EventbriteClientTests(TestCase):
     @patch.object(EventbriteClient, "_request")
     def test_event_description_uses_full_html_endpoint(self, request):

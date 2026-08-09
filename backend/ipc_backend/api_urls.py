@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from applications.views import AdminApplicationViewSet, ApplicationViewSet
-from events.views import AdminEventRegistrationViewSet, AdminEventViewSet, AdminEventbriteAttendeesView, EventPageContentView, EventRegistrationCalendarView, EventRegistrationConfigView, EventRegistrationCreateView, EventRegistrationDetailView, EventRegistrationViewSet, EventViewSet, EventbriteAuthorizeView, EventbriteCallbackView, EventbriteEventsView, EventbriteOrganizationsView, EventbriteSyncView
+from events.views import AdminEventRegistrationViewSet, AdminEventViewSet, AdminEventbriteAttendeesView, EventPageContentView, EventRegistrationCalendarView, EventRegistrationConfigView, EventRegistrationCreateView, EventRegistrationDetailView, EventRegistrationViewSet, EventViewSet, EventbriteAuthorizeView, EventbriteCallbackView, EventbriteEventsView, EventbriteOrganizationsView, EventbriteSyncView, ZohoFormWebhookView
 from awards.views import (
     AdminAwardCategoryViewSet,
     AdminAwardProgrammeViewSet,
@@ -133,6 +133,7 @@ urlpatterns = [
     path("events/eventbrite/events/", EventbriteEventsView.as_view(), name="eventbrite-events"),
     path("events/eventbrite/sync/", EventbriteSyncView.as_view(), name="eventbrite-sync-slash"),
     path("events/eventbrite/sync", EventbriteSyncView.as_view(), name="eventbrite-sync"),
+    path("events/zoho/webhook", ZohoFormWebhookView.as_view(), name="zoho-forms-webhook"),
     path("events/<slug:slug>/registration", EventRegistrationConfigView.as_view(), name="event-registration-config"),
     path("events/<slug:slug>/register", EventRegistrationCreateView.as_view(), name="event-registration-create"),
     path("events/registrations/<str:reference>", EventRegistrationDetailView.as_view(), name="event-registration-detail"),

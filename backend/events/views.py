@@ -1,4 +1,5 @@
 import secrets
+import hashlib
 from datetime import timezone as dt_timezone
 from concurrent.futures import ThreadPoolExecutor
 from secrets import token_urlsafe
@@ -10,7 +11,7 @@ from django.http import Http404
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import crypto, timezone
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -25,8 +26,9 @@ from .serializers import (
     AdminEventRegistrationSerializer, AdminEventSerializer, AdminEventVisibilitySerializer,
     EventRegistrationConfigSerializer, EventRegistrationCreateSerializer,
     EventPageContentSerializer, EventRegistrationDetailSerializer,
-    EventRegistrationSerializer, EventSerializer,
+    EventRegistrationSerializer, EventSerializer, ZohoFormWebhookSerializer,
 )
+from .services.registration import _unique_reference
 from .services.registration import create_registration
 from .services.registration_email import registration_urls, send_registration_confirmation
 from .services.eventbrite import (
@@ -269,6 +271,11 @@ class AdminEventRegistrationViewSet(mixins.ListModelMixin, mixins.RetrieveModelM
             queryset = queryset.filter(status=registration_status)
         if email_status := self.request.query_params.get("email_status"):
             queryset = queryset.filter(confirmation_email_status=email_status)
+        if source := self.request.query_params.get("source"):
+            if source == "zoho":
+                queryset = queryset.filter(payment_provider="zoho_forms")
+            elif source == "ipc":
+                queryset = queryset.exclude(payment_provider="zoho_forms")
         return queryset
 
     @action(detail=True, methods=["post"], url_path="resend-confirmation")
@@ -280,6 +287,108 @@ class AdminEventRegistrationViewSet(mixins.ListModelMixin, mixins.RetrieveModelM
             "sent": sent,
             "confirmation_email_status": registration.confirmation_email_status,
         }, status=status.HTTP_200_OK if sent else status.HTTP_502_BAD_GATEWAY)
+
+
+class ZohoFormWebhookView(APIView):
+    """Receive a Zoho Forms event submission and store it as a registration."""
+
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "zoho_webhook"
+
+    FIELD_ALIASES = {
+        "first_name": ("first_name", "Field_1"),
+        "last_name": ("last_name", "Field_2"),
+        "phone": ("phone", "Field_3"),
+        "email": ("email", "Field_4"),
+        "programme": ("programme", "program", "Field_5"),
+        "comments": ("comments", "Field_16"),
+    }
+
+    @classmethod
+    def _normalise_payload(cls, payload):
+        return {
+            destination: next(
+                (payload.get(source) for source in aliases if payload.get(source) is not None),
+                "",
+            )
+            for destination, aliases in cls.FIELD_ALIASES.items()
+        }
+
+    def post(self, request):
+        configured_token = settings.ZOHO_FORMS_WEBHOOK_TOKEN.strip()
+        if not configured_token:
+            return Response(
+                {"detail": "Zoho Forms webhook is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        supplied_token = request.headers.get("X-Zoho-Webhook-Token", "")
+        if not crypto.constant_time_compare(supplied_token, configured_token):
+            return Response(
+                {"detail": "Invalid webhook token."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        payload = self._normalise_payload(request.data)
+        serializer = ZohoFormWebhookSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        event_name = (
+            request.query_params.get("event_name")
+            or settings.ZOHO_FORMS_EVENT_NAME
+        ).strip()
+        if not event_name:
+            return Response(
+                {"detail": "The Zoho event name is not configured."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        event = Event.objects.filter(title__iexact=event_name).first()
+        if event:
+            event_name = event.title
+            event_type = event.get_event_type_display()
+        else:
+            event_type = EventRegistration.EventType.LONDON_MASTER_CLASS
+
+        identity = "|".join([
+            event_name.casefold(),
+            data["email"].strip().casefold(),
+            data.get("phone", "").strip(),
+            data.get("programme", "").strip().casefold(),
+        ])
+        idempotency_key = f"zoho:{hashlib.sha256(identity.encode('utf-8')).hexdigest()}"
+        existing = EventRegistration.objects.filter(idempotency_key=idempotency_key).first()
+        if existing:
+            return Response({
+                "received": True,
+                "created": False,
+                "reference": existing.reference,
+            })
+
+        registration = EventRegistration.objects.create(
+            event=event,
+            event_name=event_name,
+            event_type=event_type,
+            name=f"{data['first_name']} {data['last_name']}".strip(),
+            email=data["email"],
+            contact_first_name=data["first_name"],
+            contact_last_name=data["last_name"],
+            contact_mobile=data.get("phone", ""),
+            dietary_access_needs=data.get("comments", ""),
+            ticket_name=data.get("programme", "") or "Zoho Forms registration",
+            quantity=1,
+            status=EventRegistration.Status.REGISTERED,
+            reference=_unique_reference(),
+            idempotency_key=idempotency_key,
+            payment_provider="zoho_forms",
+            payment_status=EventRegistration.PaymentStatus.NOT_REQUIRED,
+        )
+        cache.delete("ipc:admin-dashboard:v2")
+        return Response({
+            "received": True,
+            "created": True,
+            "reference": registration.reference,
+        }, status=status.HTTP_201_CREATED)
 
 
 class EventbriteAuthorizeView(APIView):

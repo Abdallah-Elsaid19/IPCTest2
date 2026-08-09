@@ -206,5 +206,22 @@ class EventRegistrationDetailSerializer(serializers.ModelSerializer):
 
 
 class AdminEventRegistrationSerializer(EventRegistrationDetailSerializer):
+    source = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_source(instance):
+        return "zoho" if instance.payment_provider == "zoho_forms" else "ipc"
+
     class Meta(EventRegistrationDetailSerializer.Meta):
-        fields = EventRegistrationDetailSerializer.Meta.fields + ["id", "confirmation_email_sent_at"]
+        fields = EventRegistrationDetailSerializer.Meta.fields + [
+            "id", "confirmation_email_sent_at", "source",
+        ]
+
+
+class ZohoFormWebhookSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=80)
+    last_name = serializers.CharField(max_length=80)
+    phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
+    email = serializers.EmailField(max_length=254)
+    programme = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    comments = serializers.CharField(max_length=4000, required=False, allow_blank=True)
