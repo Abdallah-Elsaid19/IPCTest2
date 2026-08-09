@@ -179,6 +179,7 @@ export default function AdminEventsPage() {
   const [attendeesError, setAttendeesError] = useState("");
   const [zohoRegistrationsError, setZohoRegistrationsError] = useState("");
   const [isEventbriteRefreshing, setIsEventbriteRefreshing] = useState(false);
+  const [isZohoRefreshing, setIsZohoRefreshing] = useState(false);
   const [eventPage, setEventPage] = useState(1);
   const [registrationPage, setRegistrationPage] = useState(1);
   const [busyVisibilityId, setBusyVisibilityId] = useState<number | null>(null);
@@ -284,6 +285,28 @@ export default function AdminEventsPage() {
       });
     return () => { active = false; };
   }, []);
+
+  const refreshZohoRegistrations = async () => {
+    if (isZohoRefreshing) return;
+    setIsZohoRefreshing(true);
+    try {
+      const registrations = await adminApi.zohoRegistrations();
+      setZohoRegistrations(registrations);
+      setZohoRegistrationsError("");
+      setRegistrationPage(1);
+      notifications.success(
+        `Zoho Forms refreshed: ${registrations.length} registration${registrations.length === 1 ? "" : "s"} loaded.`,
+      );
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Zoho Forms registrations could not be refreshed.";
+      setZohoRegistrationsError(message);
+      notifications.error(message);
+    } finally {
+      setIsZohoRefreshing(false);
+    }
+  };
 
   const openCreate = () => {
     setEditingEvent(null);
@@ -523,7 +546,26 @@ export default function AdminEventsPage() {
       )}
 
       <section className="mt-10 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#FFFDF9]">
-        <div className="flex items-center justify-between gap-4 border-b border-[#E8DED2] px-5 py-4"><div><h2 className="font-black">Recent registrations</h2><p className="mt-1 text-xs text-[#7B7167]">Latest Eventbrite and Zoho Forms registrations.</p></div>{isEventbriteRefreshing && <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary-800"><LoaderCircle size={14} className="animate-spin" /> Updating Eventbrite</span>}</div>
+        <div className="flex flex-col gap-4 border-b border-[#E8DED2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-black">Recent registrations</h2>
+            <p className="mt-1 text-xs text-[#7B7167]">Latest Eventbrite and Zoho Forms registrations.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {isEventbriteRefreshing && <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary-800"><LoaderCircle size={14} className="animate-spin" /> Updating Eventbrite</span>}
+            <button
+              type="button"
+              onClick={() => void refreshZohoRegistrations()}
+              disabled={isZohoRefreshing}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D8CCBD] bg-white px-4 text-xs font-black text-[#554E47] shadow-sm transition hover:border-primary-500 hover:text-primary-800 disabled:cursor-wait disabled:opacity-55"
+              aria-label="Refresh Zoho Forms registrations"
+              title="Load the latest Zoho Forms registrations"
+            >
+              <RefreshCw size={16} className={isZohoRefreshing ? "animate-spin" : ""} />
+              {isZohoRefreshing ? "Refreshing Zoho" : "Refresh Zoho"}
+            </button>
+          </div>
+        </div>
         <div className="flex flex-col gap-3 border-b border-[#E8DED2] p-4 xl:flex-row xl:items-center">
           <div className="relative min-w-0 flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8178]" />
