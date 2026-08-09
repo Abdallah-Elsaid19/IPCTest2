@@ -848,7 +848,7 @@ export default function ScholarshipsGateway() {
       )}
 
       {isManagedItemActive(content.hero) && (
-      <section className="relative isolate min-h-[720px] overflow-hidden bg-[#10151f] pt-20 text-background-50">
+      <section className="relative isolate min-h-[720px] overflow-hidden bg-[#000000] pt-20 text-background-50">
         <div className="absolute inset-0 dot-grid-gold opacity-20" aria-hidden="true" />
         <div className="absolute -right-48 top-16 h-[42rem] w-[42rem] rounded-full border border-primary-400/20" aria-hidden="true" />
         <div className="absolute -right-24 top-40 h-[28rem] w-[28rem] rounded-full border border-[#71599b]/35" aria-hidden="true" />
@@ -887,7 +887,7 @@ export default function ScholarshipsGateway() {
             </div>
           </div>
 
-          <aside className="reveal relative overflow-hidden border border-white/15 bg-[#0d111b]/90 shadow-[0_28px_80px_rgba(0,0,0,.28)] backdrop-blur-sm" aria-label="IPC scholarship announcement countdown">
+          <aside className="reveal relative overflow-hidden bg-[#000000] shadow-[0_28px_80px_rgba(0,0,0,.28)]" aria-label="IPC scholarship announcement countdown">
             <div className="relative h-52 overflow-hidden sm:h-64 lg:h-72">
               <img
                 src={IPC_HOME_OWL_IMAGE}
@@ -897,10 +897,14 @@ export default function ScholarshipsGateway() {
                 loading="eager"
                 className="h-full w-full object-cover object-[56%_43%]"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#0d111b]" aria-hidden="true" />
-              <div className="absolute left-5 top-5 border border-primary-400/40 bg-black/65 px-3 py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-primary-200 backdrop-blur-sm">
-                Announcement countdown
-              </div>
+              <div
+                className="absolute inset-0 bg-[linear-gradient(to_bottom,#000_0%,rgba(0,0,0,0)_18%,rgba(0,0,0,0)_72%,#000_100%)]"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-0 bg-[linear-gradient(to_right,#000_0%,rgba(0,0,0,0)_12%,rgba(0,0,0,0)_88%,#000_100%)]"
+                aria-hidden="true"
+              />
             </div>
 
             <div className="relative -mt-2 p-5 pt-0 sm:p-6 sm:pt-0 md:p-7 md:pt-0">
