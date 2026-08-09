@@ -149,6 +149,7 @@ REST_FRAMEWORK = {
         "admin_enquiry_reply": env("DRF_ADMIN_ENQUIRY_REPLY_THROTTLE", default="30/hour"),
         "password_reset_confirm": env("DRF_PASSWORD_RESET_CONFIRM_THROTTLE", default="10/hour"),
         "event_registration": env("DRF_EVENT_REGISTRATION_THROTTLE", default="10/hour"),
+        "event_account_invite": env("DRF_EVENT_ACCOUNT_INVITE_THROTTLE", default="20/hour"),
         "zoho_webhook": env("DRF_ZOHO_WEBHOOK_THROTTLE", default="30/min"),
         "bursary_application": env(
             "DRF_BURSARY_APPLICATION_THROTTLE",

@@ -41,6 +41,14 @@ def _personal_reset_email(user):
     if application and application.email:
         return application.email
 
+    event_registration = (
+        user.event_registrations.exclude(email="")
+        .order_by("-created_at")
+        .first()
+    )
+    if event_registration:
+        return event_registration.email
+
     # Staff accounts created before managed IPC addresses may still use a real
     # email address directly on the Django user record.
     managed_domain = settings.IPC_ACCOUNT_EMAIL_DOMAIN.lower().lstrip("@")

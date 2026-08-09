@@ -52,6 +52,9 @@ type EventPageContent = {
   updated_at: string;
 };
 
+const eventsHeroBackground = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/7bb8eaad0a6c4fc28fb26f7aff6abebf.webp";
+const featuredProgrammeBackground = "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/8a6f3184a2464bd5b9648e7b319345b0.webp";
+
 export default function Events() {
   const formatDate = (value?: string | null) => {
     if (!value) return "Date to be confirmed";
@@ -177,30 +180,36 @@ export default function Events() {
     <div>
       <SEO {...pageSeo.events} />
       {/* Hero */}
-      <section className="relative min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden bg-background-950">
-        <div className="absolute inset-0 opacity-25">
+      <section className="relative flex min-h-[70vh] items-center overflow-hidden bg-background-950 md:min-h-[80vh]">
+        <div className="absolute inset-0">
           <img
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            src="https://readdy.ai/api/search-image?query=Grand%20institutional%20conference%20hall%20with%20hundreds%20of%20professionals%20seated%20in%20tiered%20rows%2C%20dramatic%20stage%20lighting%20in%20warm%20golden%20tones%2C%20large%20LED%20screens%20displaying%20data%20visualizations%2C%20elegant%20architectural%20ceiling%20details%2C%20premium%20corporate%20event%20atmosphere%2C%20deep%20charcoal%20background%20elements%2C%20cinematic%20lighting%2C%20editorial%20photography%20quality%2C%20no%20visible%20text&width=1600&height=900&seq=events-hero-professional-03&orientation=landscape"
-            alt="Professional conference event"
-            className="w-full h-full object-cover"
+            src={eventsHeroBackground}
+            alt="IPC professionals meeting at an event"
+            className="h-full w-full object-cover object-[68%_center] sm:object-center"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background-950 via-background-950/85 to-background-950/55" />
-        <div className="relative z-10 container-content w-full pt-24 md:pt-32">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(90deg, oklch(var(--background-950) / 0.98) 0%, oklch(var(--background-950) / 0.9) 35%, oklch(var(--background-950) / 0.5) 62%, oklch(var(--background-950) / 0.1) 100%)",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background-950/20 via-transparent to-background-950/75" />
+        <div className="container-content relative z-10 w-full pt-24 md:pt-32">
           <div className="max-w-3xl reveal">
             <span className="eyebrow text-primary-400 mb-4 block">Community</span>
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-background-50 leading-[1.1] mb-6">
+            <h1 className="mb-6 font-heading text-4xl font-bold leading-[1.1] text-background-50 sm:text-5xl md:text-6xl lg:text-7xl">
               Events
             </h1>
-            <p className="text-base md:text-lg text-background-200 leading-relaxed max-w-2xl mb-10">
+            <p className="mb-10 max-w-2xl text-base leading-relaxed text-background-200 md:text-lg">
               A professional institute should create spaces where people meet, learn and exchange practice.
               Networking is not only social it helps professionals understand different sectors, compare methods,
               hear lessons learned, meet employers, build confidence and identify mentors.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <a href="#upcoming" className="btn-primary inline-flex items-center gap-2">
                 <i className="ri-calendar-event-line" />
                 View Upcoming Events
@@ -223,6 +232,21 @@ export default function Events() {
               title="Upcoming events"
               subtitle="Master classes, technical sessions, roundtables, mentoring circles and club meetings across London, Nottingham, Manchester and Kent."
             />
+          </div>
+          <div className="reveal mt-10 flex flex-col gap-5 border border-primary-300 bg-primary-50 p-6 sm:flex-row sm:items-center sm:justify-between md:p-8">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center bg-primary-500 text-background-950">
+                <i className="ri-vip-crown-line text-xl" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-primary-700">Attendee membership benefit</p>
+                <h2 className="mt-2 font-heading text-xl font-semibold text-background-950">Attend an IPC event and get 100% off membership</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-700">Confirmed attendees receive a 100% discount on the standard £100 annual membership fee, reducing the membership cost to £0.</p>
+              </div>
+            </div>
+            <Link to="/membership" className="inline-flex shrink-0 items-center justify-center gap-2 bg-background-950 px-5 py-3 text-sm font-semibold text-background-50 transition hover:bg-background-800">
+              Explore membership <i className="ri-arrow-right-line" aria-hidden="true" />
+            </Link>
           </div>
           <div className="mt-12 md:mt-16">
             {eventsLoading && (
@@ -380,8 +404,14 @@ export default function Events() {
       </section>
 
       {/* London Master Class */}
-      <section className="bg-background-950 section-padding">
-        <div className="container-content">
+      <section
+        className="relative isolate overflow-hidden bg-background-950 bg-cover bg-[70%_center] bg-no-repeat section-padding sm:bg-center"
+        style={{
+          backgroundImage: `linear-gradient(90deg, rgba(11, 11, 11, 0.98) 0%, rgba(11, 11, 11, 0.93) 42%, rgba(11, 11, 11, 0.70) 68%, rgba(11, 11, 11, 0.40) 100%), url("${featuredProgrammeBackground}")`,
+        }}
+      >
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background-950/20 via-transparent to-background-950/75" aria-hidden="true" />
+        <div className="container-content relative z-10">
           {!pageContent && !contentError && (
             <div className="flex items-center justify-center gap-3 py-20 text-background-300" role="status">
               <span className="h-6 w-6 animate-spin rounded-full border-2 border-background-700 border-t-primary-500" aria-hidden="true" />
@@ -393,8 +423,8 @@ export default function Events() {
               {contentError}
             </div>
           )}
-          {featuredProgramme && <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
-            <div className="flex-1 reveal">
+          {featuredProgramme && <div className="max-w-3xl reveal">
+            <div>
               <span className="eyebrow text-primary-400 mb-4 block">{featuredProgramme.eyebrow}</span>
               <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-background-50 mb-6">
                 {featuredProgramme.title}
@@ -406,7 +436,7 @@ export default function Events() {
                 {featuredProgramme.highlights.map((highlight, index) => {
                   const accent = highlight.tone === "accent";
                   return (
-                    <div key={highlight.title} className={`bg-background-900 p-5 reveal reveal-delay-${index + 1}`}>
+                    <div key={highlight.title} className={`border border-primary-500/25 bg-background-950/75 p-5 backdrop-blur-[2px] reveal reveal-delay-${index + 1}`}>
                       <div className={`w-10 h-10 ${accent ? "bg-accent-500/20" : "bg-primary-500/20"} flex items-center justify-center mb-3`}>
                         <i className={`${highlight.icon} ${accent ? "text-accent-400" : "text-primary-400"} text-lg`} />
                       </div>
@@ -415,17 +445,6 @@ export default function Events() {
                     </div>
                   );
                 })}
-              </div>
-            </div>
-            <div className="lg:w-[42%] shrink-0 reveal reveal-delay-1">
-              <div className="overflow-hidden">
-                <img
-            loading="lazy"
-            decoding="async"
-                  src={featuredProgramme.image_url}
-                  alt={featuredProgramme.image_alt}
-                  className="w-full h-auto image-zoom"
-                />
               </div>
             </div>
           </div>}

@@ -31,6 +31,7 @@ class ZohoFormWebhookTests(TestCase):
     endpoint = "/api/events/zoho/webhook"
 
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.payload = {
             "first_name": "Amina",
@@ -93,6 +94,94 @@ class ZohoFormWebhookTests(TestCase):
         self.assertFalse(second.data["created"])
         self.assertEqual(first.data["reference"], second.data["reference"])
         self.assertEqual(EventRegistration.objects.count(), 1)
+
+    def test_admin_can_filter_and_identify_zoho_registrations(self):
+        self.post()
+        EventRegistration.objects.create(
+            event_name="IPC website event",
+            event_type=EventRegistration.EventType.OTHER,
+            name="Website Applicant",
+            email="website@example.com",
+        )
+        admin = get_user_model().objects.create_superuser(
+            username="zoho-admin",
+            email="admin@example.com",
+            password="not-used-here",
+        )
+        self.client.force_authenticate(admin)
+
+        response = self.client.get("/api/admin/event-registrations?source=zoho")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["email"], "amina@example.com")
+        self.assertEqual(response.data[0]["source"], "zoho")
+
+    @patch("events.services.account_invite.send_event_account_invite_email")
+    def test_admin_creates_ipc_account_and_sends_password_setup_to_real_email(self, send_email):
+        self.post()
+        registration = EventRegistration.objects.get()
+        admin = get_user_model().objects.create_superuser(
+            username="event-account-admin",
+            email="event-admin@example.com",
+            password="not-used-here",
+        )
+        self.client.force_authenticate(admin)
+
+        response = self.client.post(
+            "/api/admin/event-registrations/send-account-invite",
+            {"source": "zoho", "registration_id": str(registration.pk)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["account_created"])
+        self.assertEqual(response.data["ipc_email"], "amina@ipc.com")
+        registration.refresh_from_db()
+        self.assertEqual(registration.registered_user.email, "amina@ipc.com")
+        self.assertFalse(registration.registered_user.has_usable_password())
+        self.assertIsNotNone(registration.account_invite_sent_at)
+        send_email.assert_called_once()
+        email_kwargs = send_email.call_args.kwargs
+        self.assertEqual(email_kwargs["recipient"], "amina@example.com")
+        self.assertEqual(email_kwargs["ipc_email"], "amina@ipc.com")
+        self.assertIn("/reset-password?uid=", email_kwargs["reset_url"])
+
+    @patch("events.services.account_invite.send_event_account_invite_email")
+    def test_eventbrite_attendee_can_receive_ipc_account_invite(self, send_email):
+        EventbriteAttendeeSnapshot.objects.create(
+            organization_id="ipc-org",
+            payload=[{
+                "id": "eventbrite-attendee-25",
+                "reference": "EB-order-25",
+                "name": "Noor Ali",
+                "email": "noor.ali@example.com",
+                "event_name": "London Masterclass",
+                "ticket_name": "General admission",
+                "quantity": 1,
+                "status": "registered",
+                "source": "eventbrite",
+            }],
+            total_count=1,
+        )
+        admin = get_user_model().objects.create_superuser(
+            username="eventbrite-account-admin",
+            email="eventbrite-admin@example.com",
+            password="not-used-here",
+        )
+        self.client.force_authenticate(admin)
+
+        response = self.client.post(
+            "/api/admin/event-registrations/send-account-invite",
+            {"source": "eventbrite", "registration_id": "eventbrite-attendee-25"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["ipc_email"], "noor.ali@ipc.com")
+        registration = EventRegistration.objects.get(payment_provider="eventbrite")
+        self.assertEqual(registration.registered_user.email, "noor.ali@ipc.com")
+        self.assertEqual(send_email.call_args.kwargs["recipient"], "noor.ali@example.com")
 
 
 class EventbriteClientTests(TestCase):

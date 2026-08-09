@@ -198,10 +198,10 @@ class EventRegistrationDetailSerializer(serializers.ModelSerializer):
         model = EventRegistration
         fields = [
             "reference", "created_at", "updated_at", "event", "event_name", "name", "status",
-            "contact_first_name", "contact_last_name", "email", "contact_mobile", "company",
+            "contact_first_name", "contact_last_name", "email", "contact_mobile", "organisation", "company",
             "job_title", "city", "quantity", "ticket_name", "unit_price", "total_amount",
             "currency", "payment_status", "marketing_consent", "terms_accepted", "confirmation_email_status",
-            "attendees",
+            "dietary_access_needs", "attendees",
         ]
 
 
@@ -214,7 +214,7 @@ class AdminEventRegistrationSerializer(EventRegistrationDetailSerializer):
 
     class Meta(EventRegistrationDetailSerializer.Meta):
         fields = EventRegistrationDetailSerializer.Meta.fields + [
-            "id", "confirmation_email_sent_at", "source",
+            "id", "confirmation_email_sent_at", "account_invite_sent_at", "source",
         ]
 
 
@@ -225,3 +225,15 @@ class ZohoFormWebhookSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
     programme = serializers.CharField(max_length=120, required=False, allow_blank=True)
     comments = serializers.CharField(max_length=4000, required=False, allow_blank=True)
+
+
+class EventAccountInviteSerializer(serializers.Serializer):
+    source = serializers.ChoiceField(choices=("eventbrite", "zoho"))
+    registration_id = serializers.CharField(max_length=160)
+
+    def validate(self, attrs):
+        if attrs["source"] == "zoho" and not attrs["registration_id"].isdigit():
+            raise serializers.ValidationError({
+                "registration_id": "A valid Zoho registration ID is required.",
+            })
+        return attrs

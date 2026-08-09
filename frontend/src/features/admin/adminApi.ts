@@ -193,6 +193,18 @@ export const adminApi = {
   refreshEventbriteAttendees,
   eventRegistrations: () =>
     apiJson<Array<DashboardRegistration & { id: number }>>("/api/admin/event-registrations"),
+  zohoRegistrations: () =>
+    apiJson<Array<DashboardRegistration & { id: number }>>("/api/admin/event-registrations?source=zoho"),
+  sendEventAccountInvite: (registration: Pick<DashboardRegistration, "id" | "source">) =>
+    apiJson<{
+      detail: string;
+      ipc_email: string;
+      account_created: boolean;
+      email_sent: boolean;
+    }>("/api/admin/event-registrations/send-account-invite", {
+      source: registration.source,
+      registration_id: String(registration.id),
+    }),
   resendEventConfirmation: (id: number) =>
     apiJson<{ sent: boolean; confirmation_email_status: "sent" | "failed" }>(`/api/admin/event-registrations/${id}/resend-confirmation`, {}),
   event: (id: number) => apiJson<AdminEvent>(`/api/admin/events/${id}`),

@@ -31,8 +31,8 @@ const shouldRenderCta = (
 ) => {
   if (!isMembershipApplicationCta(label)) return true;
   if (isAuthLoading) return false;
-  if (!user?.membership_active) return true;
-  return normaliseIdentifier(user.membership_grade) !== normaliseIdentifier(currentGrade);
+  if (user) return false;
+  return normaliseIdentifier(currentGrade) === "affipc";
 };
 
 function StepLink({ href, children }: { href: string; children: ReactNode }) {
@@ -344,6 +344,9 @@ export default function MembershipGradeTemplate({ data }: Props) {
                 <div className="mb-6 pb-6 border-b border-background-200/50">
                   <p className="text-sm text-foreground-500 mb-1">{data.howToApply.priceLabel}</p>
                   <p className="text-2xl font-heading font-bold text-background-950">{data.howToApply.priceValue} <span className="text-sm font-normal text-foreground-500">{data.howToApply.pricePeriod}</span></p>
+                  <p className="mt-3 text-xs leading-relaxed text-emerald-700">
+                    Confirmed IPC event attendees receive a 100% membership discount, reducing this fee to £0.
+                  </p>
                 </div>
                 {data.howToApply.employerNote && (
                   <div className="mb-6 p-4 bg-secondary-50 border border-secondary-200/60">
@@ -520,7 +523,7 @@ export default function MembershipGradeTemplate({ data }: Props) {
               { q: "How long does the application process take?", a: "Applications are typically reviewed within two to four weeks, depending on the completeness of your evidence and the grade being sought." },
               { q: "Can I upgrade my membership grade later?", a: "Yes. All grades are designed as a progressive pathway. Members may progress to higher grades when their experience and evidence meet the requirements." },
               { q: "What counts as acceptable evidence?", a: "Evidence includes your CV, professional statements, CPD records, work portfolios, case studies, training certificates and references. Specific requirements vary by grade." },
-              { q: "Is there a fee for membership?", a: `The first year of ${data.title} is complimentary. Renewal details will be confirmed before the end of your first year.` },
+              { q: "Is there a fee for membership?", a: `${data.title} costs £100 per year. Confirmed IPC event attendees receive a 100% discount, reducing the membership fee to £0.` },
               { q: "Do I need to be based in the UK?", a: "No. The Institute of Project Controls is an international body. Membership is open to project controls professionals wherever they are based." },
             ].map((faq, index) => (
               <div key={index} className={`reveal reveal-delay-${index + 1} bg-background-50 border border-background-200/60 overflow-hidden`}>

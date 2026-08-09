@@ -263,6 +263,58 @@ Institute of Project Controls
     )
 
 
+def send_event_account_invite_email(
+    *, recipient, name, event_name, ipc_email, reset_url
+):
+    safe_name = html.escape(name or "IPC event attendee")
+    safe_event_name = html.escape(event_name)
+    safe_ipc_email = html.escape(ipc_email)
+    safe_url = html.escape(reset_url, quote=True)
+    subject = "Create Your IPC Account Password"
+    text_body = f"""Hello {name or 'IPC event attendee'},
+
+Thank you for attending or registering for {event_name}.
+
+Your IPC account is ready.
+IPC Email: {ipc_email}
+
+Create your password using this secure, single-use link:
+{reset_url}
+
+This link expires in {settings.PASSWORD_RESET_EXPIRE_MINUTES} minutes.
+No password has been generated or sent to you.
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.6;max-width:620px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:26px">Your IPC account is ready</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Hello {safe_name},</p>
+          <p>Thank you for attending or registering for <strong>{safe_event_name}</strong>.</p>
+          <div style="background:#f4ece1;padding:16px 18px;margin:20px 0">
+            <p style="margin:0"><strong>IPC Email:</strong> {safe_ipc_email}</p>
+          </div>
+          <p><a href="{safe_url}" style="display:inline-block;background:#d79525;color:#0b0b0b;padding:12px 20px;text-decoration:none;font-weight:700">Create Password</a></p>
+          <p style="font-size:13px;color:#655d55">This secure link is single-use and expires in {settings.PASSWORD_RESET_EXPIRE_MINUTES} minutes.</p>
+          <p style="font-size:13px;color:#655d55">If the button does not work, copy this URL into your browser:<br><a href="{safe_url}">{safe_url}</a></p>
+          <p>No plain-text password has been generated or sent.</p>
+          <p>Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    _send_mime_message(
+        recipient=recipient,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+    )
+
+
 def send_membership_refusal_email(
     *, recipient, name, application_reference, membership_grade, reason
 ):

@@ -201,6 +201,7 @@ class EventRegistration(models.Model):
     )
     confirmation_email_sent_at = models.DateTimeField(null=True, blank=True)
     confirmation_email_error = models.TextField(blank=True)
+    account_invite_sent_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

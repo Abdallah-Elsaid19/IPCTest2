@@ -179,11 +179,20 @@ export interface DashboardRegistration {
   event_name: string;
   status: string;
   created_at: string;
-  source?: "ipc" | "eventbrite";
+  source?: "ipc" | "eventbrite" | "zoho";
   reference?: string;
   quantity?: number;
   ticket_name?: string;
   confirmation_email_status?: "pending" | "sent" | "failed";
+  contact_first_name?: string;
+  contact_last_name?: string;
+  contact_mobile?: string;
+  organisation?: string;
+  company?: string;
+  job_title?: string;
+  city?: string;
+  account_invite_sent_at?: string | null;
+  dietary_access_needs?: string;
 }
 
 export interface EventbriteAttendeeResponse {

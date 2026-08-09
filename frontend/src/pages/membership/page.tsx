@@ -210,9 +210,25 @@ export default function Membership() {
               Explore Membership Grades
             </h2>
             <p className="text-foreground-600 max-w-2xl mx-auto">
-              Click any grade to view full details, benefits, pricing and how to
-              apply.
+              Every membership grade has a standard annual price of £100. New
+              applicants begin with Affiliate membership and progress through
+              the IPC membership pathway.
             </p>
+          </div>
+          <div className="mx-auto mb-10 flex max-w-4xl flex-col gap-5 border border-primary-300 bg-primary-50/95 p-6 text-left shadow-sm sm:flex-row sm:items-center sm:justify-between md:p-8">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center bg-primary-500 text-background-950">
+                <i className="ri-percent-line text-xl" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-primary-800">Event attendee benefit</p>
+                <h3 className="mt-2 font-heading text-xl font-semibold text-background-950">Attend an IPC event and receive 100% off membership</h3>
+                <p className="mt-2 text-sm leading-relaxed text-foreground-700">The standard annual membership price is £100. After confirmed event attendance, your membership fee is reduced to £0.</p>
+              </div>
+            </div>
+            <Link to="/events" className="inline-flex shrink-0 items-center justify-center gap-2 bg-primary-500 px-5 py-3 text-sm font-semibold text-background-950 transition hover:bg-primary-600">
+              View events <i className="ri-arrow-right-line" aria-hidden="true" />
+            </Link>
           </div>
           {isLoading && (
             <div
@@ -271,10 +287,16 @@ export default function Membership() {
                     {grade.description}
                   </p>
 
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors group-hover:text-primary-700">
-                    View Details
-                    <i className="ri-arrow-right-line" />
-                  </span>
+                  <div className="mt-auto">
+                    <p className="mb-4 text-sm font-bold text-background-950">
+                      £100 <span className="font-normal text-foreground-500">per year</span>
+                    </p>
+
+                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors group-hover:text-primary-700">
+                      View Details
+                      <i className="ri-arrow-right-line" />
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -309,12 +331,12 @@ export default function Membership() {
         <div className="container-content">
           <div className="reveal max-w-2xl mx-auto text-center">
             <h3 className="font-heading text-2xl md:text-3xl font-semibold text-background-50 mb-4">
-              Choose your grade and apply online
+              Start your membership journey with Affiliate
             </h3>
             <p className="text-background-300 mb-8">
-              Each grade has a dedicated application matched to its evidence and
-              competence requirements. Select the grade that best reflects your
-              current career stage.
+              New applicants join as Affiliate members first. The remaining
+              grades form a progressive pathway based on professional evidence,
+              competence and contribution.
             </p>
             <div className="mt-8 grid grid-cols-1 gap-3 text-left sm:grid-cols-2">
               {gradeCards.map((grade) => (

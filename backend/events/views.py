@@ -6,6 +6,8 @@ from secrets import token_urlsafe
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured, ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.http import HttpResponse
 from django.http import Http404
 from django.db.models import Q
@@ -17,7 +19,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
+from requests import RequestException
 
+from accounts.graph_mail import GraphMailError
 from ipc_backend.email_branding import send_branded_mail as send_mail
 
 from .eventbrite import EventbriteError, exchange_code_for_token, get_authorization_url, save_connection
@@ -26,8 +30,10 @@ from .serializers import (
     AdminEventRegistrationSerializer, AdminEventSerializer, AdminEventVisibilitySerializer,
     EventRegistrationConfigSerializer, EventRegistrationCreateSerializer,
     EventPageContentSerializer, EventRegistrationDetailSerializer,
-    EventRegistrationSerializer, EventSerializer, ZohoFormWebhookSerializer,
+    EventAccountInviteSerializer, EventRegistrationSerializer, EventSerializer,
+    ZohoFormWebhookSerializer,
 )
+from .services.account_invite import send_event_account_invite
 from .services.registration import _unique_reference
 from .services.registration import create_registration
 from .services.registration_email import registration_urls, send_registration_confirmation
@@ -262,6 +268,7 @@ class AdminEventRegistrationViewSet(mixins.ListModelMixin, mixins.RetrieveModelM
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["reference", "event_name", "email", "name", "company"]
     ordering_fields = ["created_at", "event_name", "status", "quantity"]
+    throttle_scope = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -287,6 +294,101 @@ class AdminEventRegistrationViewSet(mixins.ListModelMixin, mixins.RetrieveModelM
             "sent": sent,
             "confirmation_email_status": registration.confirmation_email_status,
         }, status=status.HTTP_200_OK if sent else status.HTTP_502_BAD_GATEWAY)
+
+    @staticmethod
+    def _eventbrite_registration(external_id):
+        snapshot = EventbriteAttendeeSnapshot.objects.order_by("-synced_at").first()
+        attendees = snapshot.payload if snapshot and isinstance(snapshot.payload, list) else []
+        attendee = next(
+            (item for item in attendees if str(item.get("id")) == str(external_id)),
+            None,
+        )
+        if attendee is None:
+            return None
+        fingerprint = hashlib.sha256(str(external_id).encode("utf-8")).hexdigest()
+        idempotency_key = f"ebacct:{fingerprint}"
+        registration = EventRegistration.objects.filter(
+            idempotency_key=idempotency_key,
+        ).first()
+        if registration:
+            return registration
+        attendee_status = str(attendee.get("status") or "registered").lower()
+        if attendee_status == "cancelled":
+            registration_status = EventRegistration.Status.CANCELLED
+        elif attendee_status == "waitlisted":
+            registration_status = EventRegistration.Status.WAITLISTED
+        else:
+            registration_status = EventRegistration.Status.REGISTERED
+        return EventRegistration.objects.create(
+            event_name=str(attendee.get("event_name") or "Eventbrite event")[:220],
+            event_type=EventRegistration.EventType.OTHER,
+            name=str(attendee.get("name") or "Eventbrite attendee")[:160],
+            email=str(attendee.get("email") or "").strip(),
+            ticket_name=str(attendee.get("ticket_name") or "Eventbrite ticket")[:120],
+            quantity=max(1, int(attendee.get("quantity") or 1)),
+            status=registration_status,
+            reference=_unique_reference(),
+            idempotency_key=idempotency_key,
+            payment_provider="eventbrite",
+            payment_status=EventRegistration.PaymentStatus.NOT_REQUIRED,
+        )
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="send-account-invite",
+        throttle_classes=[ScopedRateThrottle],
+        throttle_scope="event_account_invite",
+    )
+    def send_account_invite(self, request):
+        serializer = EventAccountInviteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        source = serializer.validated_data["source"]
+        external_id = serializer.validated_data["registration_id"]
+        if source == "zoho":
+            registration = EventRegistration.objects.filter(
+                pk=external_id,
+                payment_provider="zoho_forms",
+            ).first()
+        else:
+            registration = self._eventbrite_registration(external_id)
+        if registration is None:
+            return Response(
+                {"detail": "The event registration could not be found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if not registration.email:
+            return Response(
+                {"email": ["This registration does not include an email address."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            validate_email(registration.email)
+        except DjangoValidationError:
+            return Response(
+                {"email": ["This registration does not include a valid email address."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        cooldown_key = f"ipc:event-account-invite:{registration.email.lower()}"
+        if cache.get(cooldown_key):
+            return Response(
+                {"detail": "An account invitation was sent recently. Please wait before sending it again."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        try:
+            outcome = send_event_account_invite(registration.pk)
+        except (GraphMailError, ImproperlyConfigured, RequestException):
+            return Response(
+                {"detail": "The IPC account was prepared, but the invitation email could not be sent. Check the server mail settings and try again."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        cache.set(cooldown_key, True, settings.EMAIL_COOLDOWN_MINUTES * 60)
+        return Response({
+            "detail": "IPC account invitation sent.",
+            "ipc_email": outcome.user.email,
+            "account_created": outcome.account_created,
+            "email_sent": True,
+        })
 
 
 class ZohoFormWebhookView(APIView):
