@@ -5,6 +5,7 @@ import {
   BookOpen,
   BrainCircuit,
   BriefcaseBusiness,
+  CalendarDays,
   Check,
   ChevronDown,
   CircleCheck,
@@ -44,6 +45,18 @@ const AI_SPOTLIGHT_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/2689471e91444b2a9db6670c172036e2.webp";
 const ALL_INCLUSIVE_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b4bc056cfa164feca8dc939778cc94c9.webp";
+const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T00:00:00+01:00");
+const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
+
+function getAnnouncementCountdown(now: number) {
+  const remaining = Math.max(0, ANNOUNCEMENT_TIME - now);
+  return [
+    { label: "Days", value: Math.floor(remaining / 86_400_000) },
+    { label: "Hours", value: Math.floor((remaining / 3_600_000) % 24) },
+    { label: "Minutes", value: Math.floor((remaining / 60_000) % 60) },
+    { label: "Seconds", value: Math.floor((remaining / 1_000) % 60) },
+  ];
+}
 
 const IPC_PARTNERSHIP_ICONS = [
   GraduationCap,
@@ -766,6 +779,8 @@ export default function ScholarshipsGateway() {
   const [fundingIndex, setFundingIndex] = useState(0);
   const [commitments, setCommitments] = useState<boolean[]>(content.commitment.items.map(() => false));
   const [commitmentResult, setCommitmentResult] = useState("");
+  const [countdownNow, setCountdownNow] = useState(() => Date.now());
+  const announcementCountdown = useMemo(() => getAnnouncementCountdown(countdownNow), [countdownNow]);
 
   const pathway = pathways.find((item) => item.id === pathwayId) ?? pathways[0];
   const selectedFunding = fundingOptions[Math.min(fundingIndex, Math.max(fundingOptions.length - 1, 0))];
@@ -775,6 +790,11 @@ export default function ScholarshipsGateway() {
       setPathwayId(pathways[0].id);
     }
   }, [pathwayId, pathways]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCountdownNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const structuredData = useMemo(
     () => [
@@ -867,22 +887,51 @@ export default function ScholarshipsGateway() {
             </div>
           </div>
 
-          <aside className="reveal relative border border-white/15 bg-white/[0.04] p-6 backdrop-blur-sm md:p-8">
-            <div className="flex items-center justify-between">
-              <p className="eyebrow text-primary-300">A coordinated route</p>
-              <Network className="text-[#9d87bd]" size={28} aria-hidden="true" />
-            </div>
-            <div className="mt-8 space-y-7">
-              <div>
-                <p className="font-mono text-xs text-primary-300">01 / IPC</p>
-                <h2 className="mt-2 text-xl">Scholarship and professional support</h2>
-                <p className="mt-2 text-sm leading-6 text-background-400">Bursaries, specialist-module support, pathway guidance, community and career development.</p>
+          <aside className="reveal relative overflow-hidden border border-white/15 bg-[#0d111b]/90 shadow-[0_28px_80px_rgba(0,0,0,.28)] backdrop-blur-sm" aria-label="IPC scholarship announcement countdown">
+            <div className="relative h-52 overflow-hidden sm:h-64 lg:h-72">
+              <img
+                src={IPC_HOME_OWL_IMAGE}
+                alt="IPC owl representing wisdom and foresight"
+                width={1920}
+                height={1280}
+                loading="eager"
+                className="h-full w-full object-cover object-[56%_43%]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#0d111b]" aria-hidden="true" />
+              <div className="absolute left-5 top-5 border border-primary-400/40 bg-black/65 px-3 py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-primary-200 backdrop-blur-sm">
+                Announcement countdown
               </div>
-              <div className="h-px bg-white/10" />
-              <div>
-                <p className="font-mono text-xs text-[#bca9d7]">02 / KENT BUSINESS COLLEGE</p>
-                <h2 className="mt-2 text-xl">Assessment, delivery and enrolment</h2>
-                <p className="mt-2 text-sm leading-6 text-background-400">Eligibility, funding assessment, teaching, coaching, assessment, learner support and certification.</p>
+            </div>
+
+            <div className="relative -mt-2 p-5 pt-0 sm:p-6 sm:pt-0 md:p-7 md:pt-0">
+              <div className="flex items-start justify-between gap-1.5 sm:gap-2" aria-label="Time remaining until the scholarship announcement">
+                {announcementCountdown.map((unit) => (
+                  <div key={unit.label} className="min-w-0 flex-1 text-center">
+                    <div className="flex justify-center gap-0.5 sm:gap-1" aria-label={`${String(unit.value).padStart(2, "0")} ${unit.label}`}>
+                      {String(unit.value).padStart(2, "0").split("").map((digit, index) => (
+                        <span
+                          key={`${unit.label}-${index}-${digit}`}
+                          className="countdown-flap relative grid h-16 w-7 shrink-0 place-items-center overflow-hidden rounded-[0.45rem] border border-primary-300/35 bg-[linear-gradient(180deg,#e9a737_0%,#db9325_49.4%,#ae620c_50.6%,#c57b18_100%)] shadow-[0_10px_24px_rgba(0,0,0,.3),inset_0_1px_0_rgba(255,255,255,.18)] sm:h-20 sm:w-9 lg:h-16 lg:w-7 xl:h-20 xl:w-10"
+                          aria-hidden="true"
+                        >
+                          <span className="countdown-digit countdown-digit-in !text-[2.1rem] sm:!text-[2.6rem] lg:!text-[2.1rem] xl:!text-[2.8rem]">{digit}</span>
+                          <span className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-px -translate-y-1/2 bg-black/40" />
+                          <span className="pointer-events-none absolute -left-px top-1/2 z-30 h-2 w-1 -translate-y-1/2 rounded-r-full border-y border-r border-white/40 bg-black" />
+                          <span className="pointer-events-none absolute -right-px top-1/2 z-30 h-2 w-1 -translate-y-1/2 rounded-l-full border-y border-l border-white/40 bg-black" />
+                        </span>
+                      ))}
+                    </div>
+                    <span className="mt-3 block truncate font-mono text-[7px] font-semibold uppercase tracking-[0.12em] text-primary-300 sm:text-[8px] sm:tracking-[0.18em]">
+                      {unit.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 border border-primary-400/35 bg-primary-400/[0.07] p-4 text-center sm:p-5">
+                <CalendarDays className="mx-auto text-primary-300" size={21} aria-hidden="true" />
+                <p className="mt-2.5 font-heading text-xl font-semibold text-white sm:text-2xl">12 August 2026</p>
+                <p className="mt-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.22em] text-background-400">Official announcement date</p>
               </div>
             </div>
           </aside>
