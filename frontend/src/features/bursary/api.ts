@@ -141,6 +141,7 @@ export type BursaryApplicationDetail = Record<string, unknown> & {
   country: string;
   organisation_name: string;
   currently_employed: boolean;
+  has_disability_or_health_condition: boolean;
   preferred_pathway: string;
   preferred_modules: string[];
   preferred_pathway_label: string;
@@ -157,6 +158,20 @@ export interface BursaryAdminQuery {
   dateFrom?: string;
   dateTo?: string;
   ordering?: string;
+}
+
+function bursaryAdminQueryParams(query: BursaryAdminQuery, includePage = true) {
+  const params = new URLSearchParams();
+  if (includePage && query.page && query.page > 1) params.set("page", String(query.page));
+  if (query.search) params.set("search", query.search);
+  if (query.status) params.set("status", query.status);
+  if (query.pathway) params.set("pathway", query.pathway);
+  if (query.employed) params.set("employed", query.employed);
+  if (query.country) params.set("country", query.country);
+  if (query.dateFrom) params.set("date_from", query.dateFrom);
+  if (query.dateTo) params.set("date_to", query.dateTo);
+  if (query.ordering) params.set("ordering", query.ordering);
+  return params;
 }
 
 export const moduleLabels: Record<string, string> = {
@@ -193,22 +208,18 @@ export const bursaryApi = {
       { method: "PATCH", requestSource: "BursaryApplicationResubmission" },
     ),
   list: (query: BursaryAdminQuery, signal?: AbortSignal) => {
-    const params = new URLSearchParams();
-    if (query.page && query.page > 1) params.set("page", String(query.page));
-    if (query.search) params.set("search", query.search);
-    if (query.status) params.set("status", query.status);
-    if (query.pathway) params.set("pathway", query.pathway);
-    if (query.employed) params.set("employed", query.employed);
-    if (query.country) params.set("country", query.country);
-    if (query.dateFrom) params.set("date_from", query.dateFrom);
-    if (query.dateTo) params.set("date_to", query.dateTo);
-    if (query.ordering) params.set("ordering", query.ordering);
+    const params = bursaryAdminQueryParams(query);
     const suffix = params.size ? `?${params.toString()}` : "";
     return apiJson<PaginatedBursaryApplications>(
       `/api/admin/bursary-applications${suffix}`,
       undefined,
       { signal, cache: "no-store", requestSource: "AdminBursaryApplications" },
     );
+  },
+  exportUrl: (query: BursaryAdminQuery) => {
+    const params = bursaryAdminQueryParams(query, false);
+    const suffix = params.size ? `?${params.toString()}` : "";
+    return `/api/admin/bursary-applications/export${suffix}`;
   },
   detail: (id: number, signal?: AbortSignal) =>
     apiJson<BursaryApplicationDetail>(

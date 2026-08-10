@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, LoaderCircle, Mail, Search, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Eye, LoaderCircle, Mail, Search, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -219,6 +219,16 @@ export default function AdminBursaryApplicationsPage() {
         eyebrow="Scholarships"
         title="Bursary & Scholarship Applications"
         description="Review learner applications, funding requests, module choices and mandatory declarations."
+        action={activeTab === "applications" ? (
+          <a
+            href={bursaryApi.exportUrl({ search: search.trim(), ...filters })}
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-black text-primary-800 shadow-sm transition-colors hover:border-primary-500 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+            aria-label="Download all matching bursary applications as a CSV file"
+          >
+            <Download size={16} aria-hidden="true" />
+            Download CSV
+          </a>
+        ) : undefined}
       />
       <div className="mt-7 inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-[#D8CCBD] bg-[#EDE3D7] p-1" role="tablist" aria-label="Bursary administration views">
         <button

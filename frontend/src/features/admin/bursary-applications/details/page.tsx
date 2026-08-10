@@ -9,6 +9,7 @@ import {
   type BursaryApplicationDetail,
   type BursaryStatus,
 } from "@/features/bursary/api";
+import { calculateBursaryFundingEstimate } from "@/features/bursary/pathways";
 import { notifications } from "@/lib/notifications";
 
 const statusOptions: Array<{ value: BursaryStatus; label: string }> = [
@@ -34,9 +35,11 @@ const formatDate = (value: unknown, includeTime = false) => {
     ? { dateStyle: "medium", timeStyle: "short" }
     : { dateStyle: "medium" }).format(parsed);
 };
-const formatCurrency = (value: unknown) => value === null || value === "" || value === undefined
-  ? "Not provided"
-  : new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+const formatGbp = (value: number) => new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+  maximumFractionDigits: 0,
+}).format(value);
 const safeExternalUrl = (value: unknown) => {
   try {
     const url = new URL(String(value));
@@ -74,7 +77,7 @@ function DetailGrid({
   fields: Array<{
     key: string;
     label: string;
-    format?: "date" | "datetime" | "currency" | "percent" | "boolean" | "url" | "multiline" | "restrictions" | "signature" | "file" | "image";
+    format?: "date" | "datetime" | "boolean" | "consent" | "choice" | "phone-country" | "url" | "multiline" | "signature" | "file" | "image";
     wide?: boolean;
   }>;
 }) {
@@ -82,20 +85,16 @@ function DetailGrid({
     const value = application[key];
     if (format === "date") return formatDate(value);
     if (format === "datetime") return formatDate(value, true);
-    if (format === "currency") return formatCurrency(value);
-    if (format === "percent") return value === null || value === undefined ? "Not provided" : `${Number(value).toLocaleString()}%`;
-    if (format === "boolean") return value === true ? "Accepted / Yes" : "Not accepted / No";
+    if (format === "boolean") return value === true ? "Yes" : "No";
+    if (format === "consent") return value === true ? "Accepted" : "Not accepted";
+    if (format === "choice") return value ? label(String(value)) : "Not provided";
+    if (format === "phone-country") {
+      const dialCode = application.phone_dial_code;
+      return [value, dialCode].filter(Boolean).join(" · ") || "Not provided";
+    }
     if (format === "url") {
       const url = safeExternalUrl(value);
       return url ? <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 break-all font-semibold text-primary-800 underline">{String(value)} <ExternalLink size={13} /></a> : "Not provided";
-    }
-    if (format === "restrictions") {
-      const values = Array.isArray(value) ? value : [];
-      return values.length ? (
-        <span className="flex flex-wrap gap-2">
-          {values.map((item) => <span key={String(item)} className="rounded-full bg-[#F6E8D2] px-2.5 py-1 text-xs font-semibold text-[#704707]">{label(String(item))}</span>)}
-        </span>
-      ) : "None recorded";
     }
     if (format === "signature") {
       const signature = typeof value === "string" && value.startsWith("data:image/png;base64,") ? value : "";
@@ -124,6 +123,46 @@ function DetailGrid({
         </div>
       ))}
     </dl>
+  );
+}
+
+function ModulePricing({ selectedModules }: { selectedModules: string[] }) {
+  const estimate = calculateBursaryFundingEstimate(selectedModules);
+  if (!estimate.lines.length) return null;
+
+  return (
+    <div className="mt-6 overflow-x-auto border border-[#E8DED2]">
+      <table className="w-full min-w-[700px] text-left text-sm">
+        <thead className="bg-[#F3EBE1] text-[10px] uppercase tracking-wider text-[#6F655B]">
+          <tr>
+            <th className="px-4 py-3">Module</th>
+            <th className="px-4 py-3 text-right">Module cost</th>
+            <th className="px-4 py-3 text-right">IPC Fund contribution</th>
+            <th className="px-4 py-3 text-right">Estimated amount you pay</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[#E8DED2] bg-white">
+          {estimate.lines.map((line) => (
+            <tr key={line.value}>
+              <td className="px-4 py-3 font-semibold text-[#332D27]">{line.title}</td>
+              <td className="px-4 py-3 text-right">{formatGbp(line.costGbp)}</td>
+              <td className="px-4 py-3 text-right text-emerald-700">
+                -{formatGbp(line.discountGbp)} ({line.supportPercentage}%)
+              </td>
+              <td className="px-4 py-3 text-right font-bold text-primary-800">{formatGbp(line.amountPayableGbp)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot className="border-t-2 border-[#D7C9B8] bg-[#FAF5EE] font-black text-[#241F1A]">
+          <tr>
+            <th className="px-4 py-3">Total</th>
+            <td className="px-4 py-3 text-right">{formatGbp(estimate.totalCostGbp)}</td>
+            <td className="px-4 py-3 text-right text-emerald-700">-{formatGbp(estimate.totalDiscountGbp)}</td>
+            <td className="px-4 py-3 text-right text-primary-800">{formatGbp(estimate.totalPayableGbp)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   );
 }
 
@@ -256,78 +295,67 @@ export default function AdminBursaryApplicationDetailsPage() {
       <div className="mt-6 space-y-5">
         <DetailSection title="1. Personal Details">
           <DetailGrid application={application} fields={[
-            { key: "title", label: "Title" }, { key: "first_name", label: "First name" },
-            { key: "membership_reference", label: "Membership reference" },
-            { key: "last_name", label: "Last name" }, { key: "preferred_name", label: "Preferred name" },
+            { key: "first_name", label: "First name" },
+            { key: "last_name", label: "Last name" },
             { key: "date_of_birth", label: "Date of birth", format: "date" }, { key: "email", label: "Email" },
-            { key: "mobile_phone_e164", label: "Mobile (E.164)" }, { key: "phone_country_iso2", label: "Phone country" },
-            { key: "phone_dial_code", label: "Calling code" }, { key: "phone_national_number", label: "National number" },
+            { key: "phone_country_iso2", label: "Country calling code", format: "phone-country" },
+            { key: "phone_national_number", label: "Mobile phone number" },
             { key: "home_address_line_1", label: "Home address line 1" }, { key: "home_address_line_2", label: "Home address line 2" },
             { key: "town_or_city", label: "Town or city" }, { key: "county_or_region", label: "County or region" },
             { key: "postcode", label: "Postcode" }, { key: "country", label: "Country" },
-            { key: "linkedin_profile_url", label: "LinkedIn profile", format: "url", wide: true },
-            { key: "currently_employed", label: "Currently employed", format: "boolean" },
-            { key: "current_professional_status", label: "Professional status" },
-            { key: "preferred_contact_method", label: "Preferred contact method" },
+            { key: "linkedin_profile_url", label: "LinkedIn profile URL", format: "url", wide: true },
+            { key: "current_professional_status", label: "Current job title, professional status or area of practice" },
+            { key: "currently_employed", label: "Currently employed by an organisation", format: "boolean" },
+            { key: "preferred_contact_method", label: "Preferred contact method", format: "choice" },
           ]} />
         </DetailSection>
         <DetailSection title="2. Organisation Details">
-          <DetailGrid application={application} fields={[
-            { key: "organisation_not_applicable", label: "Not applicable", format: "boolean" },
-            { key: "organisation_name", label: "Organisation name" }, { key: "organisation_website", label: "Website", format: "url" },
-            { key: "industry_or_sector", label: "Industry or sector" }, { key: "organisation_size", label: "Organisation size" },
-            { key: "organisation_address_line_1", label: "Address line 1" }, { key: "organisation_address_line_2", label: "Address line 2" },
-            { key: "organisation_town_or_city", label: "Town or city" }, { key: "organisation_county_or_region", label: "County or region" },
-            { key: "organisation_postcode", label: "Postcode" }, { key: "organisation_country", label: "Country" },
-            { key: "job_title", label: "Job title" }, { key: "department_or_business_unit", label: "Department / unit" },
-            { key: "employment_start_date", label: "Employment start date", format: "date" }, { key: "employment_type", label: "Employment type" },
-            { key: "employer_awareness", label: "Employer awareness" },
-            { key: "pathway_role_support", label: "How module supports role", format: "multiline", wide: true },
-          ]} />
+          {application.currently_employed ? (
+            <DetailGrid application={application} fields={[
+              { key: "organisation_name", label: "Organisation name" }, { key: "organisation_website", label: "Organisation website", format: "url" },
+              { key: "industry_or_sector", label: "Industry or sector" }, { key: "organisation_size", label: "Organisation size" },
+              { key: "organisation_address_line_1", label: "Organisation address line 1" }, { key: "organisation_address_line_2", label: "Organisation address line 2" },
+              { key: "organisation_town_or_city", label: "Town or city" }, { key: "organisation_county_or_region", label: "County or region" },
+              { key: "organisation_postcode", label: "Postcode" }, { key: "organisation_country", label: "Country" },
+              { key: "job_title", label: "Your job title" }, { key: "department_or_business_unit", label: "Department or business unit" },
+              { key: "employment_start_date", label: "Employment start date", format: "date" }, { key: "employment_type", label: "Employment type" },
+              { key: "pathway_role_support", label: "How will the selected module support your current role and organisation?", format: "multiline", wide: true },
+            ]} />
+          ) : (
+            <p className="text-sm text-[#756B61]">Not applicable — the applicant selected that they are not currently employed.</p>
+          )}
         </DetailSection>
         <DetailSection title="3. Emergency Contact and Identification">
           <DetailGrid application={application} fields={[
             { key: "emergency_contact_full_name", label: "Emergency contact full name" },
-            { key: "emergency_contact_relationship", label: "Relationship" },
-            { key: "emergency_contact_email", label: "Emergency contact email" },
-            { key: "emergency_contact_phone", label: "Emergency contact phone" },
-            { key: "has_disability_or_health_condition", label: "Disability, health problem or learning difficulty", format: "boolean" },
-            { key: "health_problem_categories", label: "Relevant categories", format: "restrictions" },
-            { key: "primary_health_problem", label: "Primary health problem / support need" },
-            { key: "identity_document", label: "Passport / proof of identification", format: "file", wide: true },
-            { key: "applicant_photo", label: "Applicant photo", format: "image", wide: true },
+            { key: "emergency_contact_email", label: "Emergency contact email address" },
+            { key: "emergency_contact_phone", label: "Emergency contact phone number" },
+            { key: "identity_document", label: "Proof of identification", format: "file", wide: true },
+            { key: "applicant_photo", label: "Your photo", format: "image", wide: true },
+            { key: "has_disability_or_health_condition", label: "Long-term disability, health problem or learning difficulty", format: "boolean" },
+            ...(application.has_disability_or_health_condition ? [{
+              key: "primary_health_problem",
+              label: "Additional support required to complete the course",
+              format: "multiline" as const,
+              wide: true,
+            }] : []),
           ]} />
         </DetailSection>
         <DetailSection title="4. Module Selection">
           <DetailGrid application={application} fields={[
-            { key: "preferred_pathway_label", label: "Selected modules" },
-            { key: "professional_memberships_or_certifications", label: "Memberships / certifications", format: "multiline", wide: true },
-            { key: "relevant_experience", label: "Relevant experience", format: "multiline", wide: true },
-            { key: "pathway_fit_reason", label: "Reason for requesting an IPC bursary", format: "multiline", wide: true },
+            { key: "preferred_pathway_label", label: "Preferred modules", wide: true },
           ]} />
+          <ModulePricing selectedModules={application.preferred_modules} />
         </DetailSection>
         <DetailSection title="5. Mandatory Terms and Consents">
           <DetailGrid application={application} fields={[
-            { key: "mandatory_terms_accepted", label: "All mandatory bursary terms", format: "boolean" },
-            { key: "general_marketing_consent", label: "Optional general marketing", format: "boolean" },
-            { key: "terms_accepted_at", label: "Terms accepted", format: "datetime" },
+            { key: "mandatory_terms_accepted", label: "Learner terms and mandatory bursary commitments", format: "consent", wide: true },
           ]} />
         </DetailSection>
         <DetailSection title="6. Review and Declaration">
           <DetailGrid application={application} fields={[
-            { key: "section_1_complete", label: "Section 1 confirmed", format: "boolean" },
-            { key: "section_2_complete_or_not_applicable", label: "Section 2 confirmed", format: "boolean" },
-            { key: "section_3_complete", label: "Section 3 confirmed", format: "boolean" },
-            { key: "section_4_complete", label: "Section 4 confirmed", format: "boolean" },
-            { key: "section_5_complete", label: "Section 5 confirmed", format: "boolean" },
-            { key: "information_accurate_declaration", label: "Information accurate", format: "boolean" },
-            { key: "no_award_guarantee_declaration", label: "No award guarantee", format: "boolean" },
-            { key: "pathway_terms_declaration", label: "Module terms", format: "boolean" },
-            { key: "processing_consent_declaration", label: "Processing consent", format: "boolean" },
-            { key: "applicant_identity_declaration", label: "Applicant identity", format: "boolean" },
             { key: "date_signed", label: "Date signed", format: "date" },
             { key: "electronic_signature", label: "Drawn signature", format: "signature", wide: true },
-            { key: "declarations_accepted_at", label: "Declarations accepted", format: "datetime" },
           ]} />
         </DetailSection>
       </div>

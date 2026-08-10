@@ -20,7 +20,7 @@ type FormValue = string | boolean | string[];
 const personalFields: ApplicationField[] = [
   { name: "first_name", label: "First name", type: "text", required: true },
   { name: "last_name", label: "Last name", type: "text", required: true },
-  { name: "username", label: "Username", type: "text", required: true, placeholder: "e.g. abdoelsaid368", help: "3-30 lowercase letters, numbers, dots, underscores or hyphens." },
+  { name: "username", label: "Username", type: "text", required: true, help: "3-30 lowercase letters, numbers, dots, underscores or hyphens." },
   { name: "email", label: "Email address", type: "email", required: true },
   {
     name: "phone",

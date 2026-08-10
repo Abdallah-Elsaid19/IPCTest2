@@ -383,7 +383,6 @@ export function EmergencyInformationStep() {
 
   useEffect(() => {
     if (hasSupportNeed === false) {
-      setValue("emergencyInformation.healthProblemCategories", [], { shouldDirty: true, shouldValidate: false });
       setValue("emergencyInformation.primaryHealthProblem", "", { shouldDirty: true, shouldValidate: false });
     }
   }, [hasSupportNeed, setValue]);

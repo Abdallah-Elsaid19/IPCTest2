@@ -43,8 +43,6 @@ function validValues(): BursaryApplicationFormValues {
   });
   Object.assign(values.pathwaySelection, {
     preferredModules: ["ai", "pmp"],
-    relevantExperience: "Five years in project planning and cost control.",
-    pathwayFitReason: "IPC support would make this module accessible to me.",
   });
   Object.assign(values.termsAndConsents, {
     mandatoryTermsAccepted: true,
@@ -108,14 +106,6 @@ describe("bursary application validation", () => {
     const values = validValues();
     values.pathwaySelection.preferredModules = [];
     expect(bursaryApplicationSchema.safeParse(values).success).toBe(false);
-  });
-
-  it("does not require the removed module-selection questions", () => {
-    const values = validValues();
-    values.pathwaySelection.professionalMembershipsOrCertifications = "";
-    values.pathwaySelection.relevantExperience = "";
-    values.pathwaySelection.pathwayFitReason = "";
-    expect(bursaryApplicationSchema.safeParse(values).success).toBe(true);
   });
 
   it("offers the published bursary modules", () => {

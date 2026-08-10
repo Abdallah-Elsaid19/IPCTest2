@@ -179,16 +179,6 @@ class BursaryEmergencyInformationSerializer(serializers.Serializer):
     emergencyContactEmail = serializers.EmailField(max_length=254)
     emergencyContactPhone = serializers.RegexField(r"^\+?[\d\s().-]{7,40}$", max_length=40)
     hasDisabilityOrHealthCondition = serializers.BooleanField()
-    healthProblemCategories = serializers.ListField(
-        child=serializers.ChoiceField(choices=[
-            "physical_disability", "sensory_impairment", "mental_health",
-            "long_term_health_condition", "learning_difficulty",
-            "neurodivergence", "other",
-        ]),
-        required=False,
-        allow_empty=True,
-        max_length=7,
-    )
     primaryHealthProblem = serializers.CharField(required=False, allow_blank=True, max_length=2000)
 
     def validate(self, attrs):
@@ -197,9 +187,7 @@ class BursaryEmergencyInformationSerializer(serializers.Serializer):
                 raise serializers.ValidationError({
                     "primaryHealthProblem": "Tell us about the support or adjustments you may need.",
                 })
-            attrs["healthProblemCategories"] = []
         else:
-            attrs["healthProblemCategories"] = []
             attrs["primaryHealthProblem"] = ""
         return attrs
 
@@ -211,9 +199,6 @@ class BursaryPathwaySelectionSerializer(serializers.Serializer):
         ),
         allow_empty=False,
     )
-    professionalMembershipsOrCertifications = serializers.CharField(required=False, allow_blank=True, max_length=8000)
-    relevantExperience = serializers.CharField(required=False, allow_blank=True, default="", max_length=12000)
-    pathwayFitReason = serializers.CharField(required=False, allow_blank=True, default="", max_length=12000)
 
     def validate_preferredModules(self, modules):
         if len(modules) != len(set(modules)):
@@ -223,7 +208,6 @@ class BursaryPathwaySelectionSerializer(serializers.Serializer):
 
 class BursaryTermsSerializer(serializers.Serializer):
     mandatoryTermsAccepted = serializers.BooleanField()
-    generalMarketingConsent = serializers.BooleanField(default=False, required=False)
 
 
 class BursaryReviewSerializer(serializers.Serializer):
@@ -287,18 +271,13 @@ PUBLIC_SECTION_FIELD_MAP = {
         "emergencyContactEmail": "emergency_contact_email",
         "emergencyContactPhone": "emergency_contact_phone",
         "hasDisabilityOrHealthCondition": "has_disability_or_health_condition",
-        "healthProblemCategories": "health_problem_categories",
         "primaryHealthProblem": "primary_health_problem",
     },
     "pathwaySelection": {
         "preferredModules": "preferred_modules",
-        "professionalMembershipsOrCertifications": "professional_memberships_or_certifications",
-        "relevantExperience": "relevant_experience",
-        "pathwayFitReason": "pathway_fit_reason",
     },
     "termsAndConsents": {
         "mandatoryTermsAccepted": "mandatory_terms_accepted",
-        "generalMarketingConsent": "general_marketing_consent",
     },
     "reviewAndDeclaration": {
         "dateSigned": "date_signed",
@@ -589,7 +568,35 @@ class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BursaryApplication
-        fields = "__all__"
+        fields = [
+            # Dashboard workflow metadata.
+            "id", "application_reference", "status", "status_label",
+            "submitted_at", "updated_at", "assigned_reviewer",
+            "assigned_reviewer_name", "reviewer_internal_notes", "status_history",
+            # Section 1: Personal Details.
+            "first_name", "last_name", "date_of_birth", "email",
+            "phone_country_iso2", "phone_dial_code", "phone_national_number",
+            "mobile_phone_e164", "home_address_line_1", "home_address_line_2",
+            "town_or_city", "county_or_region", "postcode", "country",
+            "linkedin_profile_url", "currently_employed",
+            "current_professional_status", "preferred_contact_method",
+            # Section 2: Organisation Details.
+            "organisation_not_applicable", "organisation_name",
+            "organisation_website", "industry_or_sector",
+            "organisation_address_line_1", "organisation_address_line_2",
+            "organisation_town_or_city", "organisation_county_or_region",
+            "organisation_postcode", "organisation_country", "organisation_size",
+            "job_title", "department_or_business_unit", "employment_start_date",
+            "employment_type", "pathway_role_support",
+            # Section 3: Emergency Contact and Identification.
+            "emergency_contact_full_name", "emergency_contact_email",
+            "emergency_contact_phone", "identity_document", "applicant_photo",
+            "has_disability_or_health_condition", "primary_health_problem",
+            # Sections 4-6: Module, consent, and signature.
+            "preferred_modules", "preferred_pathway_label",
+            "mandatory_terms_accepted", "date_signed", "electronic_signature",
+        ]
+        read_only_fields = fields
 
     def get_assigned_reviewer_name(self, application):
         user = application.assigned_reviewer

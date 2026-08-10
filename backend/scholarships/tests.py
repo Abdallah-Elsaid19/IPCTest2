@@ -1,4 +1,6 @@
 import base64
+import csv
+import io
 import json
 from unittest.mock import patch
 
@@ -741,6 +743,24 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(listing.data["summary"]["submitted"], 1)
         detail = self.client.get(f"/api/admin/bursary-applications/{application_id}")
         self.assertEqual(detail.status_code, 200, detail.data)
+        self.assertIn("first_name", detail.data)
+        self.assertIn("preferred_modules", detail.data)
+        self.assertIn("electronic_signature", detail.data)
+        for legacy_or_internal_field in (
+            "title",
+            "preferred_name",
+            "emergency_contact_relationship",
+            "health_problem_categories",
+            "professional_memberships_or_certifications",
+            "relevant_experience",
+            "pathway_fit_reason",
+            "general_marketing_consent",
+            "terms_accepted_at",
+            "section_1_complete",
+            "information_accurate_declaration",
+            "declarations_accepted_at",
+        ):
+            self.assertNotIn(legacy_or_internal_field, detail.data)
 
         updated = self.client.patch(
             f"/api/admin/bursary-applications/{application_id}/status",
@@ -755,6 +775,31 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(updated.data["status"], "under_review")
         self.assertEqual(updated.data["assigned_reviewer"], self.staff.pk)
         self.assertEqual(updated.data["status_history"][0]["previous_status"], "submitted")
+
+    def test_dashboard_csv_export_contains_all_current_form_data_and_respects_filters(self):
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+        export_url = "/api/admin/bursary-applications/export?status=submitted&country=United%20Kingdom"
+
+        self.assertEqual(self.client.get(export_url).status_code, 403)
+        self.client.force_authenticate(self.staff)
+        response = self.client.get(export_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("bursary-applications-", response["Content-Disposition"])
+        rows = list(csv.DictReader(io.StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["Application reference"], created.data["applicationReference"])
+        self.assertEqual(row["First name"], "Amina")
+        self.assertEqual(row["Preferred modules"], "AI, PMP")
+        self.assertEqual(row["Total module cost (GBP)"], "12000")
+        self.assertEqual(row["IPC Fund contribution (GBP)"], "8000")
+        self.assertEqual(row["Estimated amount applicant pays (GBP)"], "4000")
+        self.assertIn("Proof of identification provided", row)
+        self.assertIn("Electronic signature provided", row)
+        self.assertNotIn("General marketing consent", row)
 
     @patch("scholarships.views.send_graph_bursary_approval_email")
     def test_approval_updates_member_panel_and_sends_one_approval_email(self, send_approval_email):

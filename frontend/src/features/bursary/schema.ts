@@ -44,16 +44,6 @@ export const pathwayValues = [
   "pmo",
 ] as const;
 
-export const healthProblemCategoryValues = [
-  "physical_disability",
-  "sensory_impairment",
-  "mental_health",
-  "long_term_health_condition",
-  "learning_difficulty",
-  "neurodivergence",
-  "other",
-] as const;
-
 const existingOrIdentityDocument = z.union([
   z.literal("existing"),
   requiredIdentityDocumentSchema,
@@ -135,15 +125,11 @@ export const bursaryApplicationSchema = z.object({
     identityDocument: existingOrIdentityDocument,
     applicantPhoto: existingOrApplicantPhoto,
     hasDisabilityOrHealthCondition: z.boolean({ error: "Select Yes or No." }),
-    healthProblemCategories: z.array(z.enum(healthProblemCategoryValues)),
     primaryHealthProblem: optionalText(2000),
   }),
   pathwaySelection: z.object({
     preferredModules: z.array(z.enum(pathwayValues))
       .min(1, "Select at least one preferred module."),
-    professionalMembershipsOrCertifications: optionalText(),
-    relevantExperience: optionalText(),
-    pathwayFitReason: optionalText(),
   }),
   termsAndConsents: z.object({
     mandatoryTermsAccepted: accepted("Accept all mandatory terms before continuing."),
@@ -252,12 +238,10 @@ export const defaultBursaryApplicationValues: BursaryApplicationFormValues = {
     identityDocument: undefined as unknown as File,
     applicantPhoto: "",
     hasDisabilityOrHealthCondition: undefined as unknown as boolean,
-    healthProblemCategories: [], primaryHealthProblem: "",
+    primaryHealthProblem: "",
   },
   pathwaySelection: {
     preferredModules: [],
-    professionalMembershipsOrCertifications: "",
-    relevantExperience: "", pathwayFitReason: "",
   },
   termsAndConsents: {
     mandatoryTermsAccepted: false as true,
