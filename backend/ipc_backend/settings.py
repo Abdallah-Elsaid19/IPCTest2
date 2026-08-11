@@ -33,7 +33,7 @@ INSTALLED_APPS = [
     "newsletter",
     "media_library",
     "clubs",
-    "scholarships",
+    "scholarships.apps.ScholarshipsConfig",
     "sponsorship",
     "about",
     "home",
