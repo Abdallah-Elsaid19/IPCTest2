@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, Eye, LoaderCircle, Mail, Search, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, LoaderCircle, Mail, Search, Send, Table2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -220,14 +220,23 @@ export default function AdminBursaryApplicationsPage() {
         title="Bursary & Scholarship Applications"
         description="Review learner applications, funding requests, module choices and mandatory declarations."
         action={activeTab === "applications" ? (
-          <a
-            href={bursaryApi.exportUrl({ search: search.trim(), ...filters })}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-black text-primary-800 shadow-sm transition-colors hover:border-primary-500 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
-            aria-label="Download all matching bursary applications as a CSV file"
-          >
-            <Download size={16} aria-hidden="true" />
-            Download CSV
-          </a>
+          result?.google_sheet_url ? (
+            <a
+              href={result.google_sheet_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-black text-primary-800 shadow-sm transition-colors hover:border-primary-500 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+              aria-label="Open the live Bursary applications Google Sheet"
+            >
+              <Table2 size={16} aria-hidden="true" />
+              Open Google Sheet
+            </a>
+          ) : (
+            <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-[#F5EFE7] px-4 text-xs font-bold text-[#756B61]" title="Add the Google Sheet ID and service-account credentials to the backend configuration.">
+              <Table2 size={16} aria-hidden="true" />
+              Google Sheet setup pending
+            </span>
+          )
         ) : undefined}
       />
       <div className="mt-7 inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-[#D8CCBD] bg-[#EDE3D7] p-1" role="tablist" aria-label="Bursary administration views">

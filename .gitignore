@@ -38,3 +38,5 @@ dist-server/
 .env.*
 !backend/.env.example
 frontend/.env.example
+backend/.secrets/
+*service-account*.json

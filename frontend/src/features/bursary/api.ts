@@ -105,6 +105,7 @@ export interface PaginatedBursaryApplications {
   previous: string | null;
   results: BursaryApplicationListItem[];
   summary: BursarySummary;
+  google_sheet_url: string;
 }
 
 export interface BursaryStatusHistory {

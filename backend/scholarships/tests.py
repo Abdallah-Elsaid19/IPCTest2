@@ -7,6 +7,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -18,6 +19,10 @@ from .dashboard_defaults import (
     default_gateway_content,
     default_module_offers,
     default_pathway_pages,
+)
+from .bursary_export import (
+    BURSARY_GOOGLE_SHEET_HEADERS,
+    bursary_google_sheet_row,
 )
 from .models import BursaryApplication, ScholarshipGatewayContent, ScholarshipPathwaysContent
 
@@ -739,6 +744,7 @@ class BursaryApplicationApiTests(APITestCase):
         self.client.force_authenticate(self.staff)
         listing = self.client.get("/api/admin/bursary-applications")
         self.assertEqual(listing.status_code, 200, listing.data)
+        self.assertEqual(listing.data["google_sheet_url"], "")
         self.assertEqual(listing.data["count"], 1)
         self.assertEqual(listing.data["summary"]["submitted"], 1)
         detail = self.client.get(f"/api/admin/bursary-applications/{application_id}")
@@ -776,6 +782,28 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(updated.data["assigned_reviewer"], self.staff.pk)
         self.assertEqual(updated.data["status_history"][0]["previous_status"], "submitted")
 
+    @override_settings(BURSARY_GOOGLE_SHEETS_SPREADSHEET_ID="sheet-123")
+    def test_dashboard_returns_configured_google_sheet_url(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.get("/api/admin/bursary-applications")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(
+            response.data["google_sheet_url"],
+            "https://docs.google.com/spreadsheets/d/sheet-123/edit",
+        )
+
+    @override_settings(
+        BURSARY_GOOGLE_SHEETS_ENABLED=True,
+        BURSARY_GOOGLE_SHEETS_SPREADSHEET_ID="sheet-123",
+        GOOGLE_SERVICE_ACCOUNT_JSON="{}",
+    )
+    @patch("scholarships.signals.sync_bursary_google_sheet_safely")
+    def test_application_commit_schedules_automatic_google_sheet_sync(self, sync_sheet):
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.submit_bursary()
+        self.assertEqual(response.status_code, 201, response.data)
+        sync_sheet.assert_called_once_with()
+
     def test_dashboard_csv_export_contains_all_current_form_data_and_respects_filters(self):
         created = self.submit_bursary()
         self.assertEqual(created.status_code, 201, created.data)
@@ -796,10 +824,42 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(row["Preferred modules"], "AI, PMP")
         self.assertEqual(row["Total module cost (GBP)"], "12000")
         self.assertEqual(row["IPC Fund contribution (GBP)"], "8000")
-        self.assertEqual(row["Estimated amount applicant pays (GBP)"], "4000")
+        self.assertEqual(row["Estimated amount applicant pays (GBP)"], 4000)
         self.assertIn("Proof of identification provided", row)
         self.assertIn("Electronic signature provided", row)
         self.assertNotIn("General marketing consent", row)
+
+    def test_google_sheet_contains_only_the_requested_dashboard_fields(self):
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+        application = BursaryApplication.objects.get(pk=created.data["id"])
+
+        row = dict(zip(BURSARY_GOOGLE_SHEET_HEADERS, bursary_google_sheet_row(application)))
+
+        self.assertEqual(
+            list(row),
+            [
+                "First name",
+                "Last name",
+                "Date of birth",
+                "Email",
+                "Country",
+                "Organisation name",
+                "Job title",
+                "Employment type",
+                "Preferred modules",
+                "Estimated amount applicant pays (GBP)",
+                "Long-term disability, health problem or learning difficulty",
+                "Additional support required",
+            ],
+        )
+        self.assertEqual(row["First name"], "Amina")
+        self.assertEqual(row["Preferred modules"], "AI, PMP")
+        self.assertEqual(row["Estimated amount applicant pays (GBP)"], "4000")
+        self.assertEqual(
+            row["Long-term disability, health problem or learning difficulty"],
+            "No",
+        )
 
     @patch("scholarships.views.send_graph_bursary_approval_email")
     def test_approval_updates_member_panel_and_sends_one_approval_email(self, send_approval_email):
