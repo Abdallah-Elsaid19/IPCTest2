@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/seo/SEO";
 import { apiJson } from "@/lib/api";
 
-const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T00:00:00+01:00");
+const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
 
 type CountdownUnit = {
