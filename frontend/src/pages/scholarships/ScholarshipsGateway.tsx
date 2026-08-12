@@ -45,7 +45,7 @@ const AI_SPOTLIGHT_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/2689471e91444b2a9db6670c172036e2.webp";
 const ALL_INCLUSIVE_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b4bc056cfa164feca8dc939778cc94c9.webp";
-const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T00:00:00+01:00");
+const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
 
 function getAnnouncementCountdown(now: number) {
