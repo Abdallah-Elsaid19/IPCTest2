@@ -94,7 +94,7 @@ def bursary_payload_from_request(request):
     return payload
 
 
-def deliver_bursary_approval_email(application_id):
+def deliver_bursary_approval_email(application_id, message=""):
     application = BursaryApplication.objects.filter(pk=application_id).first()
     if application is None or application.approval_email_sent_at is not None:
         return
@@ -106,6 +106,7 @@ def deliver_bursary_approval_email(application_id):
             name=recipient_name,
             application_reference=application.application_reference,
             pathway=application.get_bursary_selection_display(),
+            message=message,
         )
     except GraphMailError:
         logger.exception(
@@ -737,7 +738,8 @@ class AdminBursaryApplicationViewSet(
                 and application.approval_email_sent_at is None
             ):
                 transaction.on_commit(
-                    lambda application_id=application.pk: deliver_bursary_approval_email(application_id)
+                    lambda application_id=application.pk, message=internal_reason:
+                        deliver_bursary_approval_email(application_id, message)
                 )
             if (
                 new_status == BursaryApplication.Status.REJECTED

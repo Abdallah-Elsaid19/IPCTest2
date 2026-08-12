@@ -6,7 +6,7 @@ from django.core.mail import send_mail as django_send_mail
 
 DEFAULT_IPC_EMAIL_LOGO_URL = (
     "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/"
-    "e6e47869fdd1459f891ad4c5852798c5.png"
+    "6a97d877629743568d5134c4ff2255b8.png"
 )
 
 
@@ -20,7 +20,7 @@ def ipc_email_logo_markup():
         f'<a href="{home_url}" style="display:inline-block;text-decoration:none">'
         f'<img src="{logo_url}" alt="Institute of Project Controls" width="170" '
         'style="display:block;width:170px;max-width:100%;height:auto;border:0;'
-        'background:#ffffff;padding:8px 12px;border-radius:4px">'
+        'background:transparent">'
         "</a>"
     )
 

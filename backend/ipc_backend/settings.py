@@ -213,7 +213,7 @@ IPC_EMAIL_LOGO_URL = env(
     "IPC_EMAIL_LOGO_URL",
     default=(
         "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/"
-        "e6e47869fdd1459f891ad4c5852798c5.png"
+        "6a97d877629743568d5134c4ff2255b8.png"
     ),
 )
 IPC_ACCOUNT_EMAIL_DOMAIN = env("IPC_ACCOUNT_EMAIL_DOMAIN", default="ipc.com")

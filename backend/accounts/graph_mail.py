@@ -370,10 +370,18 @@ def send_bursary_approval_email(
     name,
     application_reference,
     pathway,
+    message="",
 ):
     safe_name = html.escape(name or "IPC member")
     safe_reference = html.escape(application_reference)
     safe_pathway = html.escape(pathway)
+    safe_message = html.escape(message).replace("\n", "<br>")
+    text_message = f"\nMessage from IPC:\n{message}\n" if message else ""
+    html_message = (
+        f'<p><strong>Message from IPC:</strong></p><p>{safe_message}</p>'
+        if message
+        else ""
+    )
     subject = "Your IPC bursary application has been approved"
     text_body = f"""Dear {name or 'IPC member'},
 
@@ -381,6 +389,7 @@ We are pleased to confirm that your IPC bursary application has been approved.
 
 Application reference: {application_reference}
 Module: {pathway}
+{text_message}
 
 The IPC team will contact you with the next steps.
 
@@ -400,6 +409,7 @@ Institute of Project Controls
             <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
             <p style="margin:0"><strong>Module:</strong> {safe_pathway}</p>
           </div>
+          {html_message}
           <p>The IPC team will contact you with the next steps.</p>
           <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
         </div>

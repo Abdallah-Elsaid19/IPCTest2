@@ -397,6 +397,8 @@ export default function AdminBursaryApplicationDetailsPage() {
             <label className="mt-4 block text-sm font-semibold">
               {nextStatus === "rejected"
                 ? "Rejection reason sent to the applicant *"
+                : nextStatus === "approved"
+                  ? "Message sent to the applicant (optional)"
                 : nextStatus === "needs_information"
                   ? "Information requested from the applicant *"
                   : "Internal reason or note"}
@@ -408,6 +410,8 @@ export default function AdminBursaryApplicationDetailsPage() {
                 required={nextStatus === "rejected" || nextStatus === "needs_information"}
                 placeholder={nextStatus === "rejected"
                   ? "Explain why the application was rejected."
+                  : nextStatus === "approved"
+                    ? "Add any approval details or next steps for the applicant."
                   : nextStatus === "needs_information"
                     ? "Explain clearly what information the applicant should update."
                     : ""}
@@ -415,9 +419,11 @@ export default function AdminBursaryApplicationDetailsPage() {
               />
             </label>
             <p className="mt-4 rounded-xl bg-[#F6E8D2] p-3 text-xs leading-5 text-[#704707]">
-              {nextStatus === "rejected" || nextStatus === "needs_information"
-                ? "This message will be included in the email and the member-panel notification sent to the applicant."
-                : "This changes review status only. The applicant's submitted answers remain unchanged."}
+              {nextStatus === "approved"
+                ? "If entered, this message will be included in the approval email sent to the applicant."
+                : nextStatus === "rejected" || nextStatus === "needs_information"
+                  ? "This message will be included in the email and the member-panel notification sent to the applicant."
+                  : "This changes review status only. The applicant's submitted answers remain unchanged."}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setShowStatusModal(false)} disabled={isSavingStatus} className="h-10 rounded-xl border border-[#D4C6B5] px-4 text-xs font-bold">Cancel</button>

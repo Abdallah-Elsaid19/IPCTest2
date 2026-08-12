@@ -5,8 +5,61 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/seo/SEO";
 import { apiJson } from "@/lib/api";
 
-const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T00:00:00+01:00");
+const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
+
+const SCHOLARSHIP_RECIPIENTS: ScholarshipRecipient[] = [
+  {
+    id: 1,
+    name: "Sam Burrows",
+    award: "Certified PMO",
+    country: "United Kingdom",
+    modules: ["Certified PMO"],
+    category: "Scholarship",
+    year: 2026,
+    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/baabc2486e8140a0a54d73c0a6b03ddc.webp",
+  },
+  {
+    id: 2,
+    name: "Tajudeen Olugbenga",
+    award: "PPC",
+    country: "United Kingdom",
+    modules: ["PPC"],
+    category: "Scholarship",
+    year: 2026,
+    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/89714eed661347a6ab062e7eaa8795d5.webp",
+  },
+  {
+    id: 3,
+    name: "Blessing Ituma",
+    award: "PPC, Managing Portfolios, Certified PMO",
+    country: "United Kingdom",
+    modules: ["PPC", "Managing Portfolios", "Certified PMO"],
+    category: "Scholarship",
+    year: 2026,
+    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/8ad91f0e98b8496eae53a3ddacbee926.webp",
+  },
+  {
+    id: 4,
+    name: "Magdalena Ilie",
+    award: "AI, PMP",
+    country: "United Kingdom",
+    modules: ["AI", "PMP"],
+    category: "Scholarship",
+    year: 2026,
+    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f3da5d5fa9154ac894198bf592a86041.webp",
+  },
+  {
+    id: 5,
+    name: "Evidence Halliday",
+    award: "AI, MSP, Managing Portfolios, PMP",
+    country: "United Kingdom",
+    modules: ["AI", "MSP", "Managing Portfolios", "PMP"],
+    category: "Scholarship",
+    year: 2026,
+    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/c1001573b51548e8b716a16318ae9eea.webp",
+  },
+];
 
 type CountdownUnit = {
   label: string;
@@ -91,6 +144,29 @@ function AnnouncementDatePanel() {
   );
 }
 
+const CONFETTI_COLOURS = ["#f7d37a", "#d89524", "#fff0b8", "#b87513"];
+
+function GoldenConfetti() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[90] overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 48 }, (_, index) => (
+        <span
+          key={index}
+          className="gold-confetti-strip absolute -top-12 block"
+          style={{
+            left: `${(index * 37) % 101}%`,
+            width: `${4 + (index % 4)}px`,
+            height: `${22 + ((index * 7) % 25)}px`,
+            backgroundColor: CONFETTI_COLOURS[index % CONFETTI_COLOURS.length],
+            animationDelay: `${(index % 13) * 0.075}s`,
+            animationDuration: `${2.8 + (index % 8) * 0.16}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 type ScholarshipRecipient = {
   id: number;
   name: string;
@@ -116,13 +192,13 @@ function RecipientPortrait({ recipient, className = "" }: { recipient: Scholarsh
   const showImage = Boolean(recipient.photo_url) && !imageFailed;
 
   return (
-    <div className={`relative aspect-[4/3] overflow-hidden bg-[#121722] ${className}`}>
+    <div className={`relative aspect-[4/5] overflow-hidden bg-[#121722] ${className}`}>
       {showImage ? (
         <img
           src={recipient.photo_url}
-          alt={`Portrait of ${recipient.name}`}
+          alt={`2026 IPC scholarship recipient announcement for ${recipient.name}`}
           loading="lazy"
-          className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.035]"
+          className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.02]"
           onError={() => setImageFailed(true)}
         />
       ) : (
@@ -132,42 +208,20 @@ function RecipientPortrait({ recipient, className = "" }: { recipient: Scholarsh
           </span>
         </div>
       )}
-      <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 border border-primary-300/30 bg-black/70 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary-200 backdrop-blur-md">
-        <Award size={13} aria-hidden="true" /> 2026 recipient
-      </span>
     </div>
   );
 }
 
 function ScholarshipRecipientsReveal() {
-  const [recipients, setRecipients] = useState<ScholarshipRecipient[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const recipients = SCHOLARSHIP_RECIPIENTS;
+  const isLoading = false;
+  const error = "";
   const [searchQuery, setSearchQuery] = useState("");
   const [awardFilter, setAwardFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [selectedRecipient, setSelectedRecipient] = useState<ScholarshipRecipient | null>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    apiJson<ScholarshipRecipient[]>("/api/scholarship-announcement/recipients", undefined, {
-      requestSource: "scholarship-announcement-recipients",
-    })
-      .then((items) => {
-        if (active) setRecipients(items);
-      })
-      .catch((requestError) => {
-        if (active) setError(requestError instanceof Error ? requestError.message : "The recipients could not be loaded.");
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const awardOptions = useMemo(
     () => [...new Set(recipients.map((recipient) => recipient.award).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
@@ -227,47 +281,64 @@ function ScholarshipRecipientsReveal() {
   }, [closeRecipient, selectedRecipient]);
 
   return (
-    <div className="mt-4 pb-8 lg:mt-6">
-      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,.72fr)] lg:gap-16">
-        <div className="pt-2">
-          <span className="inline-flex items-center gap-2 border border-primary-400/30 bg-primary-400/10 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-primary-200">
-            <Award size={15} aria-hidden="true" /> Official recipient announcement
+    <div className="relative pb-0">
+      <div className="pointer-events-none absolute inset-x-1/2 top-[-7rem] h-[48rem] w-screen -translate-x-1/2 overflow-hidden" aria-hidden="true">
+        <div className="announcement-gold-haze absolute inset-0" />
+        {Array.from({ length: 26 }, (_, index) => (
+          <span key={index} className="announcement-gold-speck absolute rounded-sm bg-primary-400" style={{ left: `${(index * 41) % 99}%`, top: `${8 + ((index * 29) % 82)}%`, animationDelay: `${(index % 9) * 0.18}s` }} />
+        ))}
+        <span className="announcement-ribbon announcement-ribbon-left" />
+        <span className="announcement-ribbon announcement-ribbon-right" />
+      </div>
+      <div className="relative grid min-h-[39rem] items-center gap-12 py-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(24rem,.72fr)] lg:gap-20 lg:py-20">
+        <div>
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
+            <Award size={15} aria-hidden="true" /> Official recipient announcement <span aria-hidden="true">✦</span>
           </span>
-          <h1 className="mt-7 max-w-5xl font-heading text-[clamp(3rem,6.6vw,6.6rem)] font-semibold leading-[0.9] tracking-[-0.065em] text-white">
-            Meet the 2026 IPC scholarship &amp; bursary recipients.
+          <h1 className="mt-7 max-w-[49rem] font-heading text-[clamp(3rem,6.2vw,6.7rem)] font-semibold leading-[0.88] tracking-[-0.055em] text-white">
+            Celebrating the<br />
+            <span className="bg-gradient-to-b from-[#ffe2a0] via-[#dba13a] to-[#9d6415] bg-clip-text text-transparent">2026 IPC</span><br />
+            Scholarship &amp;<br />Bursary Recipients
           </h1>
-          <p className="mt-7 max-w-3xl text-base leading-8 text-background-300 sm:text-lg">
+          <p className="mt-8 max-w-2xl text-sm leading-7 text-background-300 sm:text-base">
             The Institute of Project Controls is pleased to recognise the professionals selected for support through the <strong className="font-semibold text-white">IPC Scholarship and Bursary Fund</strong>. Each person listed below has been awarded the stated professional-development support for the 2026 intake.
           </p>
+          <div className="mt-7 flex max-w-2xl items-start gap-4 rounded-xl border border-primary-400/35 bg-black/45 px-5 py-4 text-sm leading-6 text-background-200 shadow-[inset_0_1px_rgba(255,221,153,.08),0_18px_50px_rgba(0,0,0,.35)] backdrop-blur-sm">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary-400/65 text-primary-300" aria-hidden="true">★</span>
+            <p><strong className="font-semibold text-white">This is the first round to receive support through the IPC Fund.</strong>{" "}Applications for Round Two are now open&mdash;apply early for the next opportunity.</p>
+          </div>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <a href="#recipient-register" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-primary-500 px-7 text-xs font-bold uppercase tracking-[0.1em] text-background-950 transition hover:bg-primary-400">
+            <a href="#recipient-register" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[0_10px_35px_rgba(216,149,36,.2)] transition hover:brightness-110">
               View all recipients <ArrowRight size={16} aria-hidden="true" />
             </a>
-            <a href="#future-opportunities" className="inline-flex min-h-[3.25rem] items-center justify-center border border-white/20 px-7 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:border-primary-400 hover:text-primary-300">
-              Future opportunities
-            </a>
+            <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/55 bg-black/30 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-background-950">
+              Apply for Round Two <ArrowRight size={16} aria-hidden="true" />
+            </Link>
           </div>
         </div>
 
-        <aside className="relative overflow-hidden bg-background-900/95 p-7 shadow-[0_30px_90px_rgba(0,0,0,.38)] backdrop-blur-md sm:p-9" aria-label="Official announcement details">
+        <aside className="relative overflow-hidden rounded-[1.75rem] border border-primary-400/55 bg-[linear-gradient(145deg,rgba(32,29,24,.94),rgba(8,9,9,.98))] p-6 shadow-[0_30px_100px_rgba(0,0,0,.65),inset_0_0_70px_rgba(216,149,36,.06)] backdrop-blur-md sm:p-9" aria-label="Official announcement details">
+          <div className="pointer-events-none absolute inset-3 rounded-[1.25rem] border border-primary-400/10" aria-hidden="true" />
           <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full border border-primary-400/15" aria-hidden="true" />
-          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full border border-primary-400/10" aria-hidden="true" />
-          <span className="relative grid h-14 w-14 place-items-center rounded-full bg-primary-500 text-background-950 shadow-[0_0_45px_rgba(216,149,36,.22)]">
-            <Trophy size={25} aria-hidden="true" />
-          </span>
-          <h2 className="relative mt-6 font-heading text-3xl font-semibold tracking-[-0.035em] text-white">Official 2026 recipient register</h2>
-          <p className="relative mt-4 text-sm leading-7 text-background-400">
+          <div className="relative mx-auto w-fit border border-primary-400/35 bg-primary-400/[.07] px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-[.22em] text-primary-300">✦ IPC Scholarship Fund · 2026</div>
+          <div className="relative mx-auto mt-7 flex h-28 w-44 items-center justify-center" aria-hidden="true">
+            <span className="absolute left-0 text-7xl text-primary-500/80">❧</span>
+            <span className="absolute right-0 -scale-x-100 text-7xl text-primary-500/80">❧</span>
+            <span className="grid h-20 w-20 place-items-center rounded-full border-2 border-primary-400 bg-black font-heading text-2xl font-bold text-primary-200 shadow-[0_0_35px_rgba(216,149,36,.25)]">IPC</span>
+          </div>
+          <h2 className="relative mt-4 text-center font-heading text-[clamp(2rem,3vw,3rem)] font-semibold leading-tight tracking-[-0.035em] text-white">Official 2026<br />Recipient Register</h2>
+          <p className="relative mx-auto mt-5 max-w-md text-center text-sm leading-6 text-background-400">
             This page is the approved public record of IPC scholarship and bursary recipients. Details appear only where publication consent has been confirmed.
           </p>
-          <dl className="relative mt-7 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <dl className="relative mt-8 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
               ["Announcement date", "12 August 2026"],
               ["Academic intake", "2026 programme year"],
-              ["Published recipients", isLoading ? "Loading…" : `${recipients.length} recipients`],
+              ["Total 2026 recipients", isLoading ? "Loading…" : `${recipients.length} recipients`],
               ["Record status", "Official announcement"],
             ].map(([label, value]) => (
-              <div key={label} className="bg-background-950/70 p-4">
-                <dt className="font-mono text-[8px] font-semibold uppercase tracking-[0.16em] text-primary-400">{label}</dt>
+              <div key={label} className="border-b border-primary-400/20 bg-black/35 p-5 odd:border-r sm:[&:nth-last-child(-n+2)]:border-b-0">
+                <dt className="font-mono text-[8px] font-bold uppercase tracking-[0.18em] text-primary-400">{label}</dt>
                 <dd className="mt-2 text-sm font-semibold text-white">{value}</dd>
               </div>
             ))}
@@ -275,11 +346,12 @@ function ScholarshipRecipientsReveal() {
         </aside>
       </div>
 
-      <section id="recipient-register" className="relative left-1/2 mt-12 w-screen -translate-x-1/2 scroll-mt-28 bg-[#f6f0e7] py-12 text-background-950 sm:mt-16 lg:py-16" aria-label="Recipient directory">
+      <section id="recipient-register" className="relative left-1/2 w-screen -translate-x-1/2 scroll-mt-28 border-y border-primary-400/20 bg-[radial-gradient(circle_at_50%_0%,rgba(216,149,36,.07),transparent_30%),#080909] py-14 text-white lg:py-20" aria-label="Recipient directory">
         <div className="container-content">
         <div className="flex items-center gap-3" aria-hidden="true">
-          <span className="h-px w-11 bg-primary-700" />
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-primary-800">Recipient directory</span>
+          <span className="h-px w-12 bg-primary-500" />
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-primary-400">Recipient directory</span>
+          <span className="h-px flex-1 bg-gradient-to-r from-primary-500/70 to-transparent" />
         </div>
       {isLoading && (
         <div className="grid min-h-64 place-items-center" role="status">
@@ -301,17 +373,17 @@ function ScholarshipRecipientsReveal() {
 
       {!isLoading && !error && recipients.length > 0 && (
         <>
-          <div className="mt-8 rounded-[1.75rem] border border-background-950/10 bg-white/75 p-4 shadow-[0_24px_70px_rgba(61,42,12,.1)] sm:p-5">
+          <div className="mt-7 rounded-2xl border border-primary-400/20 bg-[linear-gradient(100deg,rgba(34,31,27,.98),rgba(65,61,55,.72))] p-4 shadow-[0_24px_70px_rgba(0,0,0,.32),inset_0_1px_rgba(255,255,255,.05)] sm:p-5">
             <div className="grid gap-3 lg:grid-cols-[minmax(16rem,1.4fr)_minmax(12rem,.8fr)_minmax(12rem,.8fr)_auto]">
               <label className="relative block">
                 <span className="sr-only">Search recipients</span>
-                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-primary-700" size={18} aria-hidden="true" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-primary-400" size={18} aria-hidden="true" />
                 <input
                   type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search by recipient or award"
-                  className="min-h-[3.25rem] w-full rounded-2xl border border-background-950/15 bg-white py-3 pl-12 pr-4 text-sm text-background-950 outline-none transition placeholder:text-foreground-500 focus:border-primary-600"
+                  className="min-h-[3.25rem] w-full rounded-lg border border-primary-400/35 bg-black/70 py-3 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-background-500 focus:border-primary-400"
                 />
               </label>
               <label>
@@ -319,7 +391,7 @@ function ScholarshipRecipientsReveal() {
                 <select
                   value={awardFilter}
                   onChange={(event) => setAwardFilter(event.target.value)}
-                  className="min-h-[3.25rem] w-full rounded-2xl border border-background-950/15 bg-white px-4 py-3 text-sm text-background-950 outline-none transition focus:border-primary-600"
+                  className="min-h-[3.25rem] w-full rounded-lg border border-primary-400/25 bg-black/55 px-4 py-3 text-sm text-background-200 outline-none transition focus:border-primary-400"
                 >
                   <option value="all">All awards</option>
                   {awardOptions.map((award) => <option key={award} value={award}>{award}</option>)}
@@ -330,7 +402,7 @@ function ScholarshipRecipientsReveal() {
                 <select
                   value={countryFilter}
                   onChange={(event) => setCountryFilter(event.target.value)}
-                  className="min-h-[3.25rem] w-full rounded-2xl border border-background-950/15 bg-white px-4 py-3 text-sm text-background-950 outline-none transition focus:border-primary-600"
+                  className="min-h-[3.25rem] w-full rounded-lg border border-primary-400/25 bg-black/55 px-4 py-3 text-sm text-background-200 outline-none transition focus:border-primary-400"
                 >
                   <option value="all">All locations</option>
                   {countryOptions.map((country) => <option key={country} value={country}>{country}</option>)}
@@ -340,19 +412,19 @@ function ScholarshipRecipientsReveal() {
                 type="button"
                 onClick={clearFilters}
                 disabled={!filtersAreActive}
-                className="min-h-[3.25rem] rounded-2xl border border-background-950/15 bg-white px-5 text-xs font-semibold tracking-[0.02em] text-background-950 transition hover:border-primary-600 hover:bg-primary-700/10 disabled:cursor-default disabled:opacity-35"
+                className="min-h-[3.25rem] rounded-lg border border-primary-400/30 bg-primary-400/[.05] px-5 text-xs font-semibold text-primary-200 transition hover:border-primary-400 hover:bg-primary-400/10 disabled:cursor-default disabled:opacity-35"
               >
                 Clear filters
               </button>
             </div>
-            <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.17em] text-foreground-600" aria-live="polite">
-              Showing <strong className="text-primary-800">{filteredRecipients.length}</strong> of <strong className="text-background-950">{recipients.length}</strong> recipients
+            <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400" aria-live="polite">
+              Showing <strong className="text-primary-300">{filteredRecipients.length}</strong> of <strong className="text-white">{recipients.length}</strong> recipients
             </p>
           </div>
 
           {filteredRecipients.length > 0 ? (
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {filteredRecipients.map((recipient) => (
+            <div className="mx-auto mt-9 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-6">
+              {filteredRecipients.map((recipient, index) => (
                 <article
                   key={recipient.id}
                   role="button"
@@ -365,10 +437,11 @@ function ScholarshipRecipientsReveal() {
                       openRecipient(recipient, event.currentTarget);
                     }
                   }}
-                  className="group cursor-pointer overflow-hidden bg-white shadow-[0_24px_60px_rgba(61,42,12,.14)] transition duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f6f0e7]"
+                  className={`group relative cursor-pointer overflow-hidden rounded-lg border border-primary-400/50 bg-[#0d0f10] shadow-[0_24px_65px_rgba(0,0,0,.55),0_0_18px_rgba(216,149,36,.08)] transition duration-300 hover:-translate-y-1 hover:border-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 lg:col-span-2 ${filteredRecipients.length === 5 && index === 3 ? "lg:col-start-2" : ""}`}
                 >
+                  <span className="pointer-events-none absolute inset-2 z-10 rounded border border-primary-300/10" aria-hidden="true" />
                   <RecipientPortrait recipient={recipient} />
-                  <div className="relative overflow-hidden p-6">
+                  <div className="sr-only">
                     <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full border border-primary-500/15" aria-hidden="true" />
                     <div className="pointer-events-none absolute -right-5 -top-5 h-20 w-20 rounded-full border border-primary-500/10" aria-hidden="true" />
                     <h2 className="relative font-heading text-2xl font-semibold tracking-[-0.025em] text-background-950">{recipient.name}</h2>
@@ -383,10 +456,10 @@ function ScholarshipRecipientsReveal() {
               ))}
             </div>
           ) : (
-            <div className="mt-8 bg-white/65 p-10 text-center shadow-[0_20px_60px_rgba(61,42,12,.08)]">
-              <Search className="mx-auto text-primary-700" size={30} aria-hidden="true" />
-              <h2 className="mt-4 font-heading text-2xl font-semibold text-background-950">No recipients match these filters.</h2>
-              <p className="mt-2 text-sm text-foreground-700">Try another name, award or location.</p>
+            <div className="mt-8 border border-primary-400/25 bg-white/[.04] p-10 text-center shadow-[0_20px_60px_rgba(0,0,0,.28)]">
+              <Search className="mx-auto text-primary-400" size={30} aria-hidden="true" />
+              <h2 className="mt-4 font-heading text-2xl font-semibold text-white">No recipients match these filters.</h2>
+              <p className="mt-2 text-sm text-background-400">Try another name, award or location.</p>
               <button type="button" onClick={clearFilters} className="mt-6 bg-primary-500 px-6 py-3 text-xs font-bold uppercase tracking-[0.1em] text-background-950 hover:bg-primary-400">Clear filters</button>
             </div>
           )}
@@ -394,25 +467,34 @@ function ScholarshipRecipientsReveal() {
       )}
 
         {!isLoading && !error && recipients.length > 0 && (
-          <div className="mt-10 flex items-start gap-4 bg-primary-700/10 p-5 text-sm leading-7 text-foreground-700 sm:p-6">
-            <ShieldCheck className="mt-0.5 shrink-0 text-primary-700" size={23} aria-hidden="true" />
-            <p><strong className="font-semibold text-background-950">Publication notice.</strong> Only information approved for public release is shown. Financial values, personal contact details and private circumstances are intentionally excluded to protect recipient privacy.</p>
+          <div className="mx-auto mt-10 flex max-w-6xl items-start gap-4 rounded-xl border border-primary-400/35 bg-primary-400/[.045] p-5 text-sm leading-7 text-background-300 sm:p-6">
+            <ShieldCheck className="mt-0.5 shrink-0 text-primary-400" size={23} aria-hidden="true" />
+            <p><strong className="font-semibold text-primary-200">Publication notice.</strong> Only information approved for public release is shown. Financial values, personal contact details and private circumstances are intentionally excluded to protect recipient privacy.</p>
           </div>
         )}
         </div>
       </section>
 
-      <section id="future-opportunities" className="scroll-mt-28 pt-20 lg:pt-28" aria-labelledby="future-opportunities-title">
-        <div className="relative overflow-hidden bg-[linear-gradient(125deg,rgba(216,149,36,.2),rgba(13,17,27,.96)_42%,rgba(13,17,27,.98))] p-7 shadow-[0_30px_90px_rgba(0,0,0,.3)] sm:p-10 lg:flex lg:items-end lg:justify-between lg:gap-12 lg:p-12">
-          <div className="pointer-events-none absolute -right-28 -top-36 h-96 w-96 rounded-full border border-primary-300/15" aria-hidden="true" />
-          <div className="relative max-w-3xl">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-primary-300">Future scholarship opportunities</p>
-            <h2 id="future-opportunities-title" className="mt-4 font-heading text-[clamp(2.2rem,4vw,4.2rem)] font-semibold leading-[.98] tracking-[-0.045em] text-white">Continue your professional development with IPC.</h2>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-background-300 sm:text-base">Explore upcoming scholarship, bursary and professional-development opportunities. Availability and funded places remain subject to eligibility review and written approval by IPC.</p>
+      <section id="future-opportunities" className="relative left-1/2 w-screen -translate-x-1/2 scroll-mt-28 overflow-hidden border-b border-primary-400/25 bg-[#0a0b0b]" aria-labelledby="future-opportunities-title">
+        <div className="announcement-next-bg pointer-events-none absolute inset-0" aria-hidden="true" />
+        <span className="announcement-ribbon announcement-ribbon-left !bottom-[-8rem] !left-[-11rem] !top-auto" aria-hidden="true" />
+        <span className="announcement-ribbon announcement-ribbon-right !right-[-10rem] !top-[1rem]" aria-hidden="true" />
+        <div className="container-content relative grid items-center gap-10 py-14 lg:grid-cols-[16rem_minmax(0,1fr)] lg:py-20">
+          <div className="relative mx-auto flex h-52 w-52 items-end justify-center" aria-hidden="true">
+            <div className="absolute bottom-0 h-5 w-48 rounded-[50%] bg-primary-400/20 blur-xl" />
+            <div className="absolute bottom-0 h-8 w-48 rounded-t-lg border border-primary-400/45 bg-[linear-gradient(#2f2414,#0b0b0b)]" />
+            <div className="absolute bottom-7 h-6 w-36 rounded-t-lg border border-primary-400/45 bg-[linear-gradient(#413019,#111)]" />
+            <Trophy size={150} strokeWidth={1.05} className="absolute bottom-10 text-[#e7b751] drop-shadow-[0_0_20px_rgba(216,149,36,.45)]" />
+            <span className="absolute bottom-[6.9rem] grid h-12 w-12 place-items-center rounded-full border border-primary-200 bg-black font-heading text-xs font-bold text-primary-200">IPC</span>
           </div>
-          <div className="relative mt-8 flex shrink-0 flex-col gap-3 sm:flex-row lg:mt-0">
-            <Link to="/scholarships" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-primary-500 px-7 text-xs font-bold uppercase tracking-[0.1em] text-background-950 transition hover:bg-primary-400">Explore scholarships <ArrowRight size={16} aria-hidden="true" /></Link>
-            <Link to="/contact" className="inline-flex min-h-[3.25rem] items-center justify-center border border-white/20 px-7 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:border-primary-400 hover:text-primary-300">Contact IPC</Link>
+          <div className="relative">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.27em] text-primary-400">Be part of the next generation</p>
+            <h2 id="future-opportunities-title" className="mt-4 max-w-3xl font-heading text-[clamp(2.7rem,5vw,5.1rem)] font-semibold leading-[.92] tracking-[-0.045em] text-white">Be part of the next<br /><span className="text-primary-400">IPC Fund round.</span></h2>
+            <p className="mt-5 max-w-3xl text-sm leading-7 text-background-300 sm:text-base">Our first funded round has been announced. Applications for Round Two are now open, so submit your scholarship or bursary application early for the next opportunity. All places remain subject to eligibility review and written approval by IPC.</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110">Apply for Round Two <ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/contact" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/45 bg-black/40 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-primary-400 hover:text-black">Contact IPC</Link>
+            </div>
           </div>
         </div>
       </section>
@@ -548,8 +630,10 @@ export default function ScholarshipAnnouncementPage() {
       <div className="pointer-events-none absolute -right-64 bottom-[-20rem] h-[46rem] w-[46rem] rounded-full bg-[#71599b]/10 blur-[150px]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-x-0 top-24 h-px bg-gradient-to-r from-transparent via-primary-400/30 to-transparent" aria-hidden="true" />
 
+      {hasArrived && <GoldenConfetti />}
+
       <section className="container-content relative min-h-[calc(100svh-2.25rem)] pb-16 pt-28 lg:pb-20 lg:pt-32">
-        <div className="relative flex min-w-0 flex-col items-start gap-5 sm:min-h-11 sm:flex-row sm:items-center sm:justify-between">
+        {!hasArrived && <div className="relative flex min-w-0 flex-col items-start gap-5 sm:min-h-11 sm:flex-row sm:items-center sm:justify-between">
           <Link
             to="/scholarships"
             className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-background-300 transition-colors hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
@@ -567,7 +651,7 @@ export default function ScholarshipAnnouncementPage() {
               IPC Scholarship Fund · 2026
             </span>
           </div>
-        </div>
+        </div>}
 
         {hasArrived ? (
           <ScholarshipRecipientsReveal />

@@ -867,10 +867,14 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(created.status_code, 201, created.data)
 
         self.client.force_authenticate(self.staff)
+        approval_message = "Welcome to Round One. We will contact you with your onboarding details."
         with self.captureOnCommitCallbacks(execute=True):
             approved = self.client.patch(
                 f"/api/admin/bursary-applications/{created.data['id']}/status",
-                {"status": BursaryApplication.Status.APPROVED},
+                {
+                    "status": BursaryApplication.Status.APPROVED,
+                    "internal_reason": approval_message,
+                },
                 format="json",
             )
 
@@ -883,6 +887,7 @@ class BursaryApplicationApiTests(APITestCase):
             name=application.preferred_name or application.first_name,
             application_reference=application.application_reference,
             pathway=application.get_bursary_selection_display(),
+            message=approval_message,
         )
 
         self.client.force_authenticate(self.member)
