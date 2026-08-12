@@ -372,10 +372,12 @@ def send_bursary_approval_email(
     pathway,
     message="",
 ):
+    announcement_url = f"{settings.FRONTEND_URL.rstrip('/')}/scholarships/announcement"
     safe_name = html.escape(name or "IPC member")
     safe_reference = html.escape(application_reference)
     safe_pathway = html.escape(pathway)
     safe_message = html.escape(message).replace("\n", "<br>")
+    safe_announcement_url = html.escape(announcement_url, quote=True)
     text_message = f"\nMessage from IPC:\n{message}\n" if message else ""
     html_message = (
         f'<p><strong>Message from IPC:</strong></p><p>{safe_message}</p>'
@@ -392,6 +394,9 @@ Module: {pathway}
 {text_message}
 
 The IPC team will contact you with the next steps.
+
+View the scholarship announcement:
+{announcement_url}
 
 Kind regards,
 Institute of Project Controls
@@ -411,6 +416,8 @@ Institute of Project Controls
           </div>
           {html_message}
           <p>The IPC team will contact you with the next steps.</p>
+          <p style="margin:24px 0"><a href="{safe_announcement_url}" style="display:inline-block;background:#d79525;color:#171411;text-decoration:none;font-weight:bold;padding:12px 18px">View scholarship announcement</a></p>
+          <p style="font-size:13px;color:#655d55">If the button does not work, copy this URL into your browser:<br><a href="{safe_announcement_url}">{safe_announcement_url}</a></p>
           <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
         </div>
       </div>

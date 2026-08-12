@@ -28,6 +28,7 @@ from scholarships.tests import valid_bursary_multipart_payload, valid_bursary_pa
 from user_panel.models import ProfessionalInterest
 from accounts.graph_mail import (
     GraphMailError,
+    send_bursary_approval_email,
     send_enquiry_reply_email,
     send_bursary_needs_information_email,
     send_membership_welcome_email,
@@ -842,6 +843,27 @@ class AdminUserManagementApiTests(APITestCase):
     IPC_EMAIL_LOGO_URL="https://ipc.example.com/logo.png",
 )
 class MembershipWelcomeMailTests(SimpleTestCase):
+    @patch("accounts.graph_mail.requests.post")
+    @patch("accounts.graph_mail._access_token", return_value="token")
+    def test_bursary_approval_email_links_to_scholarship_announcement(self, access_token, post):
+        post.return_value.status_code = 202
+        send_bursary_approval_email(
+            recipient="member@example.com",
+            name="Nora Ali",
+            application_reference="IPC-BSA-2026-ABC123",
+            pathway="Operational Pathway",
+        )
+
+        message = BytesParser(policy=policy.default).parsebytes(
+            base64.b64decode(post.call_args.kwargs["data"])
+        )
+        plain = message.get_body(preferencelist=("plain",)).get_content()
+        html = message.get_body(preferencelist=("html",)).get_content()
+        expected = "https://ipc.example.com/scholarships/announcement"
+        self.assertIn(expected, plain)
+        self.assertIn(f'href="{expected}"', html)
+        self.assertIn("View scholarship announcement", html)
+
     @patch("accounts.graph_mail.requests.post")
     @patch("accounts.graph_mail._access_token", return_value="token")
     def test_bursary_information_email_links_to_the_requested_application(self, access_token, post):
