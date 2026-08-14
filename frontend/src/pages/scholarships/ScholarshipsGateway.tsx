@@ -47,6 +47,7 @@ const ALL_INCLUSIVE_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b4bc056cfa164feca8dc939778cc94c9.webp";
 const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
+const SHOW_COUNTDOWN_WIDGET = false;
 
 function getAnnouncementCountdown(now: number) {
   const remaining = Math.max(0, ANNOUNCEMENT_TIME - now);
@@ -878,7 +879,7 @@ export default function ScholarshipsGateway() {
                 className="inline-flex min-h-12 items-center justify-center gap-2 border border-primary-400/50 bg-primary-400/[0.08] px-5 py-3 text-center text-sm font-semibold text-primary-200 transition-colors hover:border-primary-300 hover:bg-primary-400/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
               >
                 <Clock3 size={17} aria-hidden="true" />
-                Announcement countdown
+                Scholarship Awardees
               </Link>
             </div>
             <div className="mt-8 flex items-start gap-3 border-l-2 border-primary-400 pl-4 text-sm leading-6 text-background-300">
@@ -907,6 +908,7 @@ export default function ScholarshipsGateway() {
               />
             </div>
 
+            {SHOW_COUNTDOWN_WIDGET && (
             <div className="relative -mt-2 p-5 pt-0 sm:p-6 sm:pt-0 md:p-7 md:pt-0">
               <div className="flex items-start justify-between gap-1.5 sm:gap-2" aria-label="Time remaining until the scholarship announcement">
                 {announcementCountdown.map((unit) => (
@@ -938,6 +940,7 @@ export default function ScholarshipsGateway() {
                 <p className="mt-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.22em] text-background-400">Official announcement date</p>
               </div>
             </div>
+            )}
           </aside>
         </div>
       </section>

@@ -6,6 +6,7 @@ import SEO from "@/components/seo/SEO";
 import { apiJson } from "@/lib/api";
 
 const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
+const SHOW_COUNTDOWN_WIDGET = false;
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
 
 const SCHOLARSHIP_RECIPIENTS: ScholarshipRecipient[] = [
@@ -668,9 +669,11 @@ export default function ScholarshipAnnouncementPage() {
             Successful IPC scholarship and bursary applicants will be announced on 12 August 2026 and contacted directly using the details in their application.
           </p>
 
-          <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" aria-label="Time remaining until the scholarship announcement">
-            {countdown.map((unit) => <CountdownCard key={unit.label} {...unit} />)}
-          </div>
+          {SHOW_COUNTDOWN_WIDGET && (
+            <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" aria-label="Time remaining until the scholarship announcement">
+              {countdown.map((unit) => <CountdownCard key={unit.label} {...unit} />)}
+            </div>
+          )}
 
           <form onSubmit={requestReminder} className="mt-9 max-w-2xl" aria-label="Request a scholarship announcement reminder">
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -733,17 +736,21 @@ export default function ScholarshipAnnouncementPage() {
             </div>
             <div className="pointer-events-none absolute -inset-x-6 bottom-0 z-10 h-[52%] bg-gradient-to-b from-transparent via-black/75 to-black sm:-left-[12%] sm:-right-[20vw] sm:h-[46%]" aria-hidden="true" />
 
-            <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-3 lg:hidden">
-              <AnnouncementDatePanel />
-            </div>
+            {SHOW_COUNTDOWN_WIDGET && (
+              <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-3 lg:hidden">
+                <AnnouncementDatePanel />
+              </div>
+            )}
 
           </aside>
 
-          <div className="absolute left-1/2 top-[-4.75rem] z-20 hidden w-[min(26rem,82vw)] -translate-x-1/2 border border-white/15 bg-[#0d111b]/90 p-4 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md lg:block">
-            <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-            <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">12 August 2026</p>
-            <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">Official announcement date</p>
-          </div>
+          {SHOW_COUNTDOWN_WIDGET && (
+            <div className="absolute left-1/2 top-[-4.75rem] z-20 hidden w-[min(26rem,82vw)] -translate-x-1/2 border border-white/15 bg-[#0d111b]/90 p-4 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md lg:block">
+              <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
+              <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">12 August 2026</p>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">Official announcement date</p>
+            </div>
+          )}
         </div>
         )}
       </section>
