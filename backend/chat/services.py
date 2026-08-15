@@ -157,6 +157,19 @@ def _first(payload, *keys):
     return ""
 
 
+def _html_email_to_text(value):
+    value = str(value or "")
+    value = re.sub(r"(?is)<(style|script)\b[^>]*>.*?</\1>", "", value)
+    value = re.sub(r"(?i)<br\s*/?>", "\n", value)
+    value = re.sub(
+        r"(?i)</(?:p|div|li|tr|h[1-6])\s*>",
+        "\n",
+        value,
+    )
+    value = re.sub(r"<[^>]+>", "", value)
+    return html.unescape(value).replace("\xa0", " ").strip()
+
+
 def normalise_inbound_payload(provider, payload):
     provider = (provider or "generic").lower()
     if provider == "postmark":
@@ -165,7 +178,13 @@ def normalise_inbound_payload(provider, payload):
             sender = payload["FromFull"].get("Email", sender)
         recipients = _first(payload, "OriginalRecipient", "To")
         subject = _first(payload, "Subject")
-        body = _first(payload, "StrippedTextReply", "TextBody")
+        body = strip_quoted_reply(
+            _first(payload, "StrippedTextReply", "TextBody")
+        )
+        if not body:
+            body = strip_quoted_reply(
+                _html_email_to_text(_first(payload, "HtmlBody"))
+            )
         message_id = _first(payload, "MessageID", "MessageId")
     elif provider == "mailgun":
         sender = _first(payload, "sender", "from")
@@ -189,7 +208,7 @@ def normalise_inbound_payload(provider, payload):
         "sender": parseaddr(sender)[1].lower(),
         "recipients": recipients,
         "subject": subject,
-        "body": strip_quoted_reply(body),
+        "body": body if provider == "postmark" else strip_quoted_reply(body),
         "message_id": message_id.strip("<> "),
         "conversation_id": _first(payload, "conversation_id", "conversationId"),
     }

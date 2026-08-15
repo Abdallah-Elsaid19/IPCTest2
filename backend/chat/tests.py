@@ -1,6 +1,7 @@
 import uuid
 
 from django.core import mail
+from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -27,6 +28,9 @@ CHAT_TEST_SETTINGS = {
 
 @override_settings(**CHAT_TEST_SETTINGS)
 class PublicChatAPITests(APITestCase):
+    def setUp(self):
+        cache.clear()
+
     def create_conversation(self):
         response = self.client.post(
             reverse("chat-conversation-create"),
@@ -88,6 +92,33 @@ class PublicChatAPITests(APITestCase):
         messages_url = reverse("chat-conversation-messages", kwargs={"public_id": data["id"]})
         visible = self.client.get(messages_url, HTTP_X_CHAT_TOKEN=data["token"])
         self.assertEqual(visible.data["messages"][0]["message"], "Hello Ada, here is the answer.")
+
+    def test_postmark_html_only_reply_is_saved_and_emailed(self):
+        data = self.create_conversation()
+        inbound_url = reverse("chat-inbound-reply", kwargs={"provider": "postmark"})
+        response = self.client.post(
+            inbound_url,
+            {
+                "FromFull": {"Email": "agent@example.com"},
+                "To": f"chat+{data['id']}@replies.example.com",
+                "Subject": f"Re: [IPC-CHAT:{data['id']}] Website message",
+                "TextBody": "",
+                "StrippedTextReply": "",
+                "HtmlBody": (
+                    "<div>Hello from <strong>Hostinger</strong>.</div>"
+                    "<div>On Sunday, Ada wrote:</div><blockquote>old message</blockquote>"
+                ),
+                "MessageID": "postmark-html-only-123",
+            },
+            format="json",
+            HTTP_X_IPC_WEBHOOK_TOKEN="test-webhook-token",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        message = ChatMessage.objects.get(provider_message_id="postmark-html-only-123")
+        self.assertEqual(message.sender_type, ChatMessage.SenderType.STAFF)
+        self.assertEqual(message.message, "Hello from Hostinger.")
+        self.assertEqual(mail.outbox[-1].to, ["ada@example.net"])
 
     def test_inbound_rejects_invalid_token_and_sender(self):
         data = self.create_conversation()
