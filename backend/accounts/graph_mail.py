@@ -9,6 +9,7 @@ from urllib.parse import quote
 import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.mail import EmailMultiAlternatives
 
 from ipc_backend.email_branding import add_ipc_logo
 
@@ -48,8 +49,41 @@ def _access_token():
     return token
 
 
+def _graph_is_configured():
+    values = (
+        getattr(settings, "GRAPH_TENANT_ID", ""),
+        getattr(settings, "GRAPH_CLIENT_ID", ""),
+        getattr(settings, "GRAPH_CLIENT_SECRET", ""),
+        getattr(settings, "GRAPH_SENDER", ""),
+    )
+    return all(str(value).strip() for value in values)
+
+
 def _send_mime_message(*, recipient, subject, text_body, html_body, reply_to=None):
-    sender = _required_setting("GRAPH_SENDER")
+    sender = (
+        _required_setting("GRAPH_SENDER")
+        if _graph_is_configured()
+        else settings.DEFAULT_FROM_EMAIL
+    )
+    message_id = make_msgid(domain=sender.rsplit("@", 1)[-1])
+
+    if not _graph_is_configured():
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=sender,
+            to=[recipient],
+            reply_to=[reply_to] if reply_to else None,
+            headers={"Message-ID": message_id},
+        )
+        message.attach_alternative(add_ipc_logo(html_body), "text/html")
+        try:
+            message.send(fail_silently=False)
+        except Exception as exc:
+            logger.exception("SMTP email delivery failed.")
+            raise GraphMailError("Email could not be sent.") from exc
+        return message_id.strip("<>")
+
     message = EmailMessage()
     message["From"] = sender
     message["To"] = recipient
@@ -57,7 +91,6 @@ def _send_mime_message(*, recipient, subject, text_body, html_body, reply_to=Non
     if reply_to:
         message["Reply-To"] = reply_to
     message["Date"] = formatdate(localtime=True)
-    message_id = make_msgid(domain=sender.rsplit("@", 1)[-1])
     message["Message-ID"] = message_id
     # Base64 transfer encoding prevents Graph/mail clients from treating MIME
     # soft line breaks (`=`) as visible characters or dropping the next byte.
@@ -168,9 +201,19 @@ Institute of Project Controls
 
 
 def send_password_reset_email(*, recipient, name, reset_url):
-    sender = _required_setting("GRAPH_SENDER")
     safe_name = html.escape(name or "IPC member")
     safe_url = html.escape(reset_url, quote=True)
+    text_body = f"""Hello {name or 'IPC member'},
+
+A secure password reset was requested for your IPC account.
+
+Set a new password using this secure link:
+{reset_url}
+
+This link is single-use and expires in {settings.PASSWORD_RESET_EXPIRE_MINUTES} minutes.
+
+If you were not expecting this email, contact IPC support. Do not forward this message.
+"""
     body = f"""
       <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.6;max-width:600px;margin:auto">
         <h1 style="color:#5b3b82">Reset your IPC password</h1>
@@ -181,22 +224,12 @@ def send_password_reset_email(*, recipient, name, reset_url):
         <p>If you were not expecting this email, contact IPC support. Do not forward this message.</p>
       </div>
     """
-    response = requests.post(
-        f"https://graph.microsoft.com/v1.0/users/{quote(sender, safe='')}/sendMail",
-        headers={"Authorization": f"Bearer {_access_token()}", "Content-Type": "application/json"},
-        json={
-            "message": {
-                "subject": "Reset your IPC password",
-                "body": {"contentType": "HTML", "content": add_ipc_logo(body)},
-                "toRecipients": [{"emailAddress": {"address": recipient}}],
-            },
-            "saveToSentItems": True,
-        },
-        timeout=15,
+    _send_mime_message(
+        recipient=recipient,
+        subject="Reset your IPC password",
+        text_body=text_body,
+        html_body=body,
     )
-    if response.status_code != 202:
-        logger.error("Microsoft Graph sendMail failed with status %s.", response.status_code)
-        raise GraphMailError("Microsoft Graph could not send the password-reset email.")
 
 
 def send_membership_welcome_email(

@@ -837,6 +837,9 @@ class AdminUserManagementApiTests(APITestCase):
 
 
 @override_settings(
+    GRAPH_TENANT_ID="tenant",
+    GRAPH_CLIENT_ID="client",
+    GRAPH_CLIENT_SECRET="secret",
     GRAPH_SENDER="office@ipc.example.com",
     PASSWORD_RESET_EXPIRE_MINUTES=30,
     FRONTEND_URL="https://ipc.example.com",
