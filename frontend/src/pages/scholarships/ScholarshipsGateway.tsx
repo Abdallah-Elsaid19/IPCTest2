@@ -1185,17 +1185,17 @@ export default function ScholarshipsGateway() {
                 </div>
 
                 <dl className="mt-6 grid border border-white/15 sm:grid-cols-3">
-                  <div className="flex min-h-16 items-center justify-between gap-3 border-b border-white/15 p-4 sm:border-b-0 sm:border-r">
-                    <dt className="text-[10px] uppercase tracking-wider text-background-500">Cost</dt>
-                    <dd className="text-lg font-semibold text-background-50">{offer.courseCost}</dd>
+                  <div className="flex min-h-16 flex-col items-start justify-center gap-1 border-b border-white/15 p-4 sm:flex-row sm:items-center sm:justify-between sm:border-b-0 sm:border-r">
+                    <dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">Cost</dt>
+                    <dd className="whitespace-nowrap text-lg font-semibold text-background-50">{offer.courseCost}</dd>
                   </div>
-                  <div className="flex min-h-16 items-center justify-between gap-3 border-b border-white/15 p-4 sm:border-b-0 sm:border-r">
-                    <dt className="text-[10px] uppercase tracking-wider text-background-500">IPC support</dt>
-                    <dd className="text-lg font-semibold text-primary-300">{offer.ipcSupport}</dd>
+                  <div className="flex min-h-16 flex-col items-start justify-center gap-1 border-b border-white/15 p-4 sm:flex-row sm:items-center sm:justify-between sm:border-b-0 sm:border-r">
+                    <dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">IPC support</dt>
+                    <dd className="whitespace-nowrap text-sm font-semibold text-primary-300">{offer.ipcSupport}</dd>
                   </div>
-                  <div className="flex min-h-16 items-center justify-between gap-3 p-4">
-                    <dt className="text-[10px] uppercase tracking-wider text-background-500">You pay</dt>
-                    <dd className="text-lg font-semibold text-background-50">{offer.amountPayable}</dd>
+                  <div className="flex min-h-16 flex-col items-start justify-center gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">You pay</dt>
+                    <dd className="whitespace-nowrap text-lg font-semibold text-background-50">{offer.amountPayable}</dd>
                   </div>
                 </dl>
 

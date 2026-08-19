@@ -15,6 +15,11 @@ BURSARY_MODULE_PRICING = {
     "pmo_module": (4000, 50),
     "pmp": (8000, 75),
     "pmo": (16000, 75),
+    "mba_level_7": (6000, 80),
+}
+
+BURSARY_MODULE_PAYABLE_OVERRIDE = {
+    "mba_level_7": 1000,
 }
 
 BURSARY_EXPORT_HEADERS = [
@@ -84,7 +89,8 @@ def bursary_export_row(application):
     for value in application.preferred_modules:
         cost, percentage = BURSARY_MODULE_PRICING.get(value, (0, 0))
         total_cost += cost
-        total_contribution += cost * percentage // 100
+        payable_override = BURSARY_MODULE_PAYABLE_OVERRIDE.get(value)
+        total_contribution += cost - payable_override if payable_override is not None else cost * percentage // 100
     reviewer = application.assigned_reviewer
     reviewer_name = (
         reviewer.get_full_name().strip() or reviewer.get_username()
@@ -161,7 +167,8 @@ def bursary_google_sheet_row(application):
     for value in application.preferred_modules:
         cost, percentage = BURSARY_MODULE_PRICING.get(value, (0, 0))
         total_cost += cost
-        total_contribution += cost * percentage // 100
+        payable_override = BURSARY_MODULE_PAYABLE_OVERRIDE.get(value)
+        total_contribution += cost - payable_override if payable_override is not None else cost * percentage // 100
 
     values = [
         application.first_name,
