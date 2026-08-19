@@ -202,6 +202,7 @@ class BursaryApplication(models.Model):
         PMO_MODULE = "pmo_module", "PMO"
         PMP = "pmp", "PMP"
         PMO = "pmo", "Certified PMO"
+        MBA_LEVEL_7 = "mba_level_7", "MBA Level 7"
 
     class PreferredPathway(models.TextChoices):
         # Retained only so applications submitted before the move to modules

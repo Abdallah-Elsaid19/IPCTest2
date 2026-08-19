@@ -121,6 +121,7 @@ describe("bursary application validation", () => {
       "pmo_module",
       "pmp",
       "pmo",
+      "mba_level_7",
     ]);
     expect(bursaryApplicationSchema.safeParse({
       ...validValues(),

@@ -5,6 +5,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Build practical capability in applying artificial intelligence within a professional project environment.",
   },
   {
@@ -13,6 +14,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Develop specialist planning and scheduling knowledge for project delivery.",
   },
   {
@@ -21,6 +23,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Strengthen earned value management knowledge and performance measurement practice.",
   },
   {
@@ -29,6 +32,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Develop practical project risk identification, assessment and response skills.",
   },
   {
@@ -37,6 +41,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Build focused professional capability in project planning and controls.",
   },
   {
@@ -45,6 +50,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Develop structured programme-management knowledge and practice.",
   },
   {
@@ -53,6 +59,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Build the skills needed to support effective portfolio-level decisions and delivery.",
   },
   {
@@ -61,6 +68,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Strengthen stakeholder analysis, engagement and communication practice.",
   },
   {
@@ -69,6 +77,7 @@ export const bursaryModules = [
     meta: "Individual professional module",
     costGbp: 4_000,
     supportPercentage: 50,
+    amountPayableGbp: undefined,
     description: "Build focused practical knowledge in PMO governance, assurance and delivery support.",
   },
   {
@@ -77,6 +86,7 @@ export const bursaryModules = [
     meta: "Two-module programme",
     costGbp: 8_000,
     supportPercentage: 75,
+    amountPayableGbp: undefined,
     description: "Develop project management knowledge aligned with professional practice.",
   },
   {
@@ -85,7 +95,17 @@ export const bursaryModules = [
     meta: "Four-module professional package",
     costGbp: 16_000,
     supportPercentage: 75,
+    amountPayableGbp: undefined,
     description: "Complete a four-module professional package covering PMO, Risk, Planning and Stakeholder.",
+  },
+  {
+    value: "mba_level_7",
+    title: "MBA Level 7",
+    meta: "Six-module professional package",
+    costGbp: 6_000,
+    supportPercentage: 80,
+    amountPayableGbp: 1_000,
+    description: "Complete a six-module MBA-level package covering Advanced Business Research Methods, Strategic Management, Strategic Leadership, Strategic Human Resource Management, Strategic Financial Management and Strategic Marketing.",
   },
 ] as const;
 
@@ -112,14 +132,14 @@ export function calculateBursaryFundingEstimate(
   const lines = bursaryModules
     .filter((module) => selected.has(module.value))
     .map((module) => {
-      const discountGbp = module.costGbp * (module.supportPercentage / 100);
+      const amountPayableGbp = module.amountPayableGbp ?? module.costGbp * (1 - module.supportPercentage / 100);
       return {
         value: module.value,
         title: module.title,
         costGbp: module.costGbp,
         supportPercentage: module.supportPercentage,
-        discountGbp,
-        amountPayableGbp: module.costGbp - discountGbp,
+        discountGbp: module.costGbp - amountPayableGbp,
+        amountPayableGbp,
       };
     });
 

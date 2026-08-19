@@ -187,6 +187,7 @@ export const moduleLabels: Record<string, string> = {
   pmo_module: "PMO",
   pmp: "PMP",
   pmo: "Certified PMO",
+  mba_level_7: "MBA Level 7",
 };
 
 export const bursaryApi = {

@@ -42,6 +42,7 @@ export const pathwayValues = [
   "pmo_module",
   "pmp",
   "pmo",
+  "mba_level_7",
 ] as const;
 
 const existingOrIdentityDocument = z.union([
