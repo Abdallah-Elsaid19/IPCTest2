@@ -308,8 +308,11 @@ export default function AdminScholarshipAnnouncementPage() {
                   </div>
                 </Panel>
 
-                <Panel title="Official recipient register panel" description="Edit the right-hand panel shown beside the celebration hero. The date and recipient count remain automatic.">
+                <Panel title="Official recipient register panel" description="Edit the right-hand panel shown beside the celebration hero. The recipient count remains automatic.">
                   <div className="grid gap-5 md:grid-cols-2">
+                    <Field label="Announcement date and time (London)" wide>
+                      <input type="datetime-local" required value={toLondonDateTimeInput(draft.announcement_at)} onChange={(event) => updateDraft("announcement_at", londonDateTimeToIso(event.target.value))} className={inputClass} />
+                    </Field>
                     <Field label="Panel title"><input required value={draft.register_title} onChange={(event) => updateDraft("register_title", event.target.value)} className={inputClass} /></Field>
                     <Field label="Panel description"><textarea required value={draft.register_description} onChange={(event) => updateDraft("register_description", event.target.value)} className={textareaClass} /></Field>
                     <Field label="Announcement date label"><input required value={draft.register_date_label} onChange={(event) => updateDraft("register_date_label", event.target.value)} className={inputClass} /></Field>

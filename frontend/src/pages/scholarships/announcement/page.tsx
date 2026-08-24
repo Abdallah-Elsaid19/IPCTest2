@@ -360,15 +360,17 @@ function ScholarshipRecipientsReveal({
       <div className="relative grid min-h-[39rem] items-center gap-12 pb-14 pt-5 lg:grid-cols-[minmax(0,1.12fr)_minmax(24rem,.72fr)] lg:gap-20 lg:pb-20 lg:pt-7">
         <div>
           {isPreviousRound && (
-            <button
-              type="button"
-              onClick={onBackToAnnouncement}
-              className="mb-8 inline-flex min-h-12 items-center gap-3 border border-primary-400/45 bg-black/40 px-6 text-xs font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-black"
-            >
-              <ArrowLeft size={17} aria-hidden="true" /> Back to announcement
-            </button>
+            <div className="mb-8">
+              <button
+                type="button"
+                onClick={onBackToAnnouncement}
+                className="inline-flex min-h-12 items-center gap-3 border border-primary-400/45 bg-black/40 px-6 text-xs font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-black"
+              >
+                <ArrowLeft size={17} aria-hidden="true" /> Back to announcement
+              </button>
+            </div>
           )}
-          <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
+          <span className="flex w-fit items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
             <Award size={15} aria-hidden="true" /> {revealEyebrow} <span aria-hidden="true">✦</span>
           </span>
           <h1 className="mt-7 max-w-[49rem] font-heading text-[clamp(3rem,6.2vw,6.7rem)] font-semibold leading-[0.88] tracking-[-0.055em] text-white">
@@ -728,7 +730,7 @@ export default function ScholarshipAnnouncementPage() {
 
       {(hasArrived || showPreviousRoundAwardees) && <GoldenConfetti />}
 
-      <section className={`container-content relative min-h-[calc(100svh-2.25rem)] pb-16 lg:pb-20 ${hasArrived || showPreviousRoundAwardees ? "pt-0" : "pt-28 lg:pt-32"}`}>
+      <section className={`container-content relative min-h-[calc(100svh-2.25rem)] pb-16 lg:pb-20 ${hasArrived || showPreviousRoundAwardees ? "pt-16 lg:pt-20" : "pt-28 lg:pt-32"}`}>
         {!hasArrived && !showPreviousRoundAwardees && <div className="relative flex min-w-0 flex-col items-start gap-5 sm:min-h-11 sm:flex-row sm:items-center sm:justify-between">
           <Link
             to="/scholarships"
