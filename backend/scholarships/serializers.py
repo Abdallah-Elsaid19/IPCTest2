@@ -34,7 +34,10 @@ class ScholarshipAnnouncementContentSerializer(serializers.ModelSerializer):
             "countdown_eyebrow", "countdown_title", "countdown_description",
             "reminder_button_label", "reminder_disclaimer", "previous_round_button_label",
             "recipients_eyebrow", "recipients_title", "recipients_description",
-            "recipients_highlight", "empty_title", "empty_description", "publication_notice",
+            "recipients_highlight", "register_title", "register_description",
+            "register_date_label", "register_intake_label", "register_intake_value",
+            "register_total_label", "register_status_label", "register_status_value",
+            "empty_title", "empty_description", "publication_notice",
             "apply_button_label", "seo_title", "seo_description", "has_arrived",
             "updated_by", "updated_at",
         ]

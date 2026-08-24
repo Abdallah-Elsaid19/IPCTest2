@@ -17,6 +17,14 @@ export interface ScholarshipAnnouncementContent {
   recipients_title: string;
   recipients_description: string;
   recipients_highlight: string;
+  register_title: string;
+  register_description: string;
+  register_date_label: string;
+  register_intake_label: string;
+  register_intake_value: string;
+  register_total_label: string;
+  register_status_label: string;
+  register_status_value: string;
   empty_title: string;
   empty_description: string;
   publication_notice: string;

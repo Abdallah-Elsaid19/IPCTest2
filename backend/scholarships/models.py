@@ -223,6 +223,22 @@ class ScholarshipAnnouncementContent(models.Model):
             "public release are included in this register."
         )
     )
+    register_title = models.CharField(
+        max_length=240,
+        default="Official 2026 Recipient Register",
+    )
+    register_description = models.TextField(
+        default=(
+            "This page is the approved public record of IPC scholarship and bursary "
+            "recipients. Details appear only where publication consent has been confirmed."
+        )
+    )
+    register_date_label = models.CharField(max_length=100, default="Announcement date")
+    register_intake_label = models.CharField(max_length=100, default="Academic intake")
+    register_intake_value = models.CharField(max_length=160, default="2026 programme year")
+    register_total_label = models.CharField(max_length=120, default="Total 2026 recipients")
+    register_status_label = models.CharField(max_length=100, default="Record status")
+    register_status_value = models.CharField(max_length=160, default="Official announcement")
     empty_title = models.CharField(max_length=180, default="Recipients will be published shortly.")
     empty_description = models.TextField(
         default="Approved recipient profiles will appear here as soon as they are available."

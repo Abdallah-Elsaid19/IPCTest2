@@ -25,6 +25,14 @@ type ScholarshipAnnouncementContent = {
   recipients_title: string;
   recipients_description: string;
   recipients_highlight: string;
+  register_title: string;
+  register_description: string;
+  register_date_label: string;
+  register_intake_label: string;
+  register_intake_value: string;
+  register_total_label: string;
+  register_status_label: string;
+  register_status_value: string;
   empty_title: string;
   empty_description: string;
   publication_notice: string;
@@ -51,6 +59,14 @@ const DEFAULT_ANNOUNCEMENT_CONTENT: ScholarshipAnnouncementContent = {
   recipients_title: "2026 IPC Scholarship & Bursary Recipients",
   recipients_description: "The Institute of Project Controls is pleased to recognise the professionals selected for support through the IPC Scholarship and Bursary Fund.",
   recipients_highlight: "These are the approved Round Two recipients. Only applications approved for public release are included in this register.",
+  register_title: "Official 2026 Recipient Register",
+  register_description: "This page is the approved public record of IPC scholarship and bursary recipients. Details appear only where publication consent has been confirmed.",
+  register_date_label: "Announcement date",
+  register_intake_label: "Academic intake",
+  register_intake_value: "2026 programme year",
+  register_total_label: "Total 2026 recipients",
+  register_status_label: "Record status",
+  register_status_value: "Official announcement",
   empty_title: "Recipients will be published shortly.",
   empty_description: "Approved recipient profiles will appear here as soon as they are available.",
   publication_notice: "Only information approved for public release is shown. Financial values, personal contact details and private circumstances are intentionally excluded.",
@@ -333,15 +349,6 @@ function ScholarshipRecipientsReveal({
 
   return (
     <div className="relative pb-0">
-      {isPreviousRound && (
-        <button
-          type="button"
-          onClick={onBackToAnnouncement}
-          className="relative z-20 inline-flex min-h-11 items-center gap-2 border border-primary-400/45 bg-black/45 px-5 text-xs font-bold uppercase tracking-[0.12em] text-primary-200 transition hover:bg-primary-400 hover:text-black"
-        >
-          <ArrowLeft size={16} aria-hidden="true" /> Back to announcement
-        </button>
-      )}
       <div className="pointer-events-none absolute inset-x-1/2 top-[-7rem] h-[48rem] w-screen -translate-x-1/2 overflow-hidden" aria-hidden="true">
         <div className="announcement-gold-haze absolute inset-0" />
         {Array.from({ length: 26 }, (_, index) => (
@@ -350,8 +357,17 @@ function ScholarshipRecipientsReveal({
         <span className="announcement-ribbon announcement-ribbon-left" />
         <span className="announcement-ribbon announcement-ribbon-right" />
       </div>
-      <div className="relative grid min-h-[39rem] items-center gap-12 py-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(24rem,.72fr)] lg:gap-20 lg:py-20">
+      <div className="relative grid min-h-[39rem] items-center gap-12 pb-14 pt-5 lg:grid-cols-[minmax(0,1.12fr)_minmax(24rem,.72fr)] lg:gap-20 lg:pb-20 lg:pt-7">
         <div>
+          {isPreviousRound && (
+            <button
+              type="button"
+              onClick={onBackToAnnouncement}
+              className="mb-8 inline-flex min-h-12 items-center gap-3 border border-primary-400/45 bg-black/40 px-6 text-xs font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-black"
+            >
+              <ArrowLeft size={17} aria-hidden="true" /> Back to announcement
+            </button>
+          )}
           <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
             <Award size={15} aria-hidden="true" /> {revealEyebrow} <span aria-hidden="true">✦</span>
           </span>
@@ -372,11 +388,7 @@ function ScholarshipRecipientsReveal({
             <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/55 bg-black/30 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-background-950">
               {content.apply_button_label} <ArrowRight size={16} aria-hidden="true" />
             </Link>
-            {isPreviousRound ? (
-              <button type="button" onClick={onBackToAnnouncement} className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:border-primary-400 hover:text-primary-200">
-                <ArrowLeft size={16} aria-hidden="true" /> Back to announcement
-              </button>
-            ) : (
+            {!isPreviousRound && (
               <button type="button" onClick={onShowPreviousRound} className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:border-primary-400 hover:text-primary-200">
                 <Trophy size={16} aria-hidden="true" /> {content.previous_round_button_label}
               </button>
@@ -393,16 +405,16 @@ function ScholarshipRecipientsReveal({
             <span className="absolute right-0 -scale-x-100 text-7xl text-primary-500/80">❧</span>
             <span className="grid h-20 w-20 place-items-center rounded-full border-2 border-primary-400 bg-black font-heading text-2xl font-bold text-primary-200 shadow-[0_0_35px_rgba(216,149,36,.25)]">IPC</span>
           </div>
-          <h2 className="relative mt-4 text-center font-heading text-[clamp(2rem,3vw,3rem)] font-semibold leading-tight tracking-[-0.035em] text-white">Official 2026<br />Recipient Register</h2>
+          <h2 className="relative mt-4 text-center font-heading text-[clamp(2rem,3vw,3rem)] font-semibold leading-tight tracking-[-0.035em] text-white">{content.register_title}</h2>
           <p className="relative mx-auto mt-5 max-w-md text-center text-sm leading-6 text-background-400">
-            This page is the approved public record of IPC scholarship and bursary recipients. Details appear only where publication consent has been confirmed.
+            {content.register_description}
           </p>
           <dl className="relative mt-8 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
-              ["Announcement date", formatLondonAnnouncement(content.announcement_at).date],
-              ["Academic intake", "2026 programme year"],
-              ["Total 2026 recipients", isLoading ? "Loading…" : `${recipients.length} recipients`],
-              ["Record status", "Official announcement"],
+              [content.register_date_label, formatLondonAnnouncement(content.announcement_at).date],
+              [content.register_intake_label, content.register_intake_value],
+              [content.register_total_label, isLoading ? "Loading…" : `${recipients.length} recipients`],
+              [content.register_status_label, content.register_status_value],
             ].map(([label, value]) => (
               <div key={label} className="border-b border-primary-400/20 bg-black/35 p-5 odd:border-r sm:[&:nth-last-child(-n+2)]:border-b-0">
                 <dt className="font-mono text-[8px] font-bold uppercase tracking-[0.18em] text-primary-400">{label}</dt>
@@ -716,8 +728,8 @@ export default function ScholarshipAnnouncementPage() {
 
       {(hasArrived || showPreviousRoundAwardees) && <GoldenConfetti />}
 
-      <section className="container-content relative min-h-[calc(100svh-2.25rem)] pb-16 pt-28 lg:pb-20 lg:pt-32">
-        {!hasArrived && <div className="relative flex min-w-0 flex-col items-start gap-5 sm:min-h-11 sm:flex-row sm:items-center sm:justify-between">
+      <section className={`container-content relative min-h-[calc(100svh-2.25rem)] pb-16 lg:pb-20 ${hasArrived || showPreviousRoundAwardees ? "pt-0" : "pt-28 lg:pt-32"}`}>
+        {!hasArrived && !showPreviousRoundAwardees && <div className="relative flex min-w-0 flex-col items-start gap-5 sm:min-h-11 sm:flex-row sm:items-center sm:justify-between">
           <Link
             to="/scholarships"
             className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-background-300 transition-colors hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"

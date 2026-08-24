@@ -293,7 +293,7 @@ export default function AdminScholarshipAnnouncementPage() {
             <div className="mt-6 space-y-6">
               <CelebrationPreview content={draft} winners={winners} />
 
-              <form onSubmit={(event) => { event.preventDefault(); void saveContent(); }}>
+              <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); void saveContent(); }}>
                 <Panel title="Celebration page content" description="Edit the copy used by the gold-ribbon recipients page. The preview above updates while you type.">
                   <div className="grid gap-5 md:grid-cols-2">
                     <Field label="Celebration eyebrow"><input required value={draft.recipients_eyebrow} onChange={(event) => updateDraft("recipients_eyebrow", event.target.value)} className={inputClass} /></Field>
@@ -306,13 +306,27 @@ export default function AdminScholarshipAnnouncementPage() {
                     <Field label="Empty winners description"><textarea required value={draft.empty_description} onChange={(event) => updateDraft("empty_description", event.target.value)} className={textareaClass} /></Field>
                     <Field label="Publication notice" wide><textarea required value={draft.publication_notice} onChange={(event) => updateDraft("publication_notice", event.target.value)} className={textareaClass} /></Field>
                   </div>
-                  <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#E4D9CB] pt-5">
-                    <button type="button" onClick={() => setDraft(content)} disabled={isSavingContent} className="h-11 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold">Discard changes</button>
-                    <button type="submit" disabled={isSavingContent} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-6 text-xs font-black text-[#0B0B0B] disabled:opacity-60">
-                      {isSavingContent ? <LoaderCircle size={16} className="animate-spin" /> : <Save size={16} />} {isSavingContent ? "Saving..." : "Save celebration page"}
-                    </button>
+                </Panel>
+
+                <Panel title="Official recipient register panel" description="Edit the right-hand panel shown beside the celebration hero. The date and recipient count remain automatic.">
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <Field label="Panel title"><input required value={draft.register_title} onChange={(event) => updateDraft("register_title", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Panel description"><textarea required value={draft.register_description} onChange={(event) => updateDraft("register_description", event.target.value)} className={textareaClass} /></Field>
+                    <Field label="Announcement date label"><input required value={draft.register_date_label} onChange={(event) => updateDraft("register_date_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Academic intake label"><input required value={draft.register_intake_label} onChange={(event) => updateDraft("register_intake_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Academic intake value"><input required value={draft.register_intake_value} onChange={(event) => updateDraft("register_intake_value", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Total recipients label"><input required value={draft.register_total_label} onChange={(event) => updateDraft("register_total_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Record status label"><input required value={draft.register_status_label} onChange={(event) => updateDraft("register_status_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Record status value"><input required value={draft.register_status_value} onChange={(event) => updateDraft("register_status_value", event.target.value)} className={inputClass} /></Field>
                   </div>
                 </Panel>
+
+                <div className="sticky bottom-5 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#D8CCBD] bg-[#FFFDF9]/95 p-4 shadow-xl backdrop-blur">
+                  <button type="button" onClick={() => setDraft(content)} disabled={isSavingContent} className="h-11 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold">Discard changes</button>
+                  <button type="submit" disabled={isSavingContent} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-6 text-xs font-black text-[#0B0B0B] disabled:opacity-60">
+                    {isSavingContent ? <LoaderCircle size={16} className="animate-spin" /> : <Save size={16} />} {isSavingContent ? "Saving..." : "Save celebration page"}
+                  </button>
+                </div>
               </form>
 
             <section className="mt-6 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#FFFDF9] shadow-[0_8px_25px_rgba(66,48,31,0.06)]">
@@ -370,6 +384,15 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
 }
 
 function CelebrationPreview({ content, winners }: { content: ScholarshipAnnouncementContent; winners: ScholarshipWinner[] }) {
+  const publishedRoundWinners = winners.filter(
+    (winner) => winner.is_published && winner.award_round === content.announcement_round,
+  );
+  const announcementDate = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/London",
+  }).format(new Date(content.announcement_at));
   const previewWinners = [...winners]
     .filter((winner) => winner.is_published)
     .sort((left, right) => {
@@ -400,12 +423,25 @@ function CelebrationPreview({ content, winners }: { content: ScholarshipAnnounce
 
         <div className="mt-6 max-w-3xl border border-primary-400/30 bg-black/45 px-5 py-4 text-sm leading-6 text-[#E2D9CD]">{content.recipients_highlight}</div>
 
+        <aside className="relative mx-auto mt-8 max-w-xl overflow-hidden rounded-[1.5rem] border border-primary-400/45 bg-[linear-gradient(145deg,rgba(32,29,24,.95),rgba(8,9,9,.98))] p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,.45)]">
+          <div className="pointer-events-none absolute inset-3 rounded-[1.1rem] border border-primary-400/10" />
+          <div className="relative mx-auto flex h-16 w-32 items-center justify-center" aria-hidden="true"><span className="absolute left-0 text-4xl text-primary-500/80">❧</span><span className="grid h-14 w-14 place-items-center rounded-full border-2 border-primary-400 bg-black font-heading text-base font-bold text-primary-200">IPC</span><span className="absolute right-0 -scale-x-100 text-4xl text-primary-500/80">❧</span></div>
+          <h3 className="relative mt-4 font-heading text-3xl font-semibold leading-tight tracking-[-0.035em] text-white">{content.register_title}</h3>
+          <p className="relative mx-auto mt-4 max-w-md text-xs leading-6 text-[#AAA198]">{content.register_description}</p>
+          <dl className="relative mt-6 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
+            {[
+              [content.register_date_label, announcementDate],
+              [content.register_intake_label, content.register_intake_value],
+              [content.register_total_label, `${publishedRoundWinners.length} recipients`],
+              [content.register_status_label, content.register_status_value],
+            ].map(([label, value]) => <div key={label} className="border-b border-primary-400/20 bg-black/35 p-4 text-left odd:border-r sm:[&:nth-last-child(-n+2)]:border-b-0"><dt className="font-mono text-[7px] font-black uppercase tracking-[.16em] text-primary-400">{label}</dt><dd className="mt-2 text-xs font-bold text-white">{value}</dd></div>)}
+          </dl>
+        </aside>
+
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {previewWinners.length > 0 ? previewWinners.map((winner) => (
             <article key={winner.id} className="overflow-hidden border border-primary-400/30 bg-[#111317]">
-              <div className="grid aspect-[4/3] place-items-center bg-[radial-gradient(circle_at_50%_35%,rgba(216,149,36,.22),transparent_55%),#171B22]">
-                {winner.photo_url ? <img src={winner.photo_url} alt="" className="h-full w-full object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-full border border-primary-400/35 bg-primary-400/10 font-heading text-xl font-bold text-primary-200">{winner.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>}
-              </div>
+              <WinnerPreviewPortrait winner={winner} />
               <div className="p-3"><h3 className="line-clamp-2 text-sm font-black">{winner.name}</h3><p className="mt-2 line-clamp-2 text-[10px] leading-4 text-primary-200">{winner.award || winner.modules.join(", ") || "IPC Scholarship Fund"}</p><p className="mt-2 font-mono text-[8px] uppercase tracking-[.12em] text-[#999188]">Round {winner.award_round}{winner.country ? ` · ${winner.country}` : ""}</p></div>
             </article>
           )) : (
@@ -420,6 +456,36 @@ function CelebrationPreview({ content, winners }: { content: ScholarshipAnnounce
         <p className="mt-6 border-t border-white/10 pt-4 text-[10px] leading-5 text-[#938B82]">{content.publication_notice}</p>
       </div>
     </section>
+  );
+}
+
+function WinnerPreviewPortrait({ winner }: { winner: ScholarshipWinner }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const linkedApplicationPhoto = winner.application_reference
+    ? `/api/scholarship-announcement/recipients/${winner.id}/photo`
+    : "";
+  const imageUrl = winner.photo_url || linkedApplicationPhoto;
+  const initials = winner.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="grid aspect-[4/3] place-items-center overflow-hidden bg-[radial-gradient(circle_at_50%_35%,rgba(216,149,36,.22),transparent_55%),#171B22]">
+      {imageUrl && !imageFailed ? (
+        <img
+          src={imageUrl}
+          alt={winner.name}
+          className="h-full w-full object-contain"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <span className="grid h-16 w-16 place-items-center rounded-full border border-primary-400/35 bg-primary-400/10 font-heading text-xl font-bold text-primary-200">{initials || "IPC"}</span>
+      )}
+    </div>
   );
 }
 
