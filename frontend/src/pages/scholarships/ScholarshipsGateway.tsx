@@ -45,9 +45,10 @@ const AI_SPOTLIGHT_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/2689471e91444b2a9db6670c172036e2.webp";
 const ALL_INCLUSIVE_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b4bc056cfa164feca8dc939778cc94c9.webp";
-const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
+// 10 September 2026 at 2:00 PM in London (BST, UTC+1).
+const ANNOUNCEMENT_TIME = Date.parse("2026-09-10T14:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
-const SHOW_COUNTDOWN_WIDGET = false;
+const SHOW_COUNTDOWN_WIDGET = true;
 
 function getAnnouncementCountdown(now: number) {
   const remaining = Math.max(0, ANNOUNCEMENT_TIME - now);
@@ -936,8 +937,8 @@ export default function ScholarshipsGateway() {
 
               <div className="mt-4 border border-primary-400/35 bg-primary-400/[0.07] p-4 text-center sm:p-5">
                 <CalendarDays className="mx-auto text-primary-300" size={21} aria-hidden="true" />
-                <p className="mt-2.5 font-heading text-xl font-semibold text-white sm:text-2xl">12 August 2026</p>
-                <p className="mt-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.22em] text-background-400">Official announcement date</p>
+                <p className="mt-2.5 font-heading text-xl font-semibold text-white sm:text-2xl">10 September 2026</p>
+                <p className="mt-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.22em] text-background-400">2:00 PM London time</p>
               </div>
             </div>
             )}

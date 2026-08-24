@@ -4,7 +4,7 @@ import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
 
 const bookingUrl =
-  "https://outlook.office.com/book/IPC@kentbusinesscollege.com/s/ZND9gXN_Ckuhz75PflhCdQ2?ismsaljsauthenabled";
+  "https://outlook.office.com/book/ComplianceMeetingwithJennifer@kentbusinesscollege.com/s/9nmCp10uMUWen89mOwYSSA2?ismsaljsauthenabled";
 
 const ipcLogoUrl =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
