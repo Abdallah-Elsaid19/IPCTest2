@@ -221,105 +221,19 @@ function RecipientPortrait({ recipient, className = "" }: { recipient: Scholarsh
   );
 }
 
-function PreviousRoundAwardeesModal({ onClose, round, buttonLabel }: { onClose: () => void; round: 1 | 2; buttonLabel: string }) {
-  const [recipients, setRecipients] = useState<ScholarshipRecipient[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void apiJson<ScholarshipRecipient[]>(
-      `/api/scholarship-announcement/recipients?round=${round}`,
-      undefined,
-      { signal: controller.signal, cache: "no-store", requestSource: "PreviousScholarshipAwardees" },
-    )
-      .then(setRecipients)
-      .catch((requestError) => {
-        if (!controller.signal.aborted) {
-          setError(requestError instanceof Error ? requestError.message : "The previous-round awardees could not be loaded.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
-      });
-    return () => controller.abort();
-  }, [round]);
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeButtonRef.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[110] overflow-y-auto bg-black/90 p-4 backdrop-blur-md sm:p-8"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="previous-round-awardees-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section className="relative mx-auto my-6 w-full max-w-6xl overflow-hidden border border-primary-400/45 bg-[#090a0b] p-6 shadow-[0_40px_120px_rgba(0,0,0,.75)] sm:p-9 lg:p-12">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(216,149,36,.14),transparent_38%)]" aria-hidden="true" />
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={onClose}
-          aria-label="Close previous round awardees"
-          className="absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/70 text-white transition hover:border-primary-400 hover:bg-primary-500 hover:text-black"
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
-
-        <div className="relative pr-14">
-          <p className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
-            <Trophy size={16} aria-hidden="true" /> Previous funded round
-          </p>
-          <h2 id="previous-round-awardees-title" className="mt-4 font-heading text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-            {buttonLabel}
-          </h2>
-          <p className="mt-3 text-sm text-background-400">Approved IPC Scholarship and Bursary Fund recipients from Round {round}.</p>
-        </div>
-
-        {isLoading && (
-          <div className="relative grid min-h-72 place-items-center" role="status">
-            <LoaderCircle className="animate-spin text-primary-400" size={30} />
-            <span className="sr-only">Loading Round {round} awardees</span>
-          </div>
-        )}
-        {!isLoading && error && <p className="relative mt-10 border border-red-400/30 bg-red-400/10 p-5 text-sm text-red-200" role="alert">{error}</p>}
-        {!isLoading && !error && recipients.length === 0 && <p className="relative mt-10 border border-white/10 bg-white/[.04] p-8 text-center text-background-300">No previous-round awardees are available.</p>}
-        {!isLoading && !error && recipients.length > 0 && (
-          <div className="relative mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-            {recipients.map((recipient) => (
-              <article key={recipient.id} className="group overflow-hidden border border-primary-400/30 bg-[#111317] shadow-[0_20px_55px_rgba(0,0,0,.4)]">
-                <RecipientPortrait recipient={recipient} />
-                <div className="p-4">
-                  <h3 className="font-heading text-xl font-semibold text-white">{recipient.name}</h3>
-                  <p className="mt-2 text-xs leading-5 text-primary-200">{recipient.award || "IPC Scholarship Fund"}</p>
-                  {recipient.country && <p className="mt-3 flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.12em] text-background-400"><MapPin size={12} aria-hidden="true" />{recipient.country}</p>}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowPreviousRound: () => void; content: ScholarshipAnnouncementContent }) {
+function ScholarshipRecipientsReveal({
+  onShowPreviousRound,
+  onBackToAnnouncement,
+  content,
+  round,
+  isPreviousRound = false,
+}: {
+  onShowPreviousRound?: () => void;
+  onBackToAnnouncement?: () => void;
+  content: ScholarshipAnnouncementContent;
+  round: 1 | 2;
+  isPreviousRound?: boolean;
+}) {
   const [recipients, setRecipients] = useState<ScholarshipRecipient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -335,7 +249,7 @@ function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowP
     setIsLoading(true);
     setError("");
     void apiJson<ScholarshipRecipient[]>(
-      "/api/scholarship-announcement/recipients",
+      `/api/scholarship-announcement/recipients?round=${round}`,
       undefined,
       { signal: controller.signal, cache: "no-store", requestSource: "ScholarshipAnnouncementRecipients" },
     )
@@ -349,7 +263,7 @@ function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowP
         if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [round]);
 
   const awardOptions = useMemo(
     () => [...new Set(recipients.map((recipient) => recipient.award).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
@@ -408,8 +322,26 @@ function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowP
     };
   }, [closeRecipient, selectedRecipient]);
 
+  const revealEyebrow = isPreviousRound ? "Previous funded round" : content.recipients_eyebrow;
+  const revealTitle = isPreviousRound ? content.previous_round_button_label : content.recipients_title;
+  const revealDescription = isPreviousRound
+    ? `Celebrating the approved IPC Scholarship and Bursary Fund recipients from Round ${round}.`
+    : content.recipients_description;
+  const revealHighlight = isPreviousRound
+    ? `These are the approved Round ${round} recipients. Only applications approved for public release are included in this register.`
+    : content.recipients_highlight;
+
   return (
     <div className="relative pb-0">
+      {isPreviousRound && (
+        <button
+          type="button"
+          onClick={onBackToAnnouncement}
+          className="relative z-20 inline-flex min-h-11 items-center gap-2 border border-primary-400/45 bg-black/45 px-5 text-xs font-bold uppercase tracking-[0.12em] text-primary-200 transition hover:bg-primary-400 hover:text-black"
+        >
+          <ArrowLeft size={16} aria-hidden="true" /> Back to announcement
+        </button>
+      )}
       <div className="pointer-events-none absolute inset-x-1/2 top-[-7rem] h-[48rem] w-screen -translate-x-1/2 overflow-hidden" aria-hidden="true">
         <div className="announcement-gold-haze absolute inset-0" />
         {Array.from({ length: 26 }, (_, index) => (
@@ -421,17 +353,17 @@ function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowP
       <div className="relative grid min-h-[39rem] items-center gap-12 py-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(24rem,.72fr)] lg:gap-20 lg:py-20">
         <div>
           <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
-            <Award size={15} aria-hidden="true" /> {content.recipients_eyebrow} <span aria-hidden="true">✦</span>
+            <Award size={15} aria-hidden="true" /> {revealEyebrow} <span aria-hidden="true">✦</span>
           </span>
           <h1 className="mt-7 max-w-[49rem] font-heading text-[clamp(3rem,6.2vw,6.7rem)] font-semibold leading-[0.88] tracking-[-0.055em] text-white">
-            <span className="bg-gradient-to-b from-[#fff7e7] via-[#ffe2a0] to-[#dba13a] bg-clip-text text-transparent">{content.recipients_title}</span>
+            <span className="bg-gradient-to-b from-[#fff7e7] via-[#ffe2a0] to-[#dba13a] bg-clip-text text-transparent">{revealTitle}</span>
           </h1>
           <p className="mt-8 max-w-2xl text-sm leading-7 text-background-300 sm:text-base">
-            {content.recipients_description}
+            {revealDescription}
           </p>
           <div className="mt-7 flex max-w-2xl items-start gap-4 rounded-xl border border-primary-400/35 bg-black/45 px-5 py-4 text-sm leading-6 text-background-200 shadow-[inset_0_1px_rgba(255,221,153,.08),0_18px_50px_rgba(0,0,0,.35)] backdrop-blur-sm">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary-400/65 text-primary-300" aria-hidden="true">★</span>
-            <p>{content.recipients_highlight}</p>
+            <p>{revealHighlight}</p>
           </div>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a href="#recipient-register" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[0_10px_35px_rgba(216,149,36,.2)] transition hover:brightness-110">
@@ -440,9 +372,15 @@ function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowP
             <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/55 bg-black/30 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-background-950">
               {content.apply_button_label} <ArrowRight size={16} aria-hidden="true" />
             </Link>
-            <button type="button" onClick={onShowPreviousRound} className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:border-primary-400 hover:text-primary-200">
-              <Trophy size={16} aria-hidden="true" /> {content.previous_round_button_label}
-            </button>
+            {isPreviousRound ? (
+              <button type="button" onClick={onBackToAnnouncement} className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:border-primary-400 hover:text-primary-200">
+                <ArrowLeft size={16} aria-hidden="true" /> Back to announcement
+              </button>
+            ) : (
+              <button type="button" onClick={onShowPreviousRound} className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:border-primary-400 hover:text-primary-200">
+                <Trophy size={16} aria-hidden="true" /> {content.previous_round_button_label}
+              </button>
+            )}
           </div>
         </div>
 
@@ -776,7 +714,7 @@ export default function ScholarshipAnnouncementPage() {
       <div className="pointer-events-none absolute -right-64 bottom-[-20rem] h-[46rem] w-[46rem] rounded-full bg-[#71599b]/10 blur-[150px]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-x-0 top-24 h-px bg-gradient-to-r from-transparent via-primary-400/30 to-transparent" aria-hidden="true" />
 
-      {hasArrived && <GoldenConfetti />}
+      {(hasArrived || showPreviousRoundAwardees) && <GoldenConfetti />}
 
       <section className="container-content relative min-h-[calc(100svh-2.25rem)] pb-16 pt-28 lg:pb-20 lg:pt-32">
         {!hasArrived && <div className="relative flex min-w-0 flex-col items-start gap-5 sm:min-h-11 sm:flex-row sm:items-center sm:justify-between">
@@ -799,8 +737,22 @@ export default function ScholarshipAnnouncementPage() {
           </div>
         </div>}
 
-        {hasArrived ? (
-          <ScholarshipRecipientsReveal content={announcementContent} onShowPreviousRound={() => setShowPreviousRoundAwardees(true)} />
+        {showPreviousRoundAwardees ? (
+          <ScholarshipRecipientsReveal
+            content={announcementContent}
+            round={previousRound}
+            isPreviousRound
+            onBackToAnnouncement={() => {
+              setShowPreviousRoundAwardees(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
+        ) : hasArrived ? (
+          <ScholarshipRecipientsReveal
+            content={announcementContent}
+            round={announcementContent.announcement_round}
+            onShowPreviousRound={() => setShowPreviousRoundAwardees(true)}
+          />
         ) : (
         <div className="relative mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] lg:gap-16">
           <div className="order-2 min-w-0 lg:order-1 lg:-translate-y-12">
@@ -909,9 +861,6 @@ export default function ScholarshipAnnouncementPage() {
         </div>
         )}
       </section>
-      {showPreviousRoundAwardees && (
-        <PreviousRoundAwardeesModal round={previousRound} buttonLabel={announcementContent.previous_round_button_label} onClose={() => setShowPreviousRoundAwardees(false)} />
-      )}
     </div>
   );
 }

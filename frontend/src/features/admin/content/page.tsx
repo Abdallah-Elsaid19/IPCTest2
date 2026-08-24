@@ -7,6 +7,7 @@ import {
   Database,
   Eye,
   LoaderCircle,
+  Megaphone,
   Pencil,
   Plus,
   Save,
@@ -15,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { adminApi } from "@/features/admin/adminApi";
 import {
@@ -297,6 +298,15 @@ export default function AdminContentPage() {
             role="tablist"
             aria-label="Content tables"
           >
+            <Link
+              to="/admin/content/scholarship-announcement"
+              role="tab"
+              aria-selected="false"
+              className="inline-flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-black text-[#756B61] transition hover:bg-white/50"
+            >
+              <Megaphone size={15} />
+              Announcement
+            </Link>
             {tables.map((table) => (
               <button
                 key={table.slug}

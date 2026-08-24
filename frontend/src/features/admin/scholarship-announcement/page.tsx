@@ -1,6 +1,7 @@
 import {
   CalendarClock,
   ExternalLink,
+  FileJson,
   LoaderCircle,
   Megaphone,
   Pencil,
@@ -231,16 +232,19 @@ export default function AdminScholarshipAnnouncementPage() {
             eyebrow="Scholarship publishing"
             title="Announcement & winners"
             description="Control the public countdown, announcement copy and the editable winners register from one place."
-            action={(
+            action={<div className="flex flex-wrap gap-2">
+              <Link to="/admin/content" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-black text-primary-800 shadow-sm">
+                <FileJson size={16} /> All Content
+              </Link>
               <Link to="/scholarships/announcement" target="_blank" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-black text-primary-800 shadow-sm">
                 <ExternalLink size={16} /> View public page
               </Link>
-            )}
+            </div>}
           />
 
           <div className="mt-7 inline-flex rounded-xl border border-[#D8CCBD] bg-[#E9DED0] p-1" role="tablist" aria-label="Announcement management">
             <TabButton active={activeTab === "content"} onClick={() => setActiveTab("content")} icon={<CalendarClock size={15} />} label="Content & timer" />
-            <TabButton active={activeTab === "winners"} onClick={() => setActiveTab("winners")} icon={<Trophy size={15} />} label={`Winners (${winners.length})`} />
+            <TabButton active={activeTab === "winners"} onClick={() => setActiveTab("winners")} icon={<Trophy size={15} />} label={`Celebration page (${winners.length})`} />
           </div>
 
           {activeTab === "content" && (
@@ -256,7 +260,6 @@ export default function AdminScholarshipAnnouncementPage() {
                   <Toggle label="Countdown and timed release active" checked={draft.is_active} onChange={(checked) => updateDraft("is_active", checked)} />
                   <Field label="Fund label"><input required value={draft.fund_label} onChange={(event) => updateDraft("fund_label", event.target.value)} className={inputClass} /></Field>
                   <Field label="Gateway button label"><input required value={draft.announcement_button_label} onChange={(event) => updateDraft("announcement_button_label", event.target.value)} className={inputClass} /></Field>
-                  <Field label="Previous round button label"><input required value={draft.previous_round_button_label} onChange={(event) => updateDraft("previous_round_button_label", event.target.value)} className={inputClass} /></Field>
                 </div>
               </Panel>
 
@@ -267,19 +270,6 @@ export default function AdminScholarshipAnnouncementPage() {
                   <Field label="Description" wide><textarea required value={draft.countdown_description} onChange={(event) => updateDraft("countdown_description", event.target.value)} className={textareaClass} /></Field>
                   <Field label="Reminder button"><input required value={draft.reminder_button_label} onChange={(event) => updateDraft("reminder_button_label", event.target.value)} className={inputClass} /></Field>
                   <Field label="Reminder disclaimer"><textarea required value={draft.reminder_disclaimer} onChange={(event) => updateDraft("reminder_disclaimer", event.target.value)} className={textareaClass} /></Field>
-                </div>
-              </Panel>
-
-              <Panel title="Recipients page content" description="Copy shown after the timer ends and winners are released.">
-                <div className="grid gap-5 md:grid-cols-2">
-                  <Field label="Eyebrow"><input required value={draft.recipients_eyebrow} onChange={(event) => updateDraft("recipients_eyebrow", event.target.value)} className={inputClass} /></Field>
-                  <Field label="Title"><input required value={draft.recipients_title} onChange={(event) => updateDraft("recipients_title", event.target.value)} className={inputClass} /></Field>
-                  <Field label="Description"><textarea required value={draft.recipients_description} onChange={(event) => updateDraft("recipients_description", event.target.value)} className={textareaClass} /></Field>
-                  <Field label="Highlight message"><textarea required value={draft.recipients_highlight} onChange={(event) => updateDraft("recipients_highlight", event.target.value)} className={textareaClass} /></Field>
-                  <Field label="Empty table title"><input required value={draft.empty_title} onChange={(event) => updateDraft("empty_title", event.target.value)} className={inputClass} /></Field>
-                  <Field label="Empty table description"><textarea required value={draft.empty_description} onChange={(event) => updateDraft("empty_description", event.target.value)} className={textareaClass} /></Field>
-                  <Field label="Publication notice"><textarea required value={draft.publication_notice} onChange={(event) => updateDraft("publication_notice", event.target.value)} className={textareaClass} /></Field>
-                  <Field label="Apply button label"><input required value={draft.apply_button_label} onChange={(event) => updateDraft("apply_button_label", event.target.value)} className={inputClass} /></Field>
                 </div>
               </Panel>
 
@@ -300,6 +290,31 @@ export default function AdminScholarshipAnnouncementPage() {
           )}
 
           {activeTab === "winners" && (
+            <div className="mt-6 space-y-6">
+              <CelebrationPreview content={draft} winners={winners} />
+
+              <form onSubmit={(event) => { event.preventDefault(); void saveContent(); }}>
+                <Panel title="Celebration page content" description="Edit the copy used by the gold-ribbon recipients page. The preview above updates while you type.">
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <Field label="Celebration eyebrow"><input required value={draft.recipients_eyebrow} onChange={(event) => updateDraft("recipients_eyebrow", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Celebration title"><input required value={draft.recipients_title} onChange={(event) => updateDraft("recipients_title", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Introduction"><textarea required value={draft.recipients_description} onChange={(event) => updateDraft("recipients_description", event.target.value)} className={textareaClass} /></Field>
+                    <Field label="Highlighted message"><textarea required value={draft.recipients_highlight} onChange={(event) => updateDraft("recipients_highlight", event.target.value)} className={textareaClass} /></Field>
+                    <Field label="Previous round button label"><input required value={draft.previous_round_button_label} onChange={(event) => updateDraft("previous_round_button_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Apply button label"><input required value={draft.apply_button_label} onChange={(event) => updateDraft("apply_button_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Empty winners title"><input required value={draft.empty_title} onChange={(event) => updateDraft("empty_title", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Empty winners description"><textarea required value={draft.empty_description} onChange={(event) => updateDraft("empty_description", event.target.value)} className={textareaClass} /></Field>
+                    <Field label="Publication notice" wide><textarea required value={draft.publication_notice} onChange={(event) => updateDraft("publication_notice", event.target.value)} className={textareaClass} /></Field>
+                  </div>
+                  <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#E4D9CB] pt-5">
+                    <button type="button" onClick={() => setDraft(content)} disabled={isSavingContent} className="h-11 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold">Discard changes</button>
+                    <button type="submit" disabled={isSavingContent} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-6 text-xs font-black text-[#0B0B0B] disabled:opacity-60">
+                      {isSavingContent ? <LoaderCircle size={16} className="animate-spin" /> : <Save size={16} />} {isSavingContent ? "Saving..." : "Save celebration page"}
+                    </button>
+                  </div>
+                </Panel>
+              </form>
+
             <section className="mt-6 overflow-hidden rounded-2xl border border-[#DED2C3] bg-[#FFFDF9] shadow-[0_8px_25px_rgba(66,48,31,0.06)]">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#DED2C3] p-5">
                 <div><h2 className="text-xl font-black">Winners table</h2><p className="mt-1 text-sm text-[#756B61]">Published rows appear publicly when their round is released.</p></div>
@@ -330,6 +345,7 @@ export default function AdminScholarshipAnnouncementPage() {
               </div>
               {filteredWinners.length === 0 && <div className="p-5"><EmptyState>No winners match the selected filters.</EmptyState></div>}
             </section>
+            </div>
           )}
 
           {winnerModalOpen && <WinnerModal winner={editingWinner} draft={winnerDraft} onChange={setWinnerDraft} onClose={() => !isSavingWinner && setWinnerModalOpen(false)} onSave={() => void saveWinner()} isSaving={isSavingWinner} />}
@@ -351,6 +367,60 @@ export default function AdminScholarshipAnnouncementPage() {
 
 function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
   return <button type="button" role="tab" aria-selected={active} onClick={onClick} className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-xs font-black transition ${active ? "bg-[#FFFDF9] text-primary-800 shadow-sm" : "text-[#756B61]"}`}>{icon}{label}</button>;
+}
+
+function CelebrationPreview({ content, winners }: { content: ScholarshipAnnouncementContent; winners: ScholarshipWinner[] }) {
+  const previewWinners = [...winners]
+    .filter((winner) => winner.is_published)
+    .sort((left, right) => {
+      const leftCurrent = left.award_round === content.announcement_round ? 0 : 1;
+      const rightCurrent = right.award_round === content.announcement_round ? 0 : 1;
+      return leftCurrent - rightCurrent || left.display_order - right.display_order;
+    })
+    .slice(0, 5);
+
+  return (
+    <section className="relative isolate overflow-hidden rounded-2xl border border-[#6F4A16] bg-[#060707] p-6 text-white shadow-[0_22px_60px_rgba(22,15,7,.25)] md:p-9">
+      <div className="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_18%_0%,rgba(216,149,36,.2),transparent_31%),radial-gradient(circle_at_85%_100%,rgba(122,84,31,.15),transparent_34%)]" />
+      <span className="pointer-events-none absolute -left-32 top-16 h-56 w-80 -rotate-12 rounded-[50%] border-[18px] border-[#D89524]/20" />
+      <span className="pointer-events-none absolute -right-32 top-4 h-64 w-96 rotate-12 rounded-[50%] border-[15px] border-[#F2C567]/15" />
+      {Array.from({ length: 18 }, (_, index) => (
+        <span key={index} className="pointer-events-none absolute h-1.5 w-1.5 rotate-45 bg-primary-400/50" style={{ left: `${5 + ((index * 29) % 91)}%`, top: `${8 + ((index * 37) % 84)}%` }} />
+      ))}
+
+      <div className="relative">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <p className="font-mono text-[9px] font-black uppercase tracking-[0.25em] text-primary-400">{content.recipients_eyebrow}</p>
+            <h2 className="mt-4 bg-gradient-to-b from-[#fff7e7] via-[#ffe2a0] to-[#dba13a] bg-clip-text font-heading text-4xl font-semibold leading-tight tracking-[-0.04em] text-transparent md:text-5xl">{content.recipients_title}</h2>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-[#CFC7BD]">{content.recipients_description}</p>
+          </div>
+          <div className="border border-primary-400/35 bg-primary-400/[.08] px-4 py-2 font-mono text-[9px] font-black uppercase tracking-[.2em] text-primary-300">Round {content.announcement_round} preview</div>
+        </div>
+
+        <div className="mt-6 max-w-3xl border border-primary-400/30 bg-black/45 px-5 py-4 text-sm leading-6 text-[#E2D9CD]">{content.recipients_highlight}</div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {previewWinners.length > 0 ? previewWinners.map((winner) => (
+            <article key={winner.id} className="overflow-hidden border border-primary-400/30 bg-[#111317]">
+              <div className="grid aspect-[4/3] place-items-center bg-[radial-gradient(circle_at_50%_35%,rgba(216,149,36,.22),transparent_55%),#171B22]">
+                {winner.photo_url ? <img src={winner.photo_url} alt="" className="h-full w-full object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-full border border-primary-400/35 bg-primary-400/10 font-heading text-xl font-bold text-primary-200">{winner.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>}
+              </div>
+              <div className="p-3"><h3 className="line-clamp-2 text-sm font-black">{winner.name}</h3><p className="mt-2 line-clamp-2 text-[10px] leading-4 text-primary-200">{winner.award || winner.modules.join(", ") || "IPC Scholarship Fund"}</p><p className="mt-2 font-mono text-[8px] uppercase tracking-[.12em] text-[#999188]">Round {winner.award_round}{winner.country ? ` · ${winner.country}` : ""}</p></div>
+            </article>
+          )) : (
+            <div className="col-span-full border border-dashed border-primary-400/30 bg-white/[.03] p-8 text-center"><p className="font-heading text-xl text-primary-200">{content.empty_title}</p><p className="mt-2 text-xs text-[#AAA198]">{content.empty_description}</p></div>
+          )}
+        </div>
+
+        <div className="mt-7 flex flex-wrap gap-3">
+          <span className="bg-gradient-to-r from-[#F2C567] to-[#D99B2F] px-5 py-3 text-[10px] font-black uppercase tracking-[.12em] text-black">{content.apply_button_label}</span>
+          <span className="border border-white/20 bg-white/[.04] px-5 py-3 text-[10px] font-bold uppercase tracking-[.12em]">{content.previous_round_button_label}</span>
+        </div>
+        <p className="mt-6 border-t border-white/10 pt-4 text-[10px] leading-5 text-[#938B82]">{content.publication_notice}</p>
+      </div>
+    </section>
+  );
 }
 
 function Panel({ title, description, children }: { title: string; description: string; children: ReactNode }) {
