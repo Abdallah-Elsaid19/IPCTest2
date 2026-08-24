@@ -190,6 +190,10 @@ class BursaryApplication(models.Model):
         APPROVED = "approved", "Approved"
         REJECTED = "rejected", "Rejected"
 
+    class AwardRound(models.IntegerChoices):
+        ROUND_ONE = 1, "Round 1"
+        ROUND_TWO = 2, "Round 2"
+
     class PreferredModule(models.TextChoices):
         AI = "ai", "AI"
         PMI_SP = "pmi_sp", "PMI-SP"
@@ -235,6 +239,11 @@ class BursaryApplication(models.Model):
         editable=False,
     )
     form_version = models.CharField(max_length=24, default="IPC-BSAF-2026-01", editable=False)
+    award_round = models.PositiveSmallIntegerField(
+        choices=AwardRound.choices,
+        default=AwardRound.ROUND_TWO,
+        db_index=True,
+    )
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.SUBMITTED)
     submitted_at = models.DateTimeField(default=timezone.now, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)

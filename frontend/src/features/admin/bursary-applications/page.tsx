@@ -85,7 +85,7 @@ function ScholarshipRemindersTable() {
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-800">Announcement reminders</p>
           <h2 className="mt-2 text-xl font-black text-[#171411]">Saved email requests</h2>
-          <p className="mt-1 text-sm text-[#756B61]">People who asked to be reminded about the 12 August 2026 announcement.</p>
+          <p className="mt-1 text-sm text-[#756B61]">People who asked to be reminded about the 10 September 2026 Round Two announcement.</p>
         </div>
         <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#D8CCBD] bg-[#F7F1E9] px-4 py-2 text-sm font-bold text-[#4F463E]">
           <Mail size={16} aria-hidden="true" /> {items.length} requests
@@ -150,6 +150,7 @@ export default function AdminBursaryApplicationsPage() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Omit<BursaryAdminQuery, "page" | "search">>({
     status: "",
+    awardRound: "",
     pathway: "",
     employed: "",
     country: "",
@@ -200,7 +201,7 @@ export default function AdminBursaryApplicationsPage() {
   }, [result]);
   const pageCount = Math.max(1, Math.ceil((result?.count || 0) / 15));
   const hasFilters = Boolean(
-    search || filters.status || filters.pathway || filters.employed || filters.country
+    search || filters.status || filters.awardRound || filters.pathway || filters.employed || filters.country
     || filters.dateFrom || filters.dateTo || filters.ordering !== "-submitted_at",
   );
 
@@ -208,7 +209,7 @@ export default function AdminBursaryApplicationsPage() {
     setSearch("");
     setPage(1);
     setFilters({
-      status: "", pathway: "", employed: "", country: "", dateFrom: "",
+      status: "", awardRound: "", pathway: "", employed: "", country: "", dateFrom: "",
       dateTo: "", ordering: "-submitted_at",
     });
   };
@@ -295,6 +296,14 @@ export default function AdminBursaryApplicationsPage() {
               </select>
             </label>
             <label>
+              <span className="sr-only">Award round</span>
+              <select value={filters.awardRound} onChange={(event) => { setFilters((value) => ({ ...value, awardRound: event.target.value as BursaryAdminQuery["awardRound"] })); setPage(1); }} className={`${fieldClass} w-full`}>
+                <option value="">All rounds</option>
+                <option value="1">Round 1</option>
+                <option value="2">Round 2</option>
+              </select>
+            </label>
+            <label>
               <span className="sr-only">Module</span>
               <select value={filters.pathway} onChange={(event) => { setFilters((value) => ({ ...value, pathway: event.target.value })); setPage(1); }} className={`${fieldClass} w-full`}>
                 <option value="">All modules</option>
@@ -342,10 +351,10 @@ export default function AdminBursaryApplicationsPage() {
           <div className="p-5"><EmptyState>No bursary applications match the current filters.</EmptyState></div>
         ) : (
           <div className={`overflow-x-auto ${isLoading ? "opacity-60" : ""}`} aria-busy={isLoading}>
-            <table className="min-w-[1150px] w-full text-left text-sm">
+            <table className="min-w-[1220px] w-full text-left text-sm">
               <thead className="bg-[#ECE2D6] text-[10px] uppercase tracking-wider text-[#5E554C]">
                 <tr>
-                  {["Reference", "Applicant", "Mobile", "Country", "Employment", "Organisation", "Module", "Status", "Submitted", "Actions"].map((heading) => (
+                  {["Reference", "Applicant", "Round", "Mobile", "Country", "Employment", "Organisation", "Module", "Status", "Submitted", "Actions"].map((heading) => (
                     <th key={heading} className="px-4 py-3.5">{heading}</th>
                   ))}
                 </tr>
@@ -355,6 +364,7 @@ export default function AdminBursaryApplicationsPage() {
                   <tr key={item.id} className="hover:bg-[#FAF5EE]">
                     <td className="whitespace-nowrap px-4 py-4 font-mono text-xs font-bold text-primary-800">{item.application_reference}</td>
                     <td className="px-4 py-4"><p className="font-semibold">{item.applicant_name}</p><p className="mt-1 text-xs text-[#81766B]">{item.email}</p></td>
+                    <td className="whitespace-nowrap px-4 py-4"><span className="rounded-full border border-primary-700/20 bg-primary-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-900">{item.award_round_label}</span></td>
                     <td className="whitespace-nowrap px-4 py-4">{item.mobile_phone_e164}</td>
                     <td className="px-4 py-4">{item.country}</td>
                     <td className="px-4 py-4">{item.currently_employed ? "Employed" : "Not employed"}</td>

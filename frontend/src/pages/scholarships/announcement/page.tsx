@@ -5,62 +5,9 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/seo/SEO";
 import { apiJson } from "@/lib/api";
 
-const ANNOUNCEMENT_TIME = Date.parse("2026-08-12T14:00:00+01:00");
-const SHOW_COUNTDOWN_WIDGET = false;
+const ANNOUNCEMENT_TIME = Date.parse("2026-09-10T14:00:00+01:00");
+const SHOW_COUNTDOWN_WIDGET = true;
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
-
-const SCHOLARSHIP_RECIPIENTS: ScholarshipRecipient[] = [
-  {
-    id: 1,
-    name: "Sam Burrows",
-    award: "Certified PMO",
-    country: "United Kingdom",
-    modules: ["Certified PMO"],
-    category: "Scholarship",
-    year: 2026,
-    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/baabc2486e8140a0a54d73c0a6b03ddc.webp",
-  },
-  {
-    id: 2,
-    name: "Tajudeen Olugbenga",
-    award: "PPC",
-    country: "United Kingdom",
-    modules: ["PPC"],
-    category: "Scholarship",
-    year: 2026,
-    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/89714eed661347a6ab062e7eaa8795d5.webp",
-  },
-  {
-    id: 3,
-    name: "Blessing Ituma",
-    award: "PPC, Managing Portfolios, Certified PMO",
-    country: "United Kingdom",
-    modules: ["PPC", "Managing Portfolios", "Certified PMO"],
-    category: "Scholarship",
-    year: 2026,
-    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/8ad91f0e98b8496eae53a3ddacbee926.webp",
-  },
-  {
-    id: 4,
-    name: "Magdalena Ilie",
-    award: "AI, PMP",
-    country: "United Kingdom",
-    modules: ["AI", "PMP"],
-    category: "Scholarship",
-    year: 2026,
-    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f3da5d5fa9154ac894198bf592a86041.webp",
-  },
-  {
-    id: 5,
-    name: "Evidence Halliday",
-    award: "AI, MSP, Managing Portfolios, PMP",
-    country: "United Kingdom",
-    modules: ["AI", "MSP", "Managing Portfolios", "PMP"],
-    category: "Scholarship",
-    year: 2026,
-    photo_url: "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/c1001573b51548e8b716a16318ae9eea.webp",
-  },
-];
 
 type CountdownUnit = {
   label: string;
@@ -138,8 +85,8 @@ function AnnouncementDatePanel() {
 
       <div className="w-[min(26rem,82vw)] border border-white/15 bg-[#0d111b]/90 p-3 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md sm:p-4">
         <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-        <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">12 August 2026</p>
-        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">Official announcement date</p>
+        <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">10 September 2026</p>
+        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">2:00 PM London time</p>
       </div>
     </>
   );
@@ -176,6 +123,7 @@ type ScholarshipRecipient = {
   modules: string[];
   category: string;
   year: number;
+  award_round: 1 | 2;
   photo_url: string;
 };
 
@@ -214,15 +162,36 @@ function RecipientPortrait({ recipient, className = "" }: { recipient: Scholarsh
 }
 
 function ScholarshipRecipientsReveal() {
-  const recipients = SCHOLARSHIP_RECIPIENTS;
-  const isLoading = false;
-  const error = "";
+  const [recipients, setRecipients] = useState<ScholarshipRecipient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [awardFilter, setAwardFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [selectedRecipient, setSelectedRecipient] = useState<ScholarshipRecipient | null>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError("");
+    void apiJson<ScholarshipRecipient[]>(
+      "/api/scholarship-announcement/recipients",
+      undefined,
+      { signal: controller.signal, cache: "no-store", requestSource: "ScholarshipAnnouncementRecipients" },
+    )
+      .then(setRecipients)
+      .catch((requestError) => {
+        if (!controller.signal.aborted) {
+          setError(requestError instanceof Error ? requestError.message : "The recipient register could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
 
   const awardOptions = useMemo(
     () => [...new Set(recipients.map((recipient) => recipient.award).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
@@ -306,14 +275,14 @@ function ScholarshipRecipientsReveal() {
           </p>
           <div className="mt-7 flex max-w-2xl items-start gap-4 rounded-xl border border-primary-400/35 bg-black/45 px-5 py-4 text-sm leading-6 text-background-200 shadow-[inset_0_1px_rgba(255,221,153,.08),0_18px_50px_rgba(0,0,0,.35)] backdrop-blur-sm">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary-400/65 text-primary-300" aria-hidden="true">★</span>
-            <p><strong className="font-semibold text-white">This is the first round to receive support through the IPC Fund.</strong>{" "}Applications for Round Two are now open&mdash;apply early for the next opportunity.</p>
+            <p><strong className="font-semibold text-white">These are the approved Round Two recipients.</strong>{" "}Only applications approved for public release are included in this register.</p>
           </div>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a href="#recipient-register" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[0_10px_35px_rgba(216,149,36,.2)] transition hover:brightness-110">
               View all recipients <ArrowRight size={16} aria-hidden="true" />
             </a>
             <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/55 bg-black/30 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-background-950">
-              Apply for Round Two <ArrowRight size={16} aria-hidden="true" />
+              Apply for IPC support <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -333,7 +302,7 @@ function ScholarshipRecipientsReveal() {
           </p>
           <dl className="relative mt-8 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
-              ["Announcement date", "12 August 2026"],
+              ["Announcement date", "10 September 2026"],
               ["Academic intake", "2026 programme year"],
               ["Total 2026 recipients", isLoading ? "Loading…" : `${recipients.length} recipients`],
               ["Record status", "Official announcement"],
@@ -491,9 +460,9 @@ function ScholarshipRecipientsReveal() {
           <div className="relative">
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.27em] text-primary-400">Be part of the next generation</p>
             <h2 id="future-opportunities-title" className="mt-4 max-w-3xl font-heading text-[clamp(2.7rem,5vw,5.1rem)] font-semibold leading-[.92] tracking-[-0.045em] text-white">Be part of the next<br /><span className="text-primary-400">IPC Fund round.</span></h2>
-            <p className="mt-5 max-w-3xl text-sm leading-7 text-background-300 sm:text-base">Our first funded round has been announced. Applications for Round Two are now open, so submit your scholarship or bursary application early for the next opportunity. All places remain subject to eligibility review and written approval by IPC.</p>
+            <p className="mt-5 max-w-3xl text-sm leading-7 text-background-300 sm:text-base">Round Two recipients have been announced. New scholarship and bursary applications remain subject to eligibility review, available funding and written approval by IPC.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110">Apply for Round Two <ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110">Apply for IPC support <ArrowRight size={16} aria-hidden="true" /></Link>
               <Link to="/contact" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/45 bg-black/40 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-primary-400 hover:text-black">Contact IPC</Link>
             </div>
           </div>
@@ -609,14 +578,14 @@ export default function ScholarshipAnnouncementPage() {
     <div className="relative isolate min-h-[calc(100svh-2.25rem)] overflow-hidden bg-black text-background-50">
       <SEO
         title="IPC Scholarship Announcement Countdown"
-        description="Countdown to the Institute of Project Controls scholarship and bursary announcement on 12 August 2026."
+        description="Countdown to the Institute of Project Controls Round Two scholarship and bursary announcement on 10 September 2026."
         canonicalPath="/scholarships/announcement"
-        keywords={["IPC scholarship announcement", "project controls bursary", "12 August 2026"]}
+        keywords={["IPC scholarship announcement", "project controls bursary", "10 September 2026"]}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Event",
           name: "IPC Scholarship and Bursary Announcement",
-          startDate: "2026-08-12",
+          startDate: "2026-09-10T14:00:00+01:00",
           eventStatus: "https://schema.org/EventScheduled",
           eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
           organizer: {
@@ -666,7 +635,7 @@ export default function ScholarshipAnnouncementPage() {
             {hasArrived ? "The announcement day is here." : "The next chapter is almost here."}
           </h1>
           <p className="mt-7 max-w-2xl text-base leading-7 text-background-300 sm:text-lg sm:leading-8">
-            Successful IPC scholarship and bursary applicants will be announced on 12 August 2026 and contacted directly using the details in their application.
+            Approved Round Two IPC scholarship and bursary applicants will be announced on 10 September 2026 at 2:00 PM London time and contacted directly using the details in their application.
           </p>
 
           {SHOW_COUNTDOWN_WIDGET && (
@@ -747,8 +716,8 @@ export default function ScholarshipAnnouncementPage() {
           {SHOW_COUNTDOWN_WIDGET && (
             <div className="absolute left-1/2 top-[-4.75rem] z-20 hidden w-[min(26rem,82vw)] -translate-x-1/2 border border-white/15 bg-[#0d111b]/90 p-4 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md lg:block">
               <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-              <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">12 August 2026</p>
-              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">Official announcement date</p>
+              <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">10 September 2026</p>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">2:00 PM London time</p>
             </div>
           )}
         </div>

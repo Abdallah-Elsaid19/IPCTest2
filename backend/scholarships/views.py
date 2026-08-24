@@ -1,6 +1,8 @@
 import csv
 import json
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.http import FileResponse, Http404, HttpResponse
@@ -63,6 +65,14 @@ PATHWAY_DETAIL_FIELDS = {
 }
 
 logger = logging.getLogger(__name__)
+
+ROUND_TWO_ANNOUNCEMENT_AT = datetime(
+    2026, 9, 10, 14, 0, tzinfo=ZoneInfo("Europe/London")
+)
+
+
+def round_two_announcement_is_public():
+    return timezone.now() >= ROUND_TWO_ANNOUNCEMENT_AT
 
 
 def approved_membership_for_user(user, for_update=False):
@@ -529,8 +539,11 @@ class ScholarshipAnnouncementRecipientsView(APIView):
     throttle_scope = "scholarship_announcement"
 
     def get(self, request):
+        if not round_two_announcement_is_public():
+            return Response([])
         recipients = BursaryApplication.objects.filter(
             status=BursaryApplication.Status.APPROVED,
+            award_round=BursaryApplication.AwardRound.ROUND_TWO,
             approved_media_use_consent=True,
         ).order_by("first_name", "last_name", "pk")
         return Response(ScholarshipAnnouncementRecipientSerializer(recipients, many=True).data)
@@ -542,10 +555,13 @@ class ScholarshipAnnouncementRecipientPhotoView(APIView):
     throttle_scope = "scholarship_announcement"
 
     def get(self, request, pk):
+        if not round_two_announcement_is_public():
+            raise Http404("Recipient photo not found.")
         try:
             application = BursaryApplication.objects.get(
                 pk=pk,
                 status=BursaryApplication.Status.APPROVED,
+                award_round=BursaryApplication.AwardRound.ROUND_TWO,
                 approved_media_use_consent=True,
                 professional_headshot_consent=True,
             )
@@ -579,6 +595,7 @@ class AdminBursaryApplicationViewSet(
         "first_name",
         "last_name",
         "status",
+        "award_round",
     ]
     ordering = ["-submitted_at"]
 
@@ -596,6 +613,7 @@ class AdminBursaryApplicationViewSet(
         pathway = params.get("pathway")
         employed = params.get("employed")
         country = params.get("country")
+        award_round = params.get("award_round")
         date_from = params.get("date_from")
         date_to = params.get("date_to")
         if status_value in BursaryApplication.Status.values:
@@ -606,6 +624,8 @@ class AdminBursaryApplicationViewSet(
             queryset = queryset.filter(currently_employed=employed == "true")
         if country:
             queryset = queryset.filter(country__iexact=country.strip())
+        if award_round in {str(value) for value in BursaryApplication.AwardRound.values}:
+            queryset = queryset.filter(award_round=int(award_round))
         if date_from:
             queryset = queryset.filter(submitted_at__date__gte=date_from)
         if date_to:

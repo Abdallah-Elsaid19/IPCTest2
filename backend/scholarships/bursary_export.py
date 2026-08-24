@@ -23,7 +23,7 @@ BURSARY_MODULE_PAYABLE_OVERRIDE = {
 }
 
 BURSARY_EXPORT_HEADERS = [
-    "Application reference", "Membership reference", "Status",
+    "Application reference", "Membership reference", "Round", "Status",
     "Submitted at", "Updated at", "Assigned reviewer", "Internal review notes",
     "First name", "Last name", "Date of birth", "Email",
     "Phone country", "Calling code", "Mobile national number", "Mobile E.164",
@@ -99,6 +99,7 @@ def bursary_export_row(application):
     values = [
         application.application_reference,
         application.membership_reference,
+        application.get_award_round_display(),
         application.get_status_display(),
         application.submitted_at,
         application.updated_at,

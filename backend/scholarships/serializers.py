@@ -498,13 +498,15 @@ class BursaryApplicationListSerializer(serializers.ModelSerializer):
     applicant_name = serializers.SerializerMethodField()
     preferred_pathway_label = serializers.CharField(source="get_bursary_selection_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    award_round_label = serializers.CharField(source="get_award_round_display", read_only=True)
 
     class Meta:
         model = BursaryApplication
         fields = [
             "id", "application_reference", "membership_reference", "applicant_name", "email",
             "mobile_phone_e164", "country", "currently_employed", "organisation_name",
-            "preferred_pathway", "preferred_modules", "preferred_pathway_label", "status", "status_label", "submitted_at",
+            "preferred_pathway", "preferred_modules", "preferred_pathway_label",
+            "award_round", "award_round_label", "status", "status_label", "submitted_at",
         ]
         read_only_fields = fields
 
@@ -530,6 +532,7 @@ class ScholarshipAnnouncementRecipientSerializer(serializers.ModelSerializer):
             "modules",
             "category",
             "year",
+            "award_round",
             "photo_url",
         ]
         read_only_fields = fields
@@ -561,6 +564,7 @@ class ScholarshipAnnouncementRecipientSerializer(serializers.ModelSerializer):
 class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
     preferred_pathway_label = serializers.CharField(source="get_bursary_selection_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    award_round_label = serializers.CharField(source="get_award_round_display", read_only=True)
     assigned_reviewer_name = serializers.SerializerMethodField()
     status_history = BursaryStatusHistorySerializer(many=True, read_only=True)
     identity_document = serializers.SerializerMethodField()
@@ -570,7 +574,7 @@ class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
         model = BursaryApplication
         fields = [
             # Dashboard workflow metadata.
-            "id", "application_reference", "status", "status_label",
+            "id", "application_reference", "award_round", "award_round_label", "status", "status_label",
             "submitted_at", "updated_at", "assigned_reviewer",
             "assigned_reviewer_name", "reviewer_internal_notes", "status_history",
             # Section 1: Personal Details.

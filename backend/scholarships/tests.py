@@ -2,6 +2,7 @@ import base64
 import csv
 import io
 import json
+from datetime import datetime, timezone as datetime_timezone
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -460,6 +461,7 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(response.status_code, 201, response.data)
         self.assertRegex(response.data["applicationReference"], r"^IPC-BSA-\d{4}-[A-F0-9]{12}$")
         application = BursaryApplication.objects.get()
+        self.assertEqual(application.award_round, BursaryApplication.AwardRound.ROUND_TWO)
         self.assertEqual(application.preferred_modules, ["ai", "pmp"])
         self.assertEqual(application.mobile_phone_e164, "+447400123456")
         self.assertEqual(application.phone_national_number, "7400123456")
@@ -530,14 +532,23 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(created.status_code, 201, created.data)
         application = BursaryApplication.objects.get(pk=created.data["id"])
 
-        before_approval = self.client.get("/api/scholarship-announcement/recipients")
+        before_release = datetime(2026, 9, 10, 12, 59, tzinfo=datetime_timezone.utc)
+        after_release = datetime(2026, 9, 10, 13, 1, tzinfo=datetime_timezone.utc)
+
+        with patch("scholarships.views.timezone.now", return_value=before_release):
+            before_approval = self.client.get("/api/scholarship-announcement/recipients")
         self.assertEqual(before_approval.status_code, 200, before_approval.data)
         self.assertEqual(before_approval.data, [])
 
         application.status = BursaryApplication.Status.APPROVED
         application.applicant_photo = ""
         application.save(update_fields=["status", "applicant_photo", "updated_at"])
-        announced = self.client.get("/api/scholarship-announcement/recipients")
+        with patch("scholarships.views.timezone.now", return_value=before_release):
+            not_released = self.client.get("/api/scholarship-announcement/recipients")
+        self.assertEqual(not_released.data, [])
+
+        with patch("scholarships.views.timezone.now", return_value=after_release):
+            announced = self.client.get("/api/scholarship-announcement/recipients")
 
         self.assertEqual(announced.status_code, 200, announced.data)
         self.assertEqual(len(announced.data), 1)
@@ -546,9 +557,16 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(announced.data[0]["modules"], ["AI", "PMP"])
         self.assertEqual(announced.data[0]["category"], "IPC Scholarship Fund")
         self.assertEqual(announced.data[0]["year"], 2026)
+        self.assertEqual(announced.data[0]["award_round"], 2)
         self.assertEqual(announced.data[0]["photo_url"], "")
         self.assertNotIn("email", announced.data[0])
         self.assertNotIn("mobile_phone_e164", announced.data[0])
+
+        application.award_round = BursaryApplication.AwardRound.ROUND_ONE
+        application.save(update_fields=["award_round", "updated_at"])
+        with patch("scholarships.views.timezone.now", return_value=after_release):
+            round_one_is_not_republished = self.client.get("/api/scholarship-announcement/recipients")
+        self.assertEqual(round_one_is_not_republished.data, [])
 
     def test_invalid_phone_is_rejected_for_selected_country(self):
         payload = valid_bursary_payload()
@@ -820,6 +838,7 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertEqual(row["Application reference"], created.data["applicationReference"])
+        self.assertEqual(row["Round"], "Round 2")
         self.assertEqual(row["First name"], "Amina")
         self.assertEqual(row["Preferred modules"], "AI, PMP")
         self.assertEqual(row["Total module cost (GBP)"], "12000")

@@ -21,10 +21,11 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
         "first_name",
         "last_name",
         "selected_modules",
+        "award_round",
         "status",
         "submitted_at",
     )
-    list_filter = ("status", "currently_employed", "country")
+    list_filter = ("award_round", "status", "currently_employed", "country")
     search_fields = (
         "application_reference",
         "membership_reference",

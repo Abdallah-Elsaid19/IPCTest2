@@ -86,6 +86,8 @@ export interface BursaryApplicationListItem {
   preferred_pathway: string;
   preferred_modules: string[];
   preferred_pathway_label: string;
+  award_round: 1 | 2;
+  award_round_label: string;
   status: BursaryStatus;
   status_label: string;
   submitted_at: string;
@@ -130,6 +132,8 @@ export type BursaryApplicationDetail = Record<string, unknown> & {
   assigned_reviewer: number | null;
   assigned_reviewer_name: string;
   reviewer_internal_notes: string;
+  award_round: 1 | 2;
+  award_round_label: string;
   first_name: string;
   last_name: string;
   membership_reference: string;
@@ -153,6 +157,7 @@ export interface BursaryAdminQuery {
   page?: number;
   search?: string;
   status?: "" | BursaryStatus;
+  awardRound?: "" | "1" | "2";
   pathway?: string;
   employed?: "" | "true" | "false";
   country?: string;
@@ -166,6 +171,7 @@ function bursaryAdminQueryParams(query: BursaryAdminQuery, includePage = true) {
   if (includePage && query.page && query.page > 1) params.set("page", String(query.page));
   if (query.search) params.set("search", query.search);
   if (query.status) params.set("status", query.status);
+  if (query.awardRound) params.set("award_round", query.awardRound);
   if (query.pathway) params.set("pathway", query.pathway);
   if (query.employed) params.set("employed", query.employed);
   if (query.country) params.set("country", query.country);

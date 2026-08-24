@@ -282,6 +282,7 @@ export default function AdminBursaryApplicationDetailsPage() {
 
       <section className="mt-7 grid gap-3 sm:grid-cols-2">
         {[
+          ["Award round", application.award_round_label],
           ["Selected modules", application.preferred_pathway_label],
           ["Assigned reviewer", application.assigned_reviewer_name || "Unassigned"],
         ].map(([itemLabel, value]) => (
