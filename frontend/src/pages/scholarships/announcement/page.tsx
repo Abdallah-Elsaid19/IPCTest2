@@ -5,9 +5,68 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/seo/SEO";
 import { apiJson } from "@/lib/api";
 
-const ANNOUNCEMENT_TIME = Date.parse("2026-09-10T14:00:00+01:00");
 const SHOW_COUNTDOWN_WIDGET = true;
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
+
+type ScholarshipAnnouncementContent = {
+  id: number;
+  announcement_at: string;
+  announcement_round: 1 | 2;
+  is_active: boolean;
+  fund_label: string;
+  announcement_button_label: string;
+  countdown_eyebrow: string;
+  countdown_title: string;
+  countdown_description: string;
+  reminder_button_label: string;
+  reminder_disclaimer: string;
+  previous_round_button_label: string;
+  recipients_eyebrow: string;
+  recipients_title: string;
+  recipients_description: string;
+  recipients_highlight: string;
+  empty_title: string;
+  empty_description: string;
+  publication_notice: string;
+  apply_button_label: string;
+  seo_title: string;
+  seo_description: string;
+  has_arrived: boolean;
+};
+
+const DEFAULT_ANNOUNCEMENT_CONTENT: ScholarshipAnnouncementContent = {
+  id: 0,
+  announcement_at: "2026-09-10T13:00:00Z",
+  announcement_round: 2,
+  is_active: true,
+  fund_label: "IPC Scholarship Fund · 2026",
+  announcement_button_label: "Scholarship Announcement",
+  countdown_eyebrow: "Announcement countdown",
+  countdown_title: "The next chapter is almost here.",
+  countdown_description: "Approved Round Two IPC scholarship and bursary applicants will be announced on 10 September 2026 at 2:00 PM London time and contacted directly using the details in their application.",
+  reminder_button_label: "Remind me",
+  reminder_disclaimer: "By requesting a reminder, you agree to receive IPC scholarship announcement updates at this email address.",
+  previous_round_button_label: "Scholarship Awardees",
+  recipients_eyebrow: "Official recipient announcement",
+  recipients_title: "2026 IPC Scholarship & Bursary Recipients",
+  recipients_description: "The Institute of Project Controls is pleased to recognise the professionals selected for support through the IPC Scholarship and Bursary Fund.",
+  recipients_highlight: "These are the approved Round Two recipients. Only applications approved for public release are included in this register.",
+  empty_title: "Recipients will be published shortly.",
+  empty_description: "Approved recipient profiles will appear here as soon as they are available.",
+  publication_notice: "Only information approved for public release is shown. Financial values, personal contact details and private circumstances are intentionally excluded.",
+  apply_button_label: "Apply for IPC support",
+  seo_title: "IPC Scholarship Announcement Countdown",
+  seo_description: "Countdown to the Institute of Project Controls Round Two scholarship and bursary announcement on 10 September 2026.",
+  has_arrived: false,
+};
+
+function formatLondonAnnouncement(iso: string) {
+  const date = new Date(iso);
+  return {
+    date: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }).format(date),
+    time: new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Europe/London" }).format(date),
+  };
+}
 
 type CountdownUnit = {
   label: string;
@@ -70,7 +129,8 @@ function FlipDigit({ digit }: { digit: string }) {
   );
 }
 
-function AnnouncementDatePanel() {
+function AnnouncementDatePanel({ content }: { content: ScholarshipAnnouncementContent }) {
+  const announcement = formatLondonAnnouncement(content.announcement_at);
   return (
     <>
       <div className="inline-flex max-w-[90vw] items-center gap-3 border border-primary-400/35 bg-primary-400/[0.08] px-4 py-2.5 text-primary-200">
@@ -79,14 +139,14 @@ function AnnouncementDatePanel() {
           <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-400" />
         </span>
         <span className="whitespace-nowrap font-mono text-[9px] font-semibold uppercase tracking-[0.2em] sm:text-[10px]">
-          IPC Scholarship Fund &middot; 2026
+          {content.fund_label}
         </span>
       </div>
 
       <div className="w-[min(26rem,82vw)] border border-white/15 bg-[#0d111b]/90 p-3 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md sm:p-4">
         <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-        <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">10 September 2026</p>
-        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">2:00 PM London time</p>
+        <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">{announcement.date}</p>
+        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">{announcement.time} London time</p>
       </div>
     </>
   );
@@ -161,7 +221,105 @@ function RecipientPortrait({ recipient, className = "" }: { recipient: Scholarsh
   );
 }
 
-function ScholarshipRecipientsReveal() {
+function PreviousRoundAwardeesModal({ onClose, round, buttonLabel }: { onClose: () => void; round: 1 | 2; buttonLabel: string }) {
+  const [recipients, setRecipients] = useState<ScholarshipRecipient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void apiJson<ScholarshipRecipient[]>(
+      `/api/scholarship-announcement/recipients?round=${round}`,
+      undefined,
+      { signal: controller.signal, cache: "no-store", requestSource: "PreviousScholarshipAwardees" },
+    )
+      .then(setRecipients)
+      .catch((requestError) => {
+        if (!controller.signal.aborted) {
+          setError(requestError instanceof Error ? requestError.message : "The previous-round awardees could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+    return () => controller.abort();
+  }, [round]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[110] overflow-y-auto bg-black/90 p-4 backdrop-blur-md sm:p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="previous-round-awardees-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section className="relative mx-auto my-6 w-full max-w-6xl overflow-hidden border border-primary-400/45 bg-[#090a0b] p-6 shadow-[0_40px_120px_rgba(0,0,0,.75)] sm:p-9 lg:p-12">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(216,149,36,.14),transparent_38%)]" aria-hidden="true" />
+        <button
+          ref={closeButtonRef}
+          type="button"
+          onClick={onClose}
+          aria-label="Close previous round awardees"
+          className="absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/70 text-white transition hover:border-primary-400 hover:bg-primary-500 hover:text-black"
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+
+        <div className="relative pr-14">
+          <p className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
+            <Trophy size={16} aria-hidden="true" /> Previous funded round
+          </p>
+          <h2 id="previous-round-awardees-title" className="mt-4 font-heading text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+            {buttonLabel}
+          </h2>
+          <p className="mt-3 text-sm text-background-400">Approved IPC Scholarship and Bursary Fund recipients from Round {round}.</p>
+        </div>
+
+        {isLoading && (
+          <div className="relative grid min-h-72 place-items-center" role="status">
+            <LoaderCircle className="animate-spin text-primary-400" size={30} />
+            <span className="sr-only">Loading Round {round} awardees</span>
+          </div>
+        )}
+        {!isLoading && error && <p className="relative mt-10 border border-red-400/30 bg-red-400/10 p-5 text-sm text-red-200" role="alert">{error}</p>}
+        {!isLoading && !error && recipients.length === 0 && <p className="relative mt-10 border border-white/10 bg-white/[.04] p-8 text-center text-background-300">No previous-round awardees are available.</p>}
+        {!isLoading && !error && recipients.length > 0 && (
+          <div className="relative mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            {recipients.map((recipient) => (
+              <article key={recipient.id} className="group overflow-hidden border border-primary-400/30 bg-[#111317] shadow-[0_20px_55px_rgba(0,0,0,.4)]">
+                <RecipientPortrait recipient={recipient} />
+                <div className="p-4">
+                  <h3 className="font-heading text-xl font-semibold text-white">{recipient.name}</h3>
+                  <p className="mt-2 text-xs leading-5 text-primary-200">{recipient.award || "IPC Scholarship Fund"}</p>
+                  {recipient.country && <p className="mt-3 flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.12em] text-background-400"><MapPin size={12} aria-hidden="true" />{recipient.country}</p>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function ScholarshipRecipientsReveal({ onShowPreviousRound, content }: { onShowPreviousRound: () => void; content: ScholarshipAnnouncementContent }) {
   const [recipients, setRecipients] = useState<ScholarshipRecipient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -263,34 +421,35 @@ function ScholarshipRecipientsReveal() {
       <div className="relative grid min-h-[39rem] items-center gap-12 py-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(24rem,.72fr)] lg:gap-20 lg:py-20">
         <div>
           <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-400">
-            <Award size={15} aria-hidden="true" /> Official recipient announcement <span aria-hidden="true">✦</span>
+            <Award size={15} aria-hidden="true" /> {content.recipients_eyebrow} <span aria-hidden="true">✦</span>
           </span>
           <h1 className="mt-7 max-w-[49rem] font-heading text-[clamp(3rem,6.2vw,6.7rem)] font-semibold leading-[0.88] tracking-[-0.055em] text-white">
-            Celebrating the<br />
-            <span className="bg-gradient-to-b from-[#ffe2a0] via-[#dba13a] to-[#9d6415] bg-clip-text text-transparent">2026 IPC</span><br />
-            Scholarship &amp;<br />Bursary Recipients
+            <span className="bg-gradient-to-b from-[#fff7e7] via-[#ffe2a0] to-[#dba13a] bg-clip-text text-transparent">{content.recipients_title}</span>
           </h1>
           <p className="mt-8 max-w-2xl text-sm leading-7 text-background-300 sm:text-base">
-            The Institute of Project Controls is pleased to recognise the professionals selected for support through the <strong className="font-semibold text-white">IPC Scholarship and Bursary Fund</strong>. Each person listed below has been awarded the stated professional-development support for the 2026 intake.
+            {content.recipients_description}
           </p>
           <div className="mt-7 flex max-w-2xl items-start gap-4 rounded-xl border border-primary-400/35 bg-black/45 px-5 py-4 text-sm leading-6 text-background-200 shadow-[inset_0_1px_rgba(255,221,153,.08),0_18px_50px_rgba(0,0,0,.35)] backdrop-blur-sm">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary-400/65 text-primary-300" aria-hidden="true">★</span>
-            <p><strong className="font-semibold text-white">These are the approved Round Two recipients.</strong>{" "}Only applications approved for public release are included in this register.</p>
+            <p>{content.recipients_highlight}</p>
           </div>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a href="#recipient-register" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[0_10px_35px_rgba(216,149,36,.2)] transition hover:brightness-110">
               View all recipients <ArrowRight size={16} aria-hidden="true" />
             </a>
             <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/55 bg-black/30 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-primary-100 transition hover:bg-primary-400 hover:text-background-950">
-              Apply for IPC support <ArrowRight size={16} aria-hidden="true" />
+              {content.apply_button_label} <ArrowRight size={16} aria-hidden="true" />
             </Link>
+            <button type="button" onClick={onShowPreviousRound} className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:border-primary-400 hover:text-primary-200">
+              <Trophy size={16} aria-hidden="true" /> {content.previous_round_button_label}
+            </button>
           </div>
         </div>
 
         <aside className="relative overflow-hidden rounded-[1.75rem] border border-primary-400/55 bg-[linear-gradient(145deg,rgba(32,29,24,.94),rgba(8,9,9,.98))] p-6 shadow-[0_30px_100px_rgba(0,0,0,.65),inset_0_0_70px_rgba(216,149,36,.06)] backdrop-blur-md sm:p-9" aria-label="Official announcement details">
           <div className="pointer-events-none absolute inset-3 rounded-[1.25rem] border border-primary-400/10" aria-hidden="true" />
           <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full border border-primary-400/15" aria-hidden="true" />
-          <div className="relative mx-auto w-fit border border-primary-400/35 bg-primary-400/[.07] px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-[.22em] text-primary-300">✦ IPC Scholarship Fund · 2026</div>
+          <div className="relative mx-auto w-fit border border-primary-400/35 bg-primary-400/[.07] px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-[.22em] text-primary-300">✦ {content.fund_label}</div>
           <div className="relative mx-auto mt-7 flex h-28 w-44 items-center justify-center" aria-hidden="true">
             <span className="absolute left-0 text-7xl text-primary-500/80">❧</span>
             <span className="absolute right-0 -scale-x-100 text-7xl text-primary-500/80">❧</span>
@@ -302,7 +461,7 @@ function ScholarshipRecipientsReveal() {
           </p>
           <dl className="relative mt-8 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
-              ["Announcement date", "10 September 2026"],
+              ["Announcement date", formatLondonAnnouncement(content.announcement_at).date],
               ["Academic intake", "2026 programme year"],
               ["Total 2026 recipients", isLoading ? "Loading…" : `${recipients.length} recipients`],
               ["Record status", "Official announcement"],
@@ -336,8 +495,8 @@ function ScholarshipRecipientsReveal() {
       {!isLoading && !error && recipients.length === 0 && (
         <div className="mx-auto mt-12 max-w-2xl bg-white/65 p-8 text-center shadow-[0_20px_60px_rgba(61,42,12,.08)]">
           <GraduationCap className="mx-auto text-primary-700" size={34} aria-hidden="true" />
-          <h2 className="mt-5 font-heading text-2xl font-semibold text-background-950">Recipients will be published shortly.</h2>
-          <p className="mt-3 text-sm leading-7 text-foreground-700">The announcement is open. Approved recipient profiles will appear here as soon as they are available.</p>
+          <h2 className="mt-5 font-heading text-2xl font-semibold text-background-950">{content.empty_title}</h2>
+          <p className="mt-3 text-sm leading-7 text-foreground-700">{content.empty_description}</p>
         </div>
       )}
 
@@ -439,7 +598,7 @@ function ScholarshipRecipientsReveal() {
         {!isLoading && !error && recipients.length > 0 && (
           <div className="mx-auto mt-10 flex max-w-6xl items-start gap-4 rounded-xl border border-primary-400/35 bg-primary-400/[.045] p-5 text-sm leading-7 text-background-300 sm:p-6">
             <ShieldCheck className="mt-0.5 shrink-0 text-primary-400" size={23} aria-hidden="true" />
-            <p><strong className="font-semibold text-primary-200">Publication notice.</strong> Only information approved for public release is shown. Financial values, personal contact details and private circumstances are intentionally excluded to protect recipient privacy.</p>
+            <p><strong className="font-semibold text-primary-200">Publication notice.</strong> {content.publication_notice}</p>
           </div>
         )}
         </div>
@@ -462,7 +621,7 @@ function ScholarshipRecipientsReveal() {
             <h2 id="future-opportunities-title" className="mt-4 max-w-3xl font-heading text-[clamp(2.7rem,5vw,5.1rem)] font-semibold leading-[.92] tracking-[-0.045em] text-white">Be part of the next<br /><span className="text-primary-400">IPC Fund round.</span></h2>
             <p className="mt-5 max-w-3xl text-sm leading-7 text-background-300 sm:text-base">Round Two recipients have been announced. New scholarship and bursary applications remain subject to eligibility review, available funding and written approval by IPC.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110">Apply for IPC support <ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/bursary-scholarship-application" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 bg-gradient-to-r from-[#f2c567] to-[#d99b2f] px-8 text-[11px] font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110">{content.apply_button_label} <ArrowRight size={16} aria-hidden="true" /></Link>
               <Link to="/contact" className="inline-flex min-h-[3.25rem] items-center justify-center border border-primary-400/45 bg-black/40 px-8 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-primary-400 hover:text-black">Contact IPC</Link>
             </div>
           </div>
@@ -539,13 +698,30 @@ function ScholarshipRecipientsReveal() {
 }
 
 export default function ScholarshipAnnouncementPage() {
-  const announcementTime = ANNOUNCEMENT_TIME;
+  const [announcementContent, setAnnouncementContent] = useState<ScholarshipAnnouncementContent>(DEFAULT_ANNOUNCEMENT_CONTENT);
   const [now, setNow] = useState(() => Date.now());
   const [email, setEmail] = useState("");
   const [reminderState, setReminderState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [reminderMessage, setReminderMessage] = useState("");
+  const [showPreviousRoundAwardees, setShowPreviousRoundAwardees] = useState(false);
+  const announcementTime = Date.parse(announcementContent.announcement_at);
   const countdown = useMemo(() => getCountdown(now, announcementTime), [announcementTime, now]);
-  const hasArrived = now >= announcementTime;
+  const hasArrived = announcementContent.is_active && now >= announcementTime;
+  const formattedAnnouncement = useMemo(() => formatLondonAnnouncement(announcementContent.announcement_at), [announcementContent.announcement_at]);
+  const previousRound = Math.max(1, announcementContent.announcement_round - 1) as 1 | 2;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void apiJson<ScholarshipAnnouncementContent>(
+      "/api/scholarship-announcement",
+      undefined,
+      { signal: controller.signal, cache: "no-store", requestSource: "ScholarshipAnnouncementContent" },
+    ).then((content) => {
+      setAnnouncementContent(content);
+      setNow(Date.now());
+    }).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (hasArrived) return;
@@ -577,15 +753,15 @@ export default function ScholarshipAnnouncementPage() {
   return (
     <div className="relative isolate min-h-[calc(100svh-2.25rem)] overflow-hidden bg-black text-background-50">
       <SEO
-        title="IPC Scholarship Announcement Countdown"
-        description="Countdown to the Institute of Project Controls Round Two scholarship and bursary announcement on 10 September 2026."
+        title={announcementContent.seo_title}
+        description={announcementContent.seo_description}
         canonicalPath="/scholarships/announcement"
         keywords={["IPC scholarship announcement", "project controls bursary", "10 September 2026"]}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Event",
           name: "IPC Scholarship and Bursary Announcement",
-          startDate: "2026-09-10T14:00:00+01:00",
+          startDate: announcementContent.announcement_at,
           eventStatus: "https://schema.org/EventScheduled",
           eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
           organizer: {
@@ -618,25 +794,35 @@ export default function ScholarshipAnnouncementPage() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-400" />
             </span>
             <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] sm:text-[10px]">
-              IPC Scholarship Fund · 2026
+              {announcementContent.fund_label}
             </span>
           </div>
         </div>}
 
         {hasArrived ? (
-          <ScholarshipRecipientsReveal />
+          <ScholarshipRecipientsReveal content={announcementContent} onShowPreviousRound={() => setShowPreviousRoundAwardees(true)} />
         ) : (
         <div className="relative mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] lg:gap-16">
           <div className="order-2 min-w-0 lg:order-1 lg:-translate-y-12">
           <p className="mt-7 font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-primary-400">
-            Announcement countdown
+            {announcementContent.countdown_eyebrow}
           </p>
           <h1 className="mt-5 max-w-4xl font-heading text-[clamp(2.75rem,7vw,6.6rem)] font-semibold leading-[0.92] tracking-[-0.065em] text-white">
-            {hasArrived ? "The announcement day is here." : "The next chapter is almost here."}
+            {announcementContent.countdown_title}
           </h1>
           <p className="mt-7 max-w-2xl text-base leading-7 text-background-300 sm:text-lg sm:leading-8">
-            Approved Round Two IPC scholarship and bursary applicants will be announced on 10 September 2026 at 2:00 PM London time and contacted directly using the details in their application.
+            {announcementContent.countdown_description}
           </p>
+
+          <button
+            type="button"
+            onClick={() => setShowPreviousRoundAwardees(true)}
+            className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 border border-primary-400/50 bg-primary-400/[0.08] px-5 text-sm font-semibold text-primary-200 transition hover:border-primary-300 hover:bg-primary-400/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+          >
+            <Trophy size={17} aria-hidden="true" />
+            {announcementContent.previous_round_button_label}
+            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-background-400">Round {previousRound}</span>
+          </button>
 
           {SHOW_COUNTDOWN_WIDGET && (
             <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" aria-label="Time remaining until the scholarship announcement">
@@ -667,11 +853,11 @@ export default function ScholarshipAnnouncementPage() {
                 className="inline-flex min-h-14 shrink-0 items-center justify-center gap-2 bg-primary-500 px-7 text-sm font-bold uppercase tracking-[0.08em] text-background-950 transition-colors hover:bg-primary-400 disabled:cursor-wait disabled:opacity-65"
               >
                 {reminderState === "submitting" ? <LoaderCircle className="animate-spin" size={18} aria-hidden="true" /> : <Bell size={18} aria-hidden="true" />}
-                {reminderState === "submitting" ? "Saving..." : "Remind me"}
+                {reminderState === "submitting" ? "Saving..." : announcementContent.reminder_button_label}
               </button>
             </div>
             <p id="scholarship-reminder-note" className="mt-3 text-xs leading-5 text-background-500">
-              By requesting a reminder, you agree to receive IPC scholarship announcement updates at this email address.
+              {announcementContent.reminder_disclaimer}
             </p>
             <p
               id="scholarship-reminder-status"
@@ -707,7 +893,7 @@ export default function ScholarshipAnnouncementPage() {
 
             {SHOW_COUNTDOWN_WIDGET && (
               <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-3 lg:hidden">
-                <AnnouncementDatePanel />
+                <AnnouncementDatePanel content={announcementContent} />
               </div>
             )}
 
@@ -716,13 +902,16 @@ export default function ScholarshipAnnouncementPage() {
           {SHOW_COUNTDOWN_WIDGET && (
             <div className="absolute left-1/2 top-[-4.75rem] z-20 hidden w-[min(26rem,82vw)] -translate-x-1/2 border border-white/15 bg-[#0d111b]/90 p-4 text-center shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-md lg:block">
               <CalendarDays className="mx-auto text-primary-300" size={19} aria-hidden="true" />
-              <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">10 September 2026</p>
-              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">2:00 PM London time</p>
+              <p className="mt-2.5 font-heading text-lg font-semibold text-white sm:text-xl">{formattedAnnouncement.date}</p>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-background-400">{formattedAnnouncement.time} London time</p>
             </div>
           )}
         </div>
         )}
       </section>
+      {showPreviousRoundAwardees && (
+        <PreviousRoundAwardeesModal round={previousRound} buttonLabel={announcementContent.previous_round_button_label} onClose={() => setShowPreviousRoundAwardees(false)} />
+      )}
     </div>
   );
 }

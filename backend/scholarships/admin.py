@@ -3,7 +3,9 @@ from django.contrib import admin
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
+    ScholarshipAnnouncementContent,
     ScholarshipContent,
+    ScholarshipWinner,
 )
 
 
@@ -63,3 +65,17 @@ class BursaryApplicationStatusHistoryAdmin(admin.ModelAdmin):
         "internal_reason",
         "changed_at",
     )
+
+
+@admin.register(ScholarshipAnnouncementContent)
+class ScholarshipAnnouncementContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "announcement_at", "announcement_round", "is_active", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(ScholarshipWinner)
+class ScholarshipWinnerAdmin(admin.ModelAdmin):
+    list_display = ("name", "award_round", "award_year", "country", "display_order", "is_published")
+    list_filter = ("award_round", "award_year", "is_published", "country")
+    search_fields = ("name", "award", "country", "category")
+    ordering = ("award_round", "display_order", "name")

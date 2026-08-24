@@ -42,6 +42,7 @@ const AdminApplicationsPage = lazy(() => import("@/features/admin/applications/p
 const AdminApplicationDetailsPage = lazy(() => import("@/features/admin/applications/details/page"));
 const AdminBursaryApplicationsPage = lazy(() => import("@/features/admin/bursary-applications/page"));
 const AdminBursaryApplicationDetailsPage = lazy(() => import("@/features/admin/bursary-applications/details/page"));
+const AdminScholarshipAnnouncementPage = lazy(() => import("@/features/admin/scholarship-announcement/page"));
 const AdminEnquiriesPage = lazy(() => import("@/features/admin/enquiries/page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events/page"));
 const AdminAwardsPage = lazy(() => import("@/features/admin/awards/page"));
@@ -156,6 +157,7 @@ const routes: RouteObject[] = [
       { path: "applications/:id", element: <AdminApplicationDetailsPage /> },
       { path: "bursary-applications", element: <AdminBursaryApplicationsPage /> },
       { path: "bursary-applications/:id", element: <AdminBursaryApplicationDetailsPage /> },
+      { path: "scholarship-announcement", element: <AdminScholarshipAnnouncementPage /> },
       { path: "enquiries", element: <AdminEnquiriesPage /> },
       { path: "events", element: <AdminEventsPage /> },
       { path: "awards", element: <AdminAwardsPage /> },

@@ -25,7 +25,13 @@ from .bursary_export import (
     BURSARY_GOOGLE_SHEET_HEADERS,
     bursary_google_sheet_row,
 )
-from .models import BursaryApplication, ScholarshipGatewayContent, ScholarshipPathwaysContent
+from .models import (
+    BursaryApplication,
+    ScholarshipAnnouncementContent,
+    ScholarshipGatewayContent,
+    ScholarshipPathwaysContent,
+    ScholarshipWinner,
+)
 
 
 class ScholarshipContentApiTests(APITestCase):
@@ -543,6 +549,16 @@ class BursaryApplicationApiTests(APITestCase):
         application.status = BursaryApplication.Status.APPROVED
         application.applicant_photo = ""
         application.save(update_fields=["status", "applicant_photo", "updated_at"])
+        winner = ScholarshipWinner.objects.create(
+            application=application,
+            name="Amina Khan",
+            award="AI, PMP",
+            modules=["AI", "PMP"],
+            category="IPC Scholarship Fund",
+            award_year=2026,
+            award_round=2,
+            is_published=True,
+        )
         with patch("scholarships.views.timezone.now", return_value=before_release):
             not_released = self.client.get("/api/scholarship-announcement/recipients")
         self.assertEqual(not_released.data, [])
@@ -564,9 +580,73 @@ class BursaryApplicationApiTests(APITestCase):
 
         application.award_round = BursaryApplication.AwardRound.ROUND_ONE
         application.save(update_fields=["award_round", "updated_at"])
+        winner.award_round = BursaryApplication.AwardRound.ROUND_ONE
+        winner.save(update_fields=["award_round", "updated_at"])
+        with patch("scholarships.views.timezone.now", return_value=before_release):
+            previous_round = self.client.get("/api/scholarship-announcement/recipients?round=1")
+        self.assertEqual(previous_round.status_code, 200, previous_round.data)
+        self.assertEqual(len(previous_round.data), 1)
+        self.assertEqual(previous_round.data[0]["name"], "Amina Khan")
+        self.assertEqual(previous_round.data[0]["award_round"], 1)
+
         with patch("scholarships.views.timezone.now", return_value=after_release):
             round_one_is_not_republished = self.client.get("/api/scholarship-announcement/recipients")
         self.assertEqual(round_one_is_not_republished.data, [])
+
+        invalid_round = self.client.get("/api/scholarship-announcement/recipients?round=3")
+        self.assertEqual(invalid_round.status_code, 400, invalid_round.data)
+
+    def test_staff_can_manage_announcement_content_and_winners(self):
+        public_content = self.client.get("/api/scholarship-announcement")
+        self.assertEqual(public_content.status_code, 200, public_content.data)
+        self.assertEqual(public_content.data["announcement_round"], 2)
+
+        self.client.force_authenticate(self.staff)
+        updated_content = self.client.patch(
+            "/api/admin/scholarship-announcement",
+            {
+                "announcement_at": "2026-09-10T13:00:00Z",
+                "countdown_title": "Round Two announcement",
+                "announcement_button_label": "Announcement",
+            },
+            format="json",
+        )
+        self.assertEqual(updated_content.status_code, 200, updated_content.data)
+        self.assertEqual(updated_content.data["countdown_title"], "Round Two announcement")
+        content = ScholarshipAnnouncementContent.objects.get(key="main")
+        self.assertEqual(content.updated_by, self.staff)
+
+        created = self.client.post(
+            "/api/admin/scholarship-winners",
+            {
+                "name": "Test Winner",
+                "award": "PMP",
+                "country": "United Kingdom",
+                "modules": ["PMP"],
+                "category": "IPC Scholarship Fund",
+                "award_year": 2026,
+                "award_round": 2,
+                "photo_url": "",
+                "display_order": 4,
+                "is_published": True,
+            },
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201, created.data)
+        winner_id = created.data["id"]
+
+        updated = self.client.patch(
+            f"/api/admin/scholarship-winners/{winner_id}",
+            {"name": "Updated Winner", "is_published": False},
+            format="json",
+        )
+        self.assertEqual(updated.status_code, 200, updated.data)
+        self.assertEqual(updated.data["name"], "Updated Winner")
+        self.assertFalse(updated.data["is_published"])
+
+        deleted = self.client.delete(f"/api/admin/scholarship-winners/{winner_id}")
+        self.assertEqual(deleted.status_code, 204)
+        self.assertFalse(ScholarshipWinner.objects.filter(pk=winner_id).exists())
 
     def test_invalid_phone_is_rejected_for_selected_country(self):
         payload = valid_bursary_payload()
@@ -901,6 +981,10 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(approved.data["status"], BursaryApplication.Status.APPROVED)
         application = BursaryApplication.objects.get(pk=created.data["id"])
         self.assertIsNotNone(application.approval_email_sent_at)
+        self.assertTrue(ScholarshipWinner.objects.filter(
+            application=application,
+            award_round=application.award_round,
+        ).exists())
         send_approval_email.assert_called_once_with(
             recipient=application.email,
             name=application.preferred_name or application.first_name,

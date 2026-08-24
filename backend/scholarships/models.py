@@ -1,3 +1,4 @@
+from datetime import datetime, timezone as datetime_timezone
 from uuid import uuid4
 
 from django.core.exceptions import ValidationError
@@ -172,6 +173,88 @@ class ScholarshipPathwaysContent(models.Model):
         db_table = "scholarships_pathways_content"
         verbose_name = "Scholarship pathways content"
         verbose_name_plural = "Scholarship pathways content"
+
+    def __str__(self):
+        return self.key
+
+
+def default_scholarship_announcement_at():
+    return datetime(2026, 9, 10, 13, 0, tzinfo=datetime_timezone.utc)
+
+
+class ScholarshipAnnouncementContent(models.Model):
+    key = models.SlugField(max_length=40, unique=True, default="main")
+    announcement_at = models.DateTimeField(default=default_scholarship_announcement_at)
+    announcement_round = models.PositiveSmallIntegerField(default=2)
+    is_active = models.BooleanField(default=True)
+    fund_label = models.CharField(max_length=180, default="IPC Scholarship Fund · 2026")
+    announcement_button_label = models.CharField(
+        max_length=100,
+        default="Scholarship Announcement",
+    )
+    countdown_eyebrow = models.CharField(max_length=120, default="Announcement countdown")
+    countdown_title = models.CharField(max_length=240, default="The next chapter is almost here.")
+    countdown_description = models.TextField(
+        default=(
+            "Approved Round Two IPC scholarship and bursary applicants will be announced "
+            "on 10 September 2026 at 2:00 PM London time and contacted directly using the "
+            "details in their application."
+        )
+    )
+    reminder_button_label = models.CharField(max_length=80, default="Remind me")
+    reminder_disclaimer = models.TextField(
+        default=(
+            "By requesting a reminder, you agree to receive IPC scholarship announcement "
+            "updates at this email address."
+        )
+    )
+    previous_round_button_label = models.CharField(max_length=100, default="Scholarship Awardees")
+    recipients_eyebrow = models.CharField(max_length=160, default="Official recipient announcement")
+    recipients_title = models.CharField(max_length=240, default="2026 IPC Scholarship & Bursary Recipients")
+    recipients_description = models.TextField(
+        default=(
+            "The Institute of Project Controls is pleased to recognise the professionals "
+            "selected for support through the IPC Scholarship and Bursary Fund."
+        )
+    )
+    recipients_highlight = models.TextField(
+        default=(
+            "These are the approved Round Two recipients. Only applications approved for "
+            "public release are included in this register."
+        )
+    )
+    empty_title = models.CharField(max_length=180, default="Recipients will be published shortly.")
+    empty_description = models.TextField(
+        default="Approved recipient profiles will appear here as soon as they are available."
+    )
+    publication_notice = models.TextField(
+        default=(
+            "Only information approved for public release is shown. Financial values, personal "
+            "contact details and private circumstances are intentionally excluded."
+        )
+    )
+    apply_button_label = models.CharField(max_length=100, default="Apply for IPC support")
+    seo_title = models.CharField(max_length=180, default="IPC Scholarship Announcement Countdown")
+    seo_description = models.TextField(
+        default=(
+            "Countdown to the Institute of Project Controls Round Two scholarship and bursary "
+            "announcement on 10 September 2026."
+        )
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="updated_scholarship_announcement_content",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "scholarship_announcement_content"
+        verbose_name = "Scholarship announcement content"
+        verbose_name_plural = "Scholarship announcement content"
 
     def __str__(self):
         return self.key
@@ -412,6 +495,51 @@ class BursaryApplication(models.Model):
 
     def __str__(self):
         return f"{self.application_reference} — {self.first_name} {self.last_name}"
+
+
+class ScholarshipWinner(models.Model):
+    application = models.OneToOneField(
+        BursaryApplication,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="winner_record",
+    )
+    name = models.CharField(max_length=255)
+    award = models.TextField(blank=True)
+    country = models.CharField(max_length=120, blank=True)
+    modules = models.JSONField(default=list, blank=True)
+    category = models.CharField(max_length=120, default="IPC Scholarship Fund")
+    award_year = models.PositiveSmallIntegerField(default=2026)
+    award_round = models.PositiveSmallIntegerField(
+        choices=BursaryApplication.AwardRound.choices,
+        default=BursaryApplication.AwardRound.ROUND_TWO,
+        db_index=True,
+    )
+    photo_url = models.URLField(max_length=500, blank=True)
+    display_order = models.PositiveIntegerField(default=0, db_index=True)
+    is_published = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "scholarship_winners"
+        ordering = ["award_round", "display_order", "name", "pk"]
+        indexes = [
+            models.Index(
+                fields=["award_round", "is_published", "display_order"],
+                name="winner_round_public_order_idx",
+            ),
+        ]
+
+    def clean(self):
+        if not isinstance(self.modules, list) or any(
+            not isinstance(module, str) or not module.strip() for module in self.modules
+        ):
+            raise ValidationError({"modules": "Modules must be a list of non-empty names."})
+
+    def __str__(self):
+        return f"Round {self.award_round}: {self.name}"
 
 
 class BursaryApplicationStatusHistory(models.Model):

@@ -15,10 +15,62 @@ from ipc_backend.validators import validate_identity_document, validate_image
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
+    ScholarshipAnnouncementContent,
     ScholarshipContent,
     ScholarshipGatewayContent,
     ScholarshipPathwaysContent,
+    ScholarshipWinner,
 )
+
+
+class ScholarshipAnnouncementContentSerializer(serializers.ModelSerializer):
+    has_arrived = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ScholarshipAnnouncementContent
+        fields = [
+            "id", "announcement_at", "announcement_round", "is_active", "fund_label",
+            "announcement_button_label",
+            "countdown_eyebrow", "countdown_title", "countdown_description",
+            "reminder_button_label", "reminder_disclaimer", "previous_round_button_label",
+            "recipients_eyebrow", "recipients_title", "recipients_description",
+            "recipients_highlight", "empty_title", "empty_description", "publication_notice",
+            "apply_button_label", "seo_title", "seo_description", "has_arrived",
+            "updated_by", "updated_at",
+        ]
+        read_only_fields = ["id", "has_arrived", "updated_by", "updated_at"]
+
+    def get_has_arrived(self, content):
+        return content.is_active and timezone.now() >= content.announcement_at
+
+    def validate_announcement_round(self, value):
+        if value not in BursaryApplication.AwardRound.values:
+            raise serializers.ValidationError("Announcement round must be 1 or 2.")
+        return value
+
+
+class AdminScholarshipWinnerSerializer(serializers.ModelSerializer):
+    application_reference = serializers.CharField(
+        source="application.application_reference",
+        read_only=True,
+        default="",
+    )
+
+    class Meta:
+        model = ScholarshipWinner
+        fields = [
+            "id", "application", "application_reference", "name", "award", "country",
+            "modules", "category", "award_year", "award_round", "photo_url",
+            "display_order", "is_published", "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "application", "application_reference", "created_at", "updated_at"]
+
+    def validate_modules(self, value):
+        if not isinstance(value, list) or any(
+            not isinstance(module, str) or not module.strip() for module in value
+        ):
+            raise serializers.ValidationError("Modules must be a list of non-empty names.")
+        return [module.strip() for module in value]
 
 
 class ScholarshipContentSerializer(serializers.ModelSerializer):
@@ -515,15 +567,11 @@ class BursaryApplicationListSerializer(serializers.ModelSerializer):
 
 
 class ScholarshipAnnouncementRecipientSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    award = serializers.CharField(source="get_bursary_selection_display", read_only=True)
-    modules = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
-    year = serializers.SerializerMethodField()
+    year = serializers.IntegerField(source="award_year", read_only=True)
     photo_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = BursaryApplication
+        model = ScholarshipWinner
         fields = [
             "id",
             "name",
@@ -537,28 +585,13 @@ class ScholarshipAnnouncementRecipientSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_name(self, application):
-        first_name = application.preferred_name.strip() or application.first_name.strip()
-        return f"{first_name} {application.last_name.strip()}".strip()
-
-    def get_modules(self, application):
-        module_labels = dict(BursaryApplication.PreferredModule.choices)
-        return [
-            module_labels[module]
-            for module in application.preferred_modules
-            if module in module_labels
-        ]
-
-    def get_category(self, application):
-        return "IPC Scholarship Fund"
-
-    def get_year(self, application):
-        return 2026
-
-    def get_photo_url(self, application):
-        if not application.applicant_photo or not application.professional_headshot_consent:
+    def get_photo_url(self, winner):
+        if winner.photo_url:
+            return winner.photo_url
+        application = winner.application
+        if not application or not application.applicant_photo or not application.professional_headshot_consent:
             return ""
-        return f"/api/scholarship-announcement/recipients/{application.pk}/photo"
+        return f"/api/scholarship-announcement/recipients/{winner.pk}/photo"
 
 
 class BursaryApplicationDetailSerializer(serializers.ModelSerializer):

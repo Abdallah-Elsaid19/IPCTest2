@@ -26,6 +26,7 @@ import {
   isManagedItemActive,
   useManagedSection,
 } from "@/components/content/ManagedContentProvider";
+import { apiJson } from "@/lib/api";
 
 const CONFIG = {
   KBC_OPERATIONAL_PATHWAY_URL: "https://kentbusinesscollege.com/project-control-professional-level-6/#pathways",
@@ -45,13 +46,33 @@ const AI_SPOTLIGHT_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/2689471e91444b2a9db6670c172036e2.webp";
 const ALL_INCLUSIVE_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/b4bc056cfa164feca8dc939778cc94c9.webp";
-// 10 September 2026 at 2:00 PM in London (BST, UTC+1).
-const ANNOUNCEMENT_TIME = Date.parse("2026-09-10T14:00:00+01:00");
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
 const SHOW_COUNTDOWN_WIDGET = true;
 
-function getAnnouncementCountdown(now: number) {
-  const remaining = Math.max(0, ANNOUNCEMENT_TIME - now);
+type GatewayAnnouncementContent = {
+  announcement_at: string;
+  is_active: boolean;
+  fund_label: string;
+  announcement_button_label: string;
+};
+
+const DEFAULT_GATEWAY_ANNOUNCEMENT: GatewayAnnouncementContent = {
+  announcement_at: "2026-09-10T13:00:00Z",
+  is_active: true,
+  fund_label: "IPC Scholarship Fund · 2026",
+  announcement_button_label: "Scholarship Announcement",
+};
+
+function formatLondonAnnouncement(iso: string) {
+  const date = new Date(iso);
+  return {
+    date: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }).format(date),
+    time: new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Europe/London" }).format(date),
+  };
+}
+
+function getAnnouncementCountdown(now: number, announcementTime: number) {
+  const remaining = Math.max(0, announcementTime - now);
   return [
     { label: "Days", value: Math.floor(remaining / 86_400_000) },
     { label: "Hours", value: Math.floor((remaining / 3_600_000) % 24) },
@@ -782,7 +803,10 @@ export default function ScholarshipsGateway() {
   const [commitments, setCommitments] = useState<boolean[]>(content.commitment.items.map(() => false));
   const [commitmentResult, setCommitmentResult] = useState("");
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
-  const announcementCountdown = useMemo(() => getAnnouncementCountdown(countdownNow), [countdownNow]);
+  const [announcementContent, setAnnouncementContent] = useState<GatewayAnnouncementContent>(DEFAULT_GATEWAY_ANNOUNCEMENT);
+  const announcementTime = Date.parse(announcementContent.announcement_at);
+  const announcementCountdown = useMemo(() => getAnnouncementCountdown(countdownNow, announcementTime), [announcementTime, countdownNow]);
+  const formattedAnnouncement = useMemo(() => formatLondonAnnouncement(announcementContent.announcement_at), [announcementContent.announcement_at]);
 
   const pathway = pathways.find((item) => item.id === pathwayId) ?? pathways[0];
   const selectedFunding = fundingOptions[Math.min(fundingIndex, Math.max(fundingOptions.length - 1, 0))];
@@ -796,6 +820,16 @@ export default function ScholarshipsGateway() {
   useEffect(() => {
     const timer = window.setInterval(() => setCountdownNow(Date.now()), 1_000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void apiJson<GatewayAnnouncementContent>(
+      "/api/scholarship-announcement",
+      undefined,
+      { signal: controller.signal, cache: "no-store", requestSource: "ScholarshipGatewayAnnouncement" },
+    ).then(setAnnouncementContent).catch(() => undefined);
+    return () => controller.abort();
   }, []);
 
   const structuredData = useMemo(
@@ -880,7 +914,7 @@ export default function ScholarshipsGateway() {
                 className="inline-flex min-h-12 items-center justify-center gap-2 border border-primary-400/50 bg-primary-400/[0.08] px-5 py-3 text-center text-sm font-semibold text-primary-200 transition-colors hover:border-primary-300 hover:bg-primary-400/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
               >
                 <Clock3 size={17} aria-hidden="true" />
-                Scholarship Awardees
+                {announcementContent.announcement_button_label}
               </Link>
             </div>
             <div className="mt-8 flex items-start gap-3 border-l-2 border-primary-400 pl-4 text-sm leading-6 text-background-300">
@@ -909,7 +943,7 @@ export default function ScholarshipsGateway() {
               />
             </div>
 
-            {SHOW_COUNTDOWN_WIDGET && (
+            {SHOW_COUNTDOWN_WIDGET && announcementContent.is_active && (
             <div className="relative -mt-2 p-5 pt-0 sm:p-6 sm:pt-0 md:p-7 md:pt-0">
               <div className="flex items-start justify-between gap-1.5 sm:gap-2" aria-label="Time remaining until the scholarship announcement">
                 {announcementCountdown.map((unit) => (
@@ -937,8 +971,8 @@ export default function ScholarshipsGateway() {
 
               <div className="mt-4 border border-primary-400/35 bg-primary-400/[0.07] p-4 text-center sm:p-5">
                 <CalendarDays className="mx-auto text-primary-300" size={21} aria-hidden="true" />
-                <p className="mt-2.5 font-heading text-xl font-semibold text-white sm:text-2xl">10 September 2026</p>
-                <p className="mt-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.22em] text-background-400">2:00 PM London time</p>
+                <p className="mt-2.5 font-heading text-xl font-semibold text-white sm:text-2xl">{formattedAnnouncement.date}</p>
+                <p className="mt-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.22em] text-background-400">{formattedAnnouncement.time} London time</p>
               </div>
             </div>
             )}

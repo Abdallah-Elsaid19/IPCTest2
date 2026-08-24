@@ -1,14 +1,12 @@
 import csv
 import json
 import logging
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.http import FileResponse, Http404, HttpResponse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -38,15 +36,19 @@ from .google_sheets import (
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
+    ScholarshipAnnouncementContent,
     ScholarshipGatewayContent,
     ScholarshipPathwaysContent,
+    ScholarshipWinner,
 )
 from .serializers import (
+    AdminScholarshipWinnerSerializer,
     BursaryApplicationDetailSerializer,
     BursaryApplicationListSerializer,
     BursaryApplicationNoteSerializer,
     BursaryApplicationPublicSerializer,
     BursaryApplicationStatusUpdateSerializer,
+    ScholarshipAnnouncementContentSerializer,
     ScholarshipAnnouncementRecipientSerializer,
     ScholarshipGatewayContentSerializer,
     bursary_application_to_public_values,
@@ -66,13 +68,47 @@ PATHWAY_DETAIL_FIELDS = {
 
 logger = logging.getLogger(__name__)
 
-ROUND_TWO_ANNOUNCEMENT_AT = datetime(
-    2026, 9, 10, 14, 0, tzinfo=ZoneInfo("Europe/London")
-)
+def scholarship_announcement_content():
+    content, _ = ScholarshipAnnouncementContent.objects.get_or_create(key="main")
+    return content
 
 
-def round_two_announcement_is_public():
-    return timezone.now() >= ROUND_TWO_ANNOUNCEMENT_AT
+def scholarship_round_is_public(award_round):
+    content = scholarship_announcement_content()
+    if award_round < content.announcement_round:
+        return True
+    return (
+        award_round == content.announcement_round
+        and content.is_active
+        and timezone.now() >= content.announcement_at
+    )
+
+
+def create_winner_for_application(application):
+    if ScholarshipWinner.objects.filter(application=application).exists():
+        return
+    module_labels = dict(BursaryApplication.PreferredModule.choices)
+    modules = [
+        module_labels[module]
+        for module in application.preferred_modules
+        if module in module_labels
+    ]
+    first_name = application.preferred_name.strip() or application.first_name.strip()
+    display_order = (
+        ScholarshipWinner.objects.filter(award_round=application.award_round)
+        .aggregate(max_order=Max("display_order"))["max_order"]
+        or 0
+    ) + 1
+    ScholarshipWinner.objects.create(
+        application=application,
+        name=f"{first_name} {application.last_name.strip()}".strip(),
+        award=", ".join(modules),
+        country=application.country,
+        modules=modules,
+        award_round=application.award_round,
+        display_order=display_order,
+        is_published=application.approved_media_use_consent,
+    )
 
 
 def approved_membership_for_user(user, for_update=False):
@@ -533,19 +569,38 @@ class BursaryApplicationPagination(PageNumberPagination):
     max_page_size = 50
 
 
+class ScholarshipAnnouncementContentView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "scholarship_announcement"
+
+    def get(self, request):
+        return Response(
+            ScholarshipAnnouncementContentSerializer(scholarship_announcement_content()).data
+        )
+
+
 class ScholarshipAnnouncementRecipientsView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "scholarship_announcement"
 
     def get(self, request):
-        if not round_two_announcement_is_public():
+        requested_round = request.query_params.get("round")
+        if requested_round is None:
+            requested_round = str(scholarship_announcement_content().announcement_round)
+        if requested_round not in {"1", "2"}:
+            return Response(
+                {"detail": "Round must be 1 or 2."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        award_round = int(requested_round)
+        if not scholarship_round_is_public(award_round):
             return Response([])
-        recipients = BursaryApplication.objects.filter(
-            status=BursaryApplication.Status.APPROVED,
-            award_round=BursaryApplication.AwardRound.ROUND_TWO,
-            approved_media_use_consent=True,
-        ).order_by("first_name", "last_name", "pk")
+        recipients = ScholarshipWinner.objects.select_related("application").filter(
+            award_round=award_round,
+            is_published=True,
+        ).order_by("display_order", "name", "pk")
         return Response(ScholarshipAnnouncementRecipientSerializer(recipients, many=True).data)
 
 
@@ -555,21 +610,62 @@ class ScholarshipAnnouncementRecipientPhotoView(APIView):
     throttle_scope = "scholarship_announcement"
 
     def get(self, request, pk):
-        if not round_two_announcement_is_public():
-            raise Http404("Recipient photo not found.")
         try:
-            application = BursaryApplication.objects.get(
+            winner = ScholarshipWinner.objects.select_related("application").get(
                 pk=pk,
-                status=BursaryApplication.Status.APPROVED,
-                award_round=BursaryApplication.AwardRound.ROUND_TWO,
-                approved_media_use_consent=True,
-                professional_headshot_consent=True,
+                is_published=True,
             )
-        except BursaryApplication.DoesNotExist as error:
+        except ScholarshipWinner.DoesNotExist as error:
             raise Http404("Recipient photo not found.") from error
+        if not scholarship_round_is_public(winner.award_round):
+            raise Http404("Recipient photo not found.")
+        application = winner.application
+        if not application or not application.professional_headshot_consent:
+            raise Http404("Recipient photo not found.")
         if not application.applicant_photo:
             raise Http404("Recipient photo not found.")
         return FileResponse(application.applicant_photo.open("rb"), as_attachment=False)
+
+
+class AdminScholarshipAnnouncementContentView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        return Response(
+            ScholarshipAnnouncementContentSerializer(scholarship_announcement_content()).data
+        )
+
+    @transaction.atomic
+    def patch(self, request):
+        content = ScholarshipAnnouncementContent.objects.select_for_update().get(key="main")
+        serializer = ScholarshipAnnouncementContentSerializer(
+            content,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)
+
+
+class AdminScholarshipWinnerViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = AdminScholarshipWinnerSerializer
+    pagination_class = None
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "award", "country", "category", "application__application_reference"]
+    ordering_fields = ["award_round", "award_year", "display_order", "name", "created_at"]
+    ordering = ["award_round", "display_order", "name"]
+
+    def get_queryset(self):
+        queryset = ScholarshipWinner.objects.select_related("application")
+        award_round = self.request.query_params.get("round")
+        published = self.request.query_params.get("published")
+        if award_round in {"1", "2"}:
+            queryset = queryset.filter(award_round=int(award_round))
+        if published in {"true", "false"}:
+            queryset = queryset.filter(is_published=published == "true")
+        return queryset
 
 
 class AdminBursaryApplicationViewSet(
@@ -753,6 +849,8 @@ class AdminBursaryApplicationViewSet(
                 application,
                 rejection_reason=internal_reason,
             )
+            if new_status == BursaryApplication.Status.APPROVED:
+                create_winner_for_application(application)
             if (
                 new_status == BursaryApplication.Status.APPROVED
                 and application.approval_email_sent_at is None

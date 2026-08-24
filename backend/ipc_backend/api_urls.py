@@ -22,12 +22,15 @@ from ipc_backend.views import csrf_cookie
 from ipc_backend.content_management import AdminContentDetailView, AdminContentListView
 from clubs.views import ClubEnquiryCreateView, ClubPageContentView, PublicClubDetailView
 from scholarships.views import (
+    AdminScholarshipAnnouncementContentView,
+    AdminScholarshipWinnerViewSet,
     AdminBursaryApplicationViewSet,
     BursaryApplicationCreateViewSet,
     BursaryApplicationCurrentView,
     BursaryMembershipReferenceValidationView,
     ScholarshipAnnouncementRecipientPhotoView,
     ScholarshipAnnouncementRecipientsView,
+    ScholarshipAnnouncementContentView,
     ScholarshipContentView,
 )
 from sponsorship.views import SponsorshipContentView
@@ -75,6 +78,7 @@ router.register("admin/event-registrations", AdminEventRegistrationViewSet, base
 router.register("admin/scholarship-reminders", AdminScholarshipAnnouncementReminderViewSet, basename="admin-scholarship-reminder")
 router.register("bursary-applications", BursaryApplicationCreateViewSet, basename="bursary-application")
 router.register("admin/bursary-applications", AdminBursaryApplicationViewSet, basename="admin-bursary-application")
+router.register("admin/scholarship-winners", AdminScholarshipWinnerViewSet, basename="admin-scholarship-winner")
 
 urlpatterns = [
     path("chat/conversations", ConversationCreateView.as_view(), name="chat-conversation-create"),
@@ -93,6 +97,7 @@ urlpatterns = [
     path("admin/dashboard", AdminDashboardView.as_view(), name="admin-dashboard"),
     path("admin/content", AdminContentListView.as_view(), name="admin-content-list"),
     path("admin/content/<slug:slug>", AdminContentDetailView.as_view(), name="admin-content-detail"),
+    path("admin/scholarship-announcement", AdminScholarshipAnnouncementContentView.as_view(), name="admin-scholarship-announcement"),
     path("admin/eventbrite/attendees", AdminEventbriteAttendeesView.as_view(), name="admin-eventbrite-attendees"),
     path("admin/enquiries", AdminEnquiryListView.as_view(), name="admin-enquiry-list"),
     path("admin/enquiries/<str:source>/<str:enquiry_id>", AdminEnquiryDetailView.as_view(), name="admin-enquiry-detail"),
@@ -101,6 +106,7 @@ urlpatterns = [
     path("clubs/content", ClubPageContentView.as_view(), name="club-page-content"),
     path("clubs/<slug:slug>", PublicClubDetailView.as_view(), name="public-club-detail"),
     path("scholarships", ScholarshipContentView.as_view(), name="scholarship-content"),
+    path("scholarship-announcement", ScholarshipAnnouncementContentView.as_view(), name="scholarship-announcement-content"),
     path(
         "scholarship-announcement/recipients",
         ScholarshipAnnouncementRecipientsView.as_view(),
