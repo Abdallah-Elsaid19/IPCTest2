@@ -310,12 +310,10 @@ export default function AdminScholarshipAnnouncementPage() {
 
                 <Panel title="Official recipient register panel" description="Edit the right-hand panel shown beside the celebration hero. The recipient count remains automatic.">
                   <div className="grid gap-5 md:grid-cols-2">
-                    <Field label="Announcement date and time (London)" wide>
-                      <input type="datetime-local" required value={toLondonDateTimeInput(draft.announcement_at)} onChange={(event) => updateDraft("announcement_at", londonDateTimeToIso(event.target.value))} className={inputClass} />
-                    </Field>
                     <Field label="Panel title"><input required value={draft.register_title} onChange={(event) => updateDraft("register_title", event.target.value)} className={inputClass} /></Field>
                     <Field label="Panel description"><textarea required value={draft.register_description} onChange={(event) => updateDraft("register_description", event.target.value)} className={textareaClass} /></Field>
                     <Field label="Announcement date label"><input required value={draft.register_date_label} onChange={(event) => updateDraft("register_date_label", event.target.value)} className={inputClass} /></Field>
+                    <Field label="Announcement date value"><input required value={draft.register_date_value} onChange={(event) => updateDraft("register_date_value", event.target.value)} className={inputClass} /></Field>
                     <Field label="Academic intake label"><input required value={draft.register_intake_label} onChange={(event) => updateDraft("register_intake_label", event.target.value)} className={inputClass} /></Field>
                     <Field label="Academic intake value"><input required value={draft.register_intake_value} onChange={(event) => updateDraft("register_intake_value", event.target.value)} className={inputClass} /></Field>
                     <Field label="Total recipients label"><input required value={draft.register_total_label} onChange={(event) => updateDraft("register_total_label", event.target.value)} className={inputClass} /></Field>
@@ -390,12 +388,6 @@ function CelebrationPreview({ content, winners }: { content: ScholarshipAnnounce
   const publishedRoundWinners = winners.filter(
     (winner) => winner.is_published && winner.award_round === content.announcement_round,
   );
-  const announcementDate = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/London",
-  }).format(new Date(content.announcement_at));
   const previewWinners = [...winners]
     .filter((winner) => winner.is_published)
     .sort((left, right) => {
@@ -433,7 +425,7 @@ function CelebrationPreview({ content, winners }: { content: ScholarshipAnnounce
           <p className="relative mx-auto mt-4 max-w-md text-xs leading-6 text-[#AAA198]">{content.register_description}</p>
           <dl className="relative mt-6 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
-              [content.register_date_label, announcementDate],
+              [content.register_date_label, content.register_date_value],
               [content.register_intake_label, content.register_intake_value],
               [content.register_total_label, `${publishedRoundWinners.length} recipients`],
               [content.register_status_label, content.register_status_value],

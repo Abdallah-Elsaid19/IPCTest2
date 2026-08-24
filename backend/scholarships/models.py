@@ -234,6 +234,7 @@ class ScholarshipAnnouncementContent(models.Model):
         )
     )
     register_date_label = models.CharField(max_length=100, default="Announcement date")
+    register_date_value = models.CharField(max_length=160, default="10 September 2026")
     register_intake_label = models.CharField(max_length=100, default="Academic intake")
     register_intake_value = models.CharField(max_length=160, default="2026 programme year")
     register_total_label = models.CharField(max_length=120, default="Total 2026 recipients")

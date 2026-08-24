@@ -28,6 +28,7 @@ type ScholarshipAnnouncementContent = {
   register_title: string;
   register_description: string;
   register_date_label: string;
+  register_date_value: string;
   register_intake_label: string;
   register_intake_value: string;
   register_total_label: string;
@@ -62,6 +63,7 @@ const DEFAULT_ANNOUNCEMENT_CONTENT: ScholarshipAnnouncementContent = {
   register_title: "Official 2026 Recipient Register",
   register_description: "This page is the approved public record of IPC scholarship and bursary recipients. Details appear only where publication consent has been confirmed.",
   register_date_label: "Announcement date",
+  register_date_value: "10 September 2026",
   register_intake_label: "Academic intake",
   register_intake_value: "2026 programme year",
   register_total_label: "Total 2026 recipients",
@@ -413,7 +415,7 @@ function ScholarshipRecipientsReveal({
           </p>
           <dl className="relative mt-8 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
-              [content.register_date_label, formatLondonAnnouncement(content.announcement_at).date],
+              [content.register_date_label, content.register_date_value],
               [content.register_intake_label, content.register_intake_value],
               [content.register_total_label, isLoading ? "Loading…" : `${recipients.length} recipients`],
               [content.register_status_label, content.register_status_value],

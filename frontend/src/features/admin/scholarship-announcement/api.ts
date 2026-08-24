@@ -20,6 +20,7 @@ export interface ScholarshipAnnouncementContent {
   register_title: string;
   register_description: string;
   register_date_label: string;
+  register_date_value: string;
   register_intake_label: string;
   register_intake_value: string;
   register_total_label: string;
