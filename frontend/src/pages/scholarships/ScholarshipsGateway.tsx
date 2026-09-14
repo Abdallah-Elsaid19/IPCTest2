@@ -387,6 +387,10 @@ type ModuleOffer = {
   is_active?: boolean;
 };
 
+const isMbaLevel7Offer = (offer: ModuleOffer) => (
+  /mba[\s_-]*level[\s_-]*7/i.test(`${offer.id} ${offer.label} ${offer.title}`)
+);
+
 const MODULE_OFFERS: ModuleOffer[] = [
   {
     id: "individual-module",
@@ -1243,7 +1247,7 @@ export default function ScholarshipsGateway() {
                   ))}
                 </ul>
 
-                {offer.bonus && (
+                {offer.bonus && !isMbaLevel7Offer(offer) && (
                   <div className="mb-7">
                     <div className="border border-primary-400/45 bg-primary-400/[0.07] p-4">
                       <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-300">{offer.bonus.label}</p>

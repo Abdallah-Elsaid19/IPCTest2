@@ -194,7 +194,10 @@ export const adminApi = {
   eventRegistrations: () =>
     apiJson<Array<DashboardRegistration & { id: number }>>("/api/admin/event-registrations"),
   zohoRegistrations: () =>
-    apiJson<Array<DashboardRegistration & { id: number }>>("/api/admin/event-registrations?source=zoho"),
+    apiJson<Array<DashboardRegistration & { id: number }>>("/api/admin/event-registrations?source=zoho", undefined, {
+      cache: "no-store",
+      requestSource: "AdminZohoRegistrations",
+    }),
   sendEventAccountInvite: (registration: Pick<DashboardRegistration, "id" | "source">) =>
     apiJson<{
       detail: string;

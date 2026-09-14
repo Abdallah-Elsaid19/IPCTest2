@@ -15,6 +15,11 @@ Configure the webhook with `application/json` and map these payload keys:
 | `programme` | Programme |
 | `comments` | Comments |
 
+The receiver also accepts Zoho's default labels (`Name`, `Email`, `Phone`) and
+`application/x-www-form-urlencoded` payloads. When `Name` is used, it is split
+into first and last name automatically. Keep the payload parameter names stable
+if you customise the form labels.
+
 Add the custom header `X-Zoho-Webhook-Token`. Its value must match the long,
 random `ZOHO_FORMS_WEBHOOK_TOKEN` value stored in `backend/.env` on the server.
 Do not commit or share that value.

@@ -21,6 +21,7 @@ export interface ScholarshipAnnouncementContent {
   register_description: string;
   register_date_label: string;
   register_date_value: string;
+  previous_round_date_value: string;
   register_intake_label: string;
   register_intake_value: string;
   register_total_label: string;

@@ -1,5 +1,7 @@
 import secrets
 import hashlib
+import json
+import re
 from datetime import timezone as dt_timezone
 from concurrent.futures import ThreadPoolExecutor
 from secrets import token_urlsafe
@@ -285,6 +287,15 @@ class AdminEventRegistrationViewSet(mixins.ListModelMixin, mixins.RetrieveModelM
                 queryset = queryset.exclude(payment_provider="zoho_forms")
         return queryset
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # Registrations are operational data; never let a browser/proxy cache
+        # an empty response and make the admin refresh button look broken.
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+        return response
+
     @action(detail=True, methods=["post"], url_path="resend-confirmation")
     def resend_confirmation(self, request, pk=None):
         registration = self.get_object()
@@ -399,22 +410,57 @@ class ZohoFormWebhookView(APIView):
     throttle_scope = "zoho_webhook"
 
     FIELD_ALIASES = {
-        "first_name": ("first_name", "Field_1"),
-        "last_name": ("last_name", "Field_2"),
-        "phone": ("phone", "Field_3"),
-        "email": ("email", "Field_4"),
-        "programme": ("programme", "program", "Field_5"),
-        "comments": ("comments", "Field_16"),
+        "first_name": ("first_name", "first name", "given_name", "given name", "Field_1"),
+        "last_name": ("last_name", "last name", "family_name", "family name", "surname", "Field_2"),
+        "phone": ("phone", "phone number", "mobile", "mobile phone", "Field_3"),
+        "email": ("email", "email address", "e-mail", "Field_4"),
+        "programme": ("programme", "program", "event", "event name", "Field_5"),
+        "comments": ("comments", "comment", "message", "notes", "Field_16"),
     }
 
     @classmethod
     def _normalise_payload(cls, payload):
+        """Accept our documented keys and Zoho's native field labels."""
+        if not isinstance(payload, dict):
+            payload = {}
+        nested = payload.get("payload")
+        if isinstance(nested, dict):
+            payload = {**payload, **nested}
+        elif isinstance(nested, str):
+            try:
+                decoded = json.loads(nested)
+            except (TypeError, ValueError):
+                decoded = None
+            if isinstance(decoded, dict):
+                payload = {**payload, **decoded}
+
+        key_map = {
+            re.sub(r"[^a-z0-9]", "", str(key).lower()): value
+            for key, value in payload.items()
+        }
+
+        def value_for(aliases):
+            for alias in aliases:
+                value = key_map.get(re.sub(r"[^a-z0-9]", "", alias.lower()))
+                if value is not None:
+                    return value
+            return ""
+
+        first_name = str(value_for(cls.FIELD_ALIASES["first_name"]) or "").strip()
+        last_name = str(value_for(cls.FIELD_ALIASES["last_name"]) or "").strip()
+        full_name = str(value_for(("name", "full_name", "full name")) or "").strip()
+        if full_name and not first_name and not last_name:
+            parts = full_name.split()
+            first_name = parts[0]
+            last_name = " ".join(parts[1:])
+
         return {
-            destination: next(
-                (payload.get(source) for source in aliases if payload.get(source) is not None),
-                "",
-            )
-            for destination, aliases in cls.FIELD_ALIASES.items()
+            "first_name": first_name,
+            "last_name": last_name,
+            "phone": str(value_for(cls.FIELD_ALIASES["phone"]) or "").strip(),
+            "email": str(value_for(cls.FIELD_ALIASES["email"]) or "").strip(),
+            "programme": str(value_for(cls.FIELD_ALIASES["programme"]) or "").strip(),
+            "comments": str(value_for(cls.FIELD_ALIASES["comments"]) or "").strip(),
         }
 
     def post(self, request):

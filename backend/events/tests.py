@@ -95,6 +95,21 @@ class ZohoFormWebhookTests(TestCase):
         self.assertEqual(first.data["reference"], second.data["reference"])
         self.assertEqual(EventRegistration.objects.count(), 1)
 
+    def test_accepts_zoho_native_field_labels_and_full_name(self):
+        response = self.post({
+            "Name": "Amina Khan",
+            "Email": "amina-native@example.com",
+            "Phone": "+44 7700 900123",
+            "Programme": "Project Controls Masterclass",
+            "Comments": "Window seat",
+        })
+
+        self.assertEqual(response.status_code, 201)
+        registration = EventRegistration.objects.get()
+        self.assertEqual(registration.name, "Amina Khan")
+        self.assertEqual(registration.email, "amina-native@example.com")
+        self.assertEqual(registration.contact_mobile, "+44 7700 900123")
+
     def test_admin_can_filter_and_identify_zoho_registrations(self):
         self.post()
         EventRegistration.objects.create(

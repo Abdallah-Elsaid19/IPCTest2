@@ -73,10 +73,20 @@ TEMPLATES = [{
 WSGI_APPLICATION = "ipc_backend.wsgi.application"
 ASGI_APPLICATION = "ipc_backend.asgi.application"
 
+# ---------------------------------------------------------------------------
+# DATABASE
+# ---------------------------------------------------------------------------
+# By default the project uses PostgreSQL (via the DATABASE_URL env var).
+# The SQLite toggle below is now ON by default and points at test.sqlite3,
+# so `migrate` and `createsuperuser` will write into that file.
+#
+# To switch BACK to PostgreSQL, set this in your .env file:
+#     USE_SQLITE_TEST_DB=False
+# ---------------------------------------------------------------------------
 DATABASES = {
     "default": env.db("DATABASE_URL", default="postgres://ipc:ipc@localhost:5432/ipc")
 }
-if env.bool("USE_SQLITE_TEST_DB", default=False):
+if env.bool("USE_SQLITE_TEST_DB", default=True):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",

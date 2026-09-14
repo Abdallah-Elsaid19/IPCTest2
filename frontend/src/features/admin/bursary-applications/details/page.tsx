@@ -10,6 +10,7 @@ import {
   type BursaryStatus,
 } from "@/features/bursary/api";
 import { calculateBursaryFundingEstimate } from "@/features/bursary/pathways";
+import { apiBlob } from "@/lib/api";
 import { notifications } from "@/lib/notifications";
 
 const statusOptions: Array<{ value: BursaryStatus; label: string }> = [
@@ -51,6 +52,70 @@ const safeExternalUrl = (value: unknown) => {
 const label = (value: string) => value
   .replaceAll("_", " ")
   .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+function AuthenticatedImage({ src }: { src: string }) {
+  const [objectUrl, setObjectUrl] = useState("");
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let createdUrl = "";
+    setObjectUrl("");
+    setFailed(false);
+    void apiBlob(src)
+      .then((blob) => {
+        if (!active) return;
+        createdUrl = URL.createObjectURL(blob);
+        setObjectUrl(createdUrl);
+      })
+      .catch(() => {
+        if (active) setFailed(true);
+      });
+    return () => {
+      active = false;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [src]);
+
+  if (failed) return <span>Applicant photo could not be loaded.</span>;
+  if (!objectUrl) return <span>Loading applicant photo…</span>;
+  return (
+    <a href={objectUrl} target="_blank" rel="noreferrer">
+      <img src={objectUrl} alt="Applicant" className="max-h-52 max-w-full border border-[#DED2C3] bg-white object-contain p-2" />
+    </a>
+  );
+}
+
+function AuthenticatedFileLink({ src }: { src: string }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const openDocument = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setFailed(false);
+    const target = window.open("about:blank", "_blank");
+    try {
+      const blob = await apiBlob(src);
+      const objectUrl = URL.createObjectURL(blob);
+      if (target) target.location.href = objectUrl;
+      else window.location.href = objectUrl;
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch {
+      target?.close();
+      setFailed(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (failed) return <span>Secure document could not be loaded.</span>;
+  return (
+    <button type="button" onClick={() => void openDocument()} disabled={isLoading} className="inline-flex items-center gap-1 font-semibold text-primary-800 underline disabled:cursor-wait disabled:opacity-60">
+      {isLoading ? "Opening secure document…" : "Open secure document"} <ExternalLink size={13} />
+    </button>
+  );
+}
 
 function DetailSection({
   title,
@@ -103,10 +168,10 @@ function DetailGrid({
         : value ? String(value) : "Not provided";
     }
     if (format === "file") return value
-      ? <a href={String(value)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary-800 underline">Open secure document <ExternalLink size={13} /></a>
+      ? <AuthenticatedFileLink src={String(value)} />
       : "Not provided";
     if (format === "image") return value
-      ? <a href={String(value)} target="_blank" rel="noreferrer"><img src={String(value)} alt="Applicant" className="max-h-52 max-w-full border border-[#DED2C3] bg-white object-contain p-2" /></a>
+      ? <AuthenticatedImage src={String(value)} />
       : "Not provided";
     if (format === "multiline") return value ? <span className="whitespace-pre-wrap">{String(value)}</span> : "Not provided";
     if (value === null || value === undefined || value === "") return "Not provided";

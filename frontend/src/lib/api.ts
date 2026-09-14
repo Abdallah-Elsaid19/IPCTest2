@@ -272,6 +272,23 @@ export async function apiJson<T>(path: string, body?: unknown, options: ApiReque
   return subscribeToPending<T>(entry, options.signal);
 }
 
+/** Fetch an authenticated file endpoint, renewing the short-lived access cookie once. */
+export async function apiBlob(path: string, options: Pick<NonNullable<Parameters<typeof fetch>[1]>, "signal"> = {}): Promise<Blob> {
+  const request = () => fetch(path, { credentials: "include", cache: "no-store", signal: options.signal });
+  let response = await request();
+  if (response.status === 401 && await refreshAccessToken()) {
+    response = await request();
+  }
+  if (response.status === 401) {
+    window.dispatchEvent(new Event("ipc:auth-expired"));
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(formatApiError(data));
+  }
+  return response.blob();
+}
+
 export const fallbackGradeOptions: GradeOption[] = [
   { value: "AffIPC", label: "AffIPC" },
   { value: "MIPC", label: "MIPC" },

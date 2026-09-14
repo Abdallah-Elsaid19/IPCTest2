@@ -29,6 +29,7 @@ type ScholarshipAnnouncementContent = {
   register_description: string;
   register_date_label: string;
   register_date_value: string;
+  previous_round_date_value: string;
   register_intake_label: string;
   register_intake_value: string;
   register_total_label: string;
@@ -64,6 +65,7 @@ const DEFAULT_ANNOUNCEMENT_CONTENT: ScholarshipAnnouncementContent = {
   register_description: "This page is the approved public record of IPC scholarship and bursary recipients. Details appear only where publication consent has been confirmed.",
   register_date_label: "Announcement date",
   register_date_value: "10 September 2026",
+  previous_round_date_value: "12 August 2026",
   register_intake_label: "Academic intake",
   register_intake_value: "2026 programme year",
   register_total_label: "Total 2026 recipients",
@@ -258,6 +260,8 @@ function ScholarshipRecipientsReveal({
   const [searchQuery, setSearchQuery] = useState("");
   const [awardFilter, setAwardFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [roundFilter, setRoundFilter] = useState(String(round));
+  const [defaultRound, setDefaultRound] = useState<1 | 2>(round);
   const [selectedRecipient, setSelectedRecipient] = useState<ScholarshipRecipient | null>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
@@ -266,12 +270,22 @@ function ScholarshipRecipientsReveal({
     const controller = new AbortController();
     setIsLoading(true);
     setError("");
-    void apiJson<ScholarshipRecipient[]>(
-      `/api/scholarship-announcement/recipients?round=${round}`,
+    const candidateRounds = isPreviousRound ? [round] : [1, 2];
+    void Promise.all(candidateRounds.map((candidateRound) => apiJson<ScholarshipRecipient[]>(
+      `/api/scholarship-announcement/recipients?round=${candidateRound}`,
       undefined,
-      { signal: controller.signal, cache: "no-store", requestSource: "ScholarshipAnnouncementRecipients" },
-    )
-      .then(setRecipients)
+      { signal: controller.signal, cache: "no-store", requestSource: `ScholarshipAnnouncementRecipientsRound${candidateRound}` },
+    )))
+      .then((roundResults) => {
+        const combined = roundResults.flat();
+        const publishedRounds = candidateRounds.filter((candidateRound) =>
+          combined.some((recipient) => recipient.award_round === candidateRound),
+        );
+        const latestRound = (publishedRounds.length ? publishedRounds[publishedRounds.length - 1] : round) as 1 | 2;
+        setDefaultRound(latestRound);
+        setRoundFilter(String(latestRound));
+        setRecipients(combined);
+      })
       .catch((requestError) => {
         if (!controller.signal.aborted) {
           setError(requestError instanceof Error ? requestError.message : "The recipient register could not be loaded.");
@@ -281,7 +295,7 @@ function ScholarshipRecipientsReveal({
         if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
-  }, [round]);
+  }, [isPreviousRound, round]);
 
   const awardOptions = useMemo(
     () => [...new Set(recipients.map((recipient) => recipient.award).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
@@ -302,18 +316,22 @@ function ScholarshipRecipientsReveal({
         ...recipient.modules,
       ].join(" ").toLocaleLowerCase();
       return (!query || searchable.includes(query))
+        && (roundFilter === "all" || String(recipient.award_round) === roundFilter)
         && (awardFilter === "all" || recipient.award === awardFilter)
         && (countryFilter === "all" || recipient.country === countryFilter);
     });
-  }, [awardFilter, countryFilter, recipients, searchQuery]);
+  }, [awardFilter, countryFilter, recipients, roundFilter, searchQuery]);
 
-  const filtersAreActive = Boolean(searchQuery.trim()) || awardFilter !== "all" || countryFilter !== "all";
+  const filtersAreActive = Boolean(searchQuery.trim()) || awardFilter !== "all" || countryFilter !== "all" || roundFilter !== String(defaultRound);
 
   const clearFilters = () => {
     setSearchQuery("");
     setAwardFilter("all");
     setCountryFilter("all");
+    setRoundFilter(String(defaultRound));
   };
+
+  const roundOptions = [...new Set(recipients.map((recipient) => recipient.award_round))].sort((a, b) => a - b);
 
   const openRecipient = (recipient: ScholarshipRecipient, trigger: HTMLElement) => {
     modalTriggerRef.current = trigger;
@@ -415,7 +433,7 @@ function ScholarshipRecipientsReveal({
           </p>
           <dl className="relative mt-8 grid overflow-hidden rounded-xl border border-primary-400/30 sm:grid-cols-2">
             {[
-              [content.register_date_label, content.register_date_value],
+              [content.register_date_label, isPreviousRound ? content.previous_round_date_value : content.register_date_value],
               [content.register_intake_label, content.register_intake_value],
               [content.register_total_label, isLoading ? "Loading…" : `${recipients.length} recipients`],
               [content.register_status_label, content.register_status_value],
@@ -468,6 +486,20 @@ function ScholarshipRecipientsReveal({
                   placeholder="Search by recipient or award"
                   className="min-h-[3.25rem] w-full rounded-lg border border-primary-400/35 bg-black/70 py-3 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-background-500 focus:border-primary-400"
                 />
+              </label>
+              <label>
+                <span className="sr-only">Filter by round</span>
+                <select
+                  value={roundFilter}
+                  onChange={(event) => setRoundFilter(event.target.value)}
+                  className="min-h-[3.25rem] w-full rounded-lg border border-primary-400/25 bg-black/55 px-4 py-3 text-sm text-background-200 outline-none transition focus:border-primary-400"
+                >
+                  <option value={String(defaultRound)}>Latest announced round (Round {defaultRound})</option>
+                  <option value="all">All rounds</option>
+                  {roundOptions.filter((candidateRound) => candidateRound !== defaultRound).map((candidateRound) => (
+                    <option key={candidateRound} value={String(candidateRound)}>Round {candidateRound}</option>
+                  ))}
+                </select>
               </label>
               <label>
                 <span className="sr-only">Filter by award</span>
@@ -653,6 +685,7 @@ function ScholarshipRecipientsReveal({
 
 export default function ScholarshipAnnouncementPage() {
   const [announcementContent, setAnnouncementContent] = useState<ScholarshipAnnouncementContent>(DEFAULT_ANNOUNCEMENT_CONTENT);
+  const [isContentLoading, setIsContentLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
   const [email, setEmail] = useState("");
   const [reminderState, setReminderState] = useState<"idle" | "submitting" | "success" | "error">("idle");
@@ -673,7 +706,13 @@ export default function ScholarshipAnnouncementPage() {
     ).then((content) => {
       setAnnouncementContent(content);
       setNow(Date.now());
-    }).catch(() => undefined);
+    }).catch(() => undefined).finally(() => {
+      // Do not render the default countdown/recipient state before the
+      // announcement settings arrive.  The default date can be on the
+      // opposite side of "now" from the live date, which causes a visible
+      // one-frame flash when navigating directly to this page.
+      setIsContentLoading(false);
+    });
     return () => controller.abort();
   }, []);
 
@@ -703,6 +742,16 @@ export default function ScholarshipAnnouncementPage() {
       setReminderMessage(error instanceof Error ? error.message : "We could not save your reminder. Please try again.");
     }
   };
+
+  if (isContentLoading) {
+    return (
+      <div
+        className="relative isolate min-h-[calc(100svh-2.25rem)] overflow-hidden bg-black text-background-50"
+        aria-busy="true"
+        aria-label="Loading scholarship announcement"
+      />
+    );
+  }
 
   return (
     <div className="relative isolate min-h-[calc(100svh-2.25rem)] overflow-hidden bg-black text-background-50">
@@ -789,7 +838,6 @@ export default function ScholarshipAnnouncementPage() {
           >
             <Trophy size={17} aria-hidden="true" />
             {announcementContent.previous_round_button_label}
-            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-background-400">Round {previousRound}</span>
           </button>
 
           {SHOW_COUNTDOWN_WIDGET && (
