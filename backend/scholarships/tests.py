@@ -25,6 +25,7 @@ from .bursary_export import (
     BURSARY_GOOGLE_SHEET_HEADERS,
     bursary_google_sheet_row,
 )
+from .google_sheets import _merge_bursary_google_sheet_rows
 from .models import (
     BursaryApplication,
     ScholarshipAnnouncementContent,
@@ -902,6 +903,30 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(response.status_code, 201, response.data)
         sync_sheet.assert_called_once_with()
 
+    @patch("scholarships.signals.sync_bursary_google_sheet_safely")
+    def test_admin_table_edits_schedule_automatic_google_sheet_sync(self, sync_sheet):
+        created = self.submit_bursary()
+        self.client.force_authenticate(self.staff)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            status_response = self.client.patch(
+                f"/api/admin/bursary-applications/{created.data['id']}/status",
+                {"status": "under_review"},
+                format="json",
+            )
+        self.assertEqual(status_response.status_code, 200, status_response.data)
+        sync_sheet.assert_called_once_with()
+
+        sync_sheet.reset_mock()
+        with self.captureOnCommitCallbacks(execute=True):
+            notes_response = self.client.patch(
+                f"/api/admin/bursary-applications/{created.data['id']}/notes",
+                {"reviewer_internal_notes": "Checked against the supporting documents."},
+                format="json",
+            )
+        self.assertEqual(notes_response.status_code, 200, notes_response.data)
+        sync_sheet.assert_called_once_with()
+
     def test_dashboard_csv_export_contains_all_current_form_data_and_respects_filters(self):
         created = self.submit_bursary()
         self.assertEqual(created.status_code, 201, created.data)
@@ -938,6 +963,9 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(
             list(row),
             [
+                "Application reference",
+                "Round",
+                "Status",
                 "First name",
                 "Last name",
                 "Date of birth",
@@ -952,13 +980,60 @@ class BursaryApplicationApiTests(APITestCase):
                 "Additional support required",
             ],
         )
+        self.assertEqual(row["Application reference"], created.data["applicationReference"])
+        self.assertEqual(row["Round"], "Round 2")
+        self.assertEqual(row["Status"], "Submitted")
         self.assertEqual(row["First name"], "Amina")
         self.assertEqual(row["Preferred modules"], "AI, PMP")
-        self.assertEqual(row["Estimated amount applicant pays (GBP)"], "4000")
+        self.assertEqual(row["Estimated amount applicant pays (GBP)"], 4000)
         self.assertEqual(
             row["Long-term disability, health problem or learning difficulty"],
             "No",
         )
+
+    def test_google_sheet_schema_migration_preserves_manual_rows(self):
+        old_headers = BURSARY_GOOGLE_SHEET_HEADERS[3:]
+        manual_row = [
+            "Amina",
+            "Khan",
+            "1990-05-12",
+            "amina@example.com",
+            "United Kingdom",
+            "Example Projects Ltd",
+            "Project controls analyst",
+            "Full time",
+            "AI, PMP",
+            4000,
+            "No",
+            "",
+        ]
+        database_row = [
+            "IPC-BSA-2026-EXAMPLE",
+            "Round 2",
+            "Submitted",
+            "Database",
+            "Applicant",
+            "1991-01-01",
+            "database@example.com",
+            "United Kingdom",
+            "IPC",
+            "Planner",
+            "Full time",
+            "PPC",
+            2000,
+            "No",
+            "",
+        ]
+
+        merged = _merge_bursary_google_sheet_rows(
+            [old_headers, manual_row],
+            [database_row],
+        )
+
+        self.assertEqual(merged[0], BURSARY_GOOGLE_SHEET_HEADERS)
+        self.assertEqual(merged[1][0:3], ["", "", ""])
+        self.assertEqual(merged[1][3:], manual_row)
+        self.assertEqual(merged[2], database_row)
 
     @patch("scholarships.views.send_graph_bursary_approval_email")
     def test_approval_updates_member_panel_and_sends_one_approval_email(self, send_approval_email):

@@ -46,6 +46,9 @@ BURSARY_EXPORT_HEADERS = [
 ]
 
 BURSARY_GOOGLE_SHEET_HEADERS = [
+    "Application reference",
+    "Round",
+    "Status",
     "First name",
     "Last name",
     "Date of birth",
@@ -172,6 +175,9 @@ def bursary_google_sheet_row(application):
         total_contribution += cost - payable_override if payable_override is not None else cost * percentage // 100
 
     values = [
+        application.application_reference,
+        application.get_award_round_display(),
+        application.get_status_display(),
         application.first_name,
         application.last_name,
         application.date_of_birth,
@@ -186,5 +192,7 @@ def bursary_google_sheet_row(application):
         application.primary_health_problem,
     ]
     row = [export_safe(value) for value in values]
-    row[9] = total_cost - total_contribution
+    row[BURSARY_GOOGLE_SHEET_HEADERS.index(
+        "Estimated amount applicant pays (GBP)"
+    )] = total_cost - total_contribution
     return row

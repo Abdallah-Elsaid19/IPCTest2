@@ -16,6 +16,57 @@ logger = logging.getLogger(__name__)
 SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 
 
+def _column_letter(column_number):
+    """Return the A1-notation letter for a one-based column number."""
+    letters = ""
+    while column_number:
+        column_number, remainder = divmod(column_number - 1, 26)
+        letters = chr(65 + remainder) + letters
+    return letters
+
+
+def _merge_bursary_google_sheet_rows(existing_values, database_rows):
+    """Migrate an existing sheet without dropping rows not managed by Django."""
+    if not existing_values:
+        return [BURSARY_GOOGLE_SHEET_HEADERS, *database_rows]
+
+    existing_headers = existing_values[0]
+    existing_indexes = {
+        header: index for index, header in enumerate(existing_headers)
+    }
+    database_by_reference = {
+        str(row[0]).strip(): row for row in database_rows if row
+    }
+    merged_rows = [BURSARY_GOOGLE_SHEET_HEADERS]
+    synced_references = set()
+
+    for existing_row in existing_values[1:]:
+        normalised_row = [
+            existing_row[existing_indexes[header]]
+            if header in existing_indexes
+            and existing_indexes[header] < len(existing_row)
+            else ""
+            for header in BURSARY_GOOGLE_SHEET_HEADERS
+        ]
+        if not any(str(value).strip() for value in normalised_row):
+            continue
+
+        reference = str(normalised_row[0]).strip()
+        if reference in database_by_reference:
+            if reference not in synced_references:
+                merged_rows.append(database_by_reference[reference])
+                synced_references.add(reference)
+            continue
+        merged_rows.append(normalised_row)
+
+    merged_rows.extend(
+        row
+        for reference, row in database_by_reference.items()
+        if reference not in synced_references
+    )
+    return merged_rows
+
+
 def bursary_google_sheet_url():
     spreadsheet_id = settings.BURSARY_GOOGLE_SHEETS_SPREADSHEET_ID.strip()
     return (
@@ -110,6 +161,16 @@ def _target_sheet_id(service, spreadsheet_id, worksheet_name):
 
 def _format_sheet(service, spreadsheet_id, sheet_id, row_count):
     column_count = len(BURSARY_GOOGLE_SHEET_HEADERS)
+    payable_column = BURSARY_GOOGLE_SHEET_HEADERS.index(
+        "Estimated amount applicant pays (GBP)"
+    )
+    wide_columns = {
+        BURSARY_GOOGLE_SHEET_HEADERS.index("Preferred modules"),
+        BURSARY_GOOGLE_SHEET_HEADERS.index(
+            "Long-term disability, health problem or learning difficulty"
+        ),
+        BURSARY_GOOGLE_SHEET_HEADERS.index("Additional support required"),
+    }
     requests = [
         {
             "updateSheetProperties": {
@@ -171,8 +232,8 @@ def _format_sheet(service, spreadsheet_id, sheet_id, row_count):
                     "sheetId": sheet_id,
                     "startRowIndex": 1,
                     "endRowIndex": max(row_count, 2),
-                    "startColumnIndex": 9,
-                    "endColumnIndex": 10,
+                    "startColumnIndex": payable_column,
+                    "endColumnIndex": payable_column + 1,
                 },
                 "cell": {
                     "userEnteredFormat": {
@@ -201,7 +262,7 @@ def _format_sheet(service, spreadsheet_id, sheet_id, row_count):
             }
         },
     ]
-    for column_index in (8, 10, 11):
+    for column_index in sorted(wide_columns):
         requests.append({
             "updateDimensionProperties": {
                 "range": {
@@ -231,8 +292,7 @@ def sync_bursary_google_sheet():
     applications = BursaryApplication.objects.select_related(
         "assigned_reviewer",
     ).order_by("-submitted_at", "-id")
-    rows = [BURSARY_GOOGLE_SHEET_HEADERS]
-    rows.extend(
+    database_rows = list(
         bursary_google_sheet_row(application)
         for application in applications.iterator(chunk_size=500)
     )
@@ -240,20 +300,69 @@ def sync_bursary_google_sheet():
     service = _google_sheets_service()
     sheet_id = _target_sheet_id(service, spreadsheet_id, worksheet_name)
     quoted_sheet_name = worksheet_name.replace("'", "''")
-    sheet_range = f"'{quoted_sheet_name}'!A:L"
-    service.spreadsheets().values().clear(
+    last_column = _column_letter(len(BURSARY_GOOGLE_SHEET_HEADERS))
+    sheet_range = f"'{quoted_sheet_name}'!A:{last_column}"
+    values_api = service.spreadsheets().values()
+    existing_values = values_api.get(
         spreadsheetId=spreadsheet_id,
         range=sheet_range,
-        body={},
-    ).execute()
-    service.spreadsheets().values().update(
-        spreadsheetId=spreadsheet_id,
-        range=f"'{quoted_sheet_name}'!A1",
-        valueInputOption="RAW",
-        body={"values": rows},
-    ).execute()
-    _format_sheet(service, spreadsheet_id, sheet_id, len(rows))
-    return len(rows) - 1
+    ).execute().get("values", [])
+
+    if not existing_values or existing_values[0] != BURSARY_GOOGLE_SHEET_HEADERS:
+        rows = _merge_bursary_google_sheet_rows(existing_values, database_rows)
+        values_api.update(
+            spreadsheetId=spreadsheet_id,
+            range=f"'{quoted_sheet_name}'!A1",
+            valueInputOption="RAW",
+            body={"values": rows},
+        ).execute()
+        existing_row_count = len(existing_values)
+        if existing_row_count > len(rows):
+            values_api.clear(
+                spreadsheetId=spreadsheet_id,
+                range=(
+                    f"'{quoted_sheet_name}'!A{len(rows) + 1}:"
+                    f"{last_column}{existing_row_count}"
+                ),
+                body={},
+            ).execute()
+        row_count = len(rows)
+    else:
+        existing_rows_by_reference = {}
+        for row_number, existing_row in enumerate(existing_values[1:], start=2):
+            reference = str(existing_row[0]).strip() if existing_row else ""
+            if reference:
+                existing_rows_by_reference.setdefault(reference, row_number)
+
+        updates = []
+        additions = []
+        for row in database_rows:
+            row_number = existing_rows_by_reference.get(str(row[0]).strip())
+            if row_number:
+                updates.append({
+                    "range": f"'{quoted_sheet_name}'!A{row_number}",
+                    "values": [row],
+                })
+            else:
+                additions.append(row)
+
+        if updates:
+            values_api.batchUpdate(
+                spreadsheetId=spreadsheet_id,
+                body={"valueInputOption": "RAW", "data": updates},
+            ).execute()
+        if additions:
+            values_api.append(
+                spreadsheetId=spreadsheet_id,
+                range=f"'{quoted_sheet_name}'!A:{last_column}",
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": additions},
+            ).execute()
+        row_count = len(existing_values) + len(additions)
+
+    _format_sheet(service, spreadsheet_id, sheet_id, row_count)
+    return len(database_rows)
 
 
 def sync_bursary_google_sheet_safely():
