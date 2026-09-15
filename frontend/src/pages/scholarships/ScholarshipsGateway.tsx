@@ -802,7 +802,16 @@ export default function ScholarshipsGateway() {
     return [...rawPathways.filter((item) => isManagedItemActive(item) && PUBLIC_PATHWAY_IDS.has(item.id))]
       .sort((left, right) => order.indexOf(left.id) - order.indexOf(right.id));
   }, [pathwaysActive, rawPathways]);
-  const moduleOffers = rawModuleOffers.filter(isManagedItemActive);
+  // CMS-managed module rows predate the APM price breakdown. Preserve those
+  // editable rows while filling newly added presentation data from defaults.
+  const moduleOffers = rawModuleOffers
+    .filter(isManagedItemActive)
+    .map((offer) => {
+      const defaultOffer = MODULE_OFFERS.find((item) => item.id === offer.id);
+      return defaultOffer?.priceBreakdown && !offer.priceBreakdown
+        ? { ...defaultOffer, ...offer, priceBreakdown: defaultOffer.priceBreakdown }
+        : offer;
+    });
   const fundingOptions = content.funding.options.filter(isManagedItemActive);
   const faqItems = CURRENT_FAQS.map(([question, answer]) => ({ question, answer }));
   const managedComparisonRows = content.comparison.rows.filter(isManagedItemActive);
