@@ -377,6 +377,7 @@ type ModuleOffer = {
   courseCost: string;
   ipcSupport: string;
   amountPayable: string;
+  priceBreakdown?: Array<{ label: string; courseCost: string; ipcSupport: string; amountPayable: string }>;
   details: string[];
   bonus: {
     label: string;
@@ -429,6 +430,10 @@ const MODULE_OFFERS: ModuleOffer[] = [
     title: "APM modules",
     description: "A 12-month APM package combining PMP and AI in Project Controls.",
     modules: ["PMP", "AI"],
+    priceBreakdown: [
+      { label: "PMP", courseCost: "£8,000", ipcSupport: "75%", amountPayable: "£2,000" },
+      { label: "AI", courseCost: "£4,000", ipcSupport: "50%", amountPayable: "£2,000" },
+    ],
     courseCost: "£12,000",
     ipcSupport: "TBC",
     amountPayable: "TBC",
@@ -1223,7 +1228,21 @@ export default function ScholarshipsGateway() {
                   )}
                 </div>
 
-                <dl className="mt-6 grid border border-white/15 sm:grid-cols-3">
+                {offer.priceBreakdown && (
+                  <div className="mt-6 grid gap-3">
+                    {offer.priceBreakdown.map((price) => (
+                      <div key={price.label}>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-300">{price.label}</p>
+                        <dl className="grid border border-white/15 sm:grid-cols-3">
+                          <div className="flex min-h-16 flex-col items-start justify-center gap-1 border-b border-white/15 p-4 sm:flex-row sm:items-center sm:justify-between sm:border-b-0 sm:border-r"><dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">Cost</dt><dd className="whitespace-nowrap text-lg font-semibold text-background-50">{price.courseCost}</dd></div>
+                          <div className="flex min-h-16 flex-col items-start justify-center gap-1 border-b border-white/15 p-4 sm:flex-row sm:items-center sm:justify-between sm:border-b-0 sm:border-r"><dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">IPC support</dt><dd className="whitespace-nowrap text-sm font-semibold text-primary-300">{price.ipcSupport}</dd></div>
+                          <div className="flex min-h-16 flex-col items-start justify-center gap-1 p-4 sm:flex-row sm:items-center sm:justify-between"><dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">You pay</dt><dd className="whitespace-nowrap text-lg font-semibold text-background-50">{price.amountPayable}</dd></div>
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!offer.priceBreakdown && <dl className="mt-6 grid border border-white/15 sm:grid-cols-3">
                   <div className="flex min-h-16 flex-col items-start justify-center gap-1 border-b border-white/15 p-4 sm:flex-row sm:items-center sm:justify-between sm:border-b-0 sm:border-r">
                     <dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">Cost</dt>
                     <dd className="whitespace-nowrap text-lg font-semibold text-background-50">{offer.courseCost}</dd>
@@ -1236,7 +1255,7 @@ export default function ScholarshipsGateway() {
                     <dt className="whitespace-nowrap text-[10px] uppercase tracking-wider text-background-500">You pay</dt>
                     <dd className="whitespace-nowrap text-lg font-semibold text-background-50">{offer.amountPayable}</dd>
                   </div>
-                </dl>
+                </dl>}
 
                 <ul className="mt-6 space-y-3 text-sm leading-6 text-background-300">
                   {offer.details.map((detail) => (

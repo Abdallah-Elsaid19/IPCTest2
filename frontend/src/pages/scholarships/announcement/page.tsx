@@ -8,6 +8,7 @@ import { apiJson } from "@/lib/api";
 const SHOW_COUNTDOWN_WIDGET = true;
 const IPC_HOME_OWL_IMAGE = `${__BASE_PATH__.replace(/\/$/, "")}/images/ipc-home-owl.webp`;
 
+
 type ScholarshipAnnouncementContent = {
   id: number;
   announcement_at: string;
