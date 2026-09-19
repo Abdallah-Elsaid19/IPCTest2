@@ -41,7 +41,7 @@ const CONFIG = {
 const IPC_LOGO_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
 const KENT_LOGO_URL =
-  "https://kentbusinesscollege.com/wp-content/uploads/2025/12/Kent-Business-College-e1768393206822.png";
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f8a273ccd63e493aa86aa1565b9edb3d.png";
 const AI_SPOTLIGHT_BACKGROUND_URL =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/2689471e91444b2a9db6670c172036e2.webp";
 const ALL_INCLUSIVE_BACKGROUND_URL =

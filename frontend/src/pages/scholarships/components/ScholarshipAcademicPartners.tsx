@@ -8,7 +8,7 @@ import {
 const ipcLogoUrl =
   "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/e6e47869fdd1459f891ad4c5852798c5.png";
 const kentLogoUrl =
-  "https://kentbusinesscollege.com/wp-content/uploads/2025/12/Kent-Business-College-e1768393206822.png";
+  "https://jokdxsdbxorzciulkdyl.supabase.co/storage/v1/object/public/images/f8a273ccd63e493aa86aa1565b9edb3d.png";
 
 const educationPartners = [
   {
