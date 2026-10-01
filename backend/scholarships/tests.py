@@ -3,7 +3,7 @@ import csv
 import io
 import json
 from datetime import datetime, timezone as datetime_timezone
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -25,7 +25,7 @@ from .bursary_export import (
     BURSARY_GOOGLE_SHEET_HEADERS,
     bursary_google_sheet_row,
 )
-from .google_sheets import _merge_bursary_google_sheet_rows
+from .google_sheets import _merge_bursary_google_sheet_rows, sync_bursary_google_sheet
 from .models import (
     BursaryApplication,
     ScholarshipAnnouncementContent,
@@ -1034,6 +1034,105 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(merged[1][0:3], ["", "", ""])
         self.assertEqual(merged[1][3:], manual_row)
         self.assertEqual(merged[2], database_row)
+
+    @override_settings(
+        BURSARY_GOOGLE_SHEETS_ENABLED=True,
+        BURSARY_GOOGLE_SHEETS_SPREADSHEET_ID="sheet-123",
+        BURSARY_GOOGLE_SHEETS_WORKSHEET_NAME="Bursary Applications",
+        GOOGLE_SERVICE_ACCOUNT_JSON="{}",
+    )
+    @patch("scholarships.google_sheets._google_sheets_service")
+    @patch("scholarships.google_sheets._target_sheet_id", return_value=1)
+    def test_google_sheet_sync_preserves_inserted_manual_column(
+        self, target_sheet_id, service_factory
+    ):
+        first = self.submit_bursary()
+        self.assertEqual(first.status_code, 201, first.data)
+
+        headers = [
+            *BURSARY_GOOGLE_SHEET_HEADERS[:12],
+            "Start Date and Cohorts",
+            *BURSARY_GOOGLE_SHEET_HEADERS[12:],
+        ]
+        first_application = BursaryApplication.objects.get(pk=first.data["id"])
+        existing_row = bursary_google_sheet_row(first_application)
+        existing_row[0] = "IPC-BSA-2026-OLD"
+        existing_row.insert(12, "Manual cohort")
+        service = MagicMock()
+        service_factory.return_value = service
+        values = service.spreadsheets.return_value.values.return_value
+        values.get.return_value.execute.side_effect = [
+            {"values": [headers]},
+            {"values": [headers, existing_row]},
+        ]
+
+        self.assertEqual(sync_bursary_google_sheet(), 1)
+
+        ranges = [
+            item["range"]
+            for item in values.batchUpdate.call_args.kwargs["body"]["data"]
+        ]
+        self.assertEqual(ranges, [
+            "'Bursary Applications'!A3",
+            "'Bursary Applications'!N3",
+        ])
+        values.update.assert_not_called()
+        values.clear.assert_not_called()
+        values.append.assert_not_called()
+        format_requests = service.spreadsheets.return_value.batchUpdate.call_args.kwargs["body"]["requests"]
+        self.assertFalse(any(
+            request.get("repeatCell", {}).get("range", {}).get("startColumnIndex") == 12
+            for request in format_requests
+        ))
+
+    @override_settings(
+        BURSARY_GOOGLE_SHEETS_ENABLED=True,
+        BURSARY_GOOGLE_SHEETS_SPREADSHEET_ID="sheet-123",
+        BURSARY_GOOGLE_SHEETS_WORKSHEET_NAME="Bursary Applications",
+        GOOGLE_SERVICE_ACCOUNT_JSON="{}",
+    )
+    @patch("scholarships.google_sheets._google_sheets_service")
+    @patch("scholarships.google_sheets._target_sheet_id", return_value=1)
+    def test_google_sheet_sync_deletes_excluded_application_row(
+        self, target_sheet_id, service_factory
+    ):
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+        excluded_reference = "IPC-BSA-2026-61B51818C54A"
+        BursaryApplication.objects.filter(pk=created.data["id"]).update(
+            application_reference=excluded_reference
+        )
+        application = BursaryApplication.objects.get(pk=created.data["id"])
+        headers = [
+            *BURSARY_GOOGLE_SHEET_HEADERS[:12],
+            "Start Date and Cohorts",
+            *BURSARY_GOOGLE_SHEET_HEADERS[12:],
+        ]
+        excluded_row = bursary_google_sheet_row(application)
+        excluded_row.insert(12, "Manual value")
+        service = MagicMock()
+        service_factory.return_value = service
+        values = service.spreadsheets.return_value.values.return_value
+        values.get.return_value.execute.side_effect = [
+            {"values": [headers]},
+            {"values": [headers, excluded_row]},
+        ]
+
+        self.assertEqual(sync_bursary_google_sheet(), 0)
+
+        values.batchUpdate.assert_not_called()
+        values.update.assert_not_called()
+        delete_requests = service.spreadsheets.return_value.batchUpdate.call_args_list[0].kwargs["body"]["requests"]
+        self.assertEqual(delete_requests, [{
+            "deleteDimension": {
+                "range": {
+                    "sheetId": 1,
+                    "dimension": "ROWS",
+                    "startIndex": 1,
+                    "endIndex": 2,
+                }
+            }
+        }])
 
     @patch("scholarships.views.send_graph_bursary_approval_email")
     def test_approval_updates_member_panel_and_sends_one_approval_email(self, send_approval_email):
