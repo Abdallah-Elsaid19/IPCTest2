@@ -12,6 +12,7 @@ import {
 import { calculateBursaryFundingEstimate } from "@/features/bursary/pathways";
 import { apiBlob } from "@/lib/api";
 import { notifications } from "@/lib/notifications";
+import { allowedBursaryStatuses } from "../statusTransitions";
 
 const statusOptions: Array<{ value: BursaryStatus; label: string }> = [
   { value: "submitted", label: "Submitted" },
@@ -23,10 +24,10 @@ const statusOptions: Array<{ value: BursaryStatus; label: string }> = [
 
 const finalStatuses = new Set<BursaryStatus>(["approved", "rejected"]);
 
-const allowedStatusOptions = (currentStatus: BursaryStatus) => statusOptions.filter(
-  (option) => option.value !== currentStatus
-    && !(currentStatus !== "submitted" && option.value === "submitted"),
-);
+const allowedStatusOptions = (application: BursaryApplicationDetail) => {
+  const allowed = allowedBursaryStatuses(application);
+  return statusOptions.filter((option) => allowed.includes(option.value));
+};
 
 const formatDate = (value: unknown, includeTime = false) => {
   if (!value) return "Not provided";
@@ -256,7 +257,7 @@ export default function AdminBursaryApplicationDetailsPage() {
     void bursaryApi.detail(applicationId, controller.signal)
       .then((value) => {
         setApplication(value);
-        setNextStatus(allowedStatusOptions(value.status)[0]?.value ?? value.status);
+        setNextStatus(allowedStatusOptions(value)[0]?.value ?? value.status);
         setNotes(value.reviewer_internal_notes || "");
       })
       .catch((requestError) => {
@@ -273,16 +274,17 @@ export default function AdminBursaryApplicationDetailsPage() {
     [application],
   );
   const isFinalStatus = application ? finalStatuses.has(application.status) : false;
-  const availableStatuses = application ? allowedStatusOptions(application.status) : [];
+  const availableStatuses = application ? allowedStatusOptions(application) : [];
   const openStatusModal = () => {
-    if (!application || finalStatuses.has(application.status)) return;
-    setNextStatus(allowedStatusOptions(application.status)[0]?.value ?? application.status);
+    if (!application || !availableStatuses.length) return;
+    setNextStatus(availableStatuses[0].value);
     setStatusReason("");
     setShowStatusModal(true);
   };
 
   const updateStatus = async (assignToMe = false) => {
-    if (!application || statusLock.current || finalStatuses.has(application.status)) return;
+    if (!application || statusLock.current) return;
+    if (assignToMe ? isFinalStatus : !availableStatuses.some((option) => option.value === nextStatus)) return;
     statusLock.current = true;
     setIsSavingStatus(true);
     try {
@@ -339,11 +341,19 @@ export default function AdminBursaryApplicationDetailsPage() {
             <button type="button" onClick={() => void updateStatus(true)} disabled={isSavingStatus} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold hover:border-primary-500"><UserCheck size={15} /> Assign to me</button>
           )}
           <button type="button" onClick={() => window.print()} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold hover:border-primary-500"><Printer size={15} /> Print summary</button>
-          {!isFinalStatus && (
-            <button type="button" onClick={openStatusModal} className="inline-flex h-10 items-center rounded-xl bg-primary-500 px-4 text-xs font-bold text-[#171411] hover:bg-primary-600">Change status</button>
+          {availableStatuses.length > 0 && (
+            <button type="button" onClick={openStatusModal} className="inline-flex h-10 items-center rounded-xl bg-primary-500 px-4 text-xs font-bold text-[#171411] hover:bg-primary-600">{application.status === "approved" ? "Request information (once)" : "Change status"}</button>
           )}
         </div>
       </div>
+
+      {application.post_approval_information_requested && (
+        <p className="mt-4 text-sm text-[#756B61]">
+          {application.status === "needs_information"
+            ? "The one information request after approval has been sent. The application will return to Approved automatically when the applicant resubmits."
+            : "The one information request after approval has been used."}
+        </p>
+      )}
 
       <section className="mt-7 grid gap-3 sm:grid-cols-2">
         {[
@@ -485,7 +495,9 @@ export default function AdminBursaryApplicationDetailsPage() {
               />
             </label>
             <p className="mt-4 rounded-xl bg-[#F6E8D2] p-3 text-xs leading-5 text-[#704707]">
-              {nextStatus === "approved"
+              {application.status === "approved" && nextStatus === "needs_information"
+                ? "This is the only information request allowed after approval. The applicant will receive a secure edit link, and the application will return to Approved automatically when they resubmit."
+                : nextStatus === "approved"
                 ? "If entered, this message will be included in the approval email sent to the applicant."
                 : nextStatus === "rejected" || nextStatus === "needs_information"
                   ? "This message will be included in the email and the member-panel notification sent to the applicant."

@@ -497,6 +497,7 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         identity_document = validated_data.pop("identityDocument", None)
         applicant_photo = validated_data.pop("applicantPhoto", None)
         previous_status = instance.status
+        resubmission_status = instance.resubmission_status
         model_values = {}
         for section_name, field_map in PUBLIC_SECTION_FIELD_MAP.items():
             section_data = validated_data[section_name]
@@ -511,7 +512,7 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
             instance.identity_document = identity_document
         if applicant_photo:
             instance.applicant_photo = applicant_photo
-        instance.status = BursaryApplication.Status.UNDER_REVIEW
+        instance.status = resubmission_status
         instance.submitted_at = now
         instance.terms_accepted_at = now
         instance.declarations_accepted_at = now
@@ -519,7 +520,7 @@ class BursaryApplicationPublicSerializer(serializers.Serializer):
         BursaryApplicationStatusHistory.objects.create(
             application=instance,
             previous_status=previous_status,
-            new_status=BursaryApplication.Status.UNDER_REVIEW,
+            new_status=resubmission_status,
             changed_by=changed_by,
             internal_reason="Applicant resubmitted the requested information.",
         )
@@ -599,6 +600,8 @@ class ScholarshipAnnouncementRecipientSerializer(serializers.ModelSerializer):
 
 
 class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
+    can_request_information = serializers.BooleanField(read_only=True)
+    post_approval_information_requested = serializers.BooleanField(read_only=True)
     preferred_pathway_label = serializers.CharField(source="get_bursary_selection_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     award_round_label = serializers.CharField(source="get_award_round_display", read_only=True)
@@ -614,6 +617,7 @@ class BursaryApplicationDetailSerializer(serializers.ModelSerializer):
             "id", "application_reference", "award_round", "award_round_label", "status", "status_label",
             "submitted_at", "updated_at", "assigned_reviewer",
             "assigned_reviewer_name", "reviewer_internal_notes", "status_history",
+            "can_request_information", "post_approval_information_requested",
             # Section 1: Personal Details.
             "first_name", "last_name", "date_of_birth", "email",
             "phone_country_iso2", "phone_dial_code", "phone_national_number",

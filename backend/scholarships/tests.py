@@ -7,6 +7,7 @@ from datetime import datetime, timezone as datetime_timezone
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -1391,6 +1392,102 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.data["hasApplication"])
         self.assertEqual(self.client.patch(url, valid_bursary_payload(), format="json").status_code, 409)
+
+    @patch("scholarships.views.send_graph_bursary_approval_email")
+    def test_approved_guest_can_update_once_and_automatically_remains_approved(self, approval_email):
+        self.client.force_authenticate(None)
+        created = self.submit_bursary()
+        application = BursaryApplication.objects.get(pk=created.data["id"])
+        status_url = f"/api/admin/bursary-applications/{application.pk}/status"
+        self.client.force_authenticate(self.staff)
+        with self.captureOnCommitCallbacks(execute=True):
+            approved = self.client.patch(status_url, {"status": "approved"}, format="json")
+        self.assertEqual(approved.status_code, 200, approved.data)
+        self.assertTrue(approved.data["can_request_information"])
+        self.assertFalse(approved.data["post_approval_information_requested"])
+        application.refresh_from_db()
+        approved_at = application.approval_email_sent_at
+        winner = ScholarshipWinner.objects.get(application=application)
+        winner.is_published = False
+        winner.save(update_fields=["is_published"])
+
+        token = self._request_edit_link(application)
+        application.refresh_from_db()
+        self.assertTrue(application.post_approval_information_requested)
+        with patch("scholarships.views.send_graph_bursary_needs_information_email") as send_again:
+            for new_status in ("needs_information", "approved", "under_review", "rejected"):
+                with self.captureOnCommitCallbacks(execute=True):
+                    response = self.client.patch(status_url, {
+                        "status": new_status, "internal_reason": "Another request",
+                    }, format="json")
+                self.assertEqual(response.status_code, 200 if new_status == "needs_information" else 409)
+            send_again.assert_not_called()
+
+        self.client.force_authenticate(None)
+        headers = {"HTTP_X_BURSARY_EDIT_TOKEN": token}
+        current = self.client.get("/api/bursary-applications/current", **headers)
+        self.assertEqual(current.data["resubmissionStatus"], "approved")
+        payload = valid_bursary_payload()
+        payload["personalDetails"]["firstName"] = "Updated"
+        payload["pathwaySelection"]["preferredModules"] = ["ai"]
+        with self.captureOnCommitCallbacks(execute=True):
+            updated = self.client.patch("/api/bursary-applications/current", payload, format="json", **headers)
+        self.assertEqual(updated.status_code, 200, updated.data)
+        self.assertEqual(updated.data["status"], "approved")
+        application.refresh_from_db()
+        self.assertEqual(application.status, "approved")
+        self.assertEqual(application.approval_email_sent_at, approved_at)
+        self.assertEqual(approval_email.call_count, 1)
+        self.assertTrue(application.status_history.filter(previous_status="needs_information", new_status="approved").exists())
+        self.assertIn("remains approved", mail.outbox[-1].body)
+        winner.refresh_from_db()
+        self.assertEqual(winner.name, "Updated Khan")
+        self.assertEqual(winner.modules, ["AI"])
+        self.assertFalse(winner.is_published)
+        self.assertEqual(ScholarshipWinner.objects.filter(application=application).count(), 1)
+        self.assertEqual(self.client.get("/api/bursary-applications/current", **headers).status_code, 403)
+        self.assertEqual(self.client.patch("/api/bursary-applications/current", payload, format="json", **headers).status_code, 403)
+
+        self.client.force_authenticate(self.staff)
+        with patch("scholarships.views.send_graph_bursary_needs_information_email") as send_again:
+            with self.captureOnCommitCallbacks(execute=True):
+                repeated = self.client.patch(status_url, {
+                    "status": "needs_information", "internal_reason": "Second request",
+                }, format="json")
+            self.assertEqual(repeated.status_code, 409)
+            send_again.assert_not_called()
+        detail = self.client.get(f"/api/admin/bursary-applications/{application.pk}")
+        self.assertFalse(detail.data["can_request_information"])
+        self.assertTrue(detail.data["post_approval_information_requested"])
+
+    def test_existing_approved_record_without_approval_history_can_request_information(self):
+        self.client.force_authenticate(None)
+        created = self.submit_bursary()
+        application = BursaryApplication.objects.get(pk=created.data["id"])
+        application.status = "approved"
+        application.save(update_fields=["status"])
+        self.assertTrue(application.can_request_information)
+        token = self._request_edit_link(application)
+        self.assertTrue(token)
+        application.refresh_from_db()
+        self.assertFalse(application.can_request_information)
+        self.assertEqual(application.resubmission_status, "approved")
+
+    def test_information_requests_before_approval_do_not_use_the_approved_allowance(self):
+        application, headers = self._guest_edit_link()
+        updated = self.client.patch(
+            "/api/bursary-applications/current", valid_bursary_payload(), format="json", **headers,
+        )
+        self.assertEqual(updated.status_code, 200, updated.data)
+        self.client.force_authenticate(self.staff)
+        approved = self.client.patch(
+            f"/api/admin/bursary-applications/{application.pk}/status",
+            {"status": "approved"}, format="json",
+        )
+        self.assertEqual(approved.status_code, 200, approved.data)
+        self.assertTrue(approved.data["can_request_information"])
+        self.assertFalse(approved.data["post_approval_information_requested"])
+        self.assertTrue(self._request_edit_link(application))
 
     def test_current_application_is_locked_until_more_information_is_requested(self):
         created = self.submit_bursary()

@@ -66,6 +66,7 @@ export interface BursarySubmissionResponse {
 export interface CurrentBursaryApplicationResponse {
   hasApplication: boolean;
   editable: boolean;
+  resubmissionStatus?: "approved" | "under_review" | null;
   applicationReference: string;
   status: BursaryStatus | null;
   statusLabel: string;
@@ -121,6 +122,8 @@ export interface BursaryStatusHistory {
 }
 
 export type BursaryApplicationDetail = Record<string, unknown> & {
+  can_request_information: boolean;
+  post_approval_information_requested: boolean;
   id: number;
   application_reference: string;
   form_version: string;

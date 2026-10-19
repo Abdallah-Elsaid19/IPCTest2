@@ -500,6 +500,31 @@ class BursaryApplication(models.Model):
     additional_review_information = models.TextField(blank=True)
     declarations_accepted_at = models.DateTimeField(default=timezone.now, editable=False)
 
+    @property
+    def post_approval_information_requested(self):
+        return self.status_history.filter(
+            previous_status=self.Status.APPROVED,
+            new_status=self.Status.NEEDS_INFORMATION,
+        ).exists()
+
+    @property
+    def can_request_information(self):
+        return self.status in {
+            self.Status.SUBMITTED, self.Status.UNDER_REVIEW, self.Status.APPROVED,
+        } and not self.post_approval_information_requested
+
+    @property
+    def resubmission_status(self):
+        latest = self.status_history.order_by("-pk").first()
+        if (
+            self.status == self.Status.NEEDS_INFORMATION
+            and latest is not None
+            and latest.previous_status == self.Status.APPROVED
+            and latest.new_status == self.Status.NEEDS_INFORMATION
+        ):
+            return self.Status.APPROVED
+        return self.Status.UNDER_REVIEW
+
     class Meta:
         ordering = ["-submitted_at", "-id"]
         indexes = [

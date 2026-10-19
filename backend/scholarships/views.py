@@ -88,8 +88,7 @@ def scholarship_round_is_public(award_round):
 
 
 def create_winner_for_application(application):
-    if ScholarshipWinner.objects.filter(application=application).exists():
-        return
+    existing_winner = ScholarshipWinner.objects.filter(application=application).first()
     module_labels = dict(BursaryApplication.PreferredModule.choices)
     modules = [
         module_labels[module]
@@ -97,6 +96,13 @@ def create_winner_for_application(application):
         if module in module_labels
     ]
     first_name = application.preferred_name.strip() or application.first_name.strip()
+    if existing_winner:
+        existing_winner.name = f"{first_name} {application.last_name.strip()}".strip()
+        existing_winner.award = ", ".join(modules)
+        existing_winner.country = application.country
+        existing_winner.modules = modules
+        existing_winner.save(update_fields=["name", "award", "country", "modules", "updated_at"])
+        return
     display_order = (
         ScholarshipWinner.objects.filter(award_round=application.award_round)
         .aggregate(max_order=Max("display_order"))["max_order"]
@@ -535,6 +541,7 @@ class BursaryApplicationCurrentView(APIView):
         return Response({
             "hasApplication": True,
             "editable": editable,
+            "resubmissionStatus": application.resubmission_status if editable else None,
             "applicationReference": application.application_reference,
             "status": application.status,
             "statusLabel": application.get_status_display(),
@@ -571,6 +578,8 @@ class BursaryApplicationCurrentView(APIView):
         application = serializer.save(
             changed_by=request.user if request.user.is_authenticated else None,
         )
+        if application.status == BursaryApplication.Status.APPROVED:
+            create_winner_for_application(application)
         create_bursary_status_notifications(application)
 
         def notify():
@@ -592,7 +601,11 @@ class BursaryApplicationCurrentView(APIView):
                     f"Dear {application.first_name},\n\n"
                     "We have received the updated information for your IPC bursary application.\n"
                     f"Application reference: {application.application_reference}\n\n"
-                    "Your application is now back under review."
+                    + (
+                        "Your application remains approved. The requested update is complete."
+                        if application.status == BursaryApplication.Status.APPROVED
+                        else "Your application is now back under review."
+                    )
                 ),
                 settings.DEFAULT_FROM_EMAIL,
                 [application.email],
@@ -841,13 +854,9 @@ class AdminBursaryApplicationViewSet(
         target = self.get_object()
         application = BursaryApplication.objects.select_for_update().get(pk=target.pk)
         previous = application.status
-        final_statuses = {
-            BursaryApplication.Status.APPROVED,
-            BursaryApplication.Status.REJECTED,
-        }
-        if previous in final_statuses:
+        if previous == BursaryApplication.Status.REJECTED:
             return Response(
-                {"detail": "Approved and rejected applications are final and cannot be changed."},
+                {"detail": "Rejected applications are final and cannot be changed."},
                 status=status.HTTP_409_CONFLICT,
             )
 
@@ -857,6 +866,33 @@ class AdminBursaryApplicationViewSet(
         assigned_reviewer_supplied = "assigned_reviewer" in serializer.validated_data
         assigned_reviewer = serializer.validated_data.get("assigned_reviewer")
         internal_reason = serializer.validated_data.get("internal_reason", "").strip()
+
+        if previous == BursaryApplication.Status.APPROVED and not (
+            new_status == BursaryApplication.Status.NEEDS_INFORMATION
+            and application.can_request_information
+        ):
+            return Response(
+                {"detail": "An approved application can be reopened for information only once."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if (
+            new_status == BursaryApplication.Status.NEEDS_INFORMATION
+            and new_status != previous
+            and not application.can_request_information
+        ):
+            return Response(
+                {"detail": "The one information request after approval has already been used."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if (
+            previous == BursaryApplication.Status.NEEDS_INFORMATION
+            and application.resubmission_status == BursaryApplication.Status.APPROVED
+            and new_status != previous
+        ):
+            return Response(
+                {"detail": "This approved application will return to Approved when the applicant resubmits."},
+                status=status.HTTP_409_CONFLICT,
+            )
 
         if (
             new_status == BursaryApplication.Status.SUBMITTED

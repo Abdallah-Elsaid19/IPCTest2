@@ -196,7 +196,8 @@ function SubmissionSuccess({
   result: BursarySubmissionResponse;
   values: BursaryApplicationFormValues;
 }) {
-  const resubmitted = result.status === "under_review";
+  const approved = result.status === "approved";
+  const resubmitted = result.status === "under_review" || approved;
   useEffect(() => {
     document.body.classList.add("bursary-summary-ready");
     return () => document.body.classList.remove("bursary-summary-ready");
@@ -217,7 +218,9 @@ function SubmissionSuccess({
         <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-primary-800">{resubmitted ? "Updated information received" : "Application received"}</p>
         <h1 className="mt-2 text-3xl font-semibold text-background-950 md:text-4xl">Thank you, {values.personalDetails.firstName}</h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-foreground-600">
-          {resubmitted
+          {approved
+            ? "IPC has received your updated information. Your application remains approved and is locked again."
+            : resubmitted
             ? "IPC has received your updated information. Your application is locked again and is now back under review."
             : "IPC has received your learner bursary and scholarship application. Submission does not guarantee an award."}
         </p>
@@ -232,7 +235,7 @@ function SubmissionSuccess({
             <div><dt className="text-xs text-foreground-500">Applicant</dt><dd className="font-medium">{values.personalDetails.firstName} {values.personalDetails.lastName}</dd></div>
             <div><dt className="text-xs text-foreground-500">Modules</dt><dd className="font-medium">{values.pathwaySelection.preferredModules.map((value) => moduleLabels[value]).filter(Boolean).join(", ")}</dd></div>
             <div><dt className="text-xs text-foreground-500">Submitted</dt><dd className="font-medium">{new Date(result.submittedAt).toLocaleString("en-GB")}</dd></div>
-            <div><dt className="text-xs text-foreground-500">Status</dt><dd className="font-medium">{resubmitted ? "Under review" : "Submitted"}</dd></div>
+            <div><dt className="text-xs text-foreground-500">Status</dt><dd className="font-medium">{approved ? "Approved" : resubmitted ? "Under review" : "Submitted"}</dd></div>
           </dl>
         </div>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row print:hidden">
@@ -488,7 +491,9 @@ export default function BursaryApplicationPage() {
             IPC Learner Bursary &amp; Scholarship Application Form
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-foreground-600">
-            Complete all six sections. Your progress is saved automatically in this browser for seven days and is removed after a successful submission.
+            {editToken
+              ? "Review your answers, update the requested information, and resubmit your application."
+              : "Complete all six sections. Your progress is saved automatically in this browser for seven days and is removed after a successful submission."}
           </p>
         </header>
         <div className="mx-auto mt-10 max-w-5xl">
@@ -496,7 +501,9 @@ export default function BursaryApplicationPage() {
             <div className="mb-5 border border-amber-300 bg-amber-50 p-5 text-amber-950" role="status">
               <p className="font-semibold">IPC requested more information.</p>
               <p className="mt-1 text-sm leading-6">
-                Your previous answers have been restored. Update the requested information and submit the same application again. It will then return to Under review and lock automatically.
+                Your previous answers have been restored. Update the requested information and submit the same application again. {applicationAccess.resubmissionStatus === "approved"
+                  ? "It will return to Approved and lock automatically."
+                  : "It will then return to Under review and lock automatically."}
               </p>
               <p className="mt-2 font-mono text-xs font-bold">{applicationAccess.applicationReference}</p>
             </div>
