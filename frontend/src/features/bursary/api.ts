@@ -197,11 +197,17 @@ export const moduleLabels: Record<string, string> = {
 };
 
 export const bursaryApi = {
-  current: (applicationReference = "", signal?: AbortSignal) =>
+  current: (applicationReference = "", signal?: AbortSignal, editToken = "") =>
     apiJson<CurrentBursaryApplicationResponse>(
       `/api/bursary-applications/current${applicationReference ? `?applicationReference=${encodeURIComponent(applicationReference)}` : ""}`,
       undefined,
-      { signal, requestSource: "CurrentBursaryApplication" },
+      {
+        signal,
+        cache: "no-store",
+        dedupe: !editToken,
+        headers: editToken ? { "X-Bursary-Edit-Token": editToken } : undefined,
+        requestSource: "CurrentBursaryApplication",
+      },
     ),
   submit: (payload: BursaryApplicationFormValues) =>
     apiJson<BursarySubmissionResponse>(
@@ -209,11 +215,16 @@ export const bursaryApi = {
       prepareBursarySubmissionPayload(payload),
       { requestSource: "BursaryApplicationForm" },
     ),
-  resubmit: (payload: BursaryApplicationFormValues, applicationReference = "") =>
+  resubmit: (payload: BursaryApplicationFormValues, applicationReference = "", editToken = "") =>
     apiJson<BursarySubmissionResponse>(
       `/api/bursary-applications/current${applicationReference ? `?applicationReference=${encodeURIComponent(applicationReference)}` : ""}`,
       prepareBursarySubmissionPayload(payload),
-      { method: "PATCH", requestSource: "BursaryApplicationResubmission" },
+      {
+        method: "PATCH",
+        dedupe: !editToken,
+        headers: editToken ? { "X-Bursary-Edit-Token": editToken } : undefined,
+        requestSource: "BursaryApplicationResubmission",
+      },
     ),
   list: (query: BursaryAdminQuery, signal?: AbortSignal) => {
     const params = bursaryAdminQueryParams(query);

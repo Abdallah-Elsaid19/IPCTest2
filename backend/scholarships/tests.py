@@ -2,6 +2,7 @@ import base64
 import csv
 import io
 import json
+import time
 from datetime import datetime, timezone as datetime_timezone
 from unittest.mock import MagicMock, patch
 
@@ -25,6 +26,7 @@ from .bursary_export import (
     BURSARY_GOOGLE_SHEET_HEADERS,
     bursary_google_sheet_row,
 )
+from .bursary_access import BURSARY_EDIT_LINK_MAX_AGE
 from .google_sheets import _merge_bursary_google_sheet_rows, sync_bursary_google_sheet
 from .models import (
     BursaryApplication,
@@ -948,7 +950,7 @@ class BursaryApplicationApiTests(APITestCase):
         self.assertEqual(row["Preferred modules"], "AI, PMP")
         self.assertEqual(row["Total module cost (GBP)"], "12000")
         self.assertEqual(row["IPC Fund contribution (GBP)"], "8000")
-        self.assertEqual(row["Estimated amount applicant pays (GBP)"], 4000)
+        self.assertEqual(row["Estimated amount applicant pays (GBP)"], "4000")
         self.assertIn("Proof of identification provided", row)
         self.assertIn("Electronic signature provided", row)
         self.assertNotIn("General marketing consent", row)
@@ -1277,6 +1279,118 @@ class BursaryApplicationApiTests(APITestCase):
         second = self.submit_bursary()
         self.assertEqual(second.status_code, 409, second.data)
         self.assertEqual(BursaryApplication.objects.count(), 1)
+
+    def _guest_edit_link(self):
+        self.client.force_authenticate(None)
+        created = self.submit_bursary()
+        self.assertEqual(created.status_code, 201, created.data)
+        application = BursaryApplication.objects.get(pk=created.data["id"])
+        self.assertIsNone(application.submitted_by_id)
+        token = self._request_edit_link(application)
+        self.client.force_authenticate(None)
+        return application, {"HTTP_X_BURSARY_EDIT_TOKEN": token}
+
+    def _request_edit_link(self, application):
+        self.client.force_authenticate(self.staff)
+        with patch("scholarships.views.send_graph_bursary_needs_information_email") as send_email:
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.patch(
+                    f"/api/admin/bursary-applications/{application.pk}/status",
+                    {"status": "needs_information", "internal_reason": "Please update your contact."},
+                    format="json",
+                )
+            self.assertEqual(response.status_code, 200, response.data)
+            self.assertEqual(send_email.call_args.kwargs["recipient"], application.email)
+            return send_email.call_args.kwargs["edit_token"]
+
+    def test_guest_email_link_reads_and_resubmits_same_application_once(self):
+        application, headers = self._guest_edit_link()
+        current = self.client.get("/api/bursary-applications/current", **headers)
+        self.assertEqual(current.status_code, 200, current.data)
+        self.assertTrue(current.data["editable"])
+        self.assertEqual(current["Cache-Control"], "no-store")
+        self.assertEqual(current.data["applicationReference"], application.application_reference)
+        self.assertEqual(current.data["values"]["emergencyInformation"]["identityDocument"], "existing")
+
+        payload = valid_bursary_payload()
+        payload["emergencyInformation"]["emergencyContactPhone"] = "+447400999999"
+        response = self.client.patch(
+            "/api/bursary-applications/current", payload, format="json", **headers,
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        application.refresh_from_db()
+        self.assertEqual(application.status, "under_review")
+        self.assertEqual(application.emergency_contact_phone, "+447400999999")
+        self.assertEqual(BursaryApplication.objects.count(), 1)
+        self.assertIsNone(application.status_history.first().changed_by_id)
+        self.assertEqual(self.client.get("/api/bursary-applications/current", **headers).status_code, 403)
+        replay = self.client.patch(
+            "/api/bursary-applications/current", payload, format="json", **headers,
+        )
+        self.assertEqual(replay.status_code, 403)
+
+    def test_guest_reference_alone_cannot_read_or_update_application(self):
+        application, _ = self._guest_edit_link()
+        url = f"/api/bursary-applications/current?applicationReference={application.application_reference}"
+        self.assertEqual(self.client.get(url).status_code, 401)
+        self.assertEqual(self.client.patch(url, valid_bursary_payload(), format="json").status_code, 401)
+
+    def test_guest_edit_link_rejects_tampering_and_wrong_application(self):
+        application, headers = self._guest_edit_link()
+        invalid_headers = {"HTTP_X_BURSARY_EDIT_TOKEN": headers["HTTP_X_BURSARY_EDIT_TOKEN"] + "tampered"}
+        for url, request_headers in (
+            ("/api/bursary-applications/current", invalid_headers),
+            ("/api/bursary-applications/current?applicationReference=OTHER-APPLICATION", headers),
+        ):
+            self.assertEqual(self.client.get(url, **request_headers).status_code, 403)
+            self.assertEqual(self.client.patch(url, valid_bursary_payload(), format="json", **request_headers).status_code, 403)
+        application.refresh_from_db()
+        self.assertEqual(application.status, "needs_information")
+
+    def test_guest_edit_link_expires_after_seven_days(self):
+        _, headers = self._guest_edit_link()
+        with patch("django.core.signing.time.time", return_value=time.time() + BURSARY_EDIT_LINK_MAX_AGE + 1):
+            response = self.client.get("/api/bursary-applications/current", **headers)
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("expired", response.data["detail"])
+            self.assertEqual(self.client.patch(
+                "/api/bursary-applications/current", valid_bursary_payload(), format="json", **headers,
+            ).status_code, 403)
+
+    def test_guest_old_edit_link_stays_invalid_when_application_reopens(self):
+        application, old_headers = self._guest_edit_link()
+        self.client.force_authenticate(self.staff)
+        response = self.client.patch(
+            f"/api/admin/bursary-applications/{application.pk}/status",
+            {"status": "under_review"}, format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.get("/api/bursary-applications/current", **old_headers).status_code, 403)
+        new_token = self._request_edit_link(application)
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.get("/api/bursary-applications/current", **old_headers).status_code, 403)
+        self.assertEqual(self.client.get(
+            "/api/bursary-applications/current", HTTP_X_BURSARY_EDIT_TOKEN=new_token,
+        ).status_code, 200)
+
+    def test_guest_edit_link_works_with_expired_account_cookie(self):
+        _, headers = self._guest_edit_link()
+        from django.conf import settings
+        self.client.cookies[settings.AUTH_COOKIE_ACCESS] = "expired-cookie"
+        self.assertEqual(self.client.get("/api/bursary-applications/current", **headers).status_code, 200)
+        self.assertEqual(self.client.patch(
+            "/api/bursary-applications/current", valid_bursary_payload(), format="json", **headers,
+        ).status_code, 200)
+
+    def test_unrelated_account_without_edit_token_cannot_access_guest_application(self):
+        application, _ = self._guest_edit_link()
+        self.client.force_authenticate(self.staff)
+        url = f"/api/bursary-applications/current?applicationReference={application.application_reference}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["hasApplication"])
+        self.assertEqual(self.client.patch(url, valid_bursary_payload(), format="json").status_code, 409)
 
     def test_current_application_is_locked_until_more_information_is_requested(self):
         created = self.submit_bursary()

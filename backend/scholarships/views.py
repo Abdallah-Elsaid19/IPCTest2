@@ -3,6 +3,7 @@ import json
 import logging
 
 from django.contrib.auth import get_user_model
+from django.core import signing
 from django.http import FileResponse, Http404, HttpResponse
 from django.conf import settings
 from django.db import transaction
@@ -10,6 +11,7 @@ from django.db.models import Count, Max, Q
 from django.utils import timezone
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -28,6 +30,7 @@ from user_panel.models import UserNotification
 from ipc_backend.email_branding import send_branded_mail as send_mail
 
 from .bursary_export import BURSARY_EXPORT_HEADERS, bursary_export_row
+from .bursary_access import bursary_edit_revision, make_bursary_edit_token, read_bursary_edit_token
 from .google_sheets import (
     bursary_google_sheet_url,
     bursary_google_sheets_configured,
@@ -196,7 +199,7 @@ def deliver_bursary_rejection_email(application_id, reason):
 
 def deliver_bursary_needs_information_email(application_id, message, recipient):
     application = BursaryApplication.objects.filter(pk=application_id).first()
-    if application is None:
+    if application is None or application.status != BursaryApplication.Status.NEEDS_INFORMATION:
         return
     recipient_name = application.preferred_name.strip() or application.first_name
     try:
@@ -204,6 +207,7 @@ def deliver_bursary_needs_information_email(application_id, message, recipient):
             recipient=recipient,
             name=recipient_name,
             application_reference=application.application_reference,
+            edit_token=make_bursary_edit_token(application),
             pathway=application.get_bursary_selection_display(),
             message=message,
         )
@@ -457,7 +461,48 @@ class BursaryApplicationCreateViewSet(mixins.CreateModelMixin, viewsets.GenericV
 
 
 class BursaryApplicationCurrentView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
+
+    def get_authenticators(self):
+        # This explicit bearer credential works even with an expired login cookie.
+        # It is validated below for both reads and writes, independently of accounts.
+        if self.request.headers.get("X-Bursary-Edit-Token"):
+            return []
+        return super().get_authenticators()
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Cache-Control"] = "no-store"
+        return response
+
+    def _request_application(self, request, for_update=False):
+        reference = request.query_params.get("applicationReference", "").strip()
+        token = request.headers.get("X-Bursary-Edit-Token", "")
+        if not token:
+            if not request.user.is_authenticated:
+                raise NotAuthenticated("Sign in or use the secure link in your information-request email.")
+            return self._selected_application(request.user, reference, for_update=for_update)
+
+        invalid_link = "This edit link is invalid, expired, or no longer active. Please contact IPC for a new link."
+        try:
+            payload = read_bursary_edit_token(token)
+        except signing.BadSignature:
+            raise PermissionDenied(invalid_link)
+        if not isinstance(payload, dict) or type(payload.get("application_id")) is not int:
+            raise PermissionDenied(invalid_link)
+        queryset = BursaryApplication.objects.all()
+        if for_update:
+            queryset = queryset.select_for_update()
+        application = queryset.filter(pk=payload["application_id"]).first()
+        if (
+            application is None
+            or application.status != BursaryApplication.Status.NEEDS_INFORMATION
+            or payload.get("revision") is None
+            or payload["revision"] != bursary_edit_revision(application)
+            or (reference and reference.casefold() != application.application_reference.casefold())
+        ):
+            raise PermissionDenied(invalid_link)
+        return application
 
     @staticmethod
     def _selected_application(user, application_reference="", for_update=False):
@@ -474,10 +519,7 @@ class BursaryApplicationCurrentView(APIView):
         return editable or queryset.order_by("-submitted_at", "-pk").first()
 
     def get(self, request):
-        application = self._selected_application(
-            request.user,
-            request.query_params.get("applicationReference", "").strip(),
-        )
+        application = self._request_application(request)
         if application is None:
             return Response({
                 "hasApplication": False,
@@ -506,11 +548,7 @@ class BursaryApplicationCurrentView(APIView):
 
     @transaction.atomic
     def patch(self, request):
-        application = self._selected_application(
-            request.user,
-            request.query_params.get("applicationReference", "").strip(),
-            for_update=True,
-        )
+        application = self._request_application(request, for_update=True)
         if (
             application is None
             or application.status != BursaryApplication.Status.NEEDS_INFORMATION
@@ -530,7 +568,9 @@ class BursaryApplicationCurrentView(APIView):
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
-        application = serializer.save(changed_by=request.user)
+        application = serializer.save(
+            changed_by=request.user if request.user.is_authenticated else None,
+        )
         create_bursary_status_notifications(application)
 
         def notify():

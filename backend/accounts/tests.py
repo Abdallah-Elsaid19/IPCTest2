@@ -877,6 +877,7 @@ class MembershipWelcomeMailTests(SimpleTestCase):
             application_reference="IPC-BSA-2026-ABC123",
             pathway="Operational Pathway",
             message="Please update your evidence.",
+            edit_token="signed-edit-token",
         )
 
         message = BytesParser(policy=policy.default).parsebytes(
@@ -884,9 +885,11 @@ class MembershipWelcomeMailTests(SimpleTestCase):
         )
         plain = message.get_body(preferencelist=("plain",)).get_content()
         html = message.get_body(preferencelist=("html",)).get_content()
-        expected = "/bursary-scholarship-application?applicationReference=IPC-BSA-2026-ABC123"
+        expected = "/bursary-scholarship-application?applicationReference=IPC-BSA-2026-ABC123#editToken=signed-edit-token"
         self.assertIn(expected, plain)
         self.assertIn(expected, html)
+        self.assertIn("No sign-in is required", plain)
+        self.assertIn("expires in 7 days", html)
 
     @patch("accounts.graph_mail.requests.post")
     @patch("accounts.graph_mail._access_token", return_value="token")

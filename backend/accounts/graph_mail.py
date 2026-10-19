@@ -529,6 +529,7 @@ def send_bursary_needs_information_email(
     application_reference,
     pathway,
     message,
+    edit_token,
 ):
     safe_name = html.escape(name or "IPC member")
     safe_reference = html.escape(application_reference)
@@ -537,6 +538,7 @@ def send_bursary_needs_information_email(
     application_url = (
         f"{settings.FRONTEND_URL.rstrip('/')}/bursary-scholarship-application"
         f"?applicationReference={quote(application_reference, safe='')}"
+        f"#editToken={quote(edit_token, safe='')}"
     )
     safe_application_url = html.escape(application_url, quote=True)
     subject = "More information is needed for your IPC bursary application"
@@ -550,8 +552,10 @@ Module: {pathway}
 Message from IPC:
 {message}
 
-Sign in to update and resubmit your application:
+Update and resubmit your application using this secure link. No sign-in is required:
 {application_url}
+
+This private link expires in 7 days and stops working after you resubmit or the application status changes. If it expires, contact IPC for a new link.
 
 Kind regards,
 Institute of Project Controls
@@ -572,6 +576,7 @@ Institute of Project Controls
           <p><strong>Message from IPC:</strong></p>
           <p>{safe_message}</p>
           <p style="margin:24px 0"><a href="{safe_application_url}" style="display:inline-block;background:#d79525;color:#171411;text-decoration:none;font-weight:bold;padding:12px 18px">Update application</a></p>
+          <p>No sign-in is required. This private link expires in 7 days and stops working after you resubmit or the application status changes. If it expires, contact IPC for a new link.</p>
           <p style="margin-top:28px">Kind regards,<br>Institute of Project Controls</p>
         </div>
       </div>

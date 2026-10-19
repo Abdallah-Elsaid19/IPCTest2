@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 import environ
+from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
@@ -139,6 +140,7 @@ CSRF_TRUSTED_ORIGINS = env(
     ],
 )
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = (*default_headers, "x-bursary-edit-token")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

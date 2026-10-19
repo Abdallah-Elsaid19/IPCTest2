@@ -67,9 +67,11 @@ function normaliseEditableValues(
 function BursaryAccessCard({
   mode,
   application,
+  error,
 }: {
   mode: "login" | "locked" | "error";
   application?: CurrentBursaryApplicationResponse | null;
+  error?: string;
 }) {
   const location = useLocation();
   const isLocked = mode === "locked";
@@ -105,7 +107,7 @@ function BursaryAccessCard({
             ? "The form remains read-only while IPC reviews it. It will reopen automatically only if the status is changed to Needs information."
             : mode === "login"
               ? "Your account is required so IPC can protect the submitted form and reopen the same application safely if more information is requested."
-              : "Refresh the page and try again. Your submitted application has not been changed."}
+              : error || "Refresh the page and try again. Your submitted application has not been changed."}
         </p>
         {isLocked && application?.applicationReference && (
           <div className="mx-auto mt-7 max-w-md border border-primary-200 bg-primary-50 p-5">
@@ -249,8 +251,11 @@ function SubmissionSuccess({
 export default function BursaryApplicationPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  // Fragments are not sent in HTTP requests or Referer headers.
+  const editToken = new URLSearchParams(location.hash.slice(1)).get("editToken") || "";
   const requestedApplicationReference = searchParams.get("applicationReference")?.trim() || "";
-  const [initialDraft] = useState(() => loadBursaryDraft());
+  const [initialDraft] = useState(() => editToken ? null : loadBursaryDraft());
   const [currentStep, setCurrentStep] = useState(initialDraft?.currentStep ?? 0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(
     () => new Set(initialDraft?.completedSteps ?? []),
@@ -271,7 +276,7 @@ export default function BursaryApplicationPage() {
   } | null>(null);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
-  const persistenceEnabled = useRef(true);
+  const persistenceEnabled = useRef(!editToken);
   const methods = useForm<BursaryApplicationFormValues>({
     resolver: zodResolver(bursaryApplicationSchema),
     mode: "onTouched",
@@ -288,8 +293,7 @@ export default function BursaryApplicationPage() {
     && !accessLoading
     && !accessError
     && (
-      !user
-      || !applicationAccess?.hasApplication
+      !applicationAccess?.hasApplication
       || applicationAccess.editable
     ),
   );
@@ -305,7 +309,7 @@ export default function BursaryApplicationPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
+    if (!user && !editToken) {
       setApplicationAccess(null);
       setAccessLoading(false);
       setAccessError("");
@@ -315,7 +319,7 @@ export default function BursaryApplicationPage() {
     const controller = new AbortController();
     setAccessLoading(true);
     setAccessError("");
-    void bursaryApi.current(requestedApplicationReference, controller.signal)
+    void bursaryApi.current(requestedApplicationReference, controller.signal, editToken)
       .then((current) => {
         if (controller.signal.aborted) return;
         setApplicationAccess(current);
@@ -326,7 +330,7 @@ export default function BursaryApplicationPage() {
           setCompletedSteps(new Set([0, 1, 2, 3, 4]));
           setDraftStatus("saved");
           setLastSavedAt(Date.now());
-          persistenceEnabled.current = true;
+          persistenceEnabled.current = !editToken;
         } else if (current.hasApplication) {
           persistenceEnabled.current = false;
           clearBursaryDraft();
@@ -340,7 +344,7 @@ export default function BursaryApplicationPage() {
         if (!controller.signal.aborted) setAccessLoading(false);
       });
     return () => controller.abort();
-  }, [authLoading, methods, requestedApplicationReference, user]);
+  }, [authLoading, editToken, methods, requestedApplicationReference, user]);
 
   useEffect(() => {
     if (!formReady || !persistenceEnabled.current) return;
@@ -425,7 +429,7 @@ export default function BursaryApplicationPage() {
     setSubmitError("");
     try {
       const result = applicationAccess?.editable
-        ? await bursaryApi.resubmit(values, applicationAccess.applicationReference)
+        ? await bursaryApi.resubmit(values, applicationAccess.applicationReference, editToken)
         : await bursaryApi.submit(values);
       persistenceEnabled.current = false;
       clearBursaryDraft();
@@ -462,8 +466,8 @@ export default function BursaryApplicationPage() {
       </div>
     );
   }
-  if (!user && requestedApplicationReference) return <BursaryAccessCard mode="login" />;
-  if (accessError) return <BursaryAccessCard mode="error" />;
+  if (!user && requestedApplicationReference && !editToken) return <BursaryAccessCard mode="login" />;
+  if (accessError) return <BursaryAccessCard mode="error" error={accessError} />;
   if (applicationAccess?.hasApplication && !applicationAccess.editable) {
     return <BursaryAccessCard mode="locked" application={applicationAccess} />;
   }
@@ -502,7 +506,11 @@ export default function BursaryApplicationPage() {
             completedSteps={completedSteps}
             organisationSkipped={organisationSkipped}
           />
-          <div
+          {editToken ? (
+            <p className="mt-3 border border-primary-200 bg-primary-50 px-4 py-2.5 text-center text-xs text-primary-900">
+              Your changes will be saved when you resubmit. Keep this tab open until then.
+            </p>
+          ) : <div
             className={`mt-3 flex items-center justify-center gap-2 border px-4 py-2.5 text-xs ${
               draftStatus === "unavailable"
                 ? "border-amber-300 bg-amber-50 text-amber-900"
@@ -519,7 +527,7 @@ export default function BursaryApplicationPage() {
                 : "Automatic draft saving is on."
             )}
             {draftStatus === "unavailable" && "This browser blocked draft storage. Keep this tab open while completing the form."}
-          </div>
+          </div>}
           <FormProvider {...methods}>
             <form
               className="mt-6 border border-background-300 bg-background-50 p-5 shadow-sm md:p-9"
