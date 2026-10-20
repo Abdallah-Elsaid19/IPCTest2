@@ -28,6 +28,7 @@ export default function PasswordResetPage() {
   const [showPassword, setShowPassword] = useState(false);
   const uid = params.get("uid") || "";
   const token = params.get("token") || "";
+  const nextPath = params.get("next")?.startsWith("/") ? params.get("next") : null;
   const {
     register,
     handleSubmit,
@@ -41,7 +42,7 @@ export default function PasswordResetPage() {
       notifications.success(
         "Password updated successfully. You can now sign in.",
       );
-      navigate("/login", { replace: true });
+      navigate(nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login", { replace: true });
     } catch (error) {
       notifications.error(
         error instanceof Error

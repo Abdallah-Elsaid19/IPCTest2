@@ -1,14 +1,18 @@
 import csv
 import json
 import logging
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core import signing
 from django.http import FileResponse, Http404, HttpResponse
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Max, Q
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -29,21 +33,32 @@ from accounts.notification_service import create_admin_notifications
 from user_panel.models import UserNotification
 from ipc_backend.email_branding import send_branded_mail as send_mail
 
-from .bursary_export import BURSARY_EXPORT_HEADERS, bursary_export_row
+from .bursary_export import (
+    BURSARY_EXPORT_HEADERS,
+    BURSARY_MODULE_PAYABLE_OVERRIDE,
+    BURSARY_MODULE_PRICING,
+    bursary_export_row,
+)
 from .bursary_access import bursary_edit_revision, make_bursary_edit_token, read_bursary_edit_token
 from .google_sheets import (
+    bursary_payment_plan_google_sheets_configured,
     bursary_google_sheet_url,
     bursary_google_sheets_configured,
     sync_bursary_google_sheet,
+    sync_bursary_payment_plan_sheet,
 )
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
+    BursaryPaymentInstallment,
+    BursaryPaymentPlan,
     ScholarshipAnnouncementContent,
     ScholarshipGatewayContent,
     ScholarshipPathwaysContent,
     ScholarshipWinner,
+    StripeWebhookEvent,
 )
+from .payment_portal import deliver_payment_plan_offer
 from .serializers import (
     AdminScholarshipWinnerSerializer,
     BursaryApplicationDetailSerializer,
@@ -51,10 +66,20 @@ from .serializers import (
     BursaryApplicationNoteSerializer,
     BursaryApplicationPublicSerializer,
     BursaryApplicationStatusUpdateSerializer,
+    BursaryPaymentPlanSerializer,
+    BursaryPaymentPlanPublicSerializer,
     ScholarshipAnnouncementContentSerializer,
     ScholarshipAnnouncementRecipientSerializer,
     ScholarshipGatewayContentSerializer,
     bursary_application_to_public_values,
+)
+from .stripe_payments import (
+    create_checkout_session,
+    fulfill_checkout_session,
+    link_invoice_to_installment,
+    mark_invoice_failed,
+    mark_invoice_paid,
+    stripe_credentials_configured,
 )
 
 
@@ -279,6 +304,7 @@ def owned_bursary_applications(user):
     ).values_list("application_reference", flat=True)
     return BursaryApplication.objects.filter(
         Q(submitted_by=user)
+        | Q(payment_plan__portal_user=user)
         | Q(membership_reference__in=membership_references)
         | Q(email__iexact=user.email),
     ).distinct()
@@ -814,6 +840,23 @@ class AdminBursaryApplicationViewSet(
             "google_sheet_url": bursary_google_sheet_url(),
         })
 
+    @action(detail=False, methods=["post"], url_path="sync-payment-plan-google-sheet")
+    def sync_payment_plan_google_sheet(self, request):
+        if not bursary_payment_plan_google_sheets_configured():
+            return Response(
+                {"detail": "Bursary payment-plan Google Sheets sync is not fully configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        try:
+            count = sync_bursary_payment_plan_sheet()
+        except Exception:
+            logger.exception("An administrator could not sync payment plans to Google Sheets.")
+            return Response(
+                {"detail": "The payment-plan Google Sheet could not be updated."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response({"synced": count})
+
     @action(detail=False, methods=["get"], url_path="export")
     def export_csv(self, request):
         applications = self.filter_queryset(self.get_queryset()).prefetch_related(None)
@@ -847,6 +890,92 @@ class AdminBursaryApplicationViewSet(
         if not application.applicant_photo:
             raise Http404("Applicant photo not found.")
         return FileResponse(application.applicant_photo.open("rb"), as_attachment=False)
+
+    def _payment_plan_defaults(self, application):
+        labels = dict(BursaryApplication.PreferredModule.choices)
+        total_payable = Decimal("0.00")
+        for module in application.preferred_modules:
+            cost, percentage = BURSARY_MODULE_PRICING.get(module, (0, 0))
+            payable_override = BURSARY_MODULE_PAYABLE_OVERRIDE.get(module)
+            payable = payable_override if payable_override is not None else cost * (100 - percentage) / 100
+            total_payable += Decimal(str(payable))
+        return {
+            "approved_modules": [labels[module] for module in application.preferred_modules if module in labels],
+            "amount_payable": total_payable,
+        }
+
+    @action(detail=True, methods=["get", "put"], url_path="payment-plan")
+    @transaction.atomic
+    def payment_plan(self, request, pk=None):
+        application = self.get_object()
+        plan = BursaryPaymentPlan.objects.filter(application=application).prefetch_related("installments").first()
+        if request.method == "GET":
+            return Response({
+                "payment_plan": BursaryPaymentPlanSerializer(plan).data if plan else None,
+                "defaults": self._payment_plan_defaults(application),
+            })
+        if application.status != BursaryApplication.Status.APPROVED:
+            return Response(
+                {"detail": "Approve the bursary application before creating its payment plan."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        serializer = BursaryPaymentPlanSerializer(
+            plan,
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        if plan:
+            plan = serializer.save(updated_by=request.user)
+        else:
+            plan = serializer.save(application=application, created_by=request.user, updated_by=request.user)
+        plan.refresh_from_db()
+        return Response(BursaryPaymentPlanSerializer(plan).data)
+
+    @action(detail=True, methods=["post"], url_path="payment-plan/offer")
+    @transaction.atomic
+    def offer_payment_plan(self, request, pk=None):
+        application = self.get_object()
+        plan = get_object_or_404(
+            BursaryPaymentPlan.objects.select_for_update().prefetch_related("installments"),
+            application=application,
+        )
+        if plan.status not in {
+            BursaryPaymentPlan.Status.DRAFT,
+            BursaryPaymentPlan.Status.OFFERED,
+        }:
+            return Response(
+                {"detail": "Only a draft or offered payment plan can be emailed."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        plan.full_clean()
+        if plan.status == BursaryPaymentPlan.Status.DRAFT:
+            plan.status = BursaryPaymentPlan.Status.OFFERED
+            plan.offered_at = timezone.now()
+        plan.updated_by = request.user
+        plan.save(update_fields=["status", "offered_at", "updated_by", "updated_at"])
+        try:
+            message_id = deliver_payment_plan_offer(plan)
+        except GraphMailError as error:
+            plan.offer_email_error = str(error)
+            plan.save(update_fields=["offer_email_error", "updated_at"])
+            return Response(
+                {
+                    "detail": (
+                        "The plan was offered, but its email could not be sent. "
+                        "Check the email configuration and resend it."
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        plan.offer_email_sent_at = timezone.now()
+        plan.offer_email_message_id = message_id or ""
+        plan.offer_email_error = ""
+        plan.save(update_fields=[
+            "offer_email_sent_at", "offer_email_message_id", "offer_email_error", "updated_at",
+        ])
+        plan.refresh_from_db()
+        return Response(BursaryPaymentPlanSerializer(plan).data)
 
     @action(detail=True, methods=["patch"], url_path="status")
     @transaction.atomic
@@ -981,3 +1110,148 @@ class AdminBursaryApplicationViewSet(
             application,
             context={"request": request},
         ).data, status=status.HTTP_200_OK)
+
+
+class BursaryPaymentPlanDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_plan(self, request, public_id):
+        return get_object_or_404(
+            BursaryPaymentPlan.objects.select_related("application").prefetch_related("installments"),
+            public_id=public_id,
+            application__in=owned_bursary_applications(request.user),
+        )
+
+    def get(self, request, public_id):
+        return Response(BursaryPaymentPlanPublicSerializer(self.get_plan(request, public_id)).data)
+
+
+class PaymentPortalView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        plans = (
+            BursaryPaymentPlan.objects.filter(portal_user=request.user)
+            .select_related("application")
+            .prefetch_related("installments")
+            .order_by("-created_at")
+        )
+        return Response({"plans": BursaryPaymentPlanPublicSerializer(plans, many=True).data})
+
+
+class BursaryPaymentPlanAcceptView(BursaryPaymentPlanDetailView):
+    @transaction.atomic
+    def post(self, request, public_id):
+        plan = BursaryPaymentPlan.objects.select_for_update().select_related("application").filter(
+            public_id=public_id,
+            application__in=owned_bursary_applications(request.user),
+        ).first()
+        if not plan:
+            raise Http404("Payment plan not found.")
+        if plan.status == BursaryPaymentPlan.Status.ACCEPTED:
+            return Response(BursaryPaymentPlanPublicSerializer(plan).data)
+        if plan.status != BursaryPaymentPlan.Status.OFFERED:
+            return Response(
+                {"detail": "This payment plan is not available for acceptance."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if plan.offer_expires_at and plan.offer_expires_at <= timezone.now():
+            plan.status = BursaryPaymentPlan.Status.EXPIRED
+            plan.save(update_fields=["status", "updated_at"])
+            return Response({"detail": "This payment plan has expired."}, status=status.HTTP_409_CONFLICT)
+        if request.data.get("terms_accepted") is not True:
+            return Response({"terms_accepted": "Accept the payment-plan terms to continue."}, status=400)
+        plan.status = BursaryPaymentPlan.Status.ACCEPTED
+        plan.accepted_at = timezone.now()
+        plan.save(update_fields=["status", "accepted_at", "updated_at"])
+        return Response(BursaryPaymentPlanPublicSerializer(plan).data)
+
+
+class BursaryPaymentPlanCheckoutView(BursaryPaymentPlanDetailView):
+    def post(self, request, public_id):
+        plan = self.get_plan(request, public_id)
+        if plan.status not in {
+            BursaryPaymentPlan.Status.ACCEPTED,
+            BursaryPaymentPlan.Status.DEPOSIT_PENDING,
+        }:
+            return Response(
+                {"detail": "Accept the payment plan before starting checkout."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        try:
+            session = create_checkout_session(plan)
+        except Exception as exc:
+            logger.exception("Stripe Checkout could not be created for payment plan %s.", plan.pk)
+            plan.last_stripe_error = str(exc)[:2000]
+            plan.save(update_fields=["last_stripe_error", "updated_at"])
+            return Response(
+                {"detail": "Stripe Checkout is not available. Please contact IPC support."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"checkout_url": session.url, "session_id": session.id})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class StripeWebhookView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    throttle_classes = []
+
+    def post(self, request):
+        if not stripe_credentials_configured():
+            return Response({"detail": "Stripe webhook is not configured."}, status=503)
+        try:
+            import stripe
+
+            event = stripe.Webhook.construct_event(
+                request.body,
+                request.headers.get("Stripe-Signature", ""),
+                settings.STRIPE_WEBHOOK_SECRET,
+            )
+        except (ValueError, stripe.error.SignatureVerificationError):
+            return Response({"detail": "Invalid Stripe webhook signature."}, status=400)
+
+        event_id = event["id"]
+        event_type = event["type"]
+        record, created = StripeWebhookEvent.objects.get_or_create(
+            event_id=event_id,
+            defaults={"event_type": event_type},
+        )
+        if not created and not record.processing_error:
+            return Response({"received": True, "duplicate": True})
+
+        obj = event["data"]["object"]
+        try:
+            if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
+                fulfill_checkout_session(obj)
+            elif event_type == "checkout.session.async_payment_failed":
+                plan_id = (obj.get("metadata") or {}).get("bursary_payment_plan_id")
+                plan = BursaryPaymentPlan.objects.filter(pk=plan_id).first()
+                if plan:
+                    plan.status = BursaryPaymentPlan.Status.ACCEPTED
+                    plan.last_stripe_error = "Stripe could not collect the deposit."
+                    plan.save(update_fields=["status", "last_stripe_error", "updated_at"])
+                    plan.installments.filter(kind=BursaryPaymentInstallment.Kind.DEPOSIT).update(
+                        status=BursaryPaymentInstallment.Status.FAILED,
+                        failure_message="Stripe could not collect the deposit.",
+                    )
+            elif event_type == "invoice.paid":
+                mark_invoice_paid(obj)
+            elif event_type == "invoice.payment_failed":
+                mark_invoice_failed(obj)
+            elif event_type in {"invoice.finalized", "invoice.sent"}:
+                link_invoice_to_installment(obj)
+            elif event_type in {"customer.subscription.created", "customer.subscription.updated"}:
+                plan_id = (obj.get("metadata") or {}).get("bursary_payment_plan_id")
+                plan = BursaryPaymentPlan.objects.filter(pk=plan_id).first()
+                if plan:
+                    plan.stripe_subscription_id = obj.get("id", "")
+                    plan.save(update_fields=["stripe_subscription_id", "updated_at"])
+            record.processing_error = ""
+            record.save(update_fields=["processing_error"])
+        except Exception as exc:
+            logger.exception("Stripe webhook %s could not be processed.", event_id)
+            record.processing_error = str(exc)[:4000]
+            record.save(update_fields=["processing_error"])
+            return Response({"detail": "Webhook processing failed."}, status=500)
+        return Response({"received": True})

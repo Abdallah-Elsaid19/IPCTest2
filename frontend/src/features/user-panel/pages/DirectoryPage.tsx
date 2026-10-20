@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Link } from "react-router-dom";
 
 import ClubJoinModal, { type ClubJoinDetails } from "@/features/clubs/components/ClubJoinModal";
+import { bursaryPaymentApi, type BursaryPaymentPlan } from "@/features/bursary/api";
 import { notifications } from "@/lib/notifications";
 import { panelApi, rows } from "../api";
 import { Card, Empty, ErrorState, inputClass, Loading, PageHeading, Status } from "../components/PanelUI";
@@ -384,6 +385,8 @@ function ApplicationDetailsModal({
                 </Link>
               )}
 
+              {detail.payment_plan && <PaymentPlanPanel initialPlan={detail.payment_plan} />}
+
               <DetailSection title="Application overview">
                 <Detail label="Modules" value={detail.pathway.name} />
                 <Detail label="Membership reference" value={detail.membership_reference} mono />
@@ -444,6 +447,65 @@ function ApplicationDetailsModal({
         </div>
       </section>
     </div>
+  );
+}
+
+function PaymentPlanPanel({ initialPlan }: { initialPlan: BursaryPaymentPlan }) {
+  const [plan, setPlan] = useState(initialPlan);
+  const [accepted, setAccepted] = useState(false);
+  const [busy, setBusy] = useState<"accept" | "checkout" | "">("");
+  const [error, setError] = useState("");
+  const money = (value: string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+
+  useEffect(() => setPlan(initialPlan), [initialPlan]);
+
+  const acceptPlan = async () => {
+    setBusy("accept");
+    setError("");
+    try {
+      const updated = await bursaryPaymentApi.accept(plan.public_id);
+      setPlan(updated);
+      notifications.success("Payment plan accepted.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not accept the payment plan.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const checkout = async () => {
+    setBusy("checkout");
+    setError("");
+    try {
+      const result = await bursaryPaymentApi.checkout(plan.public_id);
+      window.location.assign(result.checkout_url);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Stripe Checkout is unavailable.");
+      setBusy("");
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-primary-300 bg-primary-50 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><p className="text-[10px] font-black uppercase tracking-wider text-primary-800">Approved payment plan</p><h3 className="mt-2 text-xl font-black text-[#171411]">{money(plan.amount_payable)}</h3></div>
+        <Status value={plan.status} />
+      </div>
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+        <div><dt className="text-xs text-[#756B61]">Deposit</dt><dd className="mt-1 font-bold">{money(plan.deposit_amount)}</dd></div>
+        <div><dt className="text-xs text-[#756B61]">Installments</dt><dd className="mt-1 font-bold">{plan.installment_count || "None"}</dd></div>
+        <div><dt className="text-xs text-[#756B61]">Regular payment</dt><dd className="mt-1 font-bold">{plan.installment_count ? money(plan.installment_amount) : "—"}</dd></div>
+      </dl>
+      {plan.start_date_and_cohorts && <div className="mt-4 rounded-xl bg-white p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-[#887C70]">Start dates and cohorts</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6">{plan.start_date_and_cohorts}</p></div>}
+      {plan.installments.length > 0 && <div className="mt-4 space-y-2">{plan.installments.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E2D8CC] bg-white px-4 py-3 text-sm"><span>{item.kind === "deposit" ? "Deposit" : `Installment ${item.sequence}`} · {formatDetailDate(item.due_date)}</span><span className="font-bold">{money(item.amount)} · {item.status.replaceAll("_", " ")}</span></div>)}</div>}
+      {error && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      {plan.status === "offered" && <div className="mt-5">
+        <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-5 w-5 accent-primary-600" /><span>I have reviewed the modules, amounts, dates and installment schedule and accept the IPC payment-plan terms.</span></label>
+        <button type="button" disabled={!accepted || Boolean(busy)} onClick={() => void acceptPlan()} className="btn-primary mt-4 w-full rounded-xl disabled:opacity-50">{busy === "accept" ? "Accepting…" : "Accept payment plan"}</button>
+      </div>}
+      {["accepted", "deposit_pending"].includes(plan.status) && <button type="button" disabled={Boolean(busy) || !plan.stripe_configured} onClick={() => void checkout()} className="btn-primary mt-5 w-full rounded-xl disabled:opacity-50">{busy === "checkout" ? "Opening Stripe…" : plan.deposit_amount === "0.00" ? "Set up monthly payments" : `Pay ${money(plan.deposit_amount)} securely`}</button>}
+      {!plan.stripe_configured && ["offered", "accepted", "deposit_pending"].includes(plan.status) && <p className="mt-3 text-xs text-amber-900">Online payment is being configured. IPC will contact you before any payment is collected.</p>}
+    </section>
   );
 }
 

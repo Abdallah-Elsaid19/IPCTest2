@@ -45,7 +45,14 @@ export default function Login() {
       const user = await login(values);
       notifications.signedIn(user.name);
       const requestedPath = (location.state as { from?: string } | null)?.from;
-      navigate(requestedPath || (user.is_staff ? "/admin" : "/home"), { replace: true });
+      const queryPath = new URLSearchParams(location.search).get("next");
+      const safeQueryPath = queryPath?.startsWith("/") && !queryPath.startsWith("//") ? queryPath : null;
+      const defaultPath = user.is_staff
+        ? "/admin"
+        : user.has_payment_portal && !user.membership_active
+          ? "/payments"
+          : "/home";
+      navigate(requestedPath || safeQueryPath || defaultPath, { replace: true });
     } catch (error) {
       notifications.error(error instanceof Error ? error.message : "Please try again.");
     } finally {

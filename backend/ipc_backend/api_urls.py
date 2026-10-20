@@ -28,10 +28,15 @@ from scholarships.views import (
     BursaryApplicationCreateViewSet,
     BursaryApplicationCurrentView,
     BursaryMembershipReferenceValidationView,
+    BursaryPaymentPlanAcceptView,
+    BursaryPaymentPlanCheckoutView,
+    BursaryPaymentPlanDetailView,
+    PaymentPortalView,
     ScholarshipAnnouncementRecipientPhotoView,
     ScholarshipAnnouncementRecipientsView,
     ScholarshipAnnouncementContentView,
     ScholarshipContentView,
+    StripeWebhookView,
 )
 from sponsorship.views import SponsorshipContentView
 from about.views import AboutPageContentView
@@ -127,6 +132,23 @@ urlpatterns = [
         BursaryApplicationCurrentView.as_view(),
         name="bursary-application-current",
     ),
+    path(
+        "bursary-payment-plans/<uuid:public_id>",
+        BursaryPaymentPlanDetailView.as_view(),
+        name="bursary-payment-plan-detail",
+    ),
+    path(
+        "bursary-payment-plans/<uuid:public_id>/accept",
+        BursaryPaymentPlanAcceptView.as_view(),
+        name="bursary-payment-plan-accept",
+    ),
+    path(
+        "bursary-payment-plans/<uuid:public_id>/checkout",
+        BursaryPaymentPlanCheckoutView.as_view(),
+        name="bursary-payment-plan-checkout",
+    ),
+    path("payment-portal", PaymentPortalView.as_view(), name="payment-portal"),
+    path("stripe/webhook", StripeWebhookView.as_view(), name="stripe-webhook"),
     path("sponsorship", SponsorshipContentView.as_view(), name="sponsorship-content"),
     path("home/content", HomeContentView.as_view(), name="home-content"),
     path("services/content", ServiceContentView.as_view(), name="service-content"),

@@ -1,5 +1,7 @@
 import base64
 import binascii
+import calendar
+from datetime import date
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -15,12 +17,157 @@ from ipc_backend.validators import validate_identity_document, validate_image
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
+    BursaryPaymentInstallment,
+    BursaryPaymentPlan,
     ScholarshipAnnouncementContent,
     ScholarshipContent,
     ScholarshipGatewayContent,
     ScholarshipPathwaysContent,
     ScholarshipWinner,
 )
+
+
+def add_calendar_months(value, months):
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    return date(year, month, min(value.day, calendar.monthrange(year, month)[1]))
+
+
+class BursaryPaymentInstallmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BursaryPaymentInstallment
+        fields = [
+            "id", "sequence", "kind", "amount", "due_date", "status",
+            "paid_at", "stripe_invoice_id", "stripe_hosted_invoice_url", "failure_message",
+        ]
+        read_only_fields = fields
+
+
+class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
+    installments = BursaryPaymentInstallmentSerializer(many=True, read_only=True)
+    application_reference = serializers.CharField(source="application.application_reference", read_only=True)
+    applicant_name = serializers.SerializerMethodField()
+    applicant_email = serializers.EmailField(source="application.email", read_only=True)
+    scheduled_total = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    stripe_configured = serializers.SerializerMethodField()
+    portal_login_email = serializers.EmailField(source="portal_user.email", read_only=True, allow_null=True)
+
+    class Meta:
+        model = BursaryPaymentPlan
+        fields = [
+            "public_id", "application_reference", "applicant_name", "applicant_email",
+            "status", "currency", "approved_modules", "start_date_and_cohorts",
+            "study_duration_months", "amount_payable", "deposit_amount",
+            "installment_count", "installment_amount", "final_installment_amount",
+            "first_installment_date", "scheduled_total", "offer_expires_at",
+            "offered_at", "accepted_at", "terms_version", "stripe_configured",
+            "portal_login_email", "offer_email_sent_at", "offer_email_message_id",
+            "offer_email_error",
+            "stripe_checkout_session_id", "stripe_subscription_schedule_id",
+            "last_stripe_error", "installments", "created_at", "updated_at",
+        ]
+        read_only_fields = [
+            "public_id", "status", "currency", "final_installment_amount",
+            "offered_at", "accepted_at", "terms_version", "stripe_checkout_session_id",
+            "portal_login_email", "offer_email_sent_at", "offer_email_message_id", "offer_email_error",
+            "stripe_subscription_schedule_id", "last_stripe_error", "created_at", "updated_at",
+        ]
+
+    def get_applicant_name(self, plan):
+        return f"{plan.application.first_name} {plan.application.last_name}".strip()
+
+    def get_stripe_configured(self, plan):
+        from .stripe_payments import stripe_credentials_configured
+        return stripe_credentials_configured()
+
+    def validate_approved_modules(self, value):
+        if not value or any(not isinstance(item, str) or not item.strip() for item in value):
+            raise serializers.ValidationError("Choose at least one approved module.")
+        return [item.strip() for item in value]
+
+    def validate(self, attrs):
+        instance = self.instance
+        if instance and instance.status != BursaryPaymentPlan.Status.DRAFT:
+            raise serializers.ValidationError("Only draft payment plans can be edited.")
+
+        amount = attrs.get("amount_payable", getattr(instance, "amount_payable", None))
+        deposit = attrs.get("deposit_amount", getattr(instance, "deposit_amount", Decimal("0.00")))
+        count = attrs.get("installment_count", getattr(instance, "installment_count", 0))
+        regular = attrs.get("installment_amount", getattr(instance, "installment_amount", Decimal("0.00")))
+        first_date = attrs.get("first_installment_date", getattr(instance, "first_installment_date", None))
+        if amount is None or amount <= 0:
+            raise serializers.ValidationError({"amount_payable": "Enter an amount greater than zero."})
+        if deposit < 0 or deposit > amount:
+            raise serializers.ValidationError({"deposit_amount": "The deposit must be between zero and the amount payable."})
+        if count:
+            if not first_date:
+                raise serializers.ValidationError({"first_installment_date": "Choose the first installment date."})
+            if regular <= 0:
+                raise serializers.ValidationError({"installment_amount": "Enter a monthly installment greater than zero."})
+            final_amount = amount - deposit - regular * (count - 1)
+            if final_amount <= 0:
+                raise serializers.ValidationError({
+                    "installment_amount": "The deposit and installments exceed the amount payable.",
+                })
+            attrs["final_installment_amount"] = final_amount
+        else:
+            if deposit != amount:
+                raise serializers.ValidationError({
+                    "deposit_amount": "For a single payment, the deposit must equal the amount payable.",
+                })
+            attrs["installment_amount"] = Decimal("0.00")
+            attrs["final_installment_amount"] = Decimal("0.00")
+            attrs["first_installment_date"] = None
+        return attrs
+
+    def _sync_installments(self, plan):
+        plan.installments.all().delete()
+        sequence = 0
+        rows = []
+        if plan.deposit_amount > 0:
+            rows.append(BursaryPaymentInstallment(
+                plan=plan,
+                sequence=sequence,
+                kind=BursaryPaymentInstallment.Kind.DEPOSIT,
+                amount=plan.deposit_amount,
+                due_date=timezone.localdate(),
+            ))
+            sequence += 1
+        for index in range(plan.installment_count):
+            rows.append(BursaryPaymentInstallment(
+                plan=plan,
+                sequence=sequence,
+                kind=BursaryPaymentInstallment.Kind.INSTALLMENT,
+                amount=(plan.final_installment_amount if index == plan.installment_count - 1 else plan.installment_amount),
+                due_date=add_calendar_months(plan.first_installment_date, index),
+            ))
+            sequence += 1
+        BursaryPaymentInstallment.objects.bulk_create(rows)
+
+    def create(self, validated_data):
+        plan = super().create(validated_data)
+        self._sync_installments(plan)
+        return plan
+
+    def update(self, instance, validated_data):
+        plan = super().update(instance, validated_data)
+        self._sync_installments(plan)
+        return plan
+
+
+class BursaryPaymentPlanPublicSerializer(BursaryPaymentPlanSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        for field in (
+            "stripe_checkout_session_id",
+            "stripe_subscription_schedule_id",
+            "last_stripe_error",
+            "offer_email_message_id",
+            "offer_email_error",
+        ):
+            data.pop(field, None)
+        return data
 
 
 class ScholarshipAnnouncementContentSerializer(serializers.ModelSerializer):

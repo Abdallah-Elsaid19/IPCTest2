@@ -73,6 +73,7 @@ const ClubCommunityPage = lazy(() => import("@/features/user-panel/pages/ClubCom
 const AwardNominationPage = lazy(() => import("@/features/user-panel/pages/AwardNominationPage"));
 const UserSupportPage = lazy(() => import("@/features/user-panel/pages/SupportPage"));
 const UserNotificationsPage = lazy(() => import("@/features/user-panel/pages/NotificationsPage"));
+const PaymentPortalPage = lazy(() => import("@/features/payments/PaymentPortalPage"));
 
 const routes: RouteObject[] = [
   { path: "/", element: <LandingPage /> },
@@ -111,6 +112,7 @@ const routes: RouteObject[] = [
   { path: "/forgot-password", element: <GuestOnlyRoute><ForgotPasswordPage /></GuestOnlyRoute> },
   { path: "/reset-password", element: <PasswordResetPage /> },
   { path: "/profile", element: <ProtectedRoute><UserProfilePage /></ProtectedRoute> },
+  { path: "/payments", element: <ProtectedRoute><PaymentPortalPage /></ProtectedRoute> },
   {
     path: "/user",
     element: <ProtectedRoute><UserPanelLayout /></ProtectedRoute>,

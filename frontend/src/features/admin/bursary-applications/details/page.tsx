@@ -7,6 +7,8 @@ import { useAuth } from "@/features/auth/AuthContext";
 import {
   bursaryApi,
   type BursaryApplicationDetail,
+  type BursaryPaymentPlan,
+  type BursaryPaymentPlanInput,
   type BursaryStatus,
 } from "@/features/bursary/api";
 import { calculateBursaryFundingEstimate } from "@/features/bursary/pathways";
@@ -232,6 +234,165 @@ function ModulePricing({ selectedModules }: { selectedModules: string[] }) {
   );
 }
 
+function PaymentPlanBuilder({ application }: { application: BursaryApplicationDetail }) {
+  const [plan, setPlan] = useState<BursaryPaymentPlan | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [offering, setOffering] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState<BursaryPaymentPlanInput>({
+    approved_modules: [],
+    start_date_and_cohorts: "",
+    study_duration_months: null,
+    amount_payable: "",
+    deposit_amount: "",
+    installment_count: 0,
+    installment_amount: "",
+    first_installment_date: null,
+    offer_expires_at: null,
+  });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void bursaryApi.getPaymentPlan(application.id, controller.signal)
+      .then(({ payment_plan, defaults }) => {
+        setPlan(payment_plan);
+        const amount = payment_plan?.amount_payable ?? String(defaults.amount_payable || "");
+        setForm({
+          approved_modules: payment_plan?.approved_modules ?? defaults.approved_modules,
+          start_date_and_cohorts: payment_plan?.start_date_and_cohorts ?? "",
+          study_duration_months: payment_plan?.study_duration_months ?? null,
+          amount_payable: amount,
+          deposit_amount: payment_plan?.deposit_amount ?? amount,
+          installment_count: payment_plan?.installment_count ?? 0,
+          installment_amount: payment_plan?.installment_amount ?? "0.00",
+          first_installment_date: payment_plan?.first_installment_date ?? null,
+          offer_expires_at: payment_plan?.offer_expires_at ?? null,
+        });
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Could not load the payment plan.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [application.id]);
+
+  const amount = Number(form.amount_payable || 0);
+  const deposit = Number(form.deposit_amount || 0);
+  const regular = Number(form.installment_amount || 0);
+  const finalInstallment = form.installment_count > 0
+    ? amount - deposit - regular * (form.installment_count - 1)
+    : 0;
+  const validTotal = amount > 0 && deposit >= 0 && deposit <= amount && (
+    form.installment_count === 0
+      ? deposit === amount
+      : regular > 0 && finalInstallment > 0 && Boolean(form.first_installment_date)
+  );
+  const editable = !plan || plan.status === "draft";
+  const money = (value: number | string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+
+  const update = <K extends keyof BursaryPaymentPlanInput>(key: K, value: BursaryPaymentPlanInput[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const saved = await bursaryApi.savePaymentPlan(application.id, form);
+      setPlan(saved);
+      notifications.success("Payment plan saved as a draft.");
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Could not save the payment plan.";
+      setError(message);
+      notifications.error(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const offer = async () => {
+    setOffering(true);
+    setError("");
+    try {
+      const offered = await bursaryApi.offerPaymentPlan(application.id);
+      setPlan(offered);
+      notifications.success("Payment plan offered to the applicant.");
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Could not offer the payment plan.";
+      setError(message);
+      notifications.error(message);
+    } finally {
+      setOffering(false);
+    }
+  };
+
+  if (loading) return <DetailSection title="Payment plan"><p className="text-sm text-[#756B61]">Loading payment plan…</p></DetailSection>;
+  return (
+    <DetailSection title="Payment plan">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[#332D27]">{form.approved_modules.join(", ") || application.preferred_pathway_label}</p>
+          <p className="mt-1 text-xs text-[#756B61]">Study dates and payment dates are recorded separately.</p>
+        </div>
+        {plan && <StatusBadge status={plan.status} />}
+      </div>
+      {!plan?.stripe_configured && plan && (
+        <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Stripe keys are not configured yet. The plan can be prepared, but checkout will remain unavailable.</p>
+      )}
+      {plan?.offer_email_sent_at && (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+          Payment-plan email sent to {plan.applicant_email} on {formatDate(plan.offer_email_sent_at)}. Portal login: {plan.portal_login_email}.
+        </p>
+      )}
+      {error && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <label className="text-sm font-semibold sm:col-span-2 xl:col-span-4">Start dates and cohorts
+          <textarea disabled={!editable} rows={4} value={form.start_date_and_cohorts} onChange={(event) => update("start_date_and_cohorts", event.target.value)} className="mt-2 w-full rounded-xl border border-[#D4C6B5] bg-white p-3 font-normal outline-none focus:border-primary-500 disabled:bg-[#F4EFE8]" placeholder="Start PMP on 7 October 2026…" />
+        </label>
+        <label className="text-sm font-semibold">Study duration (months)
+          <input disabled={!editable} type="number" min="1" value={form.study_duration_months ?? ""} onChange={(event) => update("study_duration_months", event.target.value ? Number(event.target.value) : null)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+        </label>
+        <label className="text-sm font-semibold">Amount payable (GBP)
+          <input disabled={!editable} type="number" min="0.01" step="0.01" value={form.amount_payable} onChange={(event) => update("amount_payable", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+        </label>
+        <label className="text-sm font-semibold">Deposit (GBP)
+          <input disabled={!editable} type="number" min="0" step="0.01" value={form.deposit_amount} onChange={(event) => update("deposit_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+        </label>
+        <label className="text-sm font-semibold">Number of installments
+          <input disabled={!editable} type="number" min="0" max="60" value={form.installment_count} onChange={(event) => update("installment_count", Number(event.target.value))} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+        </label>
+        {form.installment_count > 0 && <>
+          <label className="text-sm font-semibold">Regular monthly payment (GBP)
+            <input disabled={!editable} type="number" min="0.01" step="0.01" value={form.installment_amount} onChange={(event) => update("installment_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+          </label>
+          <label className="text-sm font-semibold">First installment date
+            <input disabled={!editable} type="date" value={form.first_installment_date ?? ""} onChange={(event) => update("first_installment_date", event.target.value || null)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+          </label>
+        </>}
+        <label className="text-sm font-semibold">Offer expires (optional)
+          <input disabled={!editable} type="datetime-local" value={form.offer_expires_at ? form.offer_expires_at.slice(0, 16) : ""} onChange={(event) => update("offer_expires_at", event.target.value ? new Date(event.target.value).toISOString() : null)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+        </label>
+      </div>
+      <div className={`mt-5 rounded-xl border p-4 ${validTotal ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
+        <p className="text-sm font-black">Plan check</p>
+        <p className="mt-2 text-sm">{money(deposit)} deposit{form.installment_count > 0 ? ` + ${Math.max(form.installment_count - 1, 0)} × ${money(regular)} + final installment ${money(finalInstallment)}` : ""} = {money(amount)}</p>
+        <p className="mt-1 text-xs">{validTotal ? "The schedule balances exactly." : "Adjust the plan before saving; every pound must be scheduled."}</p>
+      </div>
+      {plan?.installments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[#F3EBE1] text-[10px] uppercase tracking-wider text-[#6F655B]"><tr><th className="px-3 py-2">Payment</th><th className="px-3 py-2">Due</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Status</th></tr></thead><tbody className="divide-y divide-[#E8DED2]">{plan.installments.map((item) => <tr key={item.id}><td className="px-3 py-2 capitalize">{item.kind === "deposit" ? "Deposit" : `Installment ${item.sequence}`}</td><td className="px-3 py-2">{formatDate(item.due_date)}</td><td className="px-3 py-2 font-semibold">{money(item.amount)}</td><td className="px-3 py-2"><StatusBadge status={item.status} /></td></tr>)}</tbody></table></div> : null}
+      {editable && <div className="mt-5 flex flex-wrap justify-end gap-3">
+        <button type="button" disabled={saving || !validTotal} onClick={() => void save()} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">{saving && <LoaderCircle size={15} className="animate-spin" />} Save draft</button>
+        <button type="button" disabled={offering || !plan || !validTotal} onClick={() => void offer()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black disabled:opacity-50">{offering && <LoaderCircle size={15} className="animate-spin" />} Offer to applicant</button>
+      </div>}
+      {plan?.status === "offered" && <div className="mt-5 flex justify-end">
+        <button type="button" disabled={offering} onClick={() => void offer()} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">{offering && <LoaderCircle size={15} className="animate-spin" />} Resend payment-plan email</button>
+      </div>}
+    </DetailSection>
+  );
+}
+
 export default function AdminBursaryApplicationDetailsPage() {
   const { id } = useParams();
   const applicationId = Number(id);
@@ -437,6 +598,7 @@ export default function AdminBursaryApplicationDetailsPage() {
       </div>
 
       <section className="mt-6 grid gap-5 lg:grid-cols-2 print:hidden">
+        {application.status === "approved" && <div className="lg:col-span-2"><PaymentPlanBuilder application={application} /></div>}
         <DetailSection title="Internal review note">
           <label htmlFor="bursary-review-notes" className="sr-only">Internal review note</label>
           <textarea id="bursary-review-notes" rows={7} value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={12000} className="w-full rounded-xl border border-[#D4C6B5] bg-white p-4 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20" />

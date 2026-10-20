@@ -1,3 +1,5 @@
+import type { BursaryPaymentPlan } from "@/features/bursary/api";
+
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 export type Completion = { percentage: number; missing: string[] };
 
@@ -87,6 +89,7 @@ export interface ScholarshipApplicationSummary {
   status_label: string;
   submitted_at: string | null;
   updated_at: string;
+  payment_plan: Pick<BursaryPaymentPlan, "public_id" | "status" | "amount_payable"> | null;
 }
 
 export interface ScholarshipApplicationDetail {
@@ -135,6 +138,7 @@ export interface ScholarshipApplicationDetail {
     pathway_fit_reason: string;
     additional_review_information: string;
   };
+  payment_plan: BursaryPaymentPlan | null;
 }
 
 export interface Preference {

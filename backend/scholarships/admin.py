@@ -3,10 +3,46 @@ from django.contrib import admin
 from .models import (
     BursaryApplication,
     BursaryApplicationStatusHistory,
+    BursaryPaymentInstallment,
+    BursaryPaymentPlan,
     ScholarshipAnnouncementContent,
     ScholarshipContent,
     ScholarshipWinner,
+    StripeWebhookEvent,
 )
+
+
+class BursaryPaymentInstallmentInline(admin.TabularInline):
+    model = BursaryPaymentInstallment
+    extra = 0
+    readonly_fields = (
+        "sequence", "kind", "amount", "due_date", "status", "paid_at",
+        "stripe_invoice_id", "stripe_hosted_invoice_url",
+    )
+    can_delete = False
+
+
+@admin.register(BursaryPaymentPlan)
+class BursaryPaymentPlanAdmin(admin.ModelAdmin):
+    list_display = (
+        "application", "portal_user", "status", "amount_payable", "deposit_amount",
+        "installment_count", "first_installment_date", "offer_email_sent_at",
+    )
+    list_filter = ("status",)
+    search_fields = ("application__application_reference", "application__first_name", "application__last_name", "application__email")
+    readonly_fields = (
+        "public_id", "offered_at", "accepted_at", "offer_email_sent_at",
+        "offer_email_message_id", "offer_email_error", "created_at", "updated_at",
+    )
+    inlines = (BursaryPaymentInstallmentInline,)
+
+
+@admin.register(StripeWebhookEvent)
+class StripeWebhookEventAdmin(admin.ModelAdmin):
+    list_display = ("event_id", "event_type", "processed_at", "processing_error")
+    search_fields = ("event_id", "event_type")
+    readonly_fields = ("event_id", "event_type", "processed_at", "processing_error")
+    ordering = ("-processed_at",)
 
 
 @admin.register(ScholarshipContent)

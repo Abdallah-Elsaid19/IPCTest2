@@ -9,7 +9,7 @@ from .bursary_export import (
     BURSARY_GOOGLE_SHEET_HEADERS,
     bursary_google_sheet_row,
 )
-from .models import BursaryApplication
+from .models import BursaryApplication, BursaryPaymentInstallment, BursaryPaymentPlan
 
 
 logger = logging.getLogger(__name__)
@@ -163,6 +163,23 @@ def _target_sheet_id(service, spreadsheet_id, worksheet_name):
         ).execute()
         return sheet_id
 
+    result = service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"requests": [{"addSheet": {"properties": {"title": worksheet_name}}}]},
+    ).execute()
+    return result["replies"][0]["addSheet"]["properties"]["sheetId"]
+
+
+def _get_or_create_sheet_id(service, spreadsheet_id, worksheet_name):
+    """Create a dedicated report tab without renaming or replacing an existing tab."""
+    metadata = service.spreadsheets().get(
+        spreadsheetId=spreadsheet_id,
+        fields="sheets.properties(sheetId,title)",
+    ).execute()
+    for sheet in metadata.get("sheets", []):
+        properties = sheet.get("properties", {})
+        if properties.get("title") == worksheet_name:
+            return properties["sheetId"]
     result = service.spreadsheets().batchUpdate(
         spreadsheetId=spreadsheet_id,
         body={"requests": [{"addSheet": {"properties": {"title": worksheet_name}}}]},
@@ -420,4 +437,167 @@ def sync_bursary_google_sheet_safely():
         logger.exception("Could not sync Bursary applications to Google Sheets.")
         return False
     logger.info("Synced %s Bursary applications to Google Sheets.", synced_count)
+    return True
+
+
+PAYMENT_PLAN_BASE_HEADERS = [
+    "Application reference",
+    "First name",
+    "Last name",
+    "Email",
+    "Preferred modules",
+    "Start Date and Cohorts",
+    "Estimated amount applicant pays (GBP)",
+    "Duration of Study",
+    "Monthly installment (GBP)",
+    "Deposit (GBP)",
+    "Plan status",
+    "Amount paid (GBP)",
+    "Balance remaining (GBP)",
+    "Next payment due",
+]
+
+
+def bursary_payment_plan_google_sheets_configured():
+    return bool(
+        settings.BURSARY_PAYMENT_PLANS_GOOGLE_SHEETS_ENABLED
+        and settings.BURSARY_PAYMENT_PLANS_SPREADSHEET_ID.strip()
+        and (
+            settings.GOOGLE_SERVICE_ACCOUNT_JSON.strip()
+            or settings.GOOGLE_SERVICE_ACCOUNT_FILE.strip()
+        )
+    )
+
+
+def payment_plan_sheet_values(plans):
+    """Build a spreadsheet view with one dynamic column per payment month."""
+    plans = list(plans)
+    month_dates = sorted({
+        installment.due_date.replace(day=1)
+        for plan in plans
+        for installment in plan.installments.all()
+        if installment.kind == BursaryPaymentInstallment.Kind.INSTALLMENT
+    })
+    month_headers = [month.strftime("%B %Y") for month in month_dates]
+    headers = [*PAYMENT_PLAN_BASE_HEADERS, *month_headers]
+    rows = []
+    for plan in plans:
+        application = plan.application
+        installments = list(plan.installments.all())
+        amount_paid = sum(
+            (installment.amount for installment in installments if installment.status == BursaryPaymentInstallment.Status.PAID),
+            start=0,
+        )
+        outstanding = max(plan.amount_payable - amount_paid, 0)
+        next_payment = next((
+            installment for installment in installments
+            if installment.status not in {
+                BursaryPaymentInstallment.Status.PAID,
+                BursaryPaymentInstallment.Status.CANCELLED,
+                BursaryPaymentInstallment.Status.REFUNDED,
+            }
+        ), None)
+        amounts_by_month = {}
+        for installment in installments:
+            if installment.kind != BursaryPaymentInstallment.Kind.INSTALLMENT:
+                continue
+            month = installment.due_date.replace(day=1)
+            amounts_by_month[month] = amounts_by_month.get(month, 0) + installment.amount
+        rows.append([
+            application.application_reference,
+            application.first_name,
+            application.last_name,
+            application.email,
+            ", ".join(plan.approved_modules),
+            plan.start_date_and_cohorts,
+            float(plan.amount_payable),
+            f"{plan.study_duration_months} months" if plan.study_duration_months else "",
+            float(plan.installment_amount) if plan.installment_count else "",
+            float(plan.deposit_amount),
+            plan.get_status_display(),
+            float(amount_paid),
+            float(outstanding),
+            next_payment.due_date.isoformat() if next_payment else "",
+            *[float(amounts_by_month[month]) if month in amounts_by_month else "" for month in month_dates],
+        ])
+    return [headers, *rows]
+
+
+def sync_bursary_payment_plan_sheet():
+    if not bursary_payment_plan_google_sheets_configured():
+        raise ImproperlyConfigured("Bursary payment-plan Google Sheets sync is not fully configured.")
+    spreadsheet_id = settings.BURSARY_PAYMENT_PLANS_SPREADSHEET_ID.strip()
+    worksheet_name = settings.BURSARY_PAYMENT_PLANS_WORKSHEET_NAME.strip()
+    plans = BursaryPaymentPlan.objects.exclude(
+        status=BursaryPaymentPlan.Status.DRAFT,
+    ).select_related("application").prefetch_related("installments").order_by("application__first_name", "application__last_name")
+    values = payment_plan_sheet_values(plans)
+    headers = values[0]
+    service = _google_sheets_service()
+    sheet_id = _get_or_create_sheet_id(service, spreadsheet_id, worksheet_name)
+    quoted_name = worksheet_name.replace("'", "''")
+    sheet = f"'{quoted_name}'"
+    values_api = service.spreadsheets().values()
+    values_api.clear(spreadsheetId=spreadsheet_id, range=f"{sheet}!A:ZZ", body={}).execute()
+    values_api.update(
+        spreadsheetId=spreadsheet_id,
+        range=f"{sheet}!A1",
+        valueInputOption="RAW",
+        body={"values": values},
+    ).execute()
+    currency_headers = {
+        "Estimated amount applicant pays (GBP)",
+        "Monthly installment (GBP)",
+        "Deposit (GBP)",
+        "Amount paid (GBP)",
+        "Balance remaining (GBP)",
+        *headers[len(PAYMENT_PLAN_BASE_HEADERS):],
+    }
+    requests = [{
+        "updateSheetProperties": {
+            "properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}},
+            "fields": "gridProperties.frozenRowCount",
+        }
+    }, {
+        "setBasicFilter": {"filter": {"range": {
+            "sheetId": sheet_id,
+            "startRowIndex": 0,
+            "endRowIndex": max(len(values), 1),
+            "startColumnIndex": 0,
+            "endColumnIndex": len(headers),
+        }}},
+    }]
+    for index, header in enumerate(headers):
+        requests.append({
+            "repeatCell": {
+                "range": {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": index, "endColumnIndex": index + 1},
+                "cell": {"userEnteredFormat": {
+                    "backgroundColor": {"red": 0.10, "green": 0.31, "blue": 0.25},
+                    "textFormat": {"bold": True, "foregroundColor": {"red": 1, "green": 1, "blue": 1}},
+                    "wrapStrategy": "WRAP",
+                }},
+                "fields": "userEnteredFormat(backgroundColor,textFormat,wrapStrategy)",
+            }
+        })
+        if header in currency_headers:
+            requests.append({
+                "repeatCell": {
+                    "range": {"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": max(len(values), 2), "startColumnIndex": index, "endColumnIndex": index + 1},
+                    "cell": {"userEnteredFormat": {"numberFormat": {"type": "CURRENCY", "pattern": "£#,##0.00"}}},
+                    "fields": "userEnteredFormat.numberFormat",
+                }
+            })
+    service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body={"requests": requests}).execute()
+    return len(values) - 1
+
+
+def sync_bursary_payment_plan_sheet_safely():
+    if not bursary_payment_plan_google_sheets_configured():
+        return False
+    try:
+        synced_count = sync_bursary_payment_plan_sheet()
+    except Exception:
+        logger.exception("Could not sync Bursary payment plans to Google Sheets.")
+        return False
+    logger.info("Synced %s Bursary payment plans to Google Sheets.", synced_count)
     return True

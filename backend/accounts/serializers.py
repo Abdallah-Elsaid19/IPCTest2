@@ -19,10 +19,11 @@ class UserSerializer(serializers.ModelSerializer):
     membership_active = serializers.SerializerMethodField()
     membership_grade = serializers.SerializerMethodField()
     telephone = serializers.SerializerMethodField()
+    has_payment_portal = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url", "telephone", "membership_active", "membership_grade")
+        fields = ("id", "username", "email", "first_name", "last_name", "name", "is_staff", "is_superuser", "role", "profile_image_url", "telephone", "membership_active", "membership_grade", "has_payment_portal")
         read_only_fields = fields
 
     def get_name(self, user):
@@ -55,6 +56,9 @@ class UserSerializer(serializers.ModelSerializer):
         except User.membership_application.RelatedObjectDoesNotExist:
             return None
         return application.membership_grade.code if application.status == "approved" else None
+
+    def get_has_payment_portal(self, user):
+        return user.bursary_payment_plans.exists()
 
 
 class UserProfileUpdateSerializer(serializers.Serializer):

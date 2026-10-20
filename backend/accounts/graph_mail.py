@@ -350,6 +350,109 @@ Institute of Project Controls
     )
 
 
+def send_bursary_payment_plan_offer_email(
+    *,
+    recipient,
+    name,
+    application_reference,
+    modules,
+    amount_payable,
+    deposit_amount,
+    installments,
+    login_email,
+    portal_url,
+    password_setup_url=None,
+):
+    """Send the complete payment offer and secure portal access details."""
+    safe_name = html.escape(name or "IPC bursary recipient")
+    safe_reference = html.escape(application_reference)
+    safe_modules = html.escape(", ".join(modules) or "IPC programme")
+    safe_login = html.escape(login_email)
+    safe_portal_url = html.escape(portal_url, quote=True)
+    safe_setup_url = html.escape(password_setup_url or "", quote=True)
+    amount_text = f"£{amount_payable:,.2f}"
+    deposit_text = f"£{deposit_amount:,.2f}"
+    installment_lines = [
+        f"{item['label']}: £{item['amount']:,.2f} due {item['due_date']}"
+        for item in installments
+    ]
+    rows = "".join(
+        "<tr>"
+        f"<td style='padding:9px 10px;border-bottom:1px solid #eadfce'>{html.escape(item['label'])}</td>"
+        f"<td style='padding:9px 10px;border-bottom:1px solid #eadfce'>£{item['amount']:,.2f}</td>"
+        f"<td style='padding:9px 10px;border-bottom:1px solid #eadfce'>{html.escape(item['due_date'])}</td>"
+        "</tr>"
+        for item in installments
+    )
+    access_instruction = (
+        f"Create your password using this secure, single-use link:\n{password_setup_url}\n\n"
+        if password_setup_url
+        else "Sign in using your existing IPC password.\n\n"
+    )
+    access_button = (
+        f'<p><a href="{safe_setup_url}" style="display:inline-block;background:#d79525;color:#0b0b0b;padding:12px 20px;text-decoration:none;font-weight:700">Create password</a></p>'
+        if password_setup_url
+        else ""
+    )
+    subject = f"Your IPC Payment Plan Is Ready — {application_reference}"
+    text_body = f"""Hello {name or 'IPC bursary recipient'},
+
+Your IPC payment plan is ready for review.
+
+Application reference: {application_reference}
+Modules: {', '.join(modules) or 'IPC programme'}
+Total payable: {amount_text}
+Deposit: {deposit_text}
+
+Payment schedule:
+{chr(10).join(installment_lines)}
+
+Payment portal login: {login_email}
+{access_instruction}Open your secure payment portal:
+{portal_url}
+
+No password has been generated or included in this email.
+
+Kind regards,
+Institute of Project Controls
+"""
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;color:#171411;line-height:1.6;max-width:680px;margin:auto;border:1px solid #eadfce">
+        <div style="background:#0b0b0b;color:#f4ece1;padding:24px 28px">
+          <strong style="color:#d79525;letter-spacing:.08em">IPC</strong>
+          <h1 style="margin:8px 0 0;font-size:26px">Your payment plan is ready</h1>
+        </div>
+        <div style="padding:28px">
+          <p>Hello {safe_name},</p>
+          <p>Please review and accept your IPC bursary payment plan in your secure payment portal.</p>
+          <div style="background:#f4ece1;padding:16px 18px;margin:20px 0">
+            <p style="margin:0 0 6px"><strong>Application reference:</strong> {safe_reference}</p>
+            <p style="margin:0 0 6px"><strong>Modules:</strong> {safe_modules}</p>
+            <p style="margin:0 0 6px"><strong>Total payable:</strong> {amount_text}</p>
+            <p style="margin:0"><strong>Deposit:</strong> {deposit_text}</p>
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
+            <thead><tr style="background:#171411;color:white"><th style="padding:9px 10px;text-align:left">Payment</th><th style="padding:9px 10px;text-align:left">Amount</th><th style="padding:9px 10px;text-align:left">Due date</th></tr></thead>
+            <tbody>{rows}</tbody>
+          </table>
+          <div style="border-left:4px solid #d79525;padding:12px 16px;margin:20px 0">
+            <strong>Payment portal login</strong><br>{safe_login}
+          </div>
+          {access_button}
+          <p><a href="{safe_portal_url}" style="display:inline-block;background:#171411;color:#ffffff;padding:12px 20px;text-decoration:none;font-weight:700">Open payment portal</a></p>
+          <p style="font-size:13px;color:#655d55">For security, no password has been generated or sent by email.</p>
+          <p>Kind regards,<br>Institute of Project Controls</p>
+        </div>
+      </div>
+    """
+    return _send_mime_message(
+        recipient=recipient,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+    )
+
+
 def send_membership_refusal_email(
     *, recipient, name, application_reference, membership_grade, reason
 ):

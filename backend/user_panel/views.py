@@ -21,6 +21,7 @@ from clubs.models import ClubPageContent
 from events.models import EventRegistration
 from ipc_backend.validators import clean_text, validate_upload
 from scholarships.models import BursaryApplication
+from scholarships.serializers import BursaryPaymentPlanPublicSerializer
 
 from .models import (
     AwardNomination, AwardNominationDocument, Club, ClubMembership, ClubMessage, DiscussionCategory,
@@ -224,13 +225,14 @@ class ScholarshipViewSet(SearchViewSet):
         ).values_list("application_reference", flat=True)
         return BursaryApplication.objects.filter(
             Q(submitted_by=request.user)
+            | Q(payment_plan__portal_user=request.user)
             | Q(membership_reference__in=membership_references)
             | Q(email__iexact=request.user.email),
         ).distinct()
 
     @action(detail=False, methods=["get"], url_path="my-applications")
     def my_applications(self, request):
-        bursary_applications = self.owned_bursary_applications(request)
+        bursary_applications = self.owned_bursary_applications(request).select_related("payment_plan")
         items = [
             {
                 "id": f"bursary-{application.pk}",
@@ -242,6 +244,14 @@ class ScholarshipViewSet(SearchViewSet):
                 "status_label": application.get_status_display(),
                 "submitted_at": application.submitted_at,
                 "updated_at": application.updated_at,
+                "payment_plan": (
+                    {
+                        "public_id": str(application.payment_plan.public_id),
+                        "status": application.payment_plan.status,
+                        "amount_payable": application.payment_plan.amount_payable,
+                    }
+                    if hasattr(application, "payment_plan") else None
+                ),
             }
             for application in bursary_applications
         ]
@@ -274,7 +284,7 @@ class ScholarshipViewSet(SearchViewSet):
     )
     def my_application_detail(self, request, application_reference=None):
         application = get_object_or_404(
-            self.owned_bursary_applications(request),
+            self.owned_bursary_applications(request).select_related("payment_plan").prefetch_related("payment_plan__installments"),
             application_reference__iexact=application_reference,
         )
         return Response({
@@ -323,6 +333,10 @@ class ScholarshipViewSet(SearchViewSet):
                 "pathway_fit_reason": application.pathway_fit_reason,
                 "additional_review_information": application.additional_review_information,
             },
+            "payment_plan": (
+                BursaryPaymentPlanPublicSerializer(application.payment_plan).data
+                if hasattr(application, "payment_plan") else None
+            ),
         })
 
 

@@ -56,6 +56,76 @@ export type BursaryStatus =
   | "approved"
   | "rejected";
 
+export type BursaryPaymentPlanStatus =
+  | "draft"
+  | "offered"
+  | "accepted"
+  | "deposit_pending"
+  | "active"
+  | "past_due"
+  | "completed"
+  | "cancelled"
+  | "expired";
+
+export interface BursaryPaymentInstallment {
+  id: number;
+  sequence: number;
+  kind: "deposit" | "installment";
+  amount: string;
+  due_date: string;
+  status: string;
+  paid_at: string | null;
+  stripe_invoice_id: string;
+  stripe_hosted_invoice_url: string;
+  failure_message: string;
+}
+
+export interface BursaryPaymentPlan {
+  public_id: string;
+  application_reference: string;
+  applicant_name: string;
+  applicant_email: string;
+  status: BursaryPaymentPlanStatus;
+  currency: "GBP";
+  approved_modules: string[];
+  start_date_and_cohorts: string;
+  study_duration_months: number | null;
+  amount_payable: string;
+  deposit_amount: string;
+  installment_count: number;
+  installment_amount: string;
+  final_installment_amount: string;
+  first_installment_date: string | null;
+  scheduled_total: string;
+  offer_expires_at: string | null;
+  offered_at: string | null;
+  accepted_at: string | null;
+  terms_version: string;
+  stripe_configured: boolean;
+  portal_login_email: string | null;
+  offer_email_sent_at: string | null;
+  offer_email_message_id?: string;
+  offer_email_error?: string;
+  stripe_checkout_session_id?: string;
+  stripe_subscription_schedule_id?: string;
+  last_stripe_error?: string;
+  installments: BursaryPaymentInstallment[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BursaryPaymentPlanInput {
+  approved_modules: string[];
+  start_date_and_cohorts: string;
+  study_duration_months: number | null;
+  amount_payable: string;
+  deposit_amount: string;
+  installment_count: number;
+  installment_amount: string;
+  first_installment_date: string | null;
+  offer_expires_at: string | null;
+}
+
 export interface BursarySubmissionResponse {
   id: number;
   applicationReference: string;
@@ -263,5 +333,48 @@ export const bursaryApi = {
       `/api/admin/bursary-applications/${id}/notes`,
       { reviewer_internal_notes },
       { method: "PATCH", requestSource: "AdminBursaryNotes" },
+    ),
+  getPaymentPlan: (id: number, signal?: AbortSignal) =>
+    apiJson<{ payment_plan: BursaryPaymentPlan | null; defaults: { approved_modules: string[]; amount_payable: string } }>(
+      `/api/admin/bursary-applications/${id}/payment-plan`,
+      undefined,
+      { signal, cache: "no-store", requestSource: "AdminBursaryPaymentPlan" },
+    ),
+  savePaymentPlan: (id: number, payload: BursaryPaymentPlanInput) =>
+    apiJson<BursaryPaymentPlan>(
+      `/api/admin/bursary-applications/${id}/payment-plan`,
+      payload,
+      { method: "PUT", requestSource: "AdminBursaryPaymentPlan" },
+    ),
+  offerPaymentPlan: (id: number) =>
+    apiJson<BursaryPaymentPlan>(
+      `/api/admin/bursary-applications/${id}/payment-plan/offer`,
+      {},
+      { requestSource: "AdminBursaryPaymentPlan" },
+    ),
+};
+
+export const bursaryPaymentApi = {
+  list: (signal?: AbortSignal) =>
+    apiJson<{ plans: BursaryPaymentPlan[] }>("/api/payment-portal", undefined, {
+      signal,
+      cache: "no-store",
+      requestSource: "PaymentPortal",
+    }),
+  detail: (publicId: string, signal?: AbortSignal) =>
+    apiJson<BursaryPaymentPlan>(`/api/bursary-payment-plans/${publicId}`, undefined, {
+      signal,
+      cache: "no-store",
+      requestSource: "BursaryPaymentPlan",
+    }),
+  accept: (publicId: string) =>
+    apiJson<BursaryPaymentPlan>(`/api/bursary-payment-plans/${publicId}/accept`, {
+      terms_accepted: true,
+    }, { requestSource: "BursaryPaymentPlan" }),
+  checkout: (publicId: string) =>
+    apiJson<{ checkout_url: string; session_id: string }>(
+      `/api/bursary-payment-plans/${publicId}/checkout`,
+      {},
+      { requestSource: "BursaryPaymentPlan" },
     ),
 };

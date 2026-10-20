@@ -12,6 +12,7 @@ export interface AuthUser {
   telephone: string;
   membership_active: boolean;
   membership_grade: string | null;
+  has_payment_portal: boolean;
 }
 
 export interface AuthResponse {

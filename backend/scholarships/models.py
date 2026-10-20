@@ -1,4 +1,5 @@
 from datetime import datetime, timezone as datetime_timezone
+from decimal import Decimal
 from uuid import uuid4
 
 from django.core.exceptions import ValidationError
@@ -538,6 +539,162 @@ class BursaryApplication(models.Model):
 
     def __str__(self):
         return f"{self.application_reference} — {self.first_name} {self.last_name}"
+
+
+class BursaryPaymentPlan(models.Model):
+    """A staff-defined payment offer created after bursary approval."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        OFFERED = "offered", "Offered"
+        ACCEPTED = "accepted", "Accepted"
+        DEPOSIT_PENDING = "deposit_pending", "Deposit pending"
+        ACTIVE = "active", "Active"
+        PAST_DUE = "past_due", "Past due"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
+
+    public_id = models.UUIDField(default=uuid4, unique=True, editable=False)
+    application = models.OneToOneField(
+        BursaryApplication,
+        on_delete=models.PROTECT,
+        related_name="payment_plan",
+    )
+    portal_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="bursary_payment_plans",
+    )
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.DRAFT, db_index=True)
+    currency = models.CharField(max_length=3, default="GBP", editable=False)
+    approved_modules = models.JSONField(default=list)
+    start_date_and_cohorts = models.TextField(blank=True)
+    study_duration_months = models.PositiveSmallIntegerField(null=True, blank=True)
+    amount_payable = models.DecimalField(max_digits=12, decimal_places=2)
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    installment_count = models.PositiveSmallIntegerField(default=0)
+    installment_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    final_installment_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    first_installment_date = models.DateField(null=True, blank=True)
+    offer_expires_at = models.DateTimeField(null=True, blank=True)
+    offered_at = models.DateTimeField(null=True, blank=True, editable=False)
+    accepted_at = models.DateTimeField(null=True, blank=True, editable=False)
+    offer_email_sent_at = models.DateTimeField(null=True, blank=True, editable=False)
+    offer_email_message_id = models.CharField(max_length=255, blank=True, editable=False)
+    offer_email_error = models.TextField(blank=True, editable=False)
+    terms_version = models.CharField(max_length=40, default="IPC-PAY-2026-01")
+    stripe_customer_id = models.CharField(max_length=255, blank=True, db_index=True)
+    stripe_checkout_session_id = models.CharField(max_length=255, blank=True, db_index=True)
+    stripe_product_id = models.CharField(max_length=255, blank=True)
+    stripe_price_id = models.CharField(max_length=255, blank=True)
+    stripe_final_price_id = models.CharField(max_length=255, blank=True)
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, db_index=True)
+    stripe_subscription_schedule_id = models.CharField(max_length=255, blank=True, db_index=True)
+    last_stripe_error = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_bursary_payment_plans",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="updated_bursary_payment_plans",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "first_installment_date"], name="bursary_plan_status_due_idx")]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount_payable__gt=0), name="bursary_plan_amount_positive"),
+            models.CheckConstraint(condition=models.Q(deposit_amount__gte=0), name="bursary_plan_deposit_nonnegative"),
+            models.CheckConstraint(condition=models.Q(installment_amount__gte=0), name="bursary_plan_installment_nonnegative"),
+            models.CheckConstraint(condition=models.Q(final_installment_amount__gte=0), name="bursary_plan_final_nonnegative"),
+        ]
+
+    @property
+    def scheduled_total(self):
+        if not self.installment_count:
+            return self.deposit_amount
+        return self.deposit_amount + self.installment_amount * (self.installment_count - 1) + self.final_installment_amount
+
+    def clean(self):
+        errors = {}
+        if not isinstance(self.approved_modules, list) or any(
+            not isinstance(module, str) or not module.strip() for module in self.approved_modules
+        ):
+            errors["approved_modules"] = "Approved modules must be a list of non-empty names."
+        if self.deposit_amount > self.amount_payable:
+            errors["deposit_amount"] = "The deposit cannot exceed the amount payable."
+        if self.installment_count:
+            if not self.first_installment_date:
+                errors["first_installment_date"] = "Choose the first installment date."
+            if self.installment_amount <= 0 or self.final_installment_amount <= 0:
+                errors["installment_amount"] = "Installment amounts must be greater than zero."
+        elif self.deposit_amount != self.amount_payable:
+            errors["installment_count"] = "A plan without installments must collect the full amount as the deposit."
+        if self.scheduled_total != self.amount_payable:
+            errors["amount_payable"] = "Deposit plus installments must equal the amount payable."
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return f"{self.application.application_reference} payment plan"
+
+
+class BursaryPaymentInstallment(models.Model):
+    class Kind(models.TextChoices):
+        DEPOSIT = "deposit", "Deposit"
+        INSTALLMENT = "installment", "Installment"
+
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        CHECKOUT_PENDING = "checkout_pending", "Checkout pending"
+        PAID = "paid", "Paid"
+        FAILED = "failed", "Failed"
+        PAST_DUE = "past_due", "Past due"
+        CANCELLED = "cancelled", "Cancelled"
+        REFUNDED = "refunded", "Refunded"
+
+    plan = models.ForeignKey(BursaryPaymentPlan, on_delete=models.CASCADE, related_name="installments")
+    sequence = models.PositiveSmallIntegerField()
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    due_date = models.DateField()
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    stripe_invoice_id = models.CharField(max_length=255, blank=True, db_index=True)
+    stripe_hosted_invoice_url = models.URLField(max_length=2000, blank=True)
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True, db_index=True)
+    failure_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sequence"]
+        constraints = [
+            models.UniqueConstraint(fields=["plan", "sequence"], name="unique_bursary_plan_installment"),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="bursary_installment_amount_positive"),
+        ]
+
+
+class StripeWebhookEvent(models.Model):
+    event_id = models.CharField(max_length=255, unique=True)
+    event_type = models.CharField(max_length=120, db_index=True)
+    processed_at = models.DateTimeField(auto_now_add=True)
+    processing_error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-processed_at"]
 
 
 class ScholarshipWinner(models.Model):
