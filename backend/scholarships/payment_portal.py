@@ -144,5 +144,6 @@ def deliver_payment_plan_offer(plan):
         installments=installments,
         login_email=user.email,
         portal_url=payment_portal_url(),
+        password_reset_url=f"{settings.FRONTEND_URL.rstrip('/')}/forgot-password?next=/payments",
         password_setup_url=password_setup_url(user) if not user.has_usable_password() else None,
     )

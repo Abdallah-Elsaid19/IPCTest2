@@ -9,6 +9,7 @@ import { adminApi } from "@/features/admin/adminApi";
 import { notifications } from "@/lib/notifications";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
+import { authPageUrl, safeReturnPath } from "../navigation";
 
 const schema = z
   .object({
@@ -28,7 +29,7 @@ export default function PasswordResetPage() {
   const [showPassword, setShowPassword] = useState(false);
   const uid = params.get("uid") || "";
   const token = params.get("token") || "";
-  const nextPath = params.get("next")?.startsWith("/") ? params.get("next") : null;
+  const nextPath = safeReturnPath(params.get("next"));
   const {
     register,
     handleSubmit,
@@ -42,7 +43,7 @@ export default function PasswordResetPage() {
       notifications.success(
         "Password updated successfully. You can now sign in.",
       );
-      navigate(nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login", { replace: true });
+      navigate(authPageUrl("/login", nextPath), { replace: true });
     } catch (error) {
       notifications.error(
         error instanceof Error
@@ -132,7 +133,7 @@ export default function PasswordResetPage() {
         )}
         <p className="mt-7 text-center text-xs text-white/45">
           <Link
-            to={validLink ? "/login" : "/forgot-password"}
+            to={authPageUrl(validLink ? "/login" : "/forgot-password", nextPath)}
             className="font-bold text-primary-500 hover:text-primary-400"
           >
             {validLink ? "Return to sign in" : "Request a new link"}

@@ -10,6 +10,7 @@ import { notifications } from "@/lib/notifications";
 import { useAuth } from "../AuthContext";
 import SEO from "@/components/seo/SEO";
 import { pageSeo } from "@/config/pageSeo";
+import { authPageUrl, postLoginPath, safeReturnPath } from "../navigation";
 
 const loginSchema = z.object({
   email: z
@@ -29,6 +30,9 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const requestedPath = safeReturnPath(new URLSearchParams(location.search).get("next"))
+    || safeReturnPath((location.state as { from?: string } | null)?.from);
+  const isPaymentPortal = requestedPath?.split(/[?#]/)[0] === "/payments";
   const {
     register,
     handleSubmit,
@@ -44,15 +48,7 @@ export default function Login() {
     try {
       const user = await login(values);
       notifications.signedIn(user.name);
-      const requestedPath = (location.state as { from?: string } | null)?.from;
-      const queryPath = new URLSearchParams(location.search).get("next");
-      const safeQueryPath = queryPath?.startsWith("/") && !queryPath.startsWith("//") ? queryPath : null;
-      const defaultPath = user.is_staff
-        ? "/admin"
-        : user.has_payment_portal && !user.membership_active
-          ? "/payments"
-          : "/home";
-      navigate(requestedPath || safeQueryPath || defaultPath, { replace: true });
+      navigate(postLoginPath(user, requestedPath), { replace: true });
     } catch (error) {
       notifications.error(error instanceof Error ? error.message : "Please try again.");
     } finally {
@@ -85,7 +81,7 @@ export default function Login() {
               Institute of Project Controls
             </Link>
             <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.48em] text-primary-500">
-              Member Portal
+              {isPaymentPortal ? "Payment Portal" : "Member Portal"}
             </span>
           </div>
 
@@ -94,7 +90,9 @@ export default function Login() {
           <div className="mt-6">
             <h1 id="login-title" className="text-4xl font-bold leading-tight tracking-[-0.04em] text-background-50">Sign in</h1>
             <p className="mt-1.5 max-w-md text-base leading-6 text-background-300">
-              Access your membership profile, applications, and professional records.
+              {isPaymentPortal
+                ? "Sign in to review your payment plan, installments, and receipts. Use the login email shown in your payment-plan email."
+                : "Access your membership profile, applications, and professional records."}
             </p>
           </div>
 
@@ -121,7 +119,7 @@ export default function Login() {
             <div>
               <div className="mb-2 flex items-center justify-between gap-4">
                 <label htmlFor="password" className="text-xs font-bold uppercase tracking-wide text-background-300">Password</label>
-                <Link to="/forgot-password" className="text-xs text-background-400 transition-colors hover:text-primary-500">Forgot password?</Link>
+                <Link to={authPageUrl("/forgot-password", requestedPath)} className="text-xs text-background-400 transition-colors hover:text-primary-500">Forgot password?</Link>
               </div>
               <div className="relative">
                 <LockKeyhole size={19} strokeWidth={1.8} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-background-500" aria-hidden="true" />
@@ -166,9 +164,9 @@ export default function Login() {
           </div>
 
           <p className="text-center text-sm text-background-300">
-            Not a member yet?{" "}
-            <Link to="/membership" className="font-semibold text-primary-500 transition-colors hover:text-primary-400">
-              Explore membership
+            {isPaymentPortal ? "Don't have a password? " : "Not a member yet? "}
+            <Link to={isPaymentPortal ? authPageUrl("/forgot-password", requestedPath) : "/membership"} className="font-semibold text-primary-500 transition-colors hover:text-primary-400">
+              {isPaymentPortal ? "Request a secure password link" : "Explore membership"}
             </Link>
           </p>
         </section>

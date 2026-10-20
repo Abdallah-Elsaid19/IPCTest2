@@ -361,6 +361,7 @@ def send_bursary_payment_plan_offer_email(
     installments,
     login_email,
     portal_url,
+    password_reset_url,
     password_setup_url=None,
 ):
     """Send the complete payment offer and secure portal access details."""
@@ -370,6 +371,7 @@ def send_bursary_payment_plan_offer_email(
     safe_login = html.escape(login_email)
     safe_portal_url = html.escape(portal_url, quote=True)
     safe_setup_url = html.escape(password_setup_url or "", quote=True)
+    safe_reset_url = html.escape(password_reset_url, quote=True)
     amount_text = f"£{amount_payable:,.2f}"
     deposit_text = f"£{deposit_amount:,.2f}"
     installment_lines = [
@@ -387,12 +389,19 @@ def send_bursary_payment_plan_offer_email(
     access_instruction = (
         f"Create your password using this secure, single-use link:\n{password_setup_url}\n\n"
         if password_setup_url
-        else "Sign in using your existing IPC password.\n\n"
+        else (
+            "An IPC account already exists for you. Sign in using your existing password.\n"
+            f"If you do not know it, request a secure password link using the login email above:\n{password_reset_url}\n\n"
+        )
     )
     access_button = (
         f'<p><a href="{safe_setup_url}" style="display:inline-block;background:#d79525;color:#0b0b0b;padding:12px 20px;text-decoration:none;font-weight:700">Create password</a></p>'
         if password_setup_url
-        else ""
+        else (
+            "<p>An IPC account already exists for you. Sign in using your existing password.</p>"
+            f'<p>Do not know your password? <a href="{safe_reset_url}">Request a secure password link</a>'
+            " using the login email shown above. The link will be sent to your registered personal email.</p>"
+        )
     )
     subject = f"Your IPC Payment Plan Is Ready — {application_reference}"
     text_body = f"""Hello {name or 'IPC bursary recipient'},

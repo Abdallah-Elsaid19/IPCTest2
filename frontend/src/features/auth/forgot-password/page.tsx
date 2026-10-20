@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LoaderCircle, LockKeyhole, Mail } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 
 import SEO from "@/components/seo/SEO";
@@ -10,6 +10,7 @@ import { AUTH_BACKGROUND_VIDEO } from "@/config/media";
 import { pageSeo } from "@/config/pageSeo";
 import { notifications } from "@/lib/notifications";
 import { authApi } from "../authApi";
+import { authPageUrl, safeReturnPath } from "../navigation";
 
 const schema = z.object({
   email: z.string().trim().min(1, "IPC email address is required").email("Enter a valid IPC email address"),
@@ -18,6 +19,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
+  const [params] = useSearchParams();
+  const nextPath = safeReturnPath(params.get("next"));
+  const isPaymentPortal = nextPath?.split(/[?#]/)[0] === "/payments";
   const [destination, setDestination] = useState("");
   const {
     register,
@@ -27,7 +31,7 @@ export default function ForgotPasswordPage() {
 
   const submit = async ({ email }: FormValues) => {
     try {
-      const response = await authApi.requestPasswordReset(email);
+      const response = await authApi.requestPasswordReset(email, isPaymentPortal ? "/payments" : undefined);
       setDestination(response.destination || "your personal email address");
       notifications.success(response.detail);
     } catch (error) {
@@ -52,7 +56,7 @@ export default function ForgotPasswordPage() {
         <div className="my-7 h-px bg-gradient-to-r from-primary-700 via-primary-500 to-transparent" />
         <h1 className="text-3xl font-black">Forgot your password?</h1>
         <p className="mt-2 text-sm leading-6 text-background-300">
-          Enter your IPC email address. If it matches an active account, we will send a secure reset link to the personal email registered with your membership application.
+          Enter the login email shown in your IPC email. We will send a secure password link to the personal email registered with your account.
         </p>
 
         {destination ? (
@@ -62,7 +66,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit(submit)} className="mt-7 space-y-5" noValidate>
             <div>
-              <label htmlFor="ipc-email" className="mb-2 block text-xs font-bold uppercase tracking-wide text-background-300">IPC email address</label>
+              <label htmlFor="ipc-email" className="mb-2 block text-xs font-bold uppercase tracking-wide text-background-300">Login email address</label>
               <div className="relative">
                 <Mail size={19} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-background-500" aria-hidden="true" />
                 <input
@@ -87,7 +91,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className="mt-7 text-center text-xs text-background-500">
-          <Link to="/login" className="inline-flex items-center gap-2 font-bold text-primary-500 hover:text-primary-400"><ArrowLeft size={14} /> Return to sign in</Link>
+          <Link to={authPageUrl("/login", nextPath)} className="inline-flex items-center gap-2 font-bold text-primary-500 hover:text-primary-400"><ArrowLeft size={14} /> Return to sign in</Link>
         </p>
       </section>
     </main>

@@ -809,6 +809,32 @@ class AdminUserManagementApiTests(APITestCase):
         self.assertIn("&token=", reset_url)
 
     @patch("accounts.user_management.send_password_reset_email")
+    def test_payment_reset_retains_portal_destination(self, send_email):
+        application = self.link_member_application()
+        response = self.client.post(
+            "/api/auth/password-reset/request",
+            {"email": self.member.email, "next": "/payments"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(send_email.call_args.kwargs["recipient"], application.email)
+        query = parse_qs(urlparse(send_email.call_args.kwargs["reset_url"]).query)
+        self.assertEqual(query["next"], ["/payments"])
+
+    @patch("accounts.user_management.send_password_reset_email")
+    def test_reset_rejects_unapproved_redirect_destinations(self, send_email):
+        self.link_member_application()
+        for destination in ["https://example.org", "//example.org", "/admin"]:
+            with self.subTest(destination=destination):
+                response = self.client.post(
+                    "/api/auth/password-reset/request",
+                    {"email": self.member.email, "next": destination},
+                    format="json",
+                )
+                self.assertEqual(response.status_code, 400, response.data)
+        send_email.assert_not_called()
+
+    @patch("accounts.user_management.send_password_reset_email")
     def test_reset_request_rejects_unknown_ipc_email(self, send_email):
         response = self.client.post(
             "/api/auth/password-reset/request",

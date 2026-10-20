@@ -66,10 +66,11 @@ def _personal_reset_email(user):
     return None
 
 
-def _reset_url_for(user):
+def _reset_url_for(user, next_path=None):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    return f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}"
+    suffix = "&next=/payments" if next_path == "/payments" else ""
+    return f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}{suffix}"
 
 
 def _masked_email(email):
@@ -421,6 +422,7 @@ class AdminUserViewSet(ModelViewSet):
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
+    next = serializers.ChoiceField(choices=["/payments"], required=False)
 
     def validate_email(self, value):
         user = User.objects.filter(email__iexact=value.strip(), is_active=True).first()
@@ -459,7 +461,7 @@ class PasswordResetRequestView(APIView):
             send_password_reset_email(
                 recipient=recipient,
                 name=user.get_full_name().strip() or user.get_username(),
-                reset_url=_reset_url_for(user),
+                reset_url=_reset_url_for(user, serializer.validated_data.get("next")),
             )
         except (GraphMailError, ImproperlyConfigured, RequestException):
             return Response(

@@ -12,8 +12,8 @@ export const authApi = {
   me: () => apiJson<{ user: AuthUser | null }>("/api/auth/session"),
   refresh: () => apiJson<void>("/api/auth/refresh", undefined, { method: "POST" }),
   logout: () => apiJson<void>("/api/auth/logout", undefined, { method: "POST" }),
-  requestPasswordReset: (email: string) =>
-    apiJson<PasswordResetRequestResponse>("/api/auth/password-reset/request", { email }),
+  requestPasswordReset: (email: string, next?: "/payments") =>
+    apiJson<PasswordResetRequestResponse>("/api/auth/password-reset/request", { email, ...(next ? { next } : {}) }),
   updateProfile: (payload: FormData) =>
     apiJson<AuthResponse>("/api/auth/me", payload, { method: "PATCH" }),
 };

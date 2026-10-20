@@ -1,6 +1,7 @@
 from datetime import date
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
+from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -130,6 +131,13 @@ class BursaryPaymentPlanApiTests(APITestCase):
         self.assertIsNotNone(plan.offer_email_sent_at)
         self.assertIn("Payment schedule", mail.outbox[-1].body)
         self.assertIn("/payments", mail.outbox[-1].body)
+        html_body = mail.outbox[-1].alternatives[0][0]
+        self.assertIn("Sign in using your existing password", html_body)
+        self.assertIn("/forgot-password?next=/payments", html_body)
+        self.assertIn("Request a secure password link", html_body)
+        self.assertNotIn("Create password</a>", html_body)
+        self.member.refresh_from_db()
+        self.assertTrue(self.member.check_password("test-password"))
 
         self.client.force_authenticate(self.member)
         accept_response = self.client.post(
@@ -170,8 +178,37 @@ class BursaryPaymentPlanApiTests(APITestCase):
         self.assertIn("@", plan.portal_user.email)
         self.assertIn("Create your password", mail.outbox[-1].body)
         self.assertIn("next=/payments", mail.outbox[-1].body)
+        html_body = mail.outbox[-1].alternatives[0][0]
+        self.assertIn("Create password</a>", html_body)
+        self.assertIn("/reset-password?uid=", html_body)
+        self.assertIn("next=/payments", html_body)
 
-        self.client.force_authenticate(plan.portal_user)
+        setup_link = next(
+            line for line in mail.outbox[-1].body.splitlines()
+            if "/reset-password?uid=" in line
+        )
+        query = parse_qs(urlparse(setup_link).query)
+        password_payload = {
+            "uid": query["uid"][0],
+            "token": query["token"][0],
+            "password": "New-Payer-Secure-482!",
+        }
+        self.client.force_authenticate(user=None)
+        confirmation = self.client.post(
+            "/api/auth/password-reset/confirm", password_payload, format="json",
+        )
+        self.assertEqual(confirmation.status_code, 200, confirmation.data)
+        self.assertEqual(self.client.post(
+            "/api/auth/password-reset/confirm", password_payload, format="json",
+        ).status_code, 400)
+        login = self.client.post(
+            "/api/auth/login",
+            {"email": plan.portal_user.email, "password": password_payload["password"]},
+            format="json",
+        )
+        self.assertEqual(login.status_code, 200, login.data)
+        session = self.client.get("/api/auth/session")
+        self.assertTrue(session.data["user"]["has_payment_portal"])
         portal = self.client.get("/api/payment-portal")
         self.assertEqual(portal.status_code, 200, portal.data)
         self.assertEqual(len(portal.data["plans"]), 1)
