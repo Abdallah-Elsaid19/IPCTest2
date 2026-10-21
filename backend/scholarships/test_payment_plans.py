@@ -7,6 +7,7 @@ import stripe
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from applications.models import Application, FormDefinition
@@ -14,7 +15,13 @@ from memberships.models import MembershipGrade
 
 from .models import BursaryApplication, BursaryPaymentInstallment, BursaryPaymentPlan
 from .google_sheets import payment_plan_sheet_values
-from .stripe_payments import _metadata, create_checkout_session, create_installment_schedule
+from .stripe_payments import (
+    _metadata,
+    create_checkout_session,
+    create_installment_schedule,
+    link_invoice_to_installment,
+    mark_invoice_paid,
+)
 from .payment_portal import PaymentPortalAccountError, _create_payment_user
 from .tests import valid_bursary_multipart_payload
 
@@ -478,6 +485,47 @@ class BursaryPaymentPlanApiTests(APITestCase):
         self.assertEqual(checkout_args["mode"], "setup")
         self.assertEqual(checkout_args["payment_method_types"], ["card"])
         self.assertIn("setup_intent_data", checkout_args)
+
+    def test_duplicate_invoice_link_is_consolidated_to_the_first_installment(self):
+        self.client.force_authenticate(self.staff)
+        self.client.put(
+            f"/api/admin/bursary-applications/{self.application.pk}/payment-plan",
+            self.plan_payload(),
+            format="json",
+        )
+        plan = BursaryPaymentPlan.objects.get()
+        plan.stripe_subscription_id = "sub_duplicate_invoice"
+        plan.save(update_fields=["stripe_subscription_id", "updated_at"])
+        first = plan.installments.get(sequence=1)
+        second = plan.installments.get(sequence=2)
+        paid_at = timezone.now()
+        first.stripe_invoice_id = "in_duplicate"
+        first.stripe_hosted_invoice_url = "https://invoice.test/duplicate"
+        first.save(update_fields=["stripe_invoice_id", "stripe_hosted_invoice_url", "updated_at"])
+        second.status = BursaryPaymentInstallment.Status.PAID
+        second.paid_at = paid_at
+        second.stripe_invoice_id = "in_duplicate"
+        second.stripe_hosted_invoice_url = "https://invoice.test/duplicate"
+        second.save(update_fields=[
+            "status", "paid_at", "stripe_invoice_id", "stripe_hosted_invoice_url", "updated_at",
+        ])
+        invoice = {
+            "id": "in_duplicate",
+            "subscription": "sub_duplicate_invoice",
+            "hosted_invoice_url": "https://invoice.test/duplicate",
+        }
+
+        link_invoice_to_installment(invoice)
+        mark_invoice_paid(invoice)
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertEqual(first.status, BursaryPaymentInstallment.Status.PAID)
+        self.assertEqual(first.paid_at, paid_at)
+        self.assertEqual(first.stripe_invoice_id, "in_duplicate")
+        self.assertEqual(second.status, BursaryPaymentInstallment.Status.SCHEDULED)
+        self.assertEqual(second.stripe_invoice_id, "")
+        self.assertEqual(second.stripe_hosted_invoice_url, "")
 
     def payment_plan_url(self):
         return f"/api/admin/bursary-applications/{self.application.pk}/payment-plan"

@@ -335,19 +335,56 @@ def plan_from_subscription(subscription_id):
     return plan
 
 
-@transaction.atomic
-def link_invoice_to_installment(invoice):
-    """Store Stripe's hosted invoice URL for manual payment in the IPC portal."""
+def _locked_plan_for_invoice(invoice):
+    """Resolve and lock a plan so concurrent invoice webhooks cannot take different rows."""
     plan = plan_from_subscription(_subscription_id(invoice))
     if not plan:
         return None
+    return BursaryPaymentPlan.objects.select_for_update().get(pk=plan.pk)
+
+
+def _link_invoice_to_installment_for_plan(plan, invoice):
     invoice_id = _stripe_value(invoice, "id", "")
     hosted_url = _stripe_value(invoice, "hosted_invoice_url", "") or ""
     installment = None
     if invoice_id:
-        installment = plan.installments.select_for_update().filter(
-            stripe_invoice_id=invoice_id,
-        ).first()
+        matches = list(
+            plan.installments.select_for_update().filter(
+                stripe_invoice_id=invoice_id,
+            ).order_by("sequence", "id")
+        )
+        if matches:
+            installment = matches[0]
+            # Older webhook handling could race invoice.paid against
+            # invoice.finalized and attach the same Stripe invoice to two
+            # installments. Keep the earliest installment and transfer the
+            # payment state before releasing the duplicate row.
+            paid_duplicate = next((
+                item for item in matches[1:]
+                if item.status == BursaryPaymentInstallment.Status.PAID
+            ), None)
+            update_fields = []
+            if paid_duplicate and installment.status != BursaryPaymentInstallment.Status.PAID:
+                installment.status = BursaryPaymentInstallment.Status.PAID
+                installment.paid_at = paid_duplicate.paid_at
+                installment.failure_message = ""
+                update_fields.extend(["status", "paid_at", "failure_message"])
+            if hosted_url and installment.stripe_hosted_invoice_url != hosted_url:
+                installment.stripe_hosted_invoice_url = hosted_url
+                update_fields.append("stripe_hosted_invoice_url")
+            if update_fields:
+                installment.save(update_fields=[*update_fields, "updated_at"])
+
+            for duplicate in matches[1:]:
+                duplicate.stripe_invoice_id = ""
+                duplicate.stripe_hosted_invoice_url = ""
+                duplicate_fields = ["stripe_invoice_id", "stripe_hosted_invoice_url"]
+                if duplicate.status == BursaryPaymentInstallment.Status.PAID:
+                    duplicate.status = BursaryPaymentInstallment.Status.SCHEDULED
+                    duplicate.paid_at = None
+                    duplicate.failure_message = ""
+                    duplicate_fields.extend(["status", "paid_at", "failure_message"])
+                duplicate.save(update_fields=[*duplicate_fields, "updated_at"])
     if installment is None:
         installment = plan.installments.select_for_update().filter(
             kind=BursaryPaymentInstallment.Kind.INSTALLMENT,
@@ -356,7 +393,7 @@ def link_invoice_to_installment(invoice):
             BursaryPaymentInstallment.Status.PAID,
             BursaryPaymentInstallment.Status.CANCELLED,
             BursaryPaymentInstallment.Status.REFUNDED,
-        ]).first()
+        ]).order_by("sequence", "id").first()
     if installment:
         installment.stripe_invoice_id = invoice_id
         installment.stripe_hosted_invoice_url = hosted_url
@@ -367,17 +404,21 @@ def link_invoice_to_installment(invoice):
 
 
 @transaction.atomic
+def link_invoice_to_installment(invoice):
+    """Store Stripe's hosted invoice URL for manual payment in the IPC portal."""
+    plan = _locked_plan_for_invoice(invoice)
+    if not plan:
+        return None
+    return _link_invoice_to_installment_for_plan(plan, invoice)
+
+
+@transaction.atomic
 def mark_invoice_paid(invoice):
-    plan = plan_from_subscription(_subscription_id(invoice))
+    plan = _locked_plan_for_invoice(invoice)
     if not plan:
         return None
     invoice_id = _stripe_value(invoice, "id", "")
-    if invoice_id and plan.installments.filter(
-        stripe_invoice_id=invoice_id,
-        status=BursaryPaymentInstallment.Status.PAID,
-    ).exists():
-        return plan
-    installment = link_invoice_to_installment(invoice)
+    installment = _link_invoice_to_installment_for_plan(plan, invoice)
     if installment is None:
         installment = plan.installments.select_for_update().filter(
             kind=BursaryPaymentInstallment.Kind.INSTALLMENT,
@@ -386,7 +427,7 @@ def mark_invoice_paid(invoice):
             BursaryPaymentInstallment.Status.REFUNDED,
             BursaryPaymentInstallment.Status.CANCELLED,
         ]).first()
-    if installment:
+    if installment and installment.status != BursaryPaymentInstallment.Status.PAID:
         installment.status = BursaryPaymentInstallment.Status.PAID
         installment.paid_at = timezone.now()
         installment.stripe_invoice_id = invoice_id
@@ -403,10 +444,10 @@ def mark_invoice_paid(invoice):
 
 @transaction.atomic
 def mark_invoice_failed(invoice):
-    plan = plan_from_subscription(_subscription_id(invoice))
+    plan = _locked_plan_for_invoice(invoice)
     if not plan:
         return None
-    installment = link_invoice_to_installment(invoice)
+    installment = _link_invoice_to_installment_for_plan(plan, invoice)
     if installment is None:
         installment = plan.installments.select_for_update().filter(
             kind=BursaryPaymentInstallment.Kind.INSTALLMENT,
