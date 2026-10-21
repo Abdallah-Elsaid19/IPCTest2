@@ -449,7 +449,8 @@ PAYMENT_PLAN_BASE_HEADERS = [
     "Start Date and Cohorts",
     "Estimated amount applicant pays (GBP)",
     "Duration of Study",
-    "Monthly installment (GBP)",
+    "Payment frequency",
+    "Installment amount (GBP)",
     "Deposit (GBP)",
     "Plan status",
     "Amount paid (GBP)",
@@ -512,6 +513,7 @@ def payment_plan_sheet_values(plans):
             plan.start_date_and_cohorts,
             float(plan.amount_payable),
             f"{plan.study_duration_months} months" if plan.study_duration_months else "",
+            plan.get_billing_interval_display() if plan.installment_count else "",
             float(plan.installment_amount) if plan.installment_count else "",
             float(plan.deposit_amount),
             plan.get_status_display(),
@@ -547,7 +549,7 @@ def sync_bursary_payment_plan_sheet():
     ).execute()
     currency_headers = {
         "Estimated amount applicant pays (GBP)",
-        "Monthly installment (GBP)",
+        "Installment amount (GBP)",
         "Deposit (GBP)",
         "Amount paid (GBP)",
         "Balance remaining (GBP)",

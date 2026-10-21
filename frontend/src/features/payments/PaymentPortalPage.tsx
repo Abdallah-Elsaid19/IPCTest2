@@ -17,6 +17,13 @@ const date = (value: string | null) =>
     ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value))
     : "—";
 
+const billingIntervalLabels: Record<BursaryPaymentPlan["billing_interval"], string> = {
+  day: "Daily",
+  week: "Weekly",
+  month: "Monthly",
+  year: "Yearly",
+};
+
 export default function PaymentPortalPage() {
   const [plans, setPlans] = useState<BursaryPaymentPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +102,7 @@ export default function PaymentPortalPage() {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-7 sm:py-12">
         <div className="mb-8 flex items-start gap-4">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary-500"><LockKeyhole size={22} /></span>
-          <div><p className="text-xs font-black uppercase tracking-[.2em] text-primary-800">Private account</p><h1 className="mt-1 text-3xl font-black">Your payment plans</h1><p className="mt-2 text-sm text-[#756B61]">Review your agreement, pay the deposit, and open each monthly Stripe invoice securely.</p></div>
+          <div><p className="text-xs font-black uppercase tracking-[.2em] text-primary-800">Private account</p><h1 className="mt-1 text-3xl font-black">Your payment plans</h1><p className="mt-2 text-sm text-[#756B61]">Review your agreement, pay the deposit, and track your automatic Stripe payments securely.</p></div>
         </div>
 
         {error && <p className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
@@ -113,7 +120,7 @@ export default function PaymentPortalPage() {
                 <dl className="grid gap-3 sm:grid-cols-4">
                   <Metric label="Total payable" value={money(plan.amount_payable)} />
                   <Metric label="Deposit" value={money(plan.deposit_amount)} />
-                  <Metric label="Monthly payments" value={String(plan.installment_count)} />
+                  <Metric label="Payment schedule" value={plan.installment_count ? `${plan.installment_count} × ${billingIntervalLabels[plan.billing_interval].toLowerCase()}` : "Single payment"} />
                   <Metric label="First installment" value={date(plan.first_installment_date)} />
                 </dl>
                 {plan.start_date_and_cohorts && <div className="mt-5 rounded-2xl bg-[#F7F1E9] p-5"><p className="text-xs font-black uppercase tracking-wider text-[#887C70]">Study dates and cohorts</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6">{plan.start_date_and_cohorts}</p></div>}

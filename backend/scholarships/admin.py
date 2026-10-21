@@ -26,9 +26,9 @@ class BursaryPaymentInstallmentInline(admin.TabularInline):
 class BursaryPaymentPlanAdmin(admin.ModelAdmin):
     list_display = (
         "application", "portal_user", "status", "amount_payable", "deposit_amount",
-        "installment_count", "first_installment_date", "offer_email_sent_at",
+        "installment_count", "billing_interval", "first_installment_date", "offer_email_sent_at",
     )
-    list_filter = ("status",)
+    list_filter = ("status", "billing_interval")
     search_fields = ("application__application_reference", "application__first_name", "application__last_name", "application__email")
     readonly_fields = (
         "public_id", "offered_at", "accepted_at", "offer_email_sent_at",

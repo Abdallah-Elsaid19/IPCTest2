@@ -555,6 +555,12 @@ class BursaryPaymentPlan(models.Model):
         CANCELLED = "cancelled", "Cancelled"
         EXPIRED = "expired", "Expired"
 
+    class BillingInterval(models.TextChoices):
+        DAY = "day", "Daily"
+        WEEK = "week", "Weekly"
+        MONTH = "month", "Monthly"
+        YEAR = "year", "Yearly"
+
     public_id = models.UUIDField(default=uuid4, unique=True, editable=False)
     application = models.OneToOneField(
         BursaryApplication,
@@ -576,6 +582,11 @@ class BursaryPaymentPlan(models.Model):
     amount_payable = models.DecimalField(max_digits=12, decimal_places=2)
     deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     installment_count = models.PositiveSmallIntegerField(default=0)
+    billing_interval = models.CharField(
+        max_length=5,
+        choices=BillingInterval.choices,
+        default=BillingInterval.MONTH,
+    )
     installment_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     final_installment_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     first_installment_date = models.DateField(null=True, blank=True)

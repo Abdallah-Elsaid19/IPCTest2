@@ -1,7 +1,6 @@
 import calendar
-from datetime import datetime, time, timedelta, timezone as datetime_timezone
+from datetime import datetime, time, timezone as datetime_timezone
 from decimal import Decimal
-from types import SimpleNamespace
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -65,7 +64,7 @@ def _ensure_customer(plan):
 
 
 def create_checkout_session(plan):
-    """Collect the deposit (or a mandate for a zero-deposit plan) in Checkout."""
+    """Collect the deposit and save a payment method for automatic installments."""
     stripe = stripe_client()
     customer_id = _ensure_customer(plan)
     metadata = _plan_metadata(plan)
@@ -74,33 +73,35 @@ def create_checkout_session(plan):
     description = f"IPC payment plan {plan.application.application_reference}"
 
     if plan.deposit_amount <= 0:
-        schedule = create_installment_schedule(plan)
-        plan.status = BursaryPaymentPlan.Status.ACTIVE
-        plan.last_stripe_error = ""
-        plan.save(update_fields=["status", "last_stripe_error", "updated_at"])
-        return SimpleNamespace(
-            id=schedule.id if schedule else plan.stripe_subscription_schedule_id,
-            url=f"{settings.FRONTEND_URL}/payments?setup=success",
-        )
-
-    params = {
-        "mode": "payment",
-        "customer": customer_id,
-        "success_url": success_url,
-        "cancel_url": cancel_url,
-        "metadata": metadata,
-        "payment_intent_data": {
+        params = {
+            "mode": "setup",
+            "customer": customer_id,
+            "success_url": success_url,
+            "cancel_url": cancel_url,
             "metadata": metadata,
-        },
-        "line_items": [{
-            "quantity": 1,
-            "price_data": {
-                "currency": settings.STRIPE_CURRENCY,
-                "unit_amount": to_minor_units(plan.deposit_amount),
-                "product_data": {"name": description},
+            "payment_method_types": ["card"],
+            "setup_intent_data": {"metadata": metadata},
+        }
+    else:
+        params = {
+            "mode": "payment",
+            "customer": customer_id,
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+            "metadata": metadata,
+            "payment_intent_data": {
+                "metadata": metadata,
+                "setup_future_usage": "off_session",
             },
-        }],
-    }
+            "line_items": [{
+                "quantity": 1,
+                "price_data": {
+                    "currency": settings.STRIPE_CURRENCY,
+                    "unit_amount": to_minor_units(plan.deposit_amount),
+                    "product_data": {"name": description},
+                },
+            }],
+        }
 
     session = stripe.checkout.Session.create(
         **params,
@@ -143,7 +144,7 @@ def create_installment_schedule(plan, payment_method_id=None):
     regular_price = stripe.Price.create(
         currency=settings.STRIPE_CURRENCY,
         unit_amount=to_minor_units(plan.installment_amount),
-        recurring={"interval": "month"},
+        recurring={"interval": plan.billing_interval},
         product=product.id,
         metadata=metadata,
         idempotency_key=f"bursary-plan-{plan.pk}-regular-price",
@@ -163,7 +164,7 @@ def create_installment_schedule(plan, payment_method_id=None):
         final_price = stripe.Price.create(
             currency=settings.STRIPE_CURRENCY,
             unit_amount=to_minor_units(plan.final_installment_amount),
-            recurring={"interval": "month"},
+            recurring={"interval": plan.billing_interval},
             product=product.id,
             metadata=metadata,
             idempotency_key=f"bursary-plan-{plan.pk}-final-price",
@@ -174,22 +175,17 @@ def create_installment_schedule(plan, payment_method_id=None):
             "metadata": metadata,
         })
 
-    invoice_date = plan.first_installment_date - timedelta(
-        days=settings.STRIPE_INVOICE_DAYS_UNTIL_DUE,
-    )
-    local_start = datetime.combine(invoice_date, time(hour=12))
+    local_start = datetime.combine(plan.first_installment_date, time(hour=12))
     start_timestamp = int(local_start.replace(tzinfo=datetime_timezone.utc).timestamp())
     now_timestamp = int(timezone.now().timestamp())
+    default_settings = {"collection_method": "charge_automatically"}
+    if payment_method_id:
+        default_settings["default_payment_method"] = payment_method_id
     schedule = stripe.SubscriptionSchedule.create(
         customer=plan.stripe_customer_id,
         start_date=max(start_timestamp, now_timestamp),
         end_behavior="cancel",
-        default_settings={
-            "collection_method": "send_invoice",
-            "invoice_settings": {
-                "days_until_due": settings.STRIPE_INVOICE_DAYS_UNTIL_DUE,
-            },
-        },
+        default_settings=default_settings,
         phases=phases,
         metadata=metadata,
         idempotency_key=f"bursary-plan-{plan.pk}-schedule",

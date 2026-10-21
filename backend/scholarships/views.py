@@ -15,7 +15,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -58,7 +58,7 @@ from .models import (
     ScholarshipWinner,
     StripeWebhookEvent,
 )
-from .payment_portal import deliver_payment_plan_offer
+from .payment_portal import PaymentPortalAccountError, deliver_payment_plan_offer
 from .serializers import (
     AdminScholarshipWinnerSerializer,
     BursaryApplicationDetailSerializer,
@@ -956,6 +956,9 @@ class AdminBursaryApplicationViewSet(
         plan.save(update_fields=["status", "offered_at", "updated_by", "updated_at"])
         try:
             message_id = deliver_payment_plan_offer(plan)
+        except PaymentPortalAccountError as error:
+            # Raise rather than return so the atomic offer/account changes roll back.
+            raise ValidationError({"detail": str(error)}) from error
         except GraphMailError as error:
             plan.offer_email_error = str(error)
             plan.save(update_fields=["offer_email_error", "updated_at"])

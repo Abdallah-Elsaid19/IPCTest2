@@ -93,6 +93,7 @@ export interface BursaryPaymentPlan {
   amount_payable: string;
   deposit_amount: string;
   installment_count: number;
+  billing_interval: "day" | "week" | "month" | "year";
   installment_amount: string;
   final_installment_amount: string;
   first_installment_date: string | null;
@@ -121,6 +122,7 @@ export interface BursaryPaymentPlanInput {
   amount_payable: string;
   deposit_amount: string;
   installment_count: number;
+  billing_interval: "day" | "week" | "month" | "year";
   installment_amount: string;
   first_installment_date: string | null;
   offer_expires_at: string | null;

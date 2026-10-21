@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
+from hashlib import sha256
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -12,12 +13,15 @@ from django.utils.http import urlsafe_base64_encode
 from accounts.graph_mail import send_bursary_payment_plan_offer_email
 from accounts.models import AdminProfile
 from applications.models import Application
-from applications.services.approval import generate_unique_ipc_email
 
 from .models import BursaryPaymentPlan
 
 
 User = get_user_model()
+
+
+class PaymentPortalAccountError(ValueError):
+    """Account identity must be resolved before sending a payment offer."""
 
 
 @dataclass
@@ -65,30 +69,52 @@ def _existing_payment_user(plan):
 
 def _create_payment_user(plan):
     application = plan.application
-    for _attempt in range(100):
-        ipc_email = generate_unique_ipc_email(application.email)
-        try:
-            with transaction.atomic():
-                user = User(
-                    username=ipc_email,
-                    email=ipc_email,
-                    first_name=application.first_name,
-                    last_name=application.last_name,
-                    is_active=True,
-                    is_staff=False,
-                    is_superuser=False,
-                )
-                user.set_unusable_password()
-                user.save()
-                AdminProfile.objects.create(
-                    user=user,
-                    role=AdminProfile.Role.USER,
-                    telephone=application.mobile_phone_e164,
-                )
-            return user
-        except IntegrityError:
-            continue
-    raise IntegrityError("A unique IPC payment portal account could not be created.")
+    email = application.email.strip().lower()
+    # Fail closed for disabled or ambiguous accounts rather than creating a
+    # second identity (login requires exactly one matching active account).
+    matches = list(User.objects.filter(email__iexact=email)[:2])
+    if matches:
+        if len(matches) == 1 and matches[0].is_active:
+            return matches[0]
+        raise PaymentPortalAccountError(
+            "The payment email already belongs to a disabled or duplicate account. "
+            "Review the account before offering the plan."
+        )
+
+    # Django usernames are limited to 150 characters; email logins allow 254.
+    # A deterministic username also protects concurrent creation for this email.
+    username = email if len(email) <= User._meta.get_field("username").max_length else (
+        f"payment-{sha256(email.encode('utf-8')).hexdigest()}"
+    )
+    try:
+        with transaction.atomic():
+            user = User(
+                username=username,
+                email=email,
+                first_name=application.first_name,
+                last_name=application.last_name,
+                is_active=True,
+                is_staff=False,
+                is_superuser=False,
+            )
+            user.set_unusable_password()
+            user.save()
+            AdminProfile.objects.create(
+                user=user,
+                role=AdminProfile.Role.USER,
+                telephone=application.mobile_phone_e164,
+            )
+        return user
+    except IntegrityError as error:
+        # Another offer may have just created this account. Never reuse an
+        # unrelated username or silently change an existing account's email.
+        matches = list(User.objects.filter(email__iexact=email)[:2])
+        if len(matches) == 1 and matches[0].is_active:
+            return matches[0]
+        raise PaymentPortalAccountError(
+            "The payment login conflicts with an existing account. "
+            "Review the account before offering the plan."
+        ) from error
 
 
 @transaction.atomic

@@ -24,6 +24,13 @@ const statusOptions: Array<{ value: BursaryStatus; label: string }> = [
   { value: "rejected", label: "Rejected" },
 ];
 
+const billingIntervalOptions: Array<{ value: BursaryPaymentPlanInput["billing_interval"]; label: string }> = [
+  { value: "day", label: "Daily" },
+  { value: "week", label: "Weekly" },
+  { value: "month", label: "Monthly" },
+  { value: "year", label: "Yearly" },
+];
+
 const finalStatuses = new Set<BursaryStatus>(["approved", "rejected"]);
 
 const allowedStatusOptions = (application: BursaryApplicationDetail) => {
@@ -247,6 +254,7 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
     amount_payable: "",
     deposit_amount: "",
     installment_count: 0,
+    billing_interval: "month",
     installment_amount: "",
     first_installment_date: null,
     offer_expires_at: null,
@@ -265,6 +273,7 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
           amount_payable: amount,
           deposit_amount: payment_plan?.deposit_amount ?? amount,
           installment_count: payment_plan?.installment_count ?? 0,
+          billing_interval: payment_plan?.billing_interval ?? "month",
           installment_amount: payment_plan?.installment_amount ?? "0.00",
           first_installment_date: payment_plan?.first_installment_date ?? null,
           offer_expires_at: payment_plan?.offer_expires_at ?? null,
@@ -365,7 +374,12 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
           <input disabled={!editable} type="number" min="0" max="60" value={form.installment_count} onChange={(event) => update("installment_count", Number(event.target.value))} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
         </label>
         {form.installment_count > 0 && <>
-          <label className="text-sm font-semibold">Regular monthly payment (GBP)
+          <label className="text-sm font-semibold">Payment frequency
+            <select disabled={!editable} value={form.billing_interval} onChange={(event) => update("billing_interval", event.target.value as BursaryPaymentPlanInput["billing_interval"])} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] bg-white px-3 font-normal disabled:bg-[#F4EFE8]">
+              {billingIntervalOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">Regular {billingIntervalOptions.find((option) => option.value === form.billing_interval)?.label.toLowerCase()} payment (GBP)
             <input disabled={!editable} type="number" min="0.01" step="0.01" value={form.installment_amount} onChange={(event) => update("installment_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
           </label>
           <label className="text-sm font-semibold">First installment date

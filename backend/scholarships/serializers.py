@@ -1,7 +1,7 @@
 import base64
 import binascii
 import calendar
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -34,6 +34,16 @@ def add_calendar_months(value, months):
     return date(year, month, min(value.day, calendar.monthrange(year, month)[1]))
 
 
+def add_billing_intervals(value, intervals, billing_interval):
+    if billing_interval == BursaryPaymentPlan.BillingInterval.DAY:
+        return value + timedelta(days=intervals)
+    if billing_interval == BursaryPaymentPlan.BillingInterval.WEEK:
+        return value + timedelta(weeks=intervals)
+    if billing_interval == BursaryPaymentPlan.BillingInterval.YEAR:
+        return add_calendar_months(value, intervals * 12)
+    return add_calendar_months(value, intervals)
+
+
 class BursaryPaymentInstallmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BursaryPaymentInstallment
@@ -59,7 +69,7 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
             "public_id", "application_reference", "applicant_name", "applicant_email",
             "status", "currency", "approved_modules", "start_date_and_cohorts",
             "study_duration_months", "amount_payable", "deposit_amount",
-            "installment_count", "installment_amount", "final_installment_amount",
+            "installment_count", "billing_interval", "installment_amount", "final_installment_amount",
             "first_installment_date", "scheduled_total", "offer_expires_at",
             "offered_at", "accepted_at", "terms_version", "stripe_configured",
             "portal_login_email", "offer_email_sent_at", "offer_email_message_id",
@@ -104,7 +114,7 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
             if not first_date:
                 raise serializers.ValidationError({"first_installment_date": "Choose the first installment date."})
             if regular <= 0:
-                raise serializers.ValidationError({"installment_amount": "Enter a monthly installment greater than zero."})
+                raise serializers.ValidationError({"installment_amount": "Enter a recurring installment greater than zero."})
             final_amount = amount - deposit - regular * (count - 1)
             if final_amount <= 0:
                 raise serializers.ValidationError({
@@ -140,7 +150,7 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
                 sequence=sequence,
                 kind=BursaryPaymentInstallment.Kind.INSTALLMENT,
                 amount=(plan.final_installment_amount if index == plan.installment_count - 1 else plan.installment_amount),
-                due_date=add_calendar_months(plan.first_installment_date, index),
+                due_date=add_billing_intervals(plan.first_installment_date, index, plan.billing_interval),
             ))
             sequence += 1
         BursaryPaymentInstallment.objects.bulk_create(rows)
