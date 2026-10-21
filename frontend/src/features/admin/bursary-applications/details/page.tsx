@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, LoaderCircle, Pencil, Printer, Save, UserCheck, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, LoaderCircle, Mail, Pencil, Printer, Save, UserCheck, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -266,6 +266,26 @@ function ModulePricing({ selectedModules }: { selectedModules: string[] }) {
   );
 }
 
+const paidInstallmentsOf = (plan: BursaryPaymentPlan | null) => (
+  plan && collectingPlanStatuses.has(plan.status)
+    ? plan.installments.filter((item) => item.kind === "installment" && item.status === "paid")
+    : []
+);
+
+// Even split of the unpaid balance in whole cents; the final installment absorbs the remainder.
+const autoInstallmentCents = (form: BursaryPaymentPlanInput, paidTotal: number, paidCount: number) => {
+  const remaining = form.installment_count - paidCount;
+  const balanceCents = Math.round((Number(form.amount_payable || 0) - Number(form.deposit_amount || 0) - paidTotal) * 100);
+  return remaining > 0 ? Math.floor(balanceCents / remaining) : 0;
+};
+
+const hasManualInstallment = (plan: BursaryPaymentPlan | null) => {
+  if (!plan?.installment_count) return false;
+  const paid = paidInstallmentsOf(plan);
+  const paidTotal = paid.reduce((total, item) => total + Number(item.amount), 0);
+  return Math.round(Number(plan.installment_amount) * 100) !== autoInstallmentCents(planForm(plan), paidTotal, paid.length);
+};
+
 function PaymentPlanBuilder({ application }: { application: BursaryApplicationDetail }) {
   const [plan, setPlan] = useState<BursaryPaymentPlan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -273,6 +293,7 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
   const [offering, setOffering] = useState(false);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
+  const [manualRegular, setManualRegular] = useState(false);
   const [form, setForm] = useState<BursaryPaymentPlanInput>(() => planForm(null));
 
   useEffect(() => {
@@ -281,6 +302,7 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
       .then(({ payment_plan, defaults }) => {
         setPlan(payment_plan);
         setForm(planForm(payment_plan, defaults));
+        setManualRegular(hasManualInstallment(payment_plan));
       })
       .catch((reason) => {
         if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Could not load the payment plan.");
@@ -293,15 +315,17 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
 
   const amount = Number(form.amount_payable || 0);
   const deposit = Number(form.deposit_amount || 0);
-  const regular = Number(form.installment_amount || 0);
   const collecting = Boolean(plan && collectingPlanStatuses.has(plan.status));
-  const paidInstallments = collecting
-    ? (plan?.installments ?? []).filter((item) => item.kind === "installment" && item.status === "paid")
-    : [];
+  const paidInstallments = paidInstallmentsOf(plan);
   const paidTotal = paidInstallments.reduce((total, item) => total + Number(item.amount), 0);
   const remaining = form.installment_count - paidInstallments.length;
-  const finalInstallment = form.installment_count > 0
-    ? amount - deposit - paidTotal - regular * (remaining - 1)
+  const balanceCents = Math.round((amount - deposit - paidTotal) * 100);
+  const regularCents = manualRegular
+    ? Math.round(Number(form.installment_amount || 0) * 100)
+    : autoInstallmentCents(form, paidTotal, paidInstallments.length);
+  const regular = regularCents / 100;
+  const finalInstallment = form.installment_count > 0 && remaining > 0
+    ? (balanceCents - regularCents * (remaining - 1)) / 100
     : 0;
   const validTotal = amount > 0 && deposit >= 0 && deposit <= amount && (
     form.installment_count === 0
@@ -319,9 +343,13 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
     setSaving(true);
     setError("");
     try {
-      const saved = await bursaryApi.savePaymentPlan(application.id, form);
+      const saved = await bursaryApi.savePaymentPlan(application.id, {
+        ...form,
+        installment_amount: form.installment_count > 0 ? regular.toFixed(2) : "0.00",
+      });
       setPlan(saved);
       setForm(planForm(saved));
+      setManualRegular(hasManualInstallment(saved));
       setEditing(false);
       notifications.success(collectingPlanStatuses.has(saved.status)
         ? "Payment plan updated and the Stripe schedule replaced."
@@ -412,7 +440,10 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
             </select>
           </label>
           <label className="text-sm font-semibold">Regular {billingIntervalOptions.find((option) => option.value === form.billing_interval)?.label.toLowerCase()} payment ({form.currency})
-            <input disabled={!editable} type="number" min="0.01" step="0.01" value={form.installment_amount} onChange={(event) => update("installment_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+            <input disabled={!editable} type="number" min="0.01" step="0.01" value={manualRegular ? form.installment_amount : regular > 0 ? regular.toFixed(2) : ""} onChange={(event) => { setManualRegular(true); update("installment_amount", event.target.value); }} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+            {editable && (manualRegular
+              ? <button type="button" onClick={() => setManualRegular(false)} className="mt-1 text-xs font-semibold text-primary-800 underline">Calculate automatically</button>
+              : <span className="mt-1 block text-xs font-normal text-[#756B61]">Calculated automatically; type a value to override it.</span>)}
           </label>
           <label className="text-sm font-semibold">{collecting ? "Next installment date" : "First installment date"}
             <input disabled={!editable} type="date" value={form.first_installment_date ?? ""} onChange={(event) => update("first_installment_date", event.target.value || null)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
@@ -429,7 +460,7 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
       </div>
       {plan?.installments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[#F3EBE1] text-[10px] uppercase tracking-wider text-[#6F655B]"><tr><th className="px-3 py-2">Payment</th><th className="px-3 py-2">Due</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Status</th></tr></thead><tbody className="divide-y divide-[#E8DED2]">{plan.installments.map((item) => <tr key={item.id}><td className="px-3 py-2 capitalize">{item.kind === "deposit" ? "Deposit" : `Installment ${item.sequence}`}</td><td className="px-3 py-2">{formatDate(item.due_date)}</td><td className="px-3 py-2 font-semibold">{money(item.amount)}</td><td className="px-3 py-2"><StatusBadge status={item.status} /></td></tr>)}</tbody></table></div> : null}
       {editing && <div className="mt-5 flex flex-wrap justify-end gap-3">
-        <button type="button" disabled={saving} onClick={() => { setEditing(false); setForm(planForm(plan)); setError(""); }} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">Cancel</button>
+        <button type="button" disabled={saving} onClick={() => { setEditing(false); setForm(planForm(plan)); setManualRegular(hasManualInstallment(plan)); setError(""); }} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">Cancel</button>
         <button type="button" disabled={saving || !validTotal} onClick={() => void save()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black disabled:opacity-50">{saving && <LoaderCircle size={15} className="animate-spin" />} Save changes</button>
       </div>}
       {editable && !editing && <div className="mt-5 flex flex-wrap justify-end gap-3">
@@ -454,6 +485,7 @@ export default function AdminBursaryApplicationDetailsPage() {
   const [nextStatus, setNextStatus] = useState<BursaryStatus>("under_review");
   const [statusReason, setStatusReason] = useState("");
   const [isSavingStatus, setIsSavingStatus] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [notes, setNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const statusLock = useRef(false);
@@ -491,6 +523,19 @@ export default function AdminBursaryApplicationDetailsPage() {
     setNextStatus(availableStatuses[0].value);
     setStatusReason("");
     setShowStatusModal(true);
+  };
+
+  const resendInformationRequest = async () => {
+    if (!application) return;
+    setIsResending(true);
+    try {
+      const { recipients } = await bursaryApi.resendInformationRequest(application.id);
+      notifications.success(`Information request resent to ${recipients.join(", ")}.`);
+    } catch (requestError) {
+      notifications.error(requestError instanceof Error ? requestError.message : "Could not resend the information request.");
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const updateStatus = async (assignToMe = false) => {
@@ -550,6 +595,9 @@ export default function AdminBursaryApplicationDetailsPage() {
         <div className="flex flex-wrap gap-2 print:hidden">
           {!isFinalStatus && !application.assigned_reviewer && user?.id && (
             <button type="button" onClick={() => void updateStatus(true)} disabled={isSavingStatus} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold hover:border-primary-500"><UserCheck size={15} /> Assign to me</button>
+          )}
+          {application.status === "needs_information" && (
+            <button type="button" onClick={() => void resendInformationRequest()} disabled={isResending} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold hover:border-primary-500 disabled:opacity-50">{isResending ? <LoaderCircle size={15} className="animate-spin" /> : <Mail size={15} />} Resend information request</button>
           )}
           <button type="button" onClick={() => window.print()} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold hover:border-primary-500"><Printer size={15} /> Print summary</button>
           {availableStatuses.length > 0 && (

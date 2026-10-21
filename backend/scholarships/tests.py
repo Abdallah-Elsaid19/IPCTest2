@@ -1505,6 +1505,33 @@ class BursaryApplicationApiTests(APITestCase):
         )
 
     @patch("scholarships.views.send_graph_bursary_needs_information_email")
+    def test_staff_can_resend_information_request_to_updated_email(self, send_information_email):
+        created = self.submit_bursary()
+        application_id = created.data["id"]
+        self.client.force_authenticate(self.staff)
+        resend_url = f"/api/admin/bursary-applications/{application_id}/resend-information-request"
+        self.assertEqual(self.client.post(resend_url).status_code, 409)
+
+        request_message = "Please upload a copy of your ID."
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.patch(
+                f"/api/admin/bursary-applications/{application_id}/status",
+                {"status": BursaryApplication.Status.NEEDS_INFORMATION, "internal_reason": request_message},
+                format="json",
+            )
+        BursaryApplication.objects.filter(pk=application_id).update(email="new.address@example.com")
+        send_information_email.reset_mock()
+
+        response = self.client.post(resend_url)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIn("new.address@example.com", response.data["recipients"])
+        self.assertNotIn("amina@example.com", response.data["recipients"])
+        sent_to = {call.kwargs["recipient"] for call in send_information_email.call_args_list}
+        self.assertEqual(sent_to, set(response.data["recipients"]))
+        self.assertTrue(all(call.kwargs["message"] == request_message for call in send_information_email.call_args_list))
+
+    @patch("scholarships.views.send_graph_bursary_needs_information_email")
     def test_needs_information_reopens_same_application_once_and_resubmits_under_review(self, send_information_email):
         created = self.submit_bursary()
         self.assertEqual(created.status_code, 201, created.data)

@@ -342,6 +342,12 @@ export const bursaryApi = {
       payload,
       { method: "PATCH", requestSource: "AdminBursaryStatus" },
     ),
+  resendInformationRequest: (id: number) =>
+    apiJson<{ recipients: string[] }>(
+      `/api/admin/bursary-applications/${id}/resend-information-request`,
+      {},
+      { requestSource: "AdminBursaryResendInformationRequest" },
+    ),
   updateNotes: (id: number, reviewer_internal_notes: string) =>
     apiJson<BursaryApplicationDetail>(
       `/api/admin/bursary-applications/${id}/notes`,

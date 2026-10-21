@@ -260,6 +260,23 @@ def deliver_bursary_needs_information_email(application_id, message, recipient):
         )
 
 
+def needs_information_recipients(application):
+    """The applicant's email plus the emails of any IPC accounts linked to the application."""
+    account_emails = []
+    if application.submitted_by and application.submitted_by.email:
+        account_emails.append(application.submitted_by.email)
+    if application.membership_reference:
+        account_emails.extend(get_user_model().objects.filter(
+            Q(
+                membership_application__application_reference__iexact=application.membership_reference
+            )
+            | Q(
+                membership_applications__application_reference__iexact=application.membership_reference
+            )
+        ).exclude(email="").values_list("email", flat=True).distinct())
+    return list(dict.fromkeys([application.email, *account_emails]))
+
+
 def create_bursary_status_notifications(application, rejection_reason=""):
     linked_applications = Application.objects.filter(
         application_reference__iexact=application.membership_reference,
@@ -1111,23 +1128,7 @@ class AdminBursaryApplicationViewSet(
                         deliver_bursary_rejection_email(application_id, reason)
             )
             if new_status == BursaryApplication.Status.NEEDS_INFORMATION:
-                account_emails = []
-                if application.submitted_by and application.submitted_by.email:
-                    account_emails.append(application.submitted_by.email)
-                if application.membership_reference:
-                    account_emails.extend(get_user_model().objects.filter(
-                        Q(
-                            membership_application__application_reference__iexact=application.membership_reference
-                        )
-                        | Q(
-                            membership_applications__application_reference__iexact=application.membership_reference
-                        )
-                    ).exclude(email="").values_list("email", flat=True).distinct())
-                email_recipients = list(dict.fromkeys([
-                    application.email,
-                    *account_emails,
-                ]))
-                for recipient in email_recipients:
+                for recipient in needs_information_recipients(application):
                     transaction.on_commit(
                         lambda application_id=application.pk, message=internal_reason, email=recipient:
                             deliver_bursary_needs_information_email(application_id, message, email)
@@ -1136,6 +1137,40 @@ class AdminBursaryApplicationViewSet(
             application,
             context={"request": request},
         ).data)
+
+    @action(detail=True, methods=["post"], url_path="resend-information-request")
+    def resend_information_request(self, request, pk=None):
+        application = self.get_object()
+        if application.status != BursaryApplication.Status.NEEDS_INFORMATION:
+            return Response(
+                {"detail": "Only applications that need information can have the request resent."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        request_entry = application.status_history.filter(
+            new_status=BursaryApplication.Status.NEEDS_INFORMATION,
+        ).order_by("-pk").first()
+        recipients = needs_information_recipients(application)
+        try:
+            # Sent now rather than on commit so staff see a delivery failure.
+            for recipient in recipients:
+                send_graph_bursary_needs_information_email(
+                    recipient=recipient,
+                    name=application.preferred_name.strip() or application.first_name,
+                    application_reference=application.application_reference,
+                    edit_token=make_bursary_edit_token(application),
+                    pathway=application.get_bursary_selection_display(),
+                    message=request_entry.internal_reason if request_entry else "",
+                )
+        except GraphMailError:
+            logger.exception(
+                "Microsoft Graph could not resend the bursary information-request email for application %s.",
+                application.application_reference,
+            )
+            return Response(
+                {"detail": "The email could not be sent. Check the email configuration and try again."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"recipients": recipients})
 
     @action(detail=True, methods=["patch"], url_path="notes")
     def update_notes(self, request, pk=None):
