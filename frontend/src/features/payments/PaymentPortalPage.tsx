@@ -24,7 +24,7 @@ const billingIntervalLabels: Record<BursaryPaymentPlan["billing_interval"], stri
   year: "Yearly",
 };
 
-export default function PaymentPortalPage() {
+export default function PaymentPortalPage({ embedded = false }: { embedded?: boolean }) {
   const [plans, setPlans] = useState<BursaryPaymentPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
@@ -85,8 +85,8 @@ export default function PaymentPortalPage() {
   };
 
   return (
-    <main className="min-h-[100svh] bg-[#F4ECE1] text-[#221E1A]">
-      <header className="border-b border-white/10 bg-[#0B0B0B] text-white">
+    <main className={embedded ? "text-[#221E1A]" : "min-h-[100svh] bg-[#F4ECE1] text-[#221E1A]"}>
+      {!embedded && <header className="border-b border-white/10 bg-[#0B0B0B] text-white">
         <div className="mx-auto flex min-h-20 max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-7">
           <div className="flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary-500 font-black text-black">IPC</span>
@@ -97,9 +97,9 @@ export default function PaymentPortalPage() {
             <button type="button" onClick={() => void signOut()} className="grid h-11 w-11 place-items-center rounded-xl border border-white/15 text-white/70 hover:text-white" aria-label="Sign out"><LogOut size={18} /></button>
           </div>
         </div>
-      </header>
+      </header>}
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-7 sm:py-12">
+      <div className={embedded ? "mx-auto max-w-6xl" : "mx-auto max-w-6xl px-4 py-8 sm:px-7 sm:py-12"}>
         <div className="mb-8 flex items-start gap-4">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary-500"><LockKeyhole size={22} /></span>
           <div><p className="text-xs font-black uppercase tracking-[.2em] text-primary-800">Private account</p><h1 className="mt-1 text-3xl font-black">Your payment plans</h1><p className="mt-2 text-sm text-[#756B61]">Review your agreement, pay the deposit, and track your automatic Stripe payments securely.</p></div>

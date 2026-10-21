@@ -126,6 +126,7 @@ const routes: RouteObject[] = [
       { path: "scholarships", element: <DirectoryPage kind="scholarships" /> },
       { path: "scholarships/:id", element: <DirectoryPage kind="scholarships" /> },
       { path: "scholarships/:id/apply", element: <DirectoryPage kind="scholarships" /> },
+      { path: "payments", element: <PaymentPortalPage embedded /> },
       { path: "awards", element: <RecordsPage kind="awards" /> },
       { path: "awards/explore", element: <DirectoryPage kind="awards" /> },
       { path: "awards/:id", element: <DirectoryPage kind="awards" /> },
