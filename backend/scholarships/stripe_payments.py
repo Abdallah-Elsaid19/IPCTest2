@@ -33,11 +33,18 @@ def _stripe_value(value, key, default=None):
         return default
     if isinstance(value, dict):
         return value.get(key, default)
+    to_dict = getattr(value, "to_dict", None)
+    if callable(to_dict):
+        return to_dict().get(key, default)
     return getattr(value, key, default)
 
 
 def _metadata(value):
-    return _stripe_value(value, "metadata", {}) or {}
+    metadata = _stripe_value(value, "metadata", {}) or {}
+    if isinstance(metadata, dict):
+        return metadata
+    to_dict = getattr(metadata, "to_dict", None)
+    return to_dict() if callable(to_dict) else {}
 
 
 def _plan_metadata(plan):

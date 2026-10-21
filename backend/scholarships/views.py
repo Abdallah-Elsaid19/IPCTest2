@@ -1224,6 +1224,9 @@ class StripeWebhookView(APIView):
             return Response({"received": True, "duplicate": True})
 
         obj = event["data"]["object"]
+        to_dict = getattr(obj, "to_dict", None)
+        if callable(to_dict):
+            obj = to_dict()
         try:
             if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
                 fulfill_checkout_session(obj)

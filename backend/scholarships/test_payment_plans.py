@@ -3,8 +3,10 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
 
+import stripe
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from applications.models import Application, FormDefinition
@@ -12,7 +14,7 @@ from memberships.models import MembershipGrade
 
 from .models import BursaryApplication, BursaryPaymentInstallment, BursaryPaymentPlan
 from .google_sheets import payment_plan_sheet_values
-from .stripe_payments import create_checkout_session, create_installment_schedule
+from .stripe_payments import _metadata, create_checkout_session, create_installment_schedule
 from .payment_portal import PaymentPortalAccountError, _create_payment_user
 from .tests import valid_bursary_multipart_payload
 
@@ -156,6 +158,44 @@ class BursaryPaymentPlanApiTests(APITestCase):
         }
         payload.update(overrides)
         return payload
+
+    def test_stripe_object_metadata_is_normalized_to_a_dictionary(self):
+        stripe_object = stripe.StripeObject.construct_from(
+            {"metadata": {"bursary_payment_plan_id": "17"}},
+            None,
+        )
+
+        self.assertEqual(_metadata(stripe_object).get("bursary_payment_plan_id"), "17")
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_webhook", STRIPE_WEBHOOK_SECRET="whsec_test_webhook")
+    @patch("stripe.Webhook.construct_event")
+    def test_webhook_accepts_stripe_objects_without_dict_get(self, construct_event):
+        self.client.force_authenticate(self.staff)
+        self.client.put(
+            f"/api/admin/bursary-applications/{self.application.pk}/payment-plan",
+            self.plan_payload(),
+            format="json",
+        )
+        plan = BursaryPaymentPlan.objects.get()
+        construct_event.return_value = stripe.StripeObject.construct_from({
+            "id": "evt_stripe_object_test",
+            "type": "customer.subscription.updated",
+            "data": {"object": {
+                "id": "sub_stripe_object_test",
+                "metadata": {"bursary_payment_plan_id": str(plan.pk)},
+            }},
+        }, None)
+
+        response = self.client.post(
+            "/api/stripe/webhook",
+            data=b"{}",
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test-signature",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        plan.refresh_from_db()
+        self.assertEqual(plan.stripe_subscription_id, "sub_stripe_object_test")
 
     def test_admin_builds_balanced_plan_and_monthly_rows(self):
         self.client.force_authenticate(self.staff)
