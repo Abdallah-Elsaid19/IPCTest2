@@ -10,6 +10,10 @@ from django.utils import timezone
 from .models import BursaryPaymentInstallment, BursaryPaymentPlan
 
 
+class PaymentPlanSyncError(Exception):
+    pass
+
+
 def stripe_credentials_configured():
     values = (settings.STRIPE_SECRET_KEY, settings.STRIPE_WEBHOOK_SECRET)
     return all(value and "..." not in value for value in values)
@@ -103,7 +107,7 @@ def create_checkout_session(plan):
             "line_items": [{
                 "quantity": 1,
                 "price_data": {
-                    "currency": settings.STRIPE_CURRENCY,
+                    "currency": plan.currency.lower(),
                     "unit_amount": to_minor_units(plan.deposit_amount),
                     "product_data": {"name": description},
                 },
@@ -138,26 +142,32 @@ def _payment_method_from_session(session):
     return None, ""
 
 
-def create_installment_schedule(plan, payment_method_id=None):
-    if not plan.installment_count or plan.stripe_subscription_schedule_id:
+def create_installment_schedule(plan, payment_method_id=None, revision=""):
+    """Schedule the plan's unpaid installments; ``revision`` separates re-schedules after an edit."""
+    remaining = plan.installment_count - len(plan.paid_installments())
+    if remaining <= 0 or plan.stripe_subscription_schedule_id:
         return None
     stripe = stripe_client()
     metadata = _plan_metadata(plan)
-    product = stripe.Product.create(
-        name=f"IPC installments — {plan.application.application_reference}",
-        metadata=metadata,
-        idempotency_key=f"bursary-plan-{plan.pk}-product",
-    )
+    key = f"bursary-plan-{plan.pk}-{revision}" if revision else f"bursary-plan-{plan.pk}"
+    currency = plan.currency.lower()
+    product_id = plan.stripe_product_id
+    if not product_id:
+        product_id = stripe.Product.create(
+            name=f"IPC installments — {plan.application.application_reference}",
+            metadata=metadata,
+            idempotency_key=f"{key}-product",
+        ).id
     regular_price = stripe.Price.create(
-        currency=settings.STRIPE_CURRENCY,
+        currency=currency,
         unit_amount=to_minor_units(plan.installment_amount),
         recurring={"interval": plan.billing_interval},
-        product=product.id,
+        product=product_id,
         metadata=metadata,
-        idempotency_key=f"bursary-plan-{plan.pk}-regular-price",
+        idempotency_key=f"{key}-regular-price",
     )
     phases = []
-    regular_iterations = plan.installment_count
+    regular_iterations = remaining
     final_price = None
     if plan.final_installment_amount != plan.installment_amount:
         regular_iterations -= 1
@@ -169,12 +179,12 @@ def create_installment_schedule(plan, payment_method_id=None):
         })
     if plan.final_installment_amount != plan.installment_amount:
         final_price = stripe.Price.create(
-            currency=settings.STRIPE_CURRENCY,
+            currency=currency,
             unit_amount=to_minor_units(plan.final_installment_amount),
             recurring={"interval": plan.billing_interval},
-            product=product.id,
+            product=product_id,
             metadata=metadata,
-            idempotency_key=f"bursary-plan-{plan.pk}-final-price",
+            idempotency_key=f"{key}-final-price",
         )
         phases.append({
             "items": [{"price": final_price.id, "quantity": 1}],
@@ -195,9 +205,9 @@ def create_installment_schedule(plan, payment_method_id=None):
         default_settings=default_settings,
         phases=phases,
         metadata=metadata,
-        idempotency_key=f"bursary-plan-{plan.pk}-schedule",
+        idempotency_key=f"{key}-schedule",
     )
-    plan.stripe_product_id = product.id
+    plan.stripe_product_id = product_id
     plan.stripe_price_id = regular_price.id
     plan.stripe_final_price_id = final_price.id if final_price else ""
     plan.stripe_subscription_schedule_id = schedule.id
@@ -209,6 +219,61 @@ def create_installment_schedule(plan, payment_method_id=None):
         "stripe_subscription_schedule_id", "stripe_subscription_id", "updated_at",
     ])
     return schedule
+
+
+def expire_open_checkout(plan):
+    """Stop an unpaid checkout before its plan is edited; refuse if the applicant already paid."""
+    if not plan.stripe_checkout_session_id or not stripe_credentials_configured():
+        return
+    stripe = stripe_client()
+    session = stripe.checkout.Session.retrieve(plan.stripe_checkout_session_id)
+    session_status = _stripe_value(session, "status")
+    if session_status == "complete":
+        raise PaymentPlanSyncError(
+            "The applicant has already completed Stripe checkout for this plan. "
+            "Wait for the payment to be recorded, then edit the active plan."
+        )
+    if session_status == "open":
+        stripe.checkout.Session.expire(plan.stripe_checkout_session_id)
+
+
+def _clear_unpaid_invoices(stripe, subscription_id):
+    if not subscription_id:
+        return
+    for invoice_status in ("draft", "open"):
+        invoices = stripe.Invoice.list(subscription=subscription_id, status=invoice_status, limit=100)
+        for invoice in invoices.auto_paging_iter():
+            if invoice_status == "draft":
+                stripe.Invoice.delete(invoice.id)
+            else:
+                stripe.Invoice.void_invoice(invoice.id)
+
+
+def reschedule_installments(plan):
+    """Replace an active plan's Stripe schedule with one for its edited unpaid installments."""
+    stripe = stripe_client()
+    payment_method_id = None
+    subscription_id = plan.stripe_subscription_id
+    if plan.stripe_subscription_schedule_id:
+        schedule = stripe.SubscriptionSchedule.retrieve(plan.stripe_subscription_schedule_id)
+        payment_method_id = _stripe_value(_stripe_value(schedule, "default_settings", {}) or {}, "default_payment_method")
+        subscription_id = subscription_id or _stripe_value(schedule, "subscription")
+        if _stripe_value(schedule, "status") in {"not_started", "active"}:
+            stripe.SubscriptionSchedule.cancel(plan.stripe_subscription_schedule_id, invoice_now=False, prorate=False)
+    # Unpaid invoices from the old schedule would otherwise still be collected.
+    _clear_unpaid_invoices(stripe, subscription_id)
+    if not payment_method_id:
+        deposit = plan.installments.filter(kind=BursaryPaymentInstallment.Kind.DEPOSIT).first()
+        if deposit and deposit.stripe_payment_intent_id:
+            intent = stripe.PaymentIntent.retrieve(deposit.stripe_payment_intent_id)
+            payment_method_id = _stripe_value(intent, "payment_method")
+    plan.stripe_subscription_schedule_id = ""
+    plan.stripe_subscription_id = ""
+    create_installment_schedule(plan, payment_method_id, revision=f"r{int(timezone.now().timestamp())}")
+    plan.status = BursaryPaymentPlan.Status.ACTIVE
+    plan.last_stripe_error = ""
+    plan.save(update_fields=["stripe_subscription_schedule_id", "stripe_subscription_id", "status", "last_stripe_error", "updated_at"])
+    return plan
 
 
 @transaction.atomic

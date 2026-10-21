@@ -78,7 +78,7 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
             "last_stripe_error", "installments", "created_at", "updated_at",
         ]
         read_only_fields = [
-            "public_id", "status", "currency", "final_installment_amount",
+            "public_id", "status", "final_installment_amount",
             "offered_at", "accepted_at", "terms_version", "stripe_checkout_session_id",
             "portal_login_email", "offer_email_sent_at", "offer_email_message_id", "offer_email_error",
             "stripe_subscription_schedule_id", "last_stripe_error", "created_at", "updated_at",
@@ -98,8 +98,16 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = self.instance
-        if instance and instance.status != BursaryPaymentPlan.Status.DRAFT:
-            raise serializers.ValidationError("Only draft payment plans can be edited.")
+        if instance and instance.status not in BursaryPaymentPlan.EDITABLE_STATUSES:
+            raise serializers.ValidationError("Completed, cancelled or expired payment plans cannot be edited.")
+        collecting = bool(instance and instance.status in BursaryPaymentPlan.PAID_STATUSES)
+        if collecting:
+            if attrs.get("currency", instance.currency) != instance.currency:
+                raise serializers.ValidationError({"currency": "The currency cannot change after the deposit is paid."})
+            if attrs.get("deposit_amount", instance.deposit_amount) != instance.deposit_amount:
+                raise serializers.ValidationError({"deposit_amount": "The deposit cannot change after it is paid."})
+        paid = instance.paid_installments() if collecting else []
+        paid_total = sum((item.amount for item in paid), Decimal("0.00"))
 
         amount = attrs.get("amount_payable", getattr(instance, "amount_payable", None))
         deposit = attrs.get("deposit_amount", getattr(instance, "deposit_amount", Decimal("0.00")))
@@ -110,12 +118,18 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"amount_payable": "Enter an amount greater than zero."})
         if deposit < 0 or deposit > amount:
             raise serializers.ValidationError({"deposit_amount": "The deposit must be between zero and the amount payable."})
+        if collecting and count <= len(paid):
+            raise serializers.ValidationError({
+                "installment_count": f"{len(paid)} installment(s) are already paid; schedule at least one more.",
+            })
         if count:
             if not first_date:
                 raise serializers.ValidationError({"first_installment_date": "Choose the first installment date."})
+            if collecting and first_date < timezone.localdate():
+                raise serializers.ValidationError({"first_installment_date": "The next installment date cannot be in the past."})
             if regular <= 0:
                 raise serializers.ValidationError({"installment_amount": "Enter a recurring installment greater than zero."})
-            final_amount = amount - deposit - regular * (count - 1)
+            final_amount = amount - deposit - paid_total - regular * (count - len(paid) - 1)
             if final_amount <= 0:
                 raise serializers.ValidationError({
                     "installment_amount": "The deposit and installments exceed the amount payable.",
@@ -132,10 +146,14 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
         return attrs
 
     def _sync_installments(self, plan):
-        plan.installments.all().delete()
-        sequence = 0
+        # Paid rows are history; only the unpaid part of the schedule is rebuilt.
+        kept = list(plan.installments.filter(status=BursaryPaymentInstallment.Status.PAID))
+        plan.installments.exclude(pk__in=[item.pk for item in kept]).delete()
+        sequence = max((item.sequence for item in kept), default=-1) + 1
+        paid_count = sum(item.kind == BursaryPaymentInstallment.Kind.INSTALLMENT for item in kept)
+        remaining = plan.installment_count - paid_count
         rows = []
-        if plan.deposit_amount > 0:
+        if plan.deposit_amount > 0 and not any(item.kind == BursaryPaymentInstallment.Kind.DEPOSIT for item in kept):
             rows.append(BursaryPaymentInstallment(
                 plan=plan,
                 sequence=sequence,
@@ -144,12 +162,12 @@ class BursaryPaymentPlanSerializer(serializers.ModelSerializer):
                 due_date=timezone.localdate(),
             ))
             sequence += 1
-        for index in range(plan.installment_count):
+        for index in range(remaining):
             rows.append(BursaryPaymentInstallment(
                 plan=plan,
                 sequence=sequence,
                 kind=BursaryPaymentInstallment.Kind.INSTALLMENT,
-                amount=(plan.final_installment_amount if index == plan.installment_count - 1 else plan.installment_amount),
+                amount=(plan.final_installment_amount if index == remaining - 1 else plan.installment_amount),
                 due_date=add_billing_intervals(plan.first_installment_date, index, plan.billing_interval),
             ))
             sequence += 1

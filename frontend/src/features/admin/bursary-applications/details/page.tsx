@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, LoaderCircle, Printer, Save, UserCheck, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, LoaderCircle, Pencil, Printer, Save, UserCheck, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -6,6 +6,7 @@ import { StatusBadge } from "@/features/admin/components/AdminPage";
 import { useAuth } from "@/features/auth/AuthContext";
 import {
   bursaryApi,
+  bursaryCurrencyOptions,
   type BursaryApplicationDetail,
   type BursaryPaymentPlan,
   type BursaryPaymentPlanInput,
@@ -32,6 +33,30 @@ const billingIntervalOptions: Array<{ value: BursaryPaymentPlanInput["billing_in
 ];
 
 const finalStatuses = new Set<BursaryStatus>(["approved", "rejected"]);
+
+// Plans in these states can be reopened for editing; collecting plans keep their paid terms.
+const editablePlanStatuses = new Set<BursaryPaymentPlan["status"]>(["offered", "accepted", "deposit_pending", "active", "past_due"]);
+const collectingPlanStatuses = new Set<BursaryPaymentPlan["status"]>(["active", "past_due"]);
+
+const planForm = (
+  plan: BursaryPaymentPlan | null,
+  defaults: { approved_modules: string[]; amount_payable: string } = { approved_modules: [], amount_payable: "" },
+): BursaryPaymentPlanInput => {
+  const amount = plan?.amount_payable ?? String(defaults.amount_payable || "");
+  return {
+    currency: plan?.currency ?? "GBP",
+    approved_modules: plan?.approved_modules ?? defaults.approved_modules,
+    start_date_and_cohorts: plan?.start_date_and_cohorts ?? "",
+    study_duration_months: plan?.study_duration_months ?? null,
+    amount_payable: amount,
+    deposit_amount: plan?.deposit_amount ?? amount,
+    installment_count: plan?.installment_count ?? 0,
+    billing_interval: plan?.billing_interval ?? "month",
+    installment_amount: plan?.installment_amount ?? "0.00",
+    first_installment_date: plan?.first_installment_date ?? null,
+    offer_expires_at: plan?.offer_expires_at ?? null,
+  };
+};
 
 const allowedStatusOptions = (application: BursaryApplicationDetail) => {
   const allowed = allowedBursaryStatuses(application);
@@ -247,37 +272,15 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
   const [saving, setSaving] = useState(false);
   const [offering, setOffering] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState<BursaryPaymentPlanInput>({
-    approved_modules: [],
-    start_date_and_cohorts: "",
-    study_duration_months: null,
-    amount_payable: "",
-    deposit_amount: "",
-    installment_count: 0,
-    billing_interval: "month",
-    installment_amount: "",
-    first_installment_date: null,
-    offer_expires_at: null,
-  });
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<BursaryPaymentPlanInput>(() => planForm(null));
 
   useEffect(() => {
     const controller = new AbortController();
     void bursaryApi.getPaymentPlan(application.id, controller.signal)
       .then(({ payment_plan, defaults }) => {
         setPlan(payment_plan);
-        const amount = payment_plan?.amount_payable ?? String(defaults.amount_payable || "");
-        setForm({
-          approved_modules: payment_plan?.approved_modules ?? defaults.approved_modules,
-          start_date_and_cohorts: payment_plan?.start_date_and_cohorts ?? "",
-          study_duration_months: payment_plan?.study_duration_months ?? null,
-          amount_payable: amount,
-          deposit_amount: payment_plan?.deposit_amount ?? amount,
-          installment_count: payment_plan?.installment_count ?? 0,
-          billing_interval: payment_plan?.billing_interval ?? "month",
-          installment_amount: payment_plan?.installment_amount ?? "0.00",
-          first_installment_date: payment_plan?.first_installment_date ?? null,
-          offer_expires_at: payment_plan?.offer_expires_at ?? null,
-        });
+        setForm(planForm(payment_plan, defaults));
       })
       .catch((reason) => {
         if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Could not load the payment plan.");
@@ -291,16 +294,22 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
   const amount = Number(form.amount_payable || 0);
   const deposit = Number(form.deposit_amount || 0);
   const regular = Number(form.installment_amount || 0);
+  const collecting = Boolean(plan && collectingPlanStatuses.has(plan.status));
+  const paidInstallments = collecting
+    ? (plan?.installments ?? []).filter((item) => item.kind === "installment" && item.status === "paid")
+    : [];
+  const paidTotal = paidInstallments.reduce((total, item) => total + Number(item.amount), 0);
+  const remaining = form.installment_count - paidInstallments.length;
   const finalInstallment = form.installment_count > 0
-    ? amount - deposit - regular * (form.installment_count - 1)
+    ? amount - deposit - paidTotal - regular * (remaining - 1)
     : 0;
   const validTotal = amount > 0 && deposit >= 0 && deposit <= amount && (
     form.installment_count === 0
-      ? deposit === amount
-      : regular > 0 && finalInstallment > 0 && Boolean(form.first_installment_date)
+      ? deposit === amount && !collecting
+      : regular > 0 && remaining > 0 && finalInstallment > 0 && Boolean(form.first_installment_date)
   );
-  const editable = !plan || plan.status === "draft";
-  const money = (value: number | string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+  const editable = !plan || plan.status === "draft" || editing;
+  const money = (value: number | string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: form.currency }).format(Number(value));
 
   const update = <K extends keyof BursaryPaymentPlanInput>(key: K, value: BursaryPaymentPlanInput[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -312,7 +321,11 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
     try {
       const saved = await bursaryApi.savePaymentPlan(application.id, form);
       setPlan(saved);
-      notifications.success("Payment plan saved as a draft.");
+      setForm(planForm(saved));
+      setEditing(false);
+      notifications.success(collectingPlanStatuses.has(saved.status)
+        ? "Payment plan updated and the Stripe schedule replaced."
+        : "Payment plan saved as a draft.");
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Could not save the payment plan.";
       setError(message);
@@ -346,8 +359,22 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
           <p className="text-sm font-semibold text-[#332D27]">{form.approved_modules.join(", ") || application.preferred_pathway_label}</p>
           <p className="mt-1 text-xs text-[#756B61]">Study dates and payment dates are recorded separately.</p>
         </div>
-        {plan && <StatusBadge status={plan.status} />}
+        <div className="flex items-center gap-2">
+          {plan && editablePlanStatuses.has(plan.status) && !editing && (
+            <button type="button" onClick={() => setEditing(true)} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-4 text-xs font-bold hover:border-primary-500">
+              <Pencil size={14} /> Edit plan
+            </button>
+          )}
+          {plan && <StatusBadge status={plan.status} />}
+        </div>
       </div>
+      {editing && plan && (
+        <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          {collecting
+            ? "Paid payments stay as they are. Saving cancels the current Stripe schedule and creates a new one for the unpaid installments, charged to the applicant's saved card. The currency and deposit cannot change."
+            : "Saving returns this plan to draft. The applicant must be offered the updated plan and accept it again before paying."}
+        </p>
+      )}
       {!plan?.stripe_configured && plan && (
         <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Stripe keys are not configured yet. The plan can be prepared, but checkout will remain unavailable.</p>
       )}
@@ -361,14 +388,19 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
         <label className="text-sm font-semibold sm:col-span-2 xl:col-span-4">Start dates and cohorts
           <textarea disabled={!editable} rows={4} value={form.start_date_and_cohorts} onChange={(event) => update("start_date_and_cohorts", event.target.value)} className="mt-2 w-full rounded-xl border border-[#D4C6B5] bg-white p-3 font-normal outline-none focus:border-primary-500 disabled:bg-[#F4EFE8]" placeholder="Start PMP on 7 October 2026…" />
         </label>
+        <label className="text-sm font-semibold">Currency
+          <select disabled={!editable || collecting} value={form.currency} onChange={(event) => update("currency", event.target.value as BursaryPaymentPlanInput["currency"])} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] bg-white px-3 font-normal disabled:bg-[#F4EFE8]">
+            {bursaryCurrencyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
         <label className="text-sm font-semibold">Study duration (months)
           <input disabled={!editable} type="number" min="1" value={form.study_duration_months ?? ""} onChange={(event) => update("study_duration_months", event.target.value ? Number(event.target.value) : null)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
         </label>
-        <label className="text-sm font-semibold">Amount payable (GBP)
+        <label className="text-sm font-semibold">Amount payable ({form.currency})
           <input disabled={!editable} type="number" min="0.01" step="0.01" value={form.amount_payable} onChange={(event) => update("amount_payable", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
         </label>
-        <label className="text-sm font-semibold">Deposit (GBP)
-          <input disabled={!editable} type="number" min="0" step="0.01" value={form.deposit_amount} onChange={(event) => update("deposit_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
+        <label className="text-sm font-semibold">Deposit ({form.currency})
+          <input disabled={!editable || collecting} type="number" min="0" step="0.01" value={form.deposit_amount} onChange={(event) => update("deposit_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
         </label>
         <label className="text-sm font-semibold">Number of installments
           <input disabled={!editable} type="number" min="0" max="60" value={form.installment_count} onChange={(event) => update("installment_count", Number(event.target.value))} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
@@ -379,10 +411,10 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
               {billingIntervalOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
-          <label className="text-sm font-semibold">Regular {billingIntervalOptions.find((option) => option.value === form.billing_interval)?.label.toLowerCase()} payment (GBP)
+          <label className="text-sm font-semibold">Regular {billingIntervalOptions.find((option) => option.value === form.billing_interval)?.label.toLowerCase()} payment ({form.currency})
             <input disabled={!editable} type="number" min="0.01" step="0.01" value={form.installment_amount} onChange={(event) => update("installment_amount", event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
           </label>
-          <label className="text-sm font-semibold">First installment date
+          <label className="text-sm font-semibold">{collecting ? "Next installment date" : "First installment date"}
             <input disabled={!editable} type="date" value={form.first_installment_date ?? ""} onChange={(event) => update("first_installment_date", event.target.value || null)} className="mt-2 h-12 w-full rounded-xl border border-[#D4C6B5] px-3 font-normal disabled:bg-[#F4EFE8]" />
           </label>
         </>}
@@ -392,15 +424,19 @@ function PaymentPlanBuilder({ application }: { application: BursaryApplicationDe
       </div>
       <div className={`mt-5 rounded-xl border p-4 ${validTotal ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
         <p className="text-sm font-black">Plan check</p>
-        <p className="mt-2 text-sm">{money(deposit)} deposit{form.installment_count > 0 ? ` + ${Math.max(form.installment_count - 1, 0)} × ${money(regular)} + final installment ${money(finalInstallment)}` : ""} = {money(amount)}</p>
-        <p className="mt-1 text-xs">{validTotal ? "The schedule balances exactly." : "Adjust the plan before saving; every pound must be scheduled."}</p>
+        <p className="mt-2 text-sm">{money(deposit)} deposit{paidInstallments.length ? ` + ${paidInstallments.length} paid (${money(paidTotal)})` : ""}{form.installment_count > 0 ? ` + ${Math.max(remaining - 1, 0)} × ${money(regular)} + final installment ${money(finalInstallment)}` : ""} = {money(amount)}</p>
+        <p className="mt-1 text-xs">{validTotal ? "The schedule balances exactly." : collecting && remaining < 1 ? `${paidInstallments.length} installment(s) are already paid; schedule at least one more.` : "Adjust the plan before saving; the full amount must be scheduled."}</p>
       </div>
       {plan?.installments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[#F3EBE1] text-[10px] uppercase tracking-wider text-[#6F655B]"><tr><th className="px-3 py-2">Payment</th><th className="px-3 py-2">Due</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Status</th></tr></thead><tbody className="divide-y divide-[#E8DED2]">{plan.installments.map((item) => <tr key={item.id}><td className="px-3 py-2 capitalize">{item.kind === "deposit" ? "Deposit" : `Installment ${item.sequence}`}</td><td className="px-3 py-2">{formatDate(item.due_date)}</td><td className="px-3 py-2 font-semibold">{money(item.amount)}</td><td className="px-3 py-2"><StatusBadge status={item.status} /></td></tr>)}</tbody></table></div> : null}
-      {editable && <div className="mt-5 flex flex-wrap justify-end gap-3">
+      {editing && <div className="mt-5 flex flex-wrap justify-end gap-3">
+        <button type="button" disabled={saving} onClick={() => { setEditing(false); setForm(planForm(plan)); setError(""); }} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">Cancel</button>
+        <button type="button" disabled={saving || !validTotal} onClick={() => void save()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black disabled:opacity-50">{saving && <LoaderCircle size={15} className="animate-spin" />} Save changes</button>
+      </div>}
+      {editable && !editing && <div className="mt-5 flex flex-wrap justify-end gap-3">
         <button type="button" disabled={saving || !validTotal} onClick={() => void save()} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">{saving && <LoaderCircle size={15} className="animate-spin" />} Save draft</button>
         <button type="button" disabled={offering || !plan || !validTotal} onClick={() => void offer()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary-500 px-5 text-xs font-black disabled:opacity-50">{offering && <LoaderCircle size={15} className="animate-spin" />} Offer to applicant</button>
       </div>}
-      {plan?.status === "offered" && <div className="mt-5 flex justify-end">
+      {plan?.status === "offered" && !editing && <div className="mt-5 flex justify-end">
         <button type="button" disabled={offering} onClick={() => void offer()} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D4C6B5] bg-white px-5 text-xs font-bold disabled:opacity-50">{offering && <LoaderCircle size={15} className="animate-spin" />} Resend payment-plan email</button>
       </div>}
     </DetailSection>

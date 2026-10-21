@@ -80,13 +80,24 @@ export interface BursaryPaymentInstallment {
   failure_message: string;
 }
 
+export type BursaryCurrency = "GBP" | "USD" | "EUR" | "AED" | "EGP" | "SAR";
+
+export const bursaryCurrencyOptions: Array<{ value: BursaryCurrency; label: string }> = [
+  { value: "GBP", label: "GBP — British pound" },
+  { value: "USD", label: "USD — US dollar" },
+  { value: "EUR", label: "EUR — Euro" },
+  { value: "AED", label: "AED — UAE dirham" },
+  { value: "EGP", label: "EGP — Egyptian pound" },
+  { value: "SAR", label: "SAR — Saudi riyal" },
+];
+
 export interface BursaryPaymentPlan {
   public_id: string;
   application_reference: string;
   applicant_name: string;
   applicant_email: string;
   status: BursaryPaymentPlanStatus;
-  currency: "GBP";
+  currency: BursaryCurrency;
   approved_modules: string[];
   start_date_and_cohorts: string;
   study_duration_months: number | null;
@@ -116,6 +127,7 @@ export interface BursaryPaymentPlan {
 }
 
 export interface BursaryPaymentPlanInput {
+  currency: BursaryCurrency;
   approved_modules: string[];
   start_date_and_cohorts: string;
   study_duration_months: number | null;

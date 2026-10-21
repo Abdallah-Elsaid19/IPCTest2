@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from stripe import StripeError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -74,11 +75,14 @@ from .serializers import (
     bursary_application_to_public_values,
 )
 from .stripe_payments import (
+    PaymentPlanSyncError,
     create_checkout_session,
+    expire_open_checkout,
     fulfill_checkout_session,
     link_invoice_to_installment,
     mark_invoice_failed,
     mark_invoice_paid,
+    reschedule_installments,
     stripe_credentials_configured,
 )
 
@@ -95,6 +99,13 @@ PATHWAY_DETAIL_FIELDS = {
 }
 
 logger = logging.getLogger(__name__)
+
+PAID_STATUSES = BursaryPaymentPlan.PAID_STATUSES
+PRE_PAYMENT_STATUSES = frozenset({
+    BursaryPaymentPlan.Status.OFFERED,
+    BursaryPaymentPlan.Status.ACCEPTED,
+    BursaryPaymentPlan.Status.DEPOSIT_PENDING,
+})
 
 def scholarship_announcement_content():
     content, _ = ScholarshipAnnouncementContent.objects.get_or_create(key="main")
@@ -925,11 +936,35 @@ class AdminBursaryApplicationViewSet(
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
-        if plan:
-            plan = serializer.save(updated_by=request.user)
-        else:
-            plan = serializer.save(application=application, created_by=request.user, updated_by=request.user)
-        plan.refresh_from_db()
+        previous_status = plan.status if plan else None
+        if previous_status in PAID_STATUSES and not stripe_credentials_configured():
+            return Response(
+                {"detail": "Stripe must be configured to change an active payment plan."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        try:
+            if previous_status in PRE_PAYMENT_STATUSES:
+                expire_open_checkout(plan)
+            if plan:
+                plan = serializer.save(updated_by=request.user)
+            else:
+                plan = serializer.save(application=application, created_by=request.user, updated_by=request.user)
+            plan = BursaryPaymentPlan.objects.select_related("application").get(pk=plan.pk)
+            if previous_status in PRE_PAYMENT_STATUSES:
+                # The applicant agreed to the old terms, so the edited plan must be offered again.
+                plan.status = BursaryPaymentPlan.Status.DRAFT
+                plan.accepted_at = None
+                plan.stripe_checkout_session_id = ""
+                plan.save(update_fields=["status", "accepted_at", "stripe_checkout_session_id", "updated_at"])
+            elif previous_status in PAID_STATUSES:
+                reschedule_installments(plan)
+        except PaymentPlanSyncError as error:
+            raise ValidationError({"detail": str(error)}) from error
+        except StripeError as error:
+            logger.exception("Stripe could not update bursary payment plan %s.", plan.pk)
+            # Raise so the plan edit rolls back; the Stripe calls are safe to repeat.
+            raise ValidationError({"detail": f"Stripe could not update the payment schedule: {error}"}) from error
+        plan = BursaryPaymentPlan.objects.prefetch_related("installments").get(pk=plan.pk)
         return Response(BursaryPaymentPlanSerializer(plan).data)
 
     @action(detail=True, methods=["post"], url_path="payment-plan/offer")

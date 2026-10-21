@@ -561,6 +561,21 @@ class BursaryPaymentPlan(models.Model):
         MONTH = "month", "Monthly"
         YEAR = "year", "Yearly"
 
+    class Currency(models.TextChoices):
+        GBP = "GBP", "British pound"
+        USD = "USD", "US dollar"
+        EUR = "EUR", "Euro"
+        AED = "AED", "UAE dirham"
+        EGP = "EGP", "Egyptian pound"
+        SAR = "SAR", "Saudi riyal"
+
+    # Statuses where Stripe has collected money, so the deposit and currency are fixed.
+    PAID_STATUSES = frozenset({Status.ACTIVE, Status.PAST_DUE})
+    EDITABLE_STATUSES = frozenset({
+        Status.DRAFT, Status.OFFERED, Status.ACCEPTED, Status.DEPOSIT_PENDING,
+        Status.ACTIVE, Status.PAST_DUE,
+    })
+
     public_id = models.UUIDField(default=uuid4, unique=True, editable=False)
     application = models.OneToOneField(
         BursaryApplication,
@@ -575,7 +590,7 @@ class BursaryPaymentPlan(models.Model):
         related_name="bursary_payment_plans",
     )
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.DRAFT, db_index=True)
-    currency = models.CharField(max_length=3, default="GBP", editable=False)
+    currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.GBP)
     approved_modules = models.JSONField(default=list)
     start_date_and_cohorts = models.TextField(blank=True)
     study_duration_months = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -632,11 +647,27 @@ class BursaryPaymentPlan(models.Model):
             models.CheckConstraint(condition=models.Q(final_installment_amount__gte=0), name="bursary_plan_final_nonnegative"),
         ]
 
+    def paid_installments(self):
+        if not self.pk:
+            return []
+        return [
+            item for item in self.installments.all()
+            if item.kind == BursaryPaymentInstallment.Kind.INSTALLMENT
+            and item.status == BursaryPaymentInstallment.Status.PAID
+        ]
+
     @property
     def scheduled_total(self):
         if not self.installment_count:
             return self.deposit_amount
-        return self.deposit_amount + self.installment_amount * (self.installment_count - 1) + self.final_installment_amount
+        paid = self.paid_installments()
+        remaining = self.installment_count - len(paid)
+        return (
+            self.deposit_amount
+            + sum((item.amount for item in paid), Decimal("0.00"))
+            + self.installment_amount * max(remaining - 1, 0)
+            + (self.final_installment_amount if remaining > 0 else Decimal("0.00"))
+        )
 
     def clean(self):
         errors = {}

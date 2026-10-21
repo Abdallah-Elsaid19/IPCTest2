@@ -9,8 +9,8 @@ import {
 } from "@/features/bursary/api";
 import { notifications } from "@/lib/notifications";
 
-const money = (value: string) =>
-  new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+const money = (value: string, currency: BursaryPaymentPlan["currency"]) =>
+  new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(Number(value));
 
 const date = (value: string | null) =>
   value
@@ -118,8 +118,8 @@ export default function PaymentPortalPage({ embedded = false }: { embedded?: boo
               </div>
               <div className="p-5 sm:p-7">
                 <dl className="grid gap-3 sm:grid-cols-4">
-                  <Metric label="Total payable" value={money(plan.amount_payable)} />
-                  <Metric label="Deposit" value={money(plan.deposit_amount)} />
+                  <Metric label="Total payable" value={money(plan.amount_payable, plan.currency)} />
+                  <Metric label="Deposit" value={money(plan.deposit_amount, plan.currency)} />
                   <Metric label="Payment schedule" value={plan.installment_count ? `${plan.installment_count} × ${billingIntervalLabels[plan.billing_interval].toLowerCase()}` : "Single payment"} />
                   <Metric label="First installment" value={date(plan.first_installment_date)} />
                 </dl>
@@ -128,12 +128,12 @@ export default function PaymentPortalPage({ embedded = false }: { embedded?: boo
                 <div className="mt-6 overflow-x-auto rounded-2xl border border-[#E5DACC]">
                   <table className="w-full min-w-[650px] text-left text-sm">
                     <thead className="bg-[#F3EBE1] text-xs uppercase tracking-wider text-[#6F655B]"><tr><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Due</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Action</th></tr></thead>
-                    <tbody className="divide-y divide-[#E8DED2]">{plan.installments.map((item) => <tr key={item.id}><td className="px-4 py-3 font-semibold">{item.kind === "deposit" ? "Deposit" : `Installment ${item.sequence}`}</td><td className="px-4 py-3">{date(item.due_date)}</td><td className="px-4 py-3 font-bold">{money(item.amount)}</td><td className="px-4 py-3 capitalize">{item.status.replaceAll("_", " ")}</td><td className="px-4 py-3 text-right">{item.stripe_hosted_invoice_url && item.status !== "paid" ? <a href={item.stripe_hosted_invoice_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#171411] px-3 py-2 text-xs font-bold text-white"><CreditCard size={14} /> Pay invoice</a> : "—"}</td></tr>)}</tbody>
+                    <tbody className="divide-y divide-[#E8DED2]">{plan.installments.map((item) => <tr key={item.id}><td className="px-4 py-3 font-semibold">{item.kind === "deposit" ? "Deposit" : `Installment ${item.sequence}`}</td><td className="px-4 py-3">{date(item.due_date)}</td><td className="px-4 py-3 font-bold">{money(item.amount, plan.currency)}</td><td className="px-4 py-3 capitalize">{item.status.replaceAll("_", " ")}</td><td className="px-4 py-3 text-right">{item.stripe_hosted_invoice_url && item.status !== "paid" ? <a href={item.stripe_hosted_invoice_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#171411] px-3 py-2 text-xs font-bold text-white"><CreditCard size={14} /> Pay invoice</a> : "—"}</td></tr>)}</tbody>
                   </table>
                 </div>
 
                 {plan.status === "offered" && <div className="mt-6 rounded-2xl border border-primary-200 bg-primary-50 p-5"><label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={Boolean(accepted[plan.public_id])} onChange={(event) => setAccepted((current) => ({ ...current, [plan.public_id]: event.target.checked }))} className="mt-0.5 h-5 w-5 accent-primary-600" /><span>I have reviewed the modules, amounts, dates, and installment schedule and accept the IPC payment-plan terms.</span></label><button type="button" disabled={!accepted[plan.public_id] || Boolean(busy)} onClick={() => void acceptPlan(plan)} className="mt-4 h-12 w-full rounded-xl bg-primary-500 font-black text-black disabled:opacity-50">{busy === `accept-${plan.public_id}` ? "Accepting…" : "Accept payment plan"}</button></div>}
-                {(["accepted", "deposit_pending"].includes(plan.status)) && <button type="button" disabled={Boolean(busy) || !plan.stripe_configured} onClick={() => void payDeposit(plan)} className="mt-6 h-12 w-full rounded-xl bg-[#171411] font-black text-white disabled:opacity-50">{busy === `pay-${plan.public_id}` ? "Opening Stripe…" : plan.deposit_amount === "0.00" ? "Start installment plan" : `Pay ${money(plan.deposit_amount)} deposit securely`}</button>}
+                {(["accepted", "deposit_pending"].includes(plan.status)) && <button type="button" disabled={Boolean(busy) || !plan.stripe_configured} onClick={() => void payDeposit(plan)} className="mt-6 h-12 w-full rounded-xl bg-[#171411] font-black text-white disabled:opacity-50">{busy === `pay-${plan.public_id}` ? "Opening Stripe…" : plan.deposit_amount === "0.00" ? "Start installment plan" : `Pay ${money(plan.deposit_amount, plan.currency)} deposit securely`}</button>}
                 {!plan.stripe_configured && ["offered", "accepted", "deposit_pending"].includes(plan.status) && <p className="mt-3 text-sm text-amber-800">Online payment is being configured. IPC will email you when Stripe payment is available.</p>}
               </div>
             </section>

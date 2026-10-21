@@ -87,6 +87,8 @@ class PaymentPortalPersonalEmailTests(APITestCase):
         self.assertEqual(_create_payment_user(self.plan(email)).pk, user.pk)
 
 
+# Never reach the real Stripe account from .env; tests that need Stripe mock it.
+@override_settings(STRIPE_SECRET_KEY="", STRIPE_WEBHOOK_SECRET="")
 class BursaryPaymentPlanApiTests(APITestCase):
     def setUp(self):
         grade, _ = MembershipGrade.objects.get_or_create(
@@ -476,3 +478,136 @@ class BursaryPaymentPlanApiTests(APITestCase):
         self.assertEqual(checkout_args["mode"], "setup")
         self.assertEqual(checkout_args["payment_method_types"], ["card"])
         self.assertIn("setup_intent_data", checkout_args)
+
+    def payment_plan_url(self):
+        return f"/api/admin/bursary-applications/{self.application.pk}/payment-plan"
+
+    def make_active_plan(self, paid_installments=1):
+        self.client.force_authenticate(self.staff)
+        self.client.put(self.payment_plan_url(), self.plan_payload(), format="json")
+        plan = BursaryPaymentPlan.objects.get()
+        plan.status = BursaryPaymentPlan.Status.ACTIVE
+        plan.stripe_customer_id = "cus_test"
+        plan.stripe_product_id = "prod_old"
+        plan.stripe_subscription_schedule_id = "sub_sched_old"
+        plan.stripe_subscription_id = "sub_old"
+        plan.save()
+        plan.installments.filter(sequence__lte=paid_installments).update(status=BursaryPaymentInstallment.Status.PAID)
+        return plan
+
+    def active_stripe_mock(self):
+        stripe = Mock()
+        stripe.SubscriptionSchedule.retrieve.return_value = SimpleNamespace(
+            status="active",
+            subscription="sub_old",
+            default_settings=SimpleNamespace(default_payment_method="pm_saved"),
+        )
+        stripe.Invoice.list.return_value.auto_paging_iter.return_value = [SimpleNamespace(id="in_unpaid")]
+        stripe.Price.create.return_value = SimpleNamespace(id="price_new")
+        stripe.SubscriptionSchedule.create.return_value = SimpleNamespace(id="sub_sched_new", subscription=None)
+        return stripe
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_edit", STRIPE_WEBHOOK_SECRET="whsec_test_edit")
+    @patch("scholarships.stripe_payments.stripe_client")
+    def test_editing_active_plan_keeps_paid_rows_and_replaces_stripe_schedule(self, stripe_client):
+        self.make_active_plan(paid_installments=1)
+        stripe = self.active_stripe_mock()
+        stripe_client.return_value = stripe
+
+        response = self.client.put(
+            self.payment_plan_url(),
+            self.plan_payload(installment_count=6, installment_amount="600.00", first_installment_date="2026-12-01"),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["status"], "active")
+        self.assertEqual(response.data["final_installment_amount"], "900.00")
+        self.assertEqual(response.data["scheduled_total"], "4000.00")
+        rows = response.data["installments"]
+        self.assertEqual([row["status"] for row in rows[:2]], ["paid", "paid"])
+        self.assertEqual(rows[1]["amount"], "300.00")
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(rows[-1]["amount"], "900.00")
+        stripe.SubscriptionSchedule.cancel.assert_called_once_with("sub_sched_old", invoice_now=False, prorate=False)
+        stripe.Invoice.void_invoice.assert_called_with("in_unpaid")
+        stripe.Product.create.assert_not_called()
+        schedule_args = stripe.SubscriptionSchedule.create.call_args.kwargs
+        self.assertEqual(schedule_args["default_settings"]["default_payment_method"], "pm_saved")
+        self.assertEqual(
+            [phase["duration"]["interval_count"] for phase in schedule_args["phases"]],
+            [4, 1],
+        )
+        plan = BursaryPaymentPlan.objects.get()
+        self.assertEqual(plan.stripe_subscription_schedule_id, "sub_sched_new")
+        self.assertEqual(plan.stripe_subscription_id, "")
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_edit", STRIPE_WEBHOOK_SECRET="whsec_test_edit")
+    @patch("scholarships.stripe_payments.stripe_client")
+    def test_active_plan_cannot_change_paid_terms(self, stripe_client):
+        self.make_active_plan(paid_installments=1)
+        stripe_client.return_value = self.active_stripe_mock()
+        cases = {
+            "currency": {"currency": "USD"},
+            "deposit_amount": {"deposit_amount": "500.00", "installment_amount": "291.67"},
+            "installment_count": {"installment_count": 1},
+        }
+        for field, overrides in cases.items():
+            with self.subTest(field=field):
+                response = self.client.put(self.payment_plan_url(), self.plan_payload(**overrides), format="json")
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertIn(field, response.data)
+        stripe_client.return_value.SubscriptionSchedule.cancel.assert_not_called()
+
+    def test_editing_accepted_plan_returns_it_to_draft_for_a_new_offer(self):
+        self.client.force_authenticate(self.staff)
+        self.client.put(self.payment_plan_url(), self.plan_payload(), format="json")
+        BursaryPaymentPlan.objects.update(status=BursaryPaymentPlan.Status.ACCEPTED)
+
+        response = self.client.put(
+            self.payment_plan_url(),
+            self.plan_payload(currency="AED", installment_count=6, installment_amount="600.00"),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["status"], "draft")
+        self.assertEqual(response.data["currency"], "AED")
+        self.assertEqual(response.data["accepted_at"], None)
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_edit", STRIPE_WEBHOOK_SECRET="whsec_test_edit")
+    @patch("scholarships.stripe_payments.stripe_client")
+    def test_plan_cannot_be_edited_after_applicant_completed_checkout(self, stripe_client):
+        self.client.force_authenticate(self.staff)
+        self.client.put(self.payment_plan_url(), self.plan_payload(), format="json")
+        BursaryPaymentPlan.objects.update(
+            status=BursaryPaymentPlan.Status.DEPOSIT_PENDING,
+            stripe_checkout_session_id="cs_paid",
+        )
+        stripe = Mock()
+        stripe.checkout.Session.retrieve.return_value = SimpleNamespace(status="complete")
+        stripe_client.return_value = stripe
+
+        response = self.client.put(self.payment_plan_url(), self.plan_payload(deposit_amount="1000.00", installment_amount="250.00"), format="json")
+
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertEqual(BursaryPaymentPlan.objects.get().deposit_amount, 400)
+
+    @patch("scholarships.stripe_payments.stripe_client")
+    def test_checkout_and_installments_use_the_plan_currency(self, stripe_client):
+        self.client.force_authenticate(self.staff)
+        self.client.put(self.payment_plan_url(), self.plan_payload(currency="SAR"), format="json")
+        plan = BursaryPaymentPlan.objects.select_related("application").get()
+        plan.stripe_customer_id = "cus_test"
+        plan.save(update_fields=["stripe_customer_id", "updated_at"])
+        stripe = self.active_stripe_mock()
+        stripe.checkout.Session.create.return_value = SimpleNamespace(id="cs_test", url="https://checkout.stripe.test")
+        stripe.Product.create.return_value = SimpleNamespace(id="prod_test")
+        stripe_client.return_value = stripe
+
+        create_checkout_session(plan)
+        create_installment_schedule(plan, "pm_test")
+
+        line_item = stripe.checkout.Session.create.call_args.kwargs["line_items"][0]
+        self.assertEqual(line_item["price_data"]["currency"], "sar")
+        self.assertEqual(stripe.Price.create.call_args.kwargs["currency"], "sar")

@@ -455,7 +455,7 @@ function PaymentPlanPanel({ initialPlan }: { initialPlan: BursaryPaymentPlan }) 
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState<"accept" | "checkout" | "">("");
   const [error, setError] = useState("");
-  const money = (value: string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+  const money = (value: string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: plan.currency }).format(Number(value));
 
   useEffect(() => setPlan(initialPlan), [initialPlan]);
 
