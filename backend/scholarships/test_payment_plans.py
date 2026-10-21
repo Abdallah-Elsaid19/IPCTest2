@@ -426,6 +426,9 @@ class BursaryPaymentPlanApiTests(APITestCase):
         schedule_args = stripe.SubscriptionSchedule.create.call_args.kwargs
         self.assertEqual(schedule_args["default_settings"]["collection_method"], "charge_automatically")
         self.assertEqual(schedule_args["default_settings"]["default_payment_method"], "pm_test")
+        for phase in schedule_args["phases"]:
+            self.assertNotIn("iterations", phase)
+            self.assertEqual(phase["duration"]["interval"], "week")
 
     @patch("scholarships.stripe_payments.stripe_client")
     def test_deposit_checkout_saves_card_for_future_automatic_charges(self, stripe_client):

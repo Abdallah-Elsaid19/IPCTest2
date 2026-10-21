@@ -164,7 +164,7 @@ def create_installment_schedule(plan, payment_method_id=None):
     if regular_iterations:
         phases.append({
             "items": [{"price": regular_price.id, "quantity": 1}],
-            "iterations": regular_iterations,
+            "duration": {"interval": plan.billing_interval, "interval_count": regular_iterations},
             "metadata": metadata,
         })
     if plan.final_installment_amount != plan.installment_amount:
@@ -178,7 +178,7 @@ def create_installment_schedule(plan, payment_method_id=None):
         )
         phases.append({
             "items": [{"price": final_price.id, "quantity": 1}],
-            "iterations": 1,
+            "duration": {"interval": plan.billing_interval, "interval_count": 1},
             "metadata": metadata,
         })
 
