@@ -459,6 +459,57 @@ class BursaryPaymentPlanApiTests(APITestCase):
         checkout_args = stripe.checkout.Session.create.call_args.kwargs
         self.assertEqual(checkout_args["mode"], "payment")
         self.assertEqual(checkout_args["payment_intent_data"]["setup_future_usage"], "off_session")
+        self.assertTrue(checkout_args["invoice_creation"]["enabled"])
+        self.assertEqual(
+            checkout_args["invoice_creation"]["invoice_data"]["metadata"]["bursary_payment_plan_id"],
+            str(plan.pk),
+        )
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_receipt", STRIPE_WEBHOOK_SECRET="whsec_test_receipt")
+    @patch("scholarships.stripe_payments.stripe_client")
+    def test_admin_payment_plan_backfills_printable_receipt_for_paid_deposit(self, stripe_client):
+        self.client.force_authenticate(self.staff)
+        self.client.put(
+            f"/api/admin/bursary-applications/{self.application.pk}/payment-plan",
+            self.plan_payload(),
+            format="json",
+        )
+        plan = BursaryPaymentPlan.objects.get()
+        plan.status = BursaryPaymentPlan.Status.ACTIVE
+        plan.stripe_checkout_session_id = "cs_paid_deposit"
+        plan.save(update_fields=["status", "stripe_checkout_session_id", "updated_at"])
+        deposit = plan.installments.get(kind=BursaryPaymentInstallment.Kind.DEPOSIT)
+        deposit.status = BursaryPaymentInstallment.Status.PAID
+        deposit.paid_at = timezone.now()
+        deposit.stripe_payment_intent_id = "pi_paid_deposit"
+        deposit.save(update_fields=["status", "paid_at", "stripe_payment_intent_id", "updated_at"])
+
+        stripe = Mock()
+        stripe.checkout.Session.retrieve.return_value = SimpleNamespace(invoice=None)
+        stripe.PaymentIntent.retrieve.return_value = SimpleNamespace(
+            latest_charge=SimpleNamespace(receipt_url="https://pay.stripe.com/receipts/paid-deposit"),
+        )
+        stripe_client.return_value = stripe
+
+        response = self.client.get(
+            f"/api/admin/bursary-applications/{self.application.pk}/payment-plan",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        returned_deposit = response.data["payment_plan"]["installments"][0]
+        self.assertEqual(
+            returned_deposit["stripe_hosted_invoice_url"],
+            "https://pay.stripe.com/receipts/paid-deposit",
+        )
+        deposit.refresh_from_db()
+        self.assertEqual(
+            deposit.stripe_hosted_invoice_url,
+            "https://pay.stripe.com/receipts/paid-deposit",
+        )
+        stripe.PaymentIntent.retrieve.assert_called_once_with(
+            "pi_paid_deposit",
+            expand=["latest_charge"],
+        )
 
     @patch("scholarships.stripe_payments.stripe_client")
     def test_zero_deposit_checkout_collects_a_card_before_starting_schedule(self, stripe_client):

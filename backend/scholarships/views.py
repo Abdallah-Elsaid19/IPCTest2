@@ -76,6 +76,7 @@ from .serializers import (
 )
 from .stripe_payments import (
     PaymentPlanSyncError,
+    backfill_deposit_payment_document,
     create_checkout_session,
     expire_open_checkout,
     fulfill_checkout_session,
@@ -938,6 +939,16 @@ class AdminBursaryApplicationViewSet(
         application = self.get_object()
         plan = BursaryPaymentPlan.objects.filter(application=application).prefetch_related("installments").first()
         if request.method == "GET":
+            if plan:
+                try:
+                    backfill_deposit_payment_document(plan)
+                except StripeError:
+                    logger.warning(
+                        "Stripe could not retrieve the deposit receipt for payment plan %s.",
+                        plan.pk,
+                        exc_info=True,
+                    )
+                plan = BursaryPaymentPlan.objects.filter(application=application).prefetch_related("installments").first()
             return Response({
                 "payment_plan": BursaryPaymentPlanSerializer(plan).data if plan else None,
                 "defaults": self._payment_plan_defaults(application),

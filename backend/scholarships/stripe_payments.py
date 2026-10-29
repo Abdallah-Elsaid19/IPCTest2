@@ -100,6 +100,10 @@ def create_checkout_session(plan):
             "success_url": success_url,
             "cancel_url": cancel_url,
             "metadata": metadata,
+            "invoice_creation": {
+                "enabled": True,
+                "invoice_data": {"metadata": metadata},
+            },
             "payment_intent_data": {
                 "metadata": metadata,
                 "setup_future_usage": "off_session",
@@ -140,6 +144,53 @@ def _payment_method_from_session(session):
         intent = stripe.SetupIntent.retrieve(setup_intent_id)
         return _stripe_value(intent, "payment_method"), ""
     return None, ""
+
+
+def _receipt_url_from_payment_intent(stripe, payment_intent_id):
+    if not payment_intent_id:
+        return ""
+    intent = stripe.PaymentIntent.retrieve(payment_intent_id, expand=["latest_charge"])
+    charge = _stripe_value(intent, "latest_charge")
+    if isinstance(charge, str):
+        charge = stripe.Charge.retrieve(charge)
+    receipt_url = _stripe_value(charge, "receipt_url", "")
+    return receipt_url if isinstance(receipt_url, str) else ""
+
+
+def _invoice_url_from_session(stripe, session):
+    invoice = _stripe_value(session, "invoice")
+    if isinstance(invoice, str):
+        invoice = stripe.Invoice.retrieve(invoice)
+    hosted_url = _stripe_value(invoice, "hosted_invoice_url", "")
+    return hosted_url if isinstance(hosted_url, str) else ""
+
+
+def _payment_document_url(stripe, session, payment_intent_id):
+    return (
+        _invoice_url_from_session(stripe, session)
+        or _receipt_url_from_payment_intent(stripe, payment_intent_id)
+    )
+
+
+def backfill_deposit_payment_document(plan):
+    """Populate the printable Stripe document for deposits paid before invoice creation was enabled."""
+    deposit = plan.installments.filter(
+        kind=BursaryPaymentInstallment.Kind.DEPOSIT,
+        status=BursaryPaymentInstallment.Status.PAID,
+        stripe_hosted_invoice_url="",
+    ).first()
+    if not deposit or not deposit.stripe_payment_intent_id or not stripe_credentials_configured():
+        return deposit
+
+    stripe = stripe_client()
+    session = None
+    if plan.stripe_checkout_session_id:
+        session = stripe.checkout.Session.retrieve(plan.stripe_checkout_session_id)
+    document_url = _payment_document_url(stripe, session, deposit.stripe_payment_intent_id)
+    if document_url:
+        deposit.stripe_hosted_invoice_url = document_url
+        deposit.save(update_fields=["stripe_hosted_invoice_url", "updated_at"])
+    return deposit
 
 
 def create_installment_schedule(plan, payment_method_id=None, revision=""):
@@ -288,16 +339,26 @@ def fulfill_checkout_session(session):
     if mode == "payment" and payment_status not in {"paid", "no_payment_required"}:
         return plan
     payment_method_id, payment_intent_id = _payment_method_from_session(session)
+    payment_document_url = _payment_document_url(stripe_client(), session, payment_intent_id)
     customer_id = _stripe_value(session, "customer")
     if customer_id:
         plan.stripe_customer_id = customer_id
     deposit = plan.installments.select_for_update().filter(kind=BursaryPaymentInstallment.Kind.DEPOSIT).first()
-    if deposit and deposit.status != BursaryPaymentInstallment.Status.PAID:
-        deposit.status = BursaryPaymentInstallment.Status.PAID
-        deposit.paid_at = timezone.now()
-        deposit.stripe_payment_intent_id = payment_intent_id or ""
-        deposit.failure_message = ""
-        deposit.save(update_fields=["status", "paid_at", "stripe_payment_intent_id", "failure_message", "updated_at"])
+    if deposit:
+        update_fields = []
+        if deposit.status != BursaryPaymentInstallment.Status.PAID:
+            deposit.status = BursaryPaymentInstallment.Status.PAID
+            deposit.paid_at = timezone.now()
+            deposit.failure_message = ""
+            update_fields.extend(["status", "paid_at", "failure_message"])
+        if payment_intent_id and deposit.stripe_payment_intent_id != payment_intent_id:
+            deposit.stripe_payment_intent_id = payment_intent_id
+            update_fields.append("stripe_payment_intent_id")
+        if payment_document_url and deposit.stripe_hosted_invoice_url != payment_document_url:
+            deposit.stripe_hosted_invoice_url = payment_document_url
+            update_fields.append("stripe_hosted_invoice_url")
+        if update_fields:
+            deposit.save(update_fields=[*update_fields, "updated_at"])
     if plan.installment_count:
         create_installment_schedule(plan, payment_method_id)
         plan.status = BursaryPaymentPlan.Status.ACTIVE
